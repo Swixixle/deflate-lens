@@ -1,0 +1,103 @@
+"use strict";
+/* The one place the app talks to a model. The browser never sees the API key: the page posts a prompt
+   to /api/sample and this module forwards it to Anthropic's Messages API with the key from .env.
+   DEFLATE_MOCK_AI=1 swaps in a canned responder so the whole workflow can be exercised (and tested)
+   without a key or a bill. Mock output is labelled MOCK everywhere it appears. */
+
+const DEFAULT_MODEL = "claude-sonnet-5-5";
+
+function parseJSONLoose(text) {
+  const s = String(text || "").trim();
+  try { return JSON.parse(s); } catch (e) {}
+  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) { try { return JSON.parse(fence[1]); } catch (e) {} }
+  const a = s.search(/[\[{]/), b = Math.max(s.lastIndexOf("}"), s.lastIndexOf("]"));
+  if (a !== -1 && b > a) { try { return JSON.parse(s.slice(a, b + 1)); } catch (e) {} }
+  const err = new Error("The model's reply was not well-formed JSON."); err.code = "invalid_json"; err.text = s; throw err;
+}
+
+function createAnthropicAI({ apiKey, model, maxTokens }) {
+  const Anthropic = require("@anthropic-ai/sdk");
+  const client = new Anthropic({ apiKey });
+  const mdl = model || DEFAULT_MODEL;
+  return {
+    kind: "anthropic", model: mdl, mock: false,
+    async sample({ prompt, json, images, signal }) {
+      const content = [];
+      (images || []).forEach(im => content.push({ type: "image", source: { type: "base64", media_type: im.mediaType, data: im.data } }));
+      content.push({ type: "text", text: String(prompt || "") });
+      let res;
+      try {
+        res = await client.messages.create({ model: mdl, max_tokens: maxTokens || 8000, messages: [{ role: "user", content }] }, { signal });
+      } catch (e) {
+        const err = new Error(e && e.message ? e.message : "model request failed");
+        err.code = e && e.status === 401 ? "bad_key" : e && e.status === 429 ? "rate_limited" : e && e.name === "AbortError" ? "cancelled" : "upstream_error";
+        err.status = e && e.status;
+        throw err;
+      }
+      const text = (res.content || []).filter(c => c.type === "text").map(c => c.text).join("\n");
+      const usage = res.usage ? { input: res.usage.input_tokens, output: res.usage.output_tokens } : null;
+      if (json) return { data: parseJSONLoose(text), text, usage, model: res.model || mdl };
+      return { text, usage, model: res.model || mdl };
+    }
+  };
+}
+
+/* Canned responder. Recognises each prompt by its opening words and returns the right JSON shape. */
+function createMockAI() {
+  function turnsFrom(prompt) {
+    const out = [];
+    const re = /^\[(\d+)\] ([^:]+): (.*)$/gm; let m;
+    while ((m = re.exec(prompt))) out.push({ i: +m[1], label: m[2].trim(), text: m[3] });
+    return out;
+  }
+  return {
+    kind: "mock", model: "mock", mock: true,
+    async sample({ prompt, json }) {
+      const p = String(prompt || "");
+      let data;
+      if (p.startsWith("Transcribe all text")) return { text: "[MOCK transcription] no image reader in mock mode", usage: null, model: "mock" };
+      if (p.startsWith("You are a deflation reader grading ONE claim")) {
+        const claim = (p.split("The claim:\n")[1] || "").trim();
+        data = { deflated: { hs: "MOCK plain version of: " + claim, g5: "MOCK simple version of: " + claim }, type: "unsupported", basis: { hs: "MOCK: typed as unsupported because mock mode knows nothing.", g5: "MOCK basis." }, wouldSettle: "MOCK: a real model run.", settle: { hs: "MOCK: what would settle it (senior high).", g5: "MOCK: what would settle it (fifth grade)." }, expectedSources: ["academic_paper"], searchQuery: "MOCK query " + claim.split(" ").slice(0, 3).join(" "), hidden: [], judgments: { evidence: "n/a", inference: "n/a" } };
+      } else if (p.startsWith("You are checking speaker attribution")) {
+        const t = turnsFrom(p);
+        const flags = t.filter(x => /\bmy (wife|daughter|podcast|clinical practice|book)\b/i.test(x.text)).slice(0, 5).map(x => ({ turn: x.i, labeled: x.label, likely: "UNSURE", confidence: 0.5, cue: "MOCK: self-reference found" }));
+        data = { flags, shift: { detected: false, note: "" } };
+      } else if (p.startsWith("Split this transcript")) {
+        const t = turnsFrom(p); const passages = [];
+        for (let i = 0; i < t.length; i += 8) { const seg = t.slice(i, i + 8); passages.push({ title: "MOCK passage " + (passages.length + 1), turnStart: seg[0].i, turnEnd: seg[seg.length - 1].i, stake: "MOCK: what is at issue in turns " + seg[0].i + "–" + seg[seg.length - 1].i }); }
+        data = { passages };
+      } else if (p.startsWith("You are a deflation reader")) {
+        const t = turnsFrom(p); const first = t[0] || { i: 0, label: "SPEAKER", text: "" };
+        const quote = first.text.split(" ").slice(0, 12).join(" ");
+        data = {
+          asSaid: [{ turn: first.i, speaker: first.label, quote }],
+          deflated: { hs: "MOCK deflation (senior high): " + quote, g5: "MOCK deflation (fifth grade): " + quote },
+          fidelity: { grade: "faithful", notes: { hs: "MOCK: no fidelity check was performed.", g5: "MOCK: not checked." } },
+          jump: { present: false, pivot: "", hs: "MOCK: no jump analysis in mock mode.", g5: "MOCK: not analysed." },
+          defense: { hs: "MOCK: no defense written.", g5: "MOCK: none." },
+          revision: { jumpSurvives: "no", hs: "MOCK: nothing to revise.", g5: "MOCK: nothing." },
+          claims: [
+            { text: "MOCK claim from turn " + first.i, speaker: first.label, type: "unscorable", plain: { hs: "MOCK plain (senior high).", g5: "MOCK plain (fifth grade)." }, basis: { hs: "MOCK basis.", g5: "MOCK basis." }, status: "unchecked", wouldSettle: "A real model run.", settle: { hs: "MOCK: a real model run would say.", g5: "MOCK: a real run." } },
+            { text: "MOCK empirical claim from turn " + first.i + " (exists so the Search sources path can be exercised without a model)", speaker: first.label, type: "fact", plain: { hs: "MOCK plain claim (senior high).", g5: "MOCK plain claim (fifth grade)." }, basis: { hs: "MOCK basis.", g5: "MOCK basis." }, status: "unchecked", wouldSettle: "MOCK: a study.", settle: { hs: "MOCK: a study (senior high).", g5: "MOCK: a study (fifth grade)." }, expectedSources: ["academic_paper"], searchQuery: "mock query " + first.i },
+          ],
+          judgments: { evidence: "n/a", inference: "n/a" }
+        };
+      } else if (/^Below are the (full )?results of deflating/.test(p)) {
+        data = { patterns: [{ title: { hs: "MOCK pattern", g5: "MOCK pattern" }, body: { hs: "MOCK: patterns are not computed in mock mode.", g5: "MOCK." }, passages: [] }], survived: { hs: "MOCK: not computed.", g5: "MOCK." } };
+      } else data = { note: "MOCK: unrecognised prompt" };
+      const text = JSON.stringify(data);
+      return json ? { data, text, usage: null, model: "mock" } : { text, usage: null, model: "mock" };
+    }
+  };
+}
+
+function createAI(env) {
+  if (env.DEFLATE_MOCK_AI === "1" || env.DEFLATE_MOCK_AI === "true") return createMockAI();
+  // a placeholder such as sk-ant-... is not a key; the page then asks for one instead of failing on first use
+  if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(String(env.ANTHROPIC_API_KEY || "").trim())) return null;
+  return createAnthropicAI({ apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL, maxTokens: env.ANTHROPIC_MAX_TOKENS ? Number(env.ANTHROPIC_MAX_TOKENS) : undefined });
+}
+
+module.exports = { createAI, createMockAI, createAnthropicAI, parseJSONLoose, DEFAULT_MODEL };

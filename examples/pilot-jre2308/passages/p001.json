@@ -1,0 +1,99 @@
+{
+  "order": 1,
+  "title": "A bad plan beats no plan",
+  "turnStart": 59,
+  "turnEnd": 66,
+  "stake": "Whether acting on an imperfect plan is better than waiting until you know what to do.",
+  "speakers": [
+    "JORDAN PETERSON",
+    "JOE ROGAN"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 62,
+        "speaker": "JORDAN PETERSON",
+        "quote": "you should put together a bad plan and you should implement it. Because even if you fail in the implementation, you’ll gather information and then you can rectify the plan",
+        "verbatim": true
+      },
+      {
+        "turn": 62,
+        "speaker": "JORDAN PETERSON",
+        "quote": "any plan is better than none. That’s a good rule of thumb. And a bad plan—a bad plan can be incrementally improved.",
+        "verbatim": true
+      },
+      {
+        "turn": 65,
+        "speaker": "JOE ROGAN",
+        "quote": "He who hesitates is lost.",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "If you do not know what to do, waiting teaches you nothing. Acting on a rough plan teaches you something even when it fails, and you can fix the plan with what you learn. So a rough plan beats no plan. Rogan sums it up with a proverb: hesitating costs you.",
+      "g5": "If you're stuck, don't just wait. Try something, even if it isn't perfect. When it goes wrong, you learn what to fix. Waiting teaches you nothing."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "The rewrite keeps the structure and drops the clinical framing. It leaves out one thing: Peterson's claim that waiting makes you 'older and more miserable', which is an added cost, not part of the logic.",
+        "g5": "The short version leaves out one thing he said: waiting also makes you sad and older."
+      }
+    },
+    "jump": {
+      "present": false,
+      "pivot": "",
+      "pivotVerbatim": null,
+      "hs": "The conclusion follows from the premises. The one unstated condition is that the failed attempt must be recoverable; the advice does not fit choices you cannot undo.",
+      "g5": "This one holds up. It only works when a mistake can be fixed afterward."
+    },
+    "defense": {
+      "hs": "The argument needs no defense; the quoted words carry it. If anything, 'incrementally improved' already implies small, recoverable steps, so the unstated condition is half-stated.",
+      "g5": "He already said to improve the plan a little at a time, so he was thinking about small steps."
+    },
+    "revision": {
+      "jumpSurvives": "no",
+      "hs": "No challenge was raised, so nothing to revise. The missing condition (recoverability) is a limit on scope, not an error.",
+      "g5": "Nothing to fix here."
+    },
+    "claims": [
+      {
+        "text": "Acting on an imperfect plan yields information that waiting does not.",
+        "speaker": "JORDAN PETERSON",
+        "type": "value",
+        "basis": {
+          "hs": "Sound as general advice, conditional on the attempt being recoverable.",
+          "g5": "Good advice, as long as the mistake can be fixed."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "Staying in that malaise makes you older and more miserable.",
+        "speaker": "JORDAN PETERSON",
+        "type": "interpretation",
+        "basis": {
+          "hs": "A plausible observation stated as fact; no evidence offered and the argument does not depend on it.",
+          "g5": "Probably true for a lot of people. He didn't prove it, and he didn't need to."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      }
+    ],
+    "judgments": {
+      "evidence": "n/a",
+      "inference": "valid"
+    }
+  }
+}

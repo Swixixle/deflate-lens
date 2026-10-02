@@ -1,0 +1,26 @@
+{
+  "name": "deflate-lens",
+  "version": "0.7.0",
+  "private": true,
+  "description": "Local web app: rewrite an interview as plain claims, name the jump, defend the speaker, grade every claim.",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test test/*.test.js",
+    "doctor": "node scripts/doctor.js",
+    "build-pilot": "node examples/pilot-jre2308/build-pilot.js",
+    "research-smoke": "node scripts/research-smoke.js",
+    "setup": "node scripts/setup.js",
+    "launch": "node scripts/launch.js",
+    "open": "node scripts/launch.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2"
+  }
+}

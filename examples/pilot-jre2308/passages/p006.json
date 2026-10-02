@@ -1,0 +1,131 @@
+{
+  "order": 6,
+  "title": "Cluster B and 'the ideas are irrelevant'",
+  "turnStart": 183,
+  "turnEnd": 193,
+  "stake": "Whether movements go wrong because of their ideas or because of the personalities that attach to them.",
+  "speakers": [
+    "JORDAN PETERSON",
+    "JOE ROGAN"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 189,
+        "speaker": "JORDAN PETERSON",
+        "quote": "But the problem is that that argument is predicated on the claim that the ideas are the problem. Like the woke ideas, for example, on the right or the left. But that’s not the problem. The problem is that 4 to 5% of the population, something like that is Cluster B",
+        "verbatim": true
+      },
+      {
+        "turn": 189,
+        "speaker": "JORDAN PETERSON",
+        "quote": "they go to where the power is and they adopt those ideas and they put themselves even on the forefront of that. But the ideas are completely irrelevant.",
+        "verbatim": true
+      },
+      {
+        "turn": 191,
+        "speaker": "JORDAN PETERSON",
+        "quote": "they’re the modern version of the Pharisees. They’re the people who use God’s name in vain as they proclaim moral virtue.",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "About one person in twenty has a manipulative, self-serving personality. Those people attach themselves to whichever movement has power and use its ideas as cover. So when a movement turns ugly, the cause is the four percent, not the beliefs; the beliefs are irrelevant. He calls these people modern Pharisees.",
+      "g5": "A few people out of every hundred are mean and sneaky on purpose. They join whatever group is winning and pretend to believe what it believes. So if a group does bad things, blame those few people, not the group's ideas. The ideas don't matter."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "'Completely irrelevant' is his phrase and is kept at strength. The rewrite drops the DSM list and the dark-tetrad history, which support the prevalence figure but not the conclusion.",
+        "g5": "He really did say the ideas don't matter at all. The list of personality types was left out because it doesn't change the conclusion."
+      }
+    },
+    "jump": {
+      "present": true,
+      "pivot": "But the ideas are completely irrelevant.",
+      "pivotVerbatim": true,
+      "hs": "'Bad actors exploit ideas' does not yield 'the ideas are irrelevant'. Both can be true: some ideas are easier to weaponize than others, and the same four percent produce different outcomes under different ideologies. As stated the claim also exempts every belief system from scrutiny, since any failure can be attributed to infiltrators, which leaves nothing to test.",
+      "g5": "Just because sneaky people use ideas as a disguise doesn't mean the ideas don't matter. Some ideas are easier to twist than others. And if every bad thing is blamed on infiltrators, no idea can ever be blamed, so the claim can never be checked."
+    },
+    "defense": {
+      "hs": "Peterson is answering a specific argument (that 'woke' ideas, left or right, are the problem) and his counter is diagnostic: look at who is maneuvering, not at the slogans. Read as 'ideas are not the main variable in who ends up leading a movement', the claim is modest and consistent with the dark-triad research he cites. 'Completely irrelevant' is the overstatement, not the whole theory.",
+      "g5": "He's arguing against someone who says the ideas are the whole problem. His point, 'watch who is grabbing power', is a fair one. He just said it too strongly."
+    },
+    "revision": {
+      "jumpSurvives": "partly",
+      "hs": "The jump survives on the words, but it is narrower than the first pass made it. The defensible core (personality predicts who exploits a movement) is real; the indefensible part is one word, 'completely'. The challenge should land on that word rather than on the theory.",
+      "g5": "The problem is mostly one word: 'completely'. Take that out and his idea is reasonable."
+    },
+    "claims": [
+      {
+        "text": "4 to 5% of the population meets Cluster B criteria.",
+        "speaker": "JORDAN PETERSON",
+        "type": "contested",
+        "basis": {
+          "hs": "Published estimates for the four Cluster B disorders combined range from about 1.5% to 6% depending on the survey; his figure sits inside the range. Not re-checked here.",
+          "g5": "Different studies get different numbers, from about 1 in 70 to 1 in 17. His number is in that range."
+        },
+        "status": "unchecked",
+        "wouldSettle": "NESARC and NCS-R prevalence tables; DSM-5-TR prevalence section.",
+        "receipts": [],
+        "settle": {
+          "hs": "NESARC and NCS-R prevalence tables; DSM-5-TR prevalence section.",
+          "g5": "The big national surveys that count how many people have these personality disorders, and the doctors' handbook (DSM-5-TR)."
+        },
+        "expectedSources": [
+          "academic_paper"
+        ],
+        "searchQuery": "cluster B personality disorders prevalence general population"
+      },
+      {
+        "text": "About 4% have dark-tetrad traits.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unscorable",
+        "basis": {
+          "hs": "Dark-tetrad traits are measured on continua; there is no standard cutoff that yields a percentage.",
+          "g5": "Those traits are measured on a scale, not yes/no, so there's no real 'four percent'."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "Personality-disordered people migrate to wherever power is.",
+        "speaker": "JORDAN PETERSON",
+        "type": "interpretation",
+        "basis": {
+          "hs": "A plausible model of opportunism; as stated it cannot be falsified, since any counterexample becomes a hidden case.",
+          "g5": "Sounds right, but there's no way to prove it wrong, because he can always say the person was hiding it."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "The ideas are completely irrelevant.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unsupported",
+        "basis": {
+          "hs": "The twentieth century supplies counterexamples where ideology shaped outcomes independent of personality.",
+          "g5": "History has lots of cases where the ideas themselves made things worse."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      }
+    ],
+    "judgments": {
+      "evidence": "mixed",
+      "inference": "gap"
+    }
+  }
+}

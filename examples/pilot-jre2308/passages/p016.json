@@ -1,0 +1,137 @@
+{
+  "order": 16,
+  "title": "Carnivore diet and ketones",
+  "turnStart": 435,
+  "turnEnd": 446,
+  "stake": "What four anecdotes and a planned study can support about an all-meat diet.",
+  "speakers": [
+    "JOE ROGAN",
+    "JORDAN PETERSON"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 438,
+        "speaker": "JORDAN PETERSON",
+        "quote": "my daughter was so sick and now she’s great. Isn’t it crazy? It’s crazy. Well, my wife is on this carnivore diet too. And it’s been unbelievably good for her.",
+        "verbatim": true
+      },
+      {
+        "turn": 439,
+        "speaker": "JOE ROGAN",
+        "quote": "It’s unbelievably good for almost everybody. That’s what’s really nuts.",
+        "verbatim": true
+      },
+      {
+        "turn": 440,
+        "speaker": "JORDAN PETERSON",
+        "quote": "your brain likes to run on ketones, as it turns out.",
+        "verbatim": true
+      },
+      {
+        "turn": 444,
+        "speaker": "JORDAN PETERSON",
+        "quote": "We’re going to run a study and IQ test people.",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "Peterson's daughter and wife improved on an all-meat diet; Rogan says it is unbelievably good for almost everybody and that he thinks more sharply on it. Peterson: the brain likes to run on ketones. He plans two randomized studies, including personality and IQ tests.",
+      "g5": "Peterson's daughter and wife got better eating only meat. Rogan says it's great for almost everyone and makes him think better. Peterson says the brain likes running on ketones, and he plans to do real studies."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "Both men's claims are kept at the strength spoken; Peterson's planned study is included because it bears on the evidence available.",
+        "g5": "Kept as they said it, including the plan to do a study."
+      }
+    },
+    "jump": {
+      "present": true,
+      "pivot": "It’s unbelievably good for almost everybody.",
+      "pivotVerbatim": true,
+      "hs": "'Almost everybody' from four related people. Peterson's own next sentences supply the problem: the study that could support a population-level claim has not been run. The ketone claim has real evidence in narrow uses (epilepsy) and mixed evidence elsewhere.",
+      "g5": "Four people who know each other isn't 'almost everybody'. Peterson himself says the real test hasn't been done yet. Ketones do help some people with some problems, but not everyone."
+    },
+    "defense": {
+      "hs": "Peterson is careful: he reports his family's experience as experience, proposes randomized trials with controls, and says 'we don't know'. The strong claim is Rogan's. Ketogenic diets have a long record in epilepsy and growing evidence for some metabolic conditions.",
+      "g5": "Peterson is careful: he tells his family's story as a story and wants to run a proper test. The big claim is Rogan's. Ketone diets really do help some conditions."
+    },
+    "revision": {
+      "jumpSurvives": "partly",
+      "hs": "The challenge should be addressed to Rogan's sentence, not Peterson's; Peterson's hedge is on the record. The anecdotal base is still four people.",
+      "g5": "The problem is Rogan's sentence, not Peterson's. Peterson was careful. But four people is still four people."
+    },
+    "claims": [
+      {
+        "text": "Carnivore is unbelievably good for almost everybody.",
+        "speaker": "JOE ROGAN",
+        "type": "unsupported",
+        "basis": {
+          "hs": "No controlled trials of an all-meat diet support a population-wide claim; four related anecdotes. Not re-checked here.",
+          "g5": "No real study shows this. Four people who know each other isn't proof."
+        },
+        "status": "unchecked",
+        "wouldSettle": "Randomized trials of carnivore diets with health outcomes; none at scale exist.",
+        "receipts": [],
+        "settle": {
+          "hs": "Randomized trials of carnivore diets with health outcomes; none at scale exist.",
+          "g5": "Real experiments where people are put on an all-meat diet and their health is measured. None big enough exist yet."
+        },
+        "expectedSources": [
+          "academic_paper"
+        ],
+        "searchQuery": "carnivore diet randomized trial health outcomes"
+      },
+      {
+        "text": "The brain likes to run on ketones.",
+        "speaker": "JORDAN PETERSON",
+        "type": "contested",
+        "basis": {
+          "hs": "Ketogenic diets are established for drug-resistant epilepsy; cognitive benefits in healthy adults are mixed. Not re-checked here.",
+          "g5": "Helps some people with seizures. For healthy people, studies disagree."
+        },
+        "status": "unchecked",
+        "wouldSettle": "Systematic reviews of ketogenic diet and cognition.",
+        "receipts": [],
+        "settle": {
+          "hs": "Systematic reviews of ketogenic diet and cognition.",
+          "g5": "Papers that gather all the studies on keto diets and thinking."
+        },
+        "expectedSources": [
+          "academic_paper"
+        ],
+        "searchQuery": "ketogenic diet cognition healthy adults systematic review"
+      },
+      {
+        "text": "Two randomized studies are planned, with IQ and personality tests.",
+        "speaker": "JORDAN PETERSON",
+        "type": "fact",
+        "basis": {
+          "hs": "A statement of intent by the speaker; unverifiable until registered.",
+          "g5": "He says he will do it. We'll see."
+        },
+        "status": "unchecked",
+        "wouldSettle": "A trial registration (ClinicalTrials.gov).",
+        "receipts": [],
+        "settle": {
+          "hs": "A trial registration (ClinicalTrials.gov).",
+          "g5": "A public sign-up for the study on the government's trial list (ClinicalTrials.gov)."
+        }
+      }
+    ],
+    "judgments": {
+      "evidence": "weak",
+      "inference": "gap"
+    }
+  }
+}

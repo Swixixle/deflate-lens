@@ -1,0 +1,90 @@
+{
+  "patterns": [
+    {
+      "title": {
+        "hs": "Evidence attached to a conclusion it cannot carry",
+        "g5": "A real fact, then a leap"
+      },
+      "body": {
+        "hs": "Real or roughly real material (serotonin studies, NASA greening, Piaget, Cluster B prevalence) appears next to a conclusion the material does not reach: reputation is indestructible; climate warnings are psychopathy; play is the opposite of tyranny; ideas are irrelevant. The evidence supports the modest claim; the conclusion is the immodest one.",
+        "g5": "He often gives a real fact and then a big conclusion that the fact doesn't prove. The fact is true; the conclusion is a leap."
+      },
+      "passages": [
+        "p003",
+        "p005",
+        "p006",
+        "p012"
+      ]
+    },
+    {
+      "title": {
+        "hs": "Judging the people instead of the claim",
+        "g5": "Talking about the people, not the facts"
+      },
+      "body": {
+        "hs": "Three times the argument moves from a claim to the character of those who make it: the Cluster B passage ('the ideas are irrelevant'), the Carney passage ('this kind of narcissism'), and the climate passage, where the move is announced ('So today I'm talking about something that's a lot more psychological'). Announcing it does not make it an argument, and it is never applied to the speaker's own side.",
+        "g5": "Three times he stops arguing about the facts and starts saying the people who disagree are sick or selfish. That isn't an answer to their facts."
+      },
+      "passages": [
+        "p006",
+        "p011",
+        "p012"
+      ]
+    },
+    {
+      "title": {
+        "hs": "A definition stretched until it stops distinguishing",
+        "g5": "A word made so wide it means nothing"
+      },
+      "body": {
+        "hs": "Tyranny is defined as 'fear and compulsion as your means of governance', then applied to a public-health warning, a book about climate finance, and a showerhead rule. Read as 'primary means', the definition is defensible; applied this way it covers every state that has existed.",
+        "g5": "He defines 'bully' so widely that every government counts. Then the word doesn't tell you anything."
+      },
+      "passages": [
+        "p010",
+        "p011",
+        "p012"
+      ]
+    },
+    {
+      "title": {
+        "hs": "Two doors and a hidden room",
+        "g5": "Only two choices offered"
+      },
+      "body": {
+        "hs": "The alternatives on offer are fewer than the alternatives that exist: 'the alternative is preposterous'; 'monster is better than wimp'; 'power, hedonism, nihilism; those are your options'.",
+        "g5": "He often says 'it's either this or that' when there are more choices."
+      },
+      "passages": [
+        "p013",
+        "p014"
+      ]
+    },
+    {
+      "title": {
+        "hs": "Hearsay chains, mostly Rogan's",
+        "g5": "'Someone told me' stories"
+      },
+      "body": {
+        "hs": "Watergate via Bill Murray via a Belushi biography via Tucker Carlson; COVID deaths 'dropped off radically' when they were peaking; 'they call themselves the Klan'. Where Peterson's weak points are structural, Rogan's are factual.",
+        "g5": "Rogan's weak spots are 'someone told me' stories and facts that turn out wrong. Peterson's weak spots are in how the argument is built."
+      },
+      "passages": [
+        "p007",
+        "p008",
+        "p009"
+      ]
+    }
+  ],
+  "survived": {
+    "hs": "Several arguments came through deflation intact and should be credited plainly. The bad-plan advice. The time-horizon account of recommendation algorithms. Play as voluntary and fragile, read as a proposal. Don't fight in public; don't insult your spouse. Rogan's one-question challenge to the pill-pornography link, and Peterson's immediate partial concession. The greening data, as a fact about leaves. The observation that online anonymity removes face-to-face constraints on bad behavior. Peterson's care in the carnivore passage: anecdote reported as anecdote, trials proposed. None of these needed the Bible stories or the neuroscience to stand, and most are the parts a listener would act on.",
+    "g5": "Some things held up fine: try a rough plan instead of waiting; apps pull you off track; play has to be chosen; don't fight or insult your partner in public; Rogan's good question about porn and the internet; the fact that the Earth has more plants; and Peterson being careful about the meat diet. These didn't need the big stories to stand up."
+  },
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "passagesCounted": 16,
+  "by": "claude-in-chat (pilot; corrected)",
+  "basedOn": {
+    "passagesSig": "p001@2026-10-02T14:00:00.000Z,p002@2026-10-02T14:00:00.000Z,p003@2026-10-02T14:00:00.000Z,p004@2026-10-02T14:00:00.000Z,p005@2026-10-02T14:00:00.000Z,p006@2026-10-02T14:00:00.000Z,p007@2026-10-02T14:00:00.000Z,p008@2026-10-02T14:00:00.000Z,p009@2026-10-02T14:00:00.000Z,p010@2026-10-02T14:00:00.000Z,p011@2026-10-02T14:00:00.000Z,p012@2026-10-02T14:00:00.000Z,p013@2026-10-02T14:00:00.000Z,p014@2026-10-02T14:00:00.000Z,p015@2026-10-02T14:00:00.000Z,p016@2026-10-02T14:00:00.000Z"
+  },
+  "note": "Patterns were written by Claude in chat, not by the in-page run. They count only moves that appear in at least two passages."
+}

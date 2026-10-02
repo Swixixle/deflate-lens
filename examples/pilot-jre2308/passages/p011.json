@@ -1,0 +1,138 @@
+{
+  "order": 11,
+  "title": "Carney's Values and fossil fuels",
+  "turnStart": 273,
+  "turnEnd": 277,
+  "stake": "What Carney's book says, and whether a policy stance can be read as a personality trait.",
+  "speakers": [
+    "JORDAN PETERSON",
+    "JOE ROGAN"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 275,
+        "speaker": "JORDAN PETERSON",
+        "quote": "I read Carney’s book Values. I read it twice, and I understood it.",
+        "verbatim": true
+      },
+      {
+        "turn": 275,
+        "speaker": "JORDAN PETERSON",
+        "quote": "Every single financial decision that every individual or organization makes has to prioritize decarbonization above all else, or else.",
+        "verbatim": true
+      },
+      {
+        "turn": 275,
+        "speaker": "JORDAN PETERSON",
+        "quote": "And then he says 75% of the world’s fossil fuels have to stay in the ground. And this is who Canadians are seriously thinking about electing.",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "Peterson read Mark Carney's book Values twice. He says it advocates central planning through ESG, that Carney writes that every financial decision must prioritize decarbonization above all else, implying many will pay a price, and that 75% of the world's fossil fuels must stay in the ground. He offers this as an example of the narcissism discussed earlier and as a warning about electing Carney.",
+      "g5": "Peterson read Carney's book twice. He says the book wants experts to steer the economy, says everyone must put cutting carbon first, admits many people will be hurt, and says most oil and coal must stay in the ground. Peterson says this shows Carney wants too much control, and Canadians shouldn't elect him."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "'Or else' and 'above all else' are Peterson's paraphrase of the book, not quotations, and the rewrite keeps them as his. The 75% figure is presented as the book's and treated as a claim about the book.",
+        "g5": "Some of these are Peterson's words about the book, not the book's words. The card keeps them as his."
+      }
+    },
+    "jump": {
+      "present": true,
+      "pivot": "a good example of this kind of narcissism that we talked about earlier",
+      "pivotVerbatim": true,
+      "hs": "A policy position (most reserves must stay unburned) is recast as a personality trait (narcissism) without an argument connecting them. The carbon-budget figure is a widely published result of climate arithmetic, which Carney reports; describing a reported figure as narcissism attributes motive where a disagreement about policy would do.",
+      "g5": "He turns a policy opinion into a personality problem without showing the link. The 'leave most fuel in the ground' number comes from climate math that many people report; saying it shows narcissism is about Carney's character, not his argument."
+    },
+    "defense": {
+      "hs": "Peterson says he read the book twice and is summarizing its stance, and Carney's record supports the broad description: he led ESG initiatives and has endorsed carbon-budget analyses that put most reserves off limits. 'Above all else' is a fair gloss of a book that argues for pricing climate risk into every financial decision. The electoral warning is an opinion he is entitled to state.",
+      "g5": "He did read the book carefully, and Carney really has pushed these ideas. 'Put carbon first' is a fair summary of a book about putting climate into every money decision. And he's allowed to say who he wouldn't vote for."
+    },
+    "revision": {
+      "jumpSurvives": "partly",
+      "hs": "The factual summary survives in substance (figure in the right neighborhood; stance accurately described). The narcissism inference does not; it is the motive-reading move again. The 'or else' paraphrase could not be checked against the text.",
+      "g5": "His summary of the book is mostly fair. Calling it narcissism is the part that doesn't follow. The 'or else' part couldn't be checked."
+    },
+    "claims": [
+      {
+        "text": "Carney's book says 75% of fossil fuels must stay in the ground.",
+        "speaker": "JORDAN PETERSON",
+        "type": "contested",
+        "basis": {
+          "hs": "Carney has endorsed carbon-budget analyses; a 2023 report he backed puts the figure at 65% of oil and gas and 90% of coal. In the neighborhood, and a citation of carbon-budget arithmetic rather than a personal preference. The exact wording in Values was not checked.",
+          "g5": "Carney has supported reports saying most oil, gas and coal must stay in the ground. The numbers are close to what Peterson said. The exact page in the book wasn't checked."
+        },
+        "status": "receipt",
+        "wouldSettle": "",
+        "receipts": [
+          {
+            "url": "https://www.thenation.com/article/environment/canada-mark-carney-climate/",
+            "note": "The Nation: Carney endorsed ETC report, 65% oil/gas and 90% coal unburnable",
+            "addedBy": "claude-in-chat",
+            "at": "2026-10-02T14:00:00.000Z"
+          }
+        ],
+        "expectedSources": [
+          "book_or_edition"
+        ],
+        "searchQuery": "Carney Values unburnable reserves"
+      },
+      {
+        "text": "Every financial decision must prioritize decarbonization above all else, or else.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unscorable",
+        "basis": {
+          "hs": "Peterson's paraphrase; the book's wording was not available to check.",
+          "g5": "This is Peterson's summary. The book's own words weren't checked."
+        },
+        "status": "unchecked",
+        "wouldSettle": "The text of Values (2021), chapters on climate and value.",
+        "receipts": [],
+        "settle": {
+          "hs": "The text of Values (2021), chapters on climate and value.",
+          "g5": "The actual pages of Carney's book Values (2021) about climate."
+        }
+      },
+      {
+        "text": "Carney advocates central planning via ESG.",
+        "speaker": "JORDAN PETERSON",
+        "type": "interpretation",
+        "basis": {
+          "hs": "Carney championed ESG and climate-risk disclosure; whether that is 'central planning' is a characterization.",
+          "g5": "Carney did push companies to count climate risk. Calling that 'central planning' is Peterson's opinion."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "This is an example of narcissism.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unsupported",
+        "basis": {
+          "hs": "No link offered between the policy and the trait.",
+          "g5": "He doesn't show how the policy proves the personality."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      }
+    ],
+    "judgments": {
+      "evidence": "mixed",
+      "inference": "gap"
+    }
+  }
+}

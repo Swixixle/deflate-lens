@@ -1,0 +1,103 @@
+{
+  "order": 2,
+  "title": "Algorithms and the time horizon",
+  "turnStart": 74,
+  "turnEnd": 76,
+  "stake": "Whether feeds tuned to momentary attention work against a person's longer-term goals.",
+  "speakers": [
+    "JORDAN PETERSON",
+    "JOE ROGAN"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 74,
+        "speaker": "JORDAN PETERSON",
+        "quote": "there’s a big difference between what you might be interested in if you were diligently striving towards a long term goal that required conscientiousness. And what’s going to attract your attention right now?",
+        "verbatim": true
+      },
+      {
+        "turn": 74,
+        "speaker": "JORDAN PETERSON",
+        "quote": "they maximize for short term attention and that’s a—so basically they’re actually optimizing for hedonism",
+        "verbatim": true
+      },
+      {
+        "turn": 74,
+        "speaker": "JORDAN PETERSON",
+        "quote": "the problem with short term impulsive hedonism is it doesn’t play out well over any reasonable time span",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "Feeds are tuned to what grabs you right now, not to what you would choose while working toward a long-term goal. Those two things often differ. So a feed tuned to the moment pulls against your goals, and a life run on what grabs you in the moment goes badly over time.",
+      "g5": "Apps show you whatever grabs your attention right now. That's usually not what helps you with what you really want. So the app pulls you off track, and living that way goes badly after a while."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "The rewrite swaps 'hedonism' for 'what grabs you in the moment'. That removes a moral charge the speaker chose; the structure is unchanged.",
+        "g5": "He used a stronger word, 'hedonism', which means chasing pleasure. The short version just says 'what grabs you'."
+      }
+    },
+    "jump": {
+      "present": false,
+      "pivot": "",
+      "pivotVerbatim": null,
+      "hs": "Two objective functions are named and the product is said to serve one of them, which is a fair description of engagement ranking. 'Doesn't play out well over any reasonable time span' is asserted rather than shown, but it is a modest claim.",
+      "g5": "This one holds up. He says living for the moment goes badly later. He doesn't prove it, but it's a small claim most people accept."
+    },
+    "defense": {
+      "hs": "Not needed; the argument stands. The speaker also grants the design logic ('you could imagine that you would want a machine that offers you what you want'), which is fair to the other side.",
+      "g5": "He even admits why someone would build an app like that. That's fair."
+    },
+    "revision": {
+      "jumpSurvives": "no",
+      "hs": "Nothing to revise.",
+      "g5": "Nothing to fix."
+    },
+    "claims": [
+      {
+        "text": "Recommendation algorithms maximize for short-term attention.",
+        "speaker": "JORDAN PETERSON",
+        "type": "fact",
+        "basis": {
+          "hs": "Engagement-optimized ranking is how the major feeds are documented to work, in the companies' own disclosures and in research. Not re-checked here.",
+          "g5": "Apps are built to keep you looking. The companies have said so."
+        },
+        "status": "unchecked",
+        "wouldSettle": "Platform transparency documentation on ranking signals; research on engagement optimization.",
+        "receipts": [],
+        "settle": {
+          "hs": "Platform transparency documentation on ranking signals; research on engagement optimization.",
+          "g5": "What the companies themselves say about how their feeds pick posts, and studies of apps built to keep you looking."
+        }
+      },
+      {
+        "text": "Short-term impulsive hedonism does not play out well over time.",
+        "speaker": "JORDAN PETERSON",
+        "type": "value",
+        "basis": {
+          "hs": "A judgment most traditions share; no evidence offered and the argument does not hinge on it.",
+          "g5": "Most people agree that living only for right now goes badly. He didn't prove it, but he didn't need to."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      }
+    ],
+    "judgments": {
+      "evidence": "strong",
+      "inference": "valid"
+    }
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "order": 12,
+  "title": "Climate: greening and the psychological turn",
+  "turnStart": 279,
+  "turnEnd": 301,
+  "stake": "What the greening data shows, and what happens when the argument moves from evidence to motive.",
+  "speakers": [
+    "JOE ROGAN",
+    "JORDAN PETERSON"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 281,
+        "speaker": "JOE ROGAN",
+        "quote": "The graph that shows the temperature of Earth. Have you seen it? We’re in a cooling period.",
+        "verbatim": true
+      },
+      {
+        "turn": 282,
+        "speaker": "JORDAN PETERSON",
+        "quote": "If you go back 500 million years ago, which is quite a lot longer, we’re in a drought, like a serious carbon dioxide drought.",
+        "verbatim": true
+      },
+      {
+        "turn": 287,
+        "speaker": "JORDAN PETERSON",
+        "quote": "The planet is 20% greener than it was 30 years ago. Okay, 20%. This is NASA data. I’m not inventing this.",
+        "verbatim": true
+      },
+      {
+        "turn": 287,
+        "speaker": "JORDAN PETERSON",
+        "quote": "Now, whether all that additional carbon dioxide is a function of human activity, that’s still debatable.",
+        "verbatim": true
+      },
+      {
+        "turn": 294,
+        "speaker": "JORDAN PETERSON",
+        "quote": "because I’m not a climate scientist, whatever the hell that is, by the way.",
+        "verbatim": true
+      },
+      {
+        "turn": 294,
+        "speaker": "JORDAN PETERSON",
+        "quote": "So today I’m talking about something that’s a lot more psychological. The climate apocalypse narrative is a social contagion that’s driven by power-mad psychopaths",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "Rogan: on a 500-million-year graph the Earth is in a cooling period. Peterson: on that scale we are in a CO2 drought, and the conclusion you draw depends on where you start the graph. Satellites show the planet about 20% greener than 30 years ago, with crop yields up 13%, and the greening is strongest at desert margins. Whether the extra CO2 is human-caused is still debatable. Peterson says he is not a climate scientist and may have gone outside his expertise before, so this time he is making a psychological argument: the climate-apocalypse narrative is a social contagion driven by power-seeking psychopaths who use fear and compulsion.",
+      "g5": "Rogan says that if you look at millions of years, Earth is in a cool period. Peterson says on that scale there's also very little CO2, and it depends where you start the chart. Satellites show more plants than 30 years ago, and more food grown. He says we don't know if people caused the extra CO2. He says he isn't a climate scientist, so this time he's talking about the people who warn about climate: he thinks they're power-hungry and use fear."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "An earlier version wrote that Peterson 'can't judge the climate forecasts himself'. His words are 'I'm not a climate scientist' and 'maybe I stepped a bit out of my wheelhouse'. The rewrite now uses his words. 'Rates of change have their problems' is his own concession and is kept.",
+        "g5": "Before, this card said Peterson admitted he can't judge the science. He actually said he isn't a climate scientist and may have gone too far before. The card now says it his way. He also admitted that fast change is a problem, and that's kept."
+      }
+    },
+    "jump": {
+      "present": true,
+      "pivot": "So today I’m talking about something that’s a lot more psychological.",
+      "pivotVerbatim": true,
+      "hs": "After presenting data that bears on whether warming is harmful (greening) and conceding the one point that would decide it ('rates of change have their problems'), the argument moves from the evidence to the character of the people making the forecasts. The greening data is real and is attached to a conclusion it cannot reach: more leaf area says nothing about sea level, heat or the pace of change. 'Driven by power-mad psychopaths' cannot be tested, since any counter-evidence counts as more contagion.",
+      "g5": "He shows real facts about more plants, admits the real problem is how fast things change, and then switches to talking about the people who warn about climate instead of the facts. More plants doesn't tell you about rising seas or heat. And 'they're all power-hungry' can't be checked, because any disagreement just counts as more proof."
+    },
+    "defense": {
+      "hs": "Peterson is explicit about the move: he is not arguing the climate science, he is arguing about how an apocalyptic narrative is used, which is a psychological question he is qualified to raise. The greening data is accurate in direction and under-reported, which is his stated point. His 'origin point of your graph' observation is methodologically correct. And his concession on rates of change shows he is not denying the mechanism.",
+      "g5": "He says up front he's not arguing the science, he's arguing about how fear is used, and he does know about that. The plant facts are real and rarely mentioned. His point about where you start a chart is a good one. And he admits fast change matters."
+    },
+    "revision": {
+      "jumpSurvives": "partly",
+      "hs": "The methodological points (graph origin, greening under-reported) survive. Two things do not: 'whether the CO2 rise is human-caused is debatable' contradicts settled measurement, and the shift to motive is the same move as in the Cluster B and Carney passages; announcing it does not make it an argument.",
+      "g5": "He's right about charts and about plants. He's wrong that we don't know where the extra CO2 comes from. And switching from facts to 'they're bad people' isn't an argument, even when you announce it."
+    },
+    "claims": [
+      {
+        "text": "The planet is 20% greener than 30 years ago (NASA).",
+        "speaker": "JORDAN PETERSON",
+        "type": "contested",
+        "basis": {
+          "hs": "NASA/Zhu et al. (2016): a quarter to half of vegetated land greened 1982–2015, leaf-area gain equal to about twice the continental US, roughly 70% attributed to CO2 fertilization. '20% greener' is not the study's figure; 'twice the United States' is. The authors warn the effect fades as plants acclimate and is offset by warming harms.",
+          "g5": "NASA did find a lot more leaves, about as much new green as two United States. '20%' isn't the number NASA gave. NASA also said the effect fades and warming hurts in other ways."
+        },
+        "status": "receipt",
+        "wouldSettle": "",
+        "receipts": [
+          {
+            "url": "https://www.nasa.gov/centers-and-facilities/goddard/carbon-dioxide-fertilization-greening-earth-study-finds/",
+            "note": "NASA (2016): 25–50% of vegetated land greened; ~2× continental US; ~70% CO2 fertilization",
+            "addedBy": "claude-in-chat",
+            "at": "2026-10-02T14:00:00.000Z"
+          }
+        ],
+        "expectedSources": [
+          "academic_paper",
+          "government_data"
+        ],
+        "searchQuery": "greening of the Earth and its drivers leaf area"
+      },
+      {
+        "text": "Agricultural output is up 13%.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unscorable",
+        "basis": {
+          "hs": "No source, baseline year or attribution given.",
+          "g5": "He doesn't say where this number comes from or compared to when."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "Whether the CO2 rise is human-caused is debatable.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unsupported",
+        "basis": {
+          "hs": "Not debated among those who measure it: the isotopic signature and emissions accounting both point to fossil fuels. Not re-checked here.",
+          "g5": "Scientists can tell where the extra CO2 comes from by its chemical fingerprint, and it's from burning fuel."
+        },
+        "status": "unchecked",
+        "wouldSettle": "IPCC AR6 WG1 Chapter 5; carbon-isotope records of atmospheric CO2.",
+        "receipts": [],
+        "settle": {
+          "hs": "IPCC AR6 WG1 Chapter 5; carbon-isotope records of atmospheric CO2.",
+          "g5": "The big climate report (IPCC, 2021) and measurements of the chemical fingerprint of the CO2 in the air."
+        },
+        "expectedSources": [
+          "academic_paper",
+          "agency_report"
+        ],
+        "searchQuery": "anthropogenic CO2 attribution isotope fossil fuel"
+      },
+      {
+        "text": "On a 500-million-year scale, Earth is cool and CO2-poor.",
+        "speaker": "JORDAN PETERSON",
+        "type": "fact",
+        "basis": {
+          "hs": "True on geologic timescales, and beside the rate question he concedes.",
+          "g5": "True if you look at millions of years. It doesn't answer the question about how fast things are changing now."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "The climate-apocalypse narrative is a social contagion driven by power-mad psychopaths.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unscorable",
+        "basis": {
+          "hs": "Not falsifiable as stated.",
+          "g5": "There's no way to test this; any disagreement counts as proof."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      }
+    ],
+    "judgments": {
+      "evidence": "mixed",
+      "inference": "gap"
+    }
+  }
+}

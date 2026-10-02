@@ -1,0 +1,925 @@
+{
+  "title": "Rogan × Peterson, JRE #2308",
+  "sourceUrl": "https://www.youtube.com/watch?v=QBEZhjnZTks",
+  "sourceLabel": "The Joe Rogan Experience #2308 – Jordan Peterson (YouTube, released 22 April 2025)",
+  "sourceDate": "2025-04-22",
+  "speakers": [
+    {
+      "key": "JOE ROGAN",
+      "name": "Joe Rogan",
+      "bio": "Host of The Joe Rogan Experience; comedian; UFC commentator; moved the show to Spotify; wife and children; producer Jamie; worked on NewsRadio with Phil Hartman and Dave Foley; the 2007 Carlos Mencia dispute; had Bill Murray as a guest."
+    },
+    {
+      "key": "JORDAN PETERSON",
+      "name": "Jordan Peterson",
+      "bio": "Clinical psychologist; former University of Toronto and Harvard professor; author of 12 Rules for Life and We Who Wrestle with God; wife Tammy, daughter Mikhaila; co-founder of Peterson Academy and ARC (Alliance for Responsible Citizenship); works with the Daily Wire; Canadian; carnivore diet; toured lecturing on biblical stories."
+    },
+    {
+      "key": "JAMIE",
+      "name": "Jamie Vernon",
+      "bio": "Producer of the show; bought the O.J. Simpson golf clubs."
+    }
+  ],
+  "status": "analyzed",
+  "provenance": {
+    "labelsFound": [
+      "JOE ROGAN",
+      "JORDAN PETERSON",
+      "JAMIE"
+    ],
+    "flags": [
+      {
+        "turn": 17,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.85,
+        "cue": "Jamie went golfing — Jamie is the host's producer"
+      },
+      {
+        "turn": 18,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.7,
+        "cue": "replies to the host about Jamie"
+      },
+      {
+        "turn": 19,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "Jamie bought … golf clubs"
+      },
+      {
+        "turn": 29,
+        "labeled": "JAMIE",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "only people like Jamie are dumb enough — third-person about Jamie"
+      },
+      {
+        "turn": 41,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "Have you gone into the whole George Floyd story — the host's recurring topic"
+      },
+      {
+        "turn": 42,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "a situation can be ugly in a multitude of ways — reply to the above"
+      },
+      {
+        "turn": 44,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "pick your moral pathway forward"
+      },
+      {
+        "turn": 47,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "people want it to be binary"
+      },
+      {
+        "turn": 48,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "organize yourself for combat … demoralized"
+      },
+      {
+        "turn": 50,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "continuation of the previous point"
+      },
+      {
+        "turn": 52,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "kill bad dudes — the host's military-guest phrasing"
+      },
+      {
+        "turn": 54,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "continuation"
+      },
+      {
+        "turn": 56,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "physical altercations with people"
+      },
+      {
+        "turn": 59,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "put doubts behind you … act in half measures"
+      },
+      {
+        "turn": 60,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "failed to act or hesitate to act, and it cost you"
+      },
+      {
+        "turn": 62,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.98,
+        "cue": "in my clinical practice and with the students that I mentored"
+      },
+      {
+        "turn": 63,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.9,
+        "cue": "Yeah — reply to the clinician"
+      },
+      {
+        "turn": 64,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.8,
+        "cue": "With experience — continues his own point"
+      },
+      {
+        "turn": 65,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "He who hesitates is lost — reply"
+      },
+      {
+        "turn": 66,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.7,
+        "cue": "Yep"
+      },
+      {
+        "turn": 74,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.85,
+        "cue": "conscientiousness … hedonism … Peter Pan — his vocabulary"
+      },
+      {
+        "turn": 75,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "Yeah — reply"
+      },
+      {
+        "turn": 78,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "people are afraid of losing fun"
+      },
+      {
+        "turn": 79,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.7,
+        "cue": "that's why Christ says … become as little children"
+      },
+      {
+        "turn": 82,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.8,
+        "cue": "you look at the world through eyes of memory"
+      },
+      {
+        "turn": 84,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.95,
+        "cue": "I spend a lot of time trying to take apart the causes of truly pathological degeneration … Very curious about tyranny"
+      },
+      {
+        "turn": 85,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.9,
+        "cue": "Play. — reply"
+      },
+      {
+        "turn": 169,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.75,
+        "cue": "I don't get involved in these hissy pissy fits online, particularly on Twitter"
+      },
+      {
+        "turn": 170,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.98,
+        "cue": "I see real conflict all the time as an MMA commentator … the Carlos Mencia conflict"
+      },
+      {
+        "turn": 173,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "Earned reputation — reply"
+      },
+      {
+        "turn": 175,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "Earned valid reputation with Jordan. That guy."
+      },
+      {
+        "turn": 177,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "That's what people want — reply"
+      },
+      {
+        "turn": 179,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.9,
+        "cue": "I'm willing to accept that you're smarter than me … I talk to a lot of people that are smarter than me"
+      },
+      {
+        "turn": 181,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "Without a doubt — reply"
+      },
+      {
+        "turn": 184,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "Is this where the term 'the woke right' comes in? — asks the theorist"
+      },
+      {
+        "turn": 186,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "What he's talking about is similar types of behavior"
+      },
+      {
+        "turn": 188,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "'Woke' just lets you clarify in your head"
+      },
+      {
+        "turn": 190,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "Right? — reply"
+      },
+      {
+        "turn": 192,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "Yes — reply"
+      },
+      {
+        "turn": 194,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.85,
+        "cue": "And why is that? — asks"
+      },
+      {
+        "turn": 196,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "Yeah, for sure. Well, this is a real subject."
+      },
+      {
+        "turn": 198,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "It's a religion and it's also a race and it's also a government"
+      },
+      {
+        "turn": 199,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "Right, right — reply"
+      },
+      {
+        "turn": 200,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "intelligence agencies … manipulation of world markets and money … a lot to unpack"
+      },
+      {
+        "turn": 202,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.5,
+        "cue": "They're also a walled garden, right? — picks up the other's earlier phrase"
+      },
+      {
+        "turn": 203,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "Meaning… — asks for clarification"
+      },
+      {
+        "turn": 204,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "They call themselves the Klan"
+      },
+      {
+        "turn": 205,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.7,
+        "cue": "Community. — offers the word"
+      },
+      {
+        "turn": 206,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "Yeah, community. They're very tight knit"
+      },
+      {
+        "turn": 208,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.95,
+        "cue": "I watched your whole conversation with Douglas … all three of you"
+      },
+      {
+        "turn": 209,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "Particularly now — reply"
+      },
+      {
+        "turn": 210,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.9,
+        "cue": "you've let that guide you as a podcaster … I'm trying to work through exactly the same sort of thing"
+      },
+      {
+        "turn": 211,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.9,
+        "cue": "Like, what do you mean? — the host asks"
+      },
+      {
+        "turn": 213,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.95,
+        "cue": "We're trying to work this out in the Daily Wire side of things"
+      },
+      {
+        "turn": 214,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "The worst at that now"
+      },
+      {
+        "turn": 215,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.7,
+        "cue": "Yeah, I know"
+      },
+      {
+        "turn": 216,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "They're the worst"
+      },
+      {
+        "turn": 217,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.7,
+        "cue": "I know"
+      },
+      {
+        "turn": 218,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "this is editorial bullsht"
+      },
+      {
+        "turn": 219,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.7,
+        "cue": "No, it didn't — reply"
+      },
+      {
+        "turn": 221,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.98,
+        "cue": "I had Bill Murray on the podcast"
+      },
+      {
+        "turn": 222,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.9,
+        "cue": "Oh, really? Wow. — reply"
+      },
+      {
+        "turn": 223,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.9,
+        "cue": "Isn't that crazy?"
+      },
+      {
+        "turn": 224,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.8,
+        "cue": "Yeah. No."
+      },
+      {
+        "turn": 225,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.95,
+        "cue": "what Tucker Carlson had told me"
+      },
+      {
+        "turn": 227,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "you saw the government website … ? — asks the host"
+      },
+      {
+        "turn": 228,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "Wild."
+      },
+      {
+        "turn": 229,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "What are you supposed to do with that?"
+      },
+      {
+        "turn": 230,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.95,
+        "cue": "right at the height of COVID was also when I had gone over to Spotify"
+      },
+      {
+        "turn": 231,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.7,
+        "cue": "Yes, they didn't lock down"
+      },
+      {
+        "turn": 232,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.95,
+        "cue": "I've had dinner with him, brought him to the comedy club"
+      },
+      {
+        "turn": 233,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.7,
+        "cue": "He's great"
+      },
+      {
+        "turn": 234,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.98,
+        "cue": "Jamie, pull it up"
+      },
+      {
+        "turn": 235,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "Well."
+      },
+      {
+        "turn": 236,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "And look at this lab"
+      },
+      {
+        "turn": 237,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.6,
+        "cue": "Yeah, right. By the way."
+      },
+      {
+        "turn": 239,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "that very famous White House post … psychological warfare that was played on the American people"
+      },
+      {
+        "turn": 241,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.98,
+        "cue": "I was part of a group that started this organization in the UK called the Alliance for Responsible Citizenship"
+      },
+      {
+        "turn": 242,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.9,
+        "cue": "So you're doing, like, a positive counter to the World Economic—"
+      },
+      {
+        "turn": 243,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.95,
+        "cue": "we have some rules, and one rule is you don't use force or fear … can I tell you a story"
+      },
+      {
+        "turn": 244,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.9,
+        "cue": "Please do."
+      },
+      {
+        "turn": 323,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "what do you always say? Clean your room, make your bed"
+      },
+      {
+        "turn": 325,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.5,
+        "cue": "What's going on?"
+      },
+      {
+        "turn": 327,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "Sure. — answers 'Can I tell you another story?'"
+      },
+      {
+        "turn": 333,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "That resonates."
+      },
+      {
+        "turn": 335,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "Definitely. — reply to 'That's what you followed to make this show'"
+      },
+      {
+        "turn": 338,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "you're talking about tyrants, right? — addresses the storyteller"
+      },
+      {
+        "turn": 340,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "Right."
+      },
+      {
+        "turn": 342,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "isn't it kind of celebrated among certain high achievers … business world"
+      },
+      {
+        "turn": 344,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "Greed is good. That's … Michael Douglas, right?"
+      },
+      {
+        "turn": 346,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "Greed is good."
+      },
+      {
+        "turn": 348,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "I'm not advocating."
+      },
+      {
+        "turn": 351,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "if they get rejected a lot, they associate women with pain"
+      },
+      {
+        "turn": 353,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "that's how you get a woman hater"
+      },
+      {
+        "turn": 355,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "they're not the pursuers"
+      },
+      {
+        "turn": 357,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "wealth allows you to bypass the genetic social hierarchy"
+      },
+      {
+        "turn": 359,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.9,
+        "cue": "Completely different background than him … whenever you can be nice — answers 'why are you respectable'"
+      },
+      {
+        "turn": 361,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "I mean, both."
+      },
+      {
+        "turn": 363,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.9,
+        "cue": "I get the posturing … And I was to many fighters"
+      },
+      {
+        "turn": 366,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.85,
+        "cue": "The kings are almost precisely universally disciplined, focused and generally kind"
+      },
+      {
+        "turn": 368,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "I think you have to be."
+      },
+      {
+        "turn": 370,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.8,
+        "cue": "Miyamoto Musashi wrote about this in the Book of Five Rings"
+      },
+      {
+        "turn": 372,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "if you're a narcissist and a sociopath, you know you are"
+      },
+      {
+        "turn": 374,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "the positive feedback that you get from true kindness to others"
+      },
+      {
+        "turn": 376,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.5,
+        "cue": "Then you're really alone."
+      },
+      {
+        "turn": 380,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.6,
+        "cue": "if you do achieve success, it's hollow"
+      },
+      {
+        "turn": 383,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.7,
+        "cue": "Right? — reply"
+      },
+      {
+        "turn": 386,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.95,
+        "cue": "your countryman, George St. Pierre — said to the Canadian"
+      },
+      {
+        "turn": 391,
+        "labeled": "JORDAN PETERSON",
+        "likely": "JOE ROGAN",
+        "confidence": 0.9,
+        "cue": "a university in Jerusalem … the acacia bush is rich in DMT — asks the Bible lecturer"
+      },
+      {
+        "turn": 431,
+        "labeled": "JOE ROGAN",
+        "likely": "JORDAN PETERSON",
+        "confidence": 0.98,
+        "cue": "the ideas that I was teaching at Harvard and at U of T"
+      }
+    ],
+    "overrides": {
+      "17": "JOE ROGAN",
+      "18": "JORDAN PETERSON",
+      "19": "JOE ROGAN",
+      "29": "JOE ROGAN",
+      "41": "JOE ROGAN",
+      "42": "JORDAN PETERSON",
+      "44": "JORDAN PETERSON",
+      "47": "JOE ROGAN",
+      "48": "JORDAN PETERSON",
+      "50": "JORDAN PETERSON",
+      "52": "JOE ROGAN",
+      "54": "JOE ROGAN",
+      "56": "JOE ROGAN",
+      "59": "JORDAN PETERSON",
+      "60": "JOE ROGAN",
+      "62": "JORDAN PETERSON",
+      "63": "JOE ROGAN",
+      "64": "JORDAN PETERSON",
+      "65": "JOE ROGAN",
+      "66": "JORDAN PETERSON",
+      "74": "JORDAN PETERSON",
+      "75": "JOE ROGAN",
+      "78": "JOE ROGAN",
+      "79": "JORDAN PETERSON",
+      "82": "JORDAN PETERSON",
+      "84": "JORDAN PETERSON",
+      "85": "JOE ROGAN",
+      "169": "JOE ROGAN",
+      "170": "JOE ROGAN",
+      "173": "JOE ROGAN",
+      "175": "JOE ROGAN",
+      "177": "JOE ROGAN",
+      "179": "JOE ROGAN",
+      "181": "JOE ROGAN",
+      "184": "JOE ROGAN",
+      "186": "JOE ROGAN",
+      "188": "JOE ROGAN",
+      "190": "JOE ROGAN",
+      "192": "JOE ROGAN",
+      "194": "JOE ROGAN",
+      "196": "JOE ROGAN",
+      "198": "JOE ROGAN",
+      "200": "JOE ROGAN",
+      "202": "JOE ROGAN",
+      "204": "JOE ROGAN",
+      "205": "JORDAN PETERSON",
+      "206": "JOE ROGAN",
+      "208": "JORDAN PETERSON",
+      "209": "JOE ROGAN",
+      "210": "JORDAN PETERSON",
+      "211": "JOE ROGAN",
+      "213": "JORDAN PETERSON",
+      "214": "JOE ROGAN",
+      "215": "JORDAN PETERSON",
+      "216": "JOE ROGAN",
+      "217": "JORDAN PETERSON",
+      "218": "JOE ROGAN",
+      "219": "JORDAN PETERSON",
+      "221": "JOE ROGAN",
+      "222": "JORDAN PETERSON",
+      "223": "JOE ROGAN",
+      "224": "JORDAN PETERSON",
+      "225": "JOE ROGAN",
+      "227": "JORDAN PETERSON",
+      "228": "JOE ROGAN",
+      "229": "JORDAN PETERSON",
+      "230": "JOE ROGAN",
+      "231": "JORDAN PETERSON",
+      "232": "JOE ROGAN",
+      "233": "JORDAN PETERSON",
+      "234": "JOE ROGAN",
+      "235": "JORDAN PETERSON",
+      "236": "JOE ROGAN",
+      "237": "JORDAN PETERSON",
+      "239": "JOE ROGAN",
+      "241": "JORDAN PETERSON",
+      "242": "JOE ROGAN",
+      "243": "JORDAN PETERSON",
+      "244": "JOE ROGAN",
+      "323": "JOE ROGAN",
+      "325": "JOE ROGAN",
+      "327": "JOE ROGAN",
+      "333": "JOE ROGAN",
+      "335": "JOE ROGAN",
+      "338": "JOE ROGAN",
+      "340": "JOE ROGAN",
+      "342": "JOE ROGAN",
+      "344": "JOE ROGAN",
+      "346": "JOE ROGAN",
+      "348": "JOE ROGAN",
+      "351": "JOE ROGAN",
+      "353": "JOE ROGAN",
+      "355": "JOE ROGAN",
+      "357": "JOE ROGAN",
+      "359": "JOE ROGAN",
+      "361": "JOE ROGAN",
+      "363": "JOE ROGAN",
+      "366": "JOE ROGAN",
+      "368": "JOE ROGAN",
+      "370": "JOE ROGAN",
+      "372": "JOE ROGAN",
+      "374": "JOE ROGAN",
+      "376": "JOE ROGAN",
+      "380": "JOE ROGAN",
+      "383": "JOE ROGAN",
+      "386": "JOE ROGAN",
+      "391": "JOE ROGAN",
+      "431": "JORDAN PETERSON"
+    },
+    "auditedAt": "2026-10-02T14:00:00.000Z",
+    "shiftNote": "Long stretches are labeled JORDAN PETERSON for both speakers (turns 169–206, 221–239, 323–391); several of the host's lines are labeled Peterson and vice versa. Corrections were made from content cues (self-references to jobs, family, guests, books).",
+    "method": "Content-cue attribution by Claude in chat (pilot). Not yet confirmed by a person.",
+    "notes": ""
+  },
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "updatedAt": "2026-10-02T14:00:00.000Z",
+  "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+  "turnCount": 393,
+  "passageCount": 16,
+  "pilot": true,
+  "example": true,
+  "pilotNote": "Pilot run. The first pass was done by Claude in chat on 2 October 2026; a second reader (GPT) flagged four overreaches and the percentage scores; this version corrects them, replaces the scores with fidelity, evidence and inference judgments, and adds the defense and revision steps to every card. Attribution rests on content cues and has not been confirmed by a person; confirm it in stage 2."
+}

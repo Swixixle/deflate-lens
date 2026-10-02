@@ -1,0 +1,170 @@
+{
+  "order": 15,
+  "title": "Peterson Academy update",
+  "turnStart": 413,
+  "turnEnd": 421,
+  "stake": "Whether the figures offered about Peterson Academy support the claim that it is the future of higher education.",
+  "speakers": [
+    "JORDAN PETERSON",
+    "JOE ROGAN"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 415,
+        "speaker": "JORDAN PETERSON",
+        "quote": "we launched Peterson Academy in September and we talked about it and it’s been a stunning success. We have 40,000 students.",
+        "verbatim": true
+      },
+      {
+        "turn": 417,
+        "speaker": "JORDAN PETERSON",
+        "quote": "We’re one of the most rapidly capitalized companies ever, especially with our degree of investment, because we run a lean show.",
+        "verbatim": true
+      },
+      {
+        "turn": 421,
+        "speaker": "JORDAN PETERSON",
+        "quote": "we are dropping the price from $599 to $399 a year as of today.",
+        "verbatim": true
+      },
+      {
+        "turn": 421,
+        "speaker": "JORDAN PETERSON",
+        "quote": "we discovered that 40% of courses at university are now online. And we’ve investigated some of those courses. Many of them are PowerPoint presentations.",
+        "verbatim": true
+      },
+      {
+        "turn": 421,
+        "speaker": "JORDAN PETERSON",
+        "quote": "we literally have the best professors in the world and unmatched production quality.",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "Peterson Academy launched in September, has 40,000 students and 15,000 active users on its social platform, removed ten disruptive users, raised money fast, and is cutting its price from $599 to $399 a year. Peterson says 40% of university courses are now online and many are just slide decks, so his academy, with the best professors in the world, must be the future of higher education.",
+      "g5": "Peterson's online school started in September, has 40,000 students, kicked out ten troublemakers, raised money quickly, and is now cheaper. He says many college classes are just online slideshows, so his school, with the best teachers in the world, is the future."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "This is a promotional segment and the deflation treats it as one. The superlatives are kept as his.",
+        "g5": "This part is an advertisement. His big words are kept as his."
+      }
+    },
+    "jump": {
+      "present": true,
+      "pivot": "this has to be the future of higher education",
+      "pivotVerbatim": true,
+      "hs": "The step from 'some online university courses are poor' to 'this has to be the future of higher education' skips every alternative, including universities improving their own online teaching. The supporting figures are the company's own and unverifiable from outside.",
+      "g5": "Just because some college classes are bad doesn't mean his school has to be the future. Colleges could get better. And all his numbers come from his own company."
+    },
+    "defense": {
+      "hs": "A founder describing his company is expected to promote it, and he gives checkable specifics (student count, price, active users) rather than only adjectives. The price cut is confirmed by the company's own announcement. The complaint that much online university teaching is slide decks is widely shared.",
+      "g5": "Of course he talks up his own school. He gives real numbers that could be checked, and the price cut is real. Lots of people agree that many online college classes are boring slideshows."
+    },
+    "revision": {
+      "jumpSurvives": "partly",
+      "hs": "The specifics are the company's figures and stay unverified except the price. The inference to 'has to be the future' remains unsupported.",
+      "g5": "His numbers can't be checked except the price, which is real. The 'future of college' claim still isn't shown."
+    },
+    "claims": [
+      {
+        "text": "Price cut from $599 to $399 a year.",
+        "speaker": "JORDAN PETERSON",
+        "type": "fact",
+        "basis": {
+          "hs": "Confirmed by Peterson Academy's own announcement, April 2025.",
+          "g5": "The company said this too."
+        },
+        "status": "receipt",
+        "wouldSettle": "",
+        "receipts": [
+          {
+            "url": "https://x.com/petersonacademy/status/1917305963184275810",
+            "note": "Peterson Academy on X: $599 to $399",
+            "addedBy": "claude-in-chat",
+            "at": "2026-10-02T14:00:00.000Z"
+          }
+        ],
+        "expectedSources": [
+          "company_statement"
+        ],
+        "searchQuery": "Peterson Academy price 399"
+      },
+      {
+        "text": "40,000 students.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unscorable",
+        "basis": {
+          "hs": "The company's own figure; no outside check available.",
+          "g5": "Only his company says so."
+        },
+        "status": "unchecked",
+        "wouldSettle": "Independent reporting or audited figures.",
+        "receipts": [],
+        "settle": {
+          "hs": "Independent reporting or audited figures.",
+          "g5": "Numbers checked by someone outside his company."
+        }
+      },
+      {
+        "text": "40% of university courses are now online.",
+        "speaker": "JORDAN PETERSON",
+        "type": "contested",
+        "basis": {
+          "hs": "Plausible for US enrollment in at least one online course after 2020; the specific figure and definition were not checked.",
+          "g5": "Could be right; depends what you count. Not checked."
+        },
+        "status": "unchecked",
+        "wouldSettle": "NCES/IPEDS distance-education enrollment tables.",
+        "receipts": [],
+        "settle": {
+          "hs": "NCES/IPEDS distance-education enrollment tables.",
+          "g5": "The US government's count of how many college students take online courses."
+        },
+        "expectedSources": [
+          "government_data"
+        ],
+        "searchQuery": "distance education enrollment share IPEDS"
+      },
+      {
+        "text": "The best professors in the world.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unscorable",
+        "basis": {
+          "hs": "Superlative with no measure.",
+          "g5": "No way to measure 'best'."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "This has to be the future of higher education.",
+        "speaker": "JORDAN PETERSON",
+        "type": "value",
+        "basis": {
+          "hs": "A prediction stated as necessity; no argument offered beyond the slide-deck complaint.",
+          "g5": "A guess about the future stated like a fact."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      }
+    ],
+    "judgments": {
+      "evidence": "weak",
+      "inference": "gap"
+    }
+  }
+}

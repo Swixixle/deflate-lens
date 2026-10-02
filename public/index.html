@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Deflate Lens</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Archivo:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><h1>Deflate Lens</h1><span class="eyebrow">plain words · where it jumps · in fairness · what is left</span></div>
+  <div class="spacer"></div>
+  <span class="eyebrow">Reading level</span>
+  <div class="seg" role="group" aria-label="Reading level for all written output">
+    <button id="lvlHS" type="button" aria-pressed="true">High school</button>
+    <button id="lvl5" type="button" aria-pressed="false">Fifth grade</button>
+  </div>
+  <span class="chip" id="storeChip"><span class="dot"></span><span id="storeText">Connecting to the local server…</span></span>
+</header>
+
+<div class="layout">
+  <aside class="rail">
+    <div class="row"><span class="eyebrow">Runs</span><span class="spacer"></span><button class="btn" id="newRun" type="button">New run</button></div>
+    <ul class="runs" id="runList"><li class="hint" style="padding:6px 10px">Loading runs from the data folder…</li></ul>
+    <div id="trash" hidden></div>
+    <p class="hint" style="padding:0 6px">A run is one transcript taken through five stages. Everything written at a stage is kept on disk in the data folder, with who confirmed what. Nothing is deleted by the app: earlier readings go to history, replaced passages to an archive, deleted runs to the trash.</p>
+  </aside>
+
+  <main>
+    <div class="inner" id="main">
+      <section class="panel" id="welcome">
+        <div class="empty">
+          <p class="eyebrow">How it works</p>
+          <h2>Paste what you have. Take the costume off the argument, then grade what is left.</h2>
+          <p>A claim, a quote, a whole transcript, or a link: paste it and go. A claim gets a search query and can be checked against the academic databases at once. A transcript is split into passages; each one is rewritten in plain words at two reading levels, with the single step where the argument jumps, the fairest defense of the speaker, what is left after it, and every claim graded on its own. Who said what is checked first when more than one person speaks. The speaker is never graded.</p>
+          <p class="hint">Pick a run on the left, or click New run. The supplied example works with no key. Real analysis asks for your Anthropic API key once and keeps it on this computer. Everything is saved to the data folder.</p>
+        </div>
+      </section>
+      <div id="runView" hidden></div>
+    </div>
+  </main>
+</div>
+
+<script src="/shared/transcript.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
