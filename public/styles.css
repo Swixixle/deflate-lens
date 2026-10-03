@@ -250,3 +250,23 @@ details.ctx > *:not(summary){margin-top:10px}
 /* Reading choices belong at the start of every card, outside its optional record. */
 .card-level{justify-content:flex-end;flex-wrap:wrap;margin:10px 0}
 .more pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto;font-size:12px}
+
+/* The normal flow is input -> progress -> reading. Processing controls stay optional. */
+.reading-heading{margin-bottom:18px}
+.reading-heading h2{font-size:26px;line-height:1.2;font-weight:600}
+.reading-cards{display:grid;gap:18px}
+.reading-section{margin:18px 0}
+.read-status{border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin:16px 0;display:flex;align-items:center;flex-wrap:wrap;gap:12px;background:var(--soft)}
+.reading-message{flex:1;min-width:200px;margin:0}
+.read-status.running .reading-message::before{content:"";display:inline-block;width:8px;height:8px;margin-right:9px;border-radius:50%;background:var(--accent);animation:reading-pulse 1.5s ease-in-out infinite}
+.read-status .keybox{flex-basis:100%;width:100%}
+.read-status details{flex-basis:100%}
+.processing-record,.manual-controls{border-top:1px solid var(--line);padding:14px 0;margin:16px 0}
+.processing-record > summary,.manual-controls > summary{font-family:var(--display);font-size:13px;color:var(--muted);cursor:pointer}
+.processing-record > .panel{margin-top:16px}
+.manual-controls > .row{margin:14px 0}
+#stage-intake .num,#stage-patterns .num{display:none}
+.upload-zone textarea{width:100%}
+@keyframes reading-pulse{50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){.read-status.running .reading-message::before{animation:none}}
+@media(max-width:480px){.reading-heading h2{font-size:23px}.read-status{padding:12px}.keybox input[type=password]{min-width:0!important;width:100%}.card-level{justify-content:flex-start}}

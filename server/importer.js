@@ -30,6 +30,11 @@ function htmlToText(html) {
   s = s.replace(/<!--[\s\S]*?-->/g, "");
   s = s.replace(/<head\b[^>]*>[\s\S]*?<\/head>/i, " ");
   s = s.replace(/<(script|style|noscript|svg|canvas|iframe|nav|header|footer|aside|form|template)\b[^>]*>[\s\S]*?<\/\1>/gi, " ");
+  // Prefer the article rather than the site's menus and promoted stories. Some sites put
+  // each paragraph in its own article: in that case use main/body instead of one fragment.
+  const articles = [...s.matchAll(/<article\b[^>]*>([\s\S]*?)<\/article>/gi)].map(m => m[1]);
+  if (articles.length === 1) s = articles[0];
+  else { const main = s.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i); if (main) s = main[1]; }
   s = s.replace(/<\s*(br|hr)\s*\/?>/gi, "\n");
   s = s.replace(/<\/(p|div|li|h[1-6]|tr|blockquote|section|article|dd|dt|pre|figcaption)\s*>/gi, "\n");
   s = s.replace(/<[^>]+>/g, " ");
@@ -47,7 +52,7 @@ function createImporter(deps) {
     for (const [re, reason] of NO_IMPORTER) if (re.test(parsed.hostname)) return { ok: false, reason, host: parsed.hostname, noImporter: true };
     const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 20000);
     try {
-      const res = await fetchFn(u, { signal: ctl.signal, redirect: "follow", headers: { "User-Agent": "deflate-lens/0.8 (local transcript importer)", "Accept": "text/html,text/plain,text/vtt,application/x-subrip;q=0.9,*/*;q=0.5" } });
+      const res = await fetchFn(u, { signal: ctl.signal, redirect: "follow", headers: { "User-Agent": "deflate-lens/0.10 (local transcript importer)", "Accept": "text/html,text/plain,text/vtt,application/x-subrip;q=0.9,*/*;q=0.5" } });
       const ctype = String(res.headers && typeof res.headers.get === "function" ? res.headers.get("content-type") || "" : "").toLowerCase();
       if (res.status >= 400) return { ok: false, reason: "The site answered HTTP " + res.status + (res.status === 401 || res.status === 403 ? ": it wants a login or blocks automated fetches" : "") + ". Paste the text or upload a file.", status: res.status };
       const body = await res.text();

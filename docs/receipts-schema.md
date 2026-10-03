@@ -17,6 +17,14 @@ The server computes `attributionGate` for the run and `readingGate` for each car
 
 The reading page and Markdown withhold held card bodies. JSON preserves their records for inspection, carrying `run.attributionGate`, `passages[].readingGate`, `claims[].readingGate`, `patternsGate` and provisional reasons; consumers must honor those statuses. A passed preparation check is a text review, not proof of who spoke or of factual truth.
 
+## Automatic processing and input
+
+`POST /api/intake` takes `{input, context?}`, with no required context fields, saves an input and starts a background reading. `POST /api/runs/:id/read` starts or resumes it; concurrent starts share one job. `POST /api/runs/:id/stop` aborts it. `GET /api/runs/:id` carries server-owned `run.processing` (id, status, phase, plain message, input hash, card counts, timestamps and issues). Statuses are running, awaiting_key, held, partial, complete, error, stopped, or interrupted. A browser disconnect does not stop it. A server restart marks unfinished work interrupted, ready to resume. Current input, attribution and job identity are checked under the lock before publishing readings.
+
+`run.intake` records hashes and sizes before/after cleanup, the counts of outside-dialogue lines removed, the method, source, timestamp and original-input filename. Earlier intake records stay in `intakeHistory`; originals stay under `inputs/`. `/api/runs/:id/original-input.txt` returns the latest original. The cleaned text is the transcript bound to every reading. No inside-dialogue words are automatically removed. Source searches now run automatically after prepared readings; candidates still require a person's decision to become receipts.
+
+An overview needs both levels, at least two prepared cards per recurring pattern, and a server-recorded approval with a `summaryHash` matching its content. Changing its content or its supporting cards holds it before display. Canonical prompts are shared between the server and optional page controls in `shared/prompts.js`.
+
 ## Revisions and addressing
 
 Every passage carries `rev` (moves on every write) and `readingRev` (moves only when the analysis changes: a re-run,

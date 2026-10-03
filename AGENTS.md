@@ -40,7 +40,8 @@ APIs (Crossref, PubMed, GDELT for news; OpenAlex with an optional key) and needs
      `npm run launch -- --port 4000` to choose a port, `npm start` to run without the launcher.
 5. **Check health yourself** if you want to confirm: `curl -s http://127.0.0.1:3123/api/health` returns `{"ok":true,…}`
    with `ai` null (no key yet) or the model name, and `version`.
-6. **Present the address** to the person. The supplied example opens without a key, but its old readings are held until preparation passes. A pasted claim can be searched without a key; **Copy and prepare this example** starts model preparation and asks for the key when needed.
+6. **Use the app.** Upload or paste into the initial box and press **Read this**. Do not ask the person to confirm labels, split passages, select cards, or generate patterns; those steps run automatically. The one-time key prompt continues the whole job. Processing runs on the server across browser refreshes; Stop preserves prepared work and Read this resumes. Detailed controls are optional and closed.
+7. **Present the address** to the person. The supplied example opens without a key, but its old readings are held until preparation passes. A pasted claim can be searched without a key; **Copy and read this example** starts model preparation and asks for the key when needed.
 
 ## The API key
 
@@ -53,8 +54,7 @@ set `DEFLATE_MOCK_AI=1` for the person; that produces placeholder output and is 
 ## Repeat runs and updates
 
 `npm run setup` and `npm run launch` are safe to repeat. A second setup leaves `.env`, saved runs, sources and
-attribution decisions exactly as they were (the test suite checks this). After updating the code (`git pull` or a new
-ZIP unpacked over the old folder), run `npm run setup` again; it reinstalls dependencies only if the lockfile changed.
+attribution decisions exactly as they were (the test suite checks this). For an existing downloaded copy, `bash scripts/update.sh` (or `npm run update`) backs up code, preserves settings and saved work, then runs setup and launch. For older copies that lack the updater, use the README’s single download command. After updating the code (`git pull` or a new ZIP unpacked over the old folder), run `npm run setup` again; it reinstalls dependencies only if the lockfile changed.
 Saved runs are parsed under the rules they were saved with, so an update never silently renumbers a run's turns.
 
 ## Where things are
@@ -67,7 +67,7 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 
 ## Checks you can run
 
-- `npm test` — 102 regression tests, no external network or key; uses local HTTP servers.
+- `npm test` — 120 regression tests, no external network or key; uses local HTTP servers.
 - `npm run doctor` — prints what is configured without printing secrets.
 - `npm run research-smoke` — hits the live Crossref and PubMed services for two example claims (needs network).
 - `node scripts/ui-check.js` — optional headless-browser check; needs `npm install --no-save playwright && npx playwright install chromium` first.

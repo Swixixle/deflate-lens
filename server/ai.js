@@ -94,7 +94,7 @@ function createMockAI() {
           judgments: { evidence: "n/a", inference: "n/a" }
         };
       } else if (/^Below are the (full )?results of deflating/.test(p)) {
-        data = { patterns: [{ title: { hs: "MOCK pattern", g5: "MOCK pattern" }, body: { hs: "MOCK: patterns are not computed in mock mode.", g5: "MOCK." }, passages: [] }], survived: { hs: "MOCK: not computed.", g5: "MOCK." } };
+        data = { patterns: [{ title: { hs: "MOCK pattern", g5: "MOCK pattern" }, body: { hs: "MOCK: patterns are not computed in mock mode.", g5: "MOCK." }, passages: [...p.matchAll(/^### (p\d{3}) /gm)].slice(0, 2).map(m => m[1]) }], survived: { hs: "MOCK: not computed.", g5: "MOCK." } };
       } else data = { note: "MOCK: unrecognised prompt" };
       const text = JSON.stringify(data);
       const meta = { usage: null, model: "mock", requestId: "mock_" + Math.random().toString(36).slice(2, 8), stopReason: "end_turn" };

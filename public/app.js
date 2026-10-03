@@ -51,8 +51,8 @@ function levelToggle(target){
 function errCopy(e){
   var c = e && e.code;
   var map = {
-    no_ai:"No model is configured on the server. Add ANTHROPIC_API_KEY to .env and restart.",
-    bad_key:"The server's API key was rejected. Check ANTHROPIC_API_KEY in .env.",
+    no_ai:"Add the model key once to continue.",
+    bad_key:"The model key was not accepted. Replace it and try again.",
     rate_limited:"Too many requests right now. Wait a minute and try again.",
     prompt_too_large:"That section is too large for one request. Shorten the transcript or split it.",
     invalid_json:"The model's reply was not well-formed. Try again once; if it repeats, the passage may need splitting.",
@@ -94,6 +94,9 @@ var API = {
   health(){ return API.req("GET","/api/health"); },
   listRuns(){ return API.req("GET","/api/runs"); },
   getRun(id){ return API.req("GET","/api/runs/" + id); },
+  intake(input, context){ return API.req("POST", "/api/intake", {input:input, context:context||{}}); },
+  readRun(id){ return API.req("POST", "/api/runs/" + id + "/read", {}); },
+  stopReading(id){ return API.req("POST", "/api/runs/" + id + "/stop", {}); },
   createRun(run, transcript){ return API.req("POST","/api/runs", {run:run, transcript:transcript}); },
   saveRun(id, run, transcript){ return API.req("PUT","/api/runs/" + id, {run:run, transcript:transcript}); },
   deleteRun(id){ return API.req("DELETE","/api/runs/" + id); },
@@ -135,48 +138,7 @@ var API = {
 function fileToBase64(file){ return new Promise(function(resolve, reject){ var r = new FileReader(); r.onload = function(){ resolve(String(r.result).split(",")[1]); }; r.onerror = reject; r.readAsDataURL(file); }); }
 
 /* ---------- prompts ---------- */
-var P = {};
-function speakerLines(run){ return (run.speakers||[]).map(function(s){ return "- " + s.key + (s.name && s.name !== s.key ? " (" + s.name + ")" : "") + (s.bio ? ": " + s.bio : ""); }).join("\n") || "(no bios given)"; }
-P.audit = function(run, turnsText){
-  return "You are checking speaker attribution in an interview transcript. Transcription services often shift or swap the labels, so a line can be labeled with the wrong speaker.\n\nSpeakers and short bios:\n" + speakerLines(run) +
-  "\n\nBelow are numbered turns with their current labels. Flag ONLY turns whose content conflicts with the label: a self-reference to a job, biography, family, book, business or earlier statement that fits a different speaker; a question answered under the same label it was asked with; a direct address by name. Do not flag on style or opinion alone. When many consecutive turns look shifted by one, say so in 'shift'.\n\nReply with only JSON of this exact shape:\n{\"flags\":[{\"turn\":12,\"labeled\":\"LABEL\",\"likely\":\"LABEL or UNSURE\",\"confidence\":0.9,\"cue\":\"the words that gave it away, under 20 words\"}],\"shift\":{\"detected\":false,\"note\":\"\"}}\n\nTurns:\n" + turnsText;
-};
-P.segment = function(run, turnsText){
-  return "Split this transcript section into passages. A passage is one argument or one topic exchange: a claim and the back-and-forth around it. Skip small talk, logistics and ads unless a checkable claim is made. Aim for 3 to 25 turns per passage; a long monologue may be its own passage. Titles are neutral and name the topic, never a verdict.\n\nReply with only JSON of this exact shape:\n{\"passages\":[{\"title\":\"4 to 8 words\",\"turnStart\":41,\"turnEnd\":52,\"stake\":\"one sentence: the claim or question at issue\"}]}\n\nTurn numbers are in brackets; use them exactly.\n\nTurns:\n" + turnsText;
-};
-P.deflate = function(run, passage, turnsText){
-  return "You are a deflation reader. Take one passage of an interview and (1) rewrite what is argued in plain language, (2) check your rewrite for fidelity, (3) name the single step where the argument jumps, if it does, (4) argue the speaker's side from the quoted words alone, (5) revise your challenge if the defense shows it overreached, and (6) grade each claim on its own. Grade claims, never people. Keep a neutral register: no mockery, and avoid loaded words such as costume, demolition, tell, nonsense, debunk.\n\n" +
-  "Two reading levels for EVERY text you write:\n- hs: a careful senior-high-school reader. Plain and precise. Keep every 'only if' and 'in part' the speaker used.\n- g5: a ten-year-old. Short sentences, concrete words, no jargon. If a claim cannot be simplified this far without becoming wrong, get as close as you can and say in fidelity.notes.g5 what was lost.\n\n" +
-  "Fidelity rules: the deflation must not add certainty, motives, or content the speaker did not say. 'I am not an X' is not 'I cannot judge X'. 'He was concerned about Y' is not 'he was about to reveal Y'. Accepting an added explanation ('Oh, definitely') is not withdrawing the original claim. After writing, list every place your rewrite is firmer, weaker, or different from the spoken words, then grade: faithful | adds | strengthens | softens.\n\n" +
-  "Claim types: fact (empirical, supported in general knowledge) | contested (empirical, evidence mixed or disputed) | unsupported (empirical, no support offered and none known to you) | interpretation (a reading of a text, event or data) | value (a moral or aesthetic judgment) | image (a metaphor or frame that carries meaning but is not offered as evidence; say what it helps explain) | unscorable (too vague or unbounded to grade as stated; say what would make it scorable). A metaphor is not 'empty': decide whether the speaker uses it as evidence (then grade the inference) or as a picture (then type it image). You cannot browse: mark every empirical claim status \"unchecked\" and say what source would settle it.\n\n" +
-  "For every empirical claim (fact, contested, unsupported) also give expectedSources: one or two of [academic_paper, survey_report, government_data, agency_report, news_coverage, book_or_edition, company_statement, transcript_or_recording, federal_court_filing, corporate_filing], and searchQuery: the four-to-eight-word query a reference librarian would type to find the settling document. For other claim types leave both empty.\n\n" +
-  "Quote discipline: asSaid.quote and jump.pivot must be VERBATIM from the turns below (you may trim with …). The app checks them against the transcript.\n\n" +
-  "For every claim also write plain: what the claim says, restated at both levels (hs, g5) with the same hedges and the same uncertainty; and settle: what evidence would settle it, at both levels. The claim's text field is the canonical wording and must not be simplified.\n\n" +
-  "Reply with ONLY JSON of this exact shape:\n" +
-  "{\"asSaid\":[{\"turn\":41,\"speaker\":\"LABEL\",\"quote\":\"verbatim, under 70 words, … to trim\"}],\n" +
-  " \"deflated\":{\"hs\":\"\",\"g5\":\"\"},\n" +
-  " \"fidelity\":{\"grade\":\"faithful|adds|strengthens|softens\",\"notes\":{\"hs\":\"\",\"g5\":\"\"}},\n" +
-  " \"jump\":{\"present\":true,\"pivot\":\"verbatim words where it turns\",\"hs\":\"\",\"g5\":\"\"},\n" +
-  " \"defense\":{\"hs\":\"\",\"g5\":\"\"},\n" +
-  " \"revision\":{\"jumpSurvives\":\"yes|partly|no\",\"hs\":\"\",\"g5\":\"\"},\n" +
-  " \"claims\":[{\"text\":\"one claim in the speaker's terms\",\"speaker\":\"LABEL\",\"type\":\"fact|contested|unsupported|interpretation|value|image|unscorable\",\"plain\":{\"hs\":\"\",\"g5\":\"\"},\"basis\":{\"hs\":\"\",\"g5\":\"\"},\"status\":\"unchecked\",\"wouldSettle\":\"what source or test would settle it\",\"settle\":{\"hs\":\"\",\"g5\":\"\"},\"expectedSources\":[\"academic_paper\"],\"searchQuery\":\"\"}],\n" +
-  " \"judgments\":{\"evidence\":\"strong|mixed|weak|none|n/a\",\"inference\":\"valid|gap|unfalsifiable|n/a\"}}\n\n" +
-  "Speakers:\n" + speakerLines(run) + "\n\nPassage title: " + (passage.title||"") + "\nAt stake: " + (passage.stake||"") + "\n\nTurns (numbers in brackets):\n" + turnsText;
-};
-P.patterns = function(run, passages){
-  var blocks = passages.map(function(p){
-    var a = p.analysis || {};
-    return "### " + p.id + " \"" + (p.title||"") + "\" (turns " + p.turnStart + "–" + p.turnEnd + ")\n" +
-      "In plain words: " + (a.deflated && a.deflated.hs || "") + "\n" +
-      (a.jump && a.jump.present ? "Where it jumps (the critique): " + (a.jump.hs||"") + (a.jump.pivot ? " [pivot: \"" + a.jump.pivot + "\"]" : "") + "\n" : "No jump.\n") +
-      "In fairness to the speaker (the strongest defense, from the quoted words): " + (a.defense && a.defense.hs || "") + "\n" +
-      "After the defense (the revised judgment; jump survives: " + (a.revision && a.revision.jumpSurvives || "—") + "): " + (a.revision && a.revision.hs || "") + "\n" +
-      "Fidelity of the rewrite: " + (a.fidelity && a.fidelity.grade || "?") + " · evidence: " + (a.judgments && a.judgments.evidence || "?") + " · inference: " + (a.judgments && a.judgments.inference || "?") + "\n" +
-      "Claims:\n" + (a.claims||[]).map(function(c){ return "  - [" + c.type + "] " + (c.speaker ? c.speaker + ": " : "") + c.text; }).join("\n");
-  }).join("\n\n");
-  return "Below are the full results of deflating " + passages.length + " passages from one interview (cards marked stale were left out). Each card gives the critique, the strongest defense, and the revised judgment after the defense; respect the revised judgment: where the revision says the jump partly stands or does not stand, treat the critique as partly or wholly withdrawn and do not count it as a pattern on its own. Find the argumentative moves that recur across passages (for example: evidence attached to a conclusion it cannot carry; replacing a claim with a judgment about the people who make it; a definition widened until it no longer distinguishes anything; false dichotomies; hearsay chains). Name each pattern neutrally, quote or point to the passage ids that show it (only ids listed below), and keep to patterns that appear at least twice. Then list what survived: arguments or claims that came through deflation intact. Credit them plainly. Grade moves, never people.\n\nTwo reading levels for every text: hs (careful senior-high reader) and g5 (ten-year-old; short concrete sentences).\n\nReply with ONLY JSON of this exact shape:\n{\"patterns\":[{\"title\":{\"hs\":\"\",\"g5\":\"\"},\"body\":{\"hs\":\"\",\"g5\":\"\"},\"passages\":[\"p001\",\"p004\"]}],\"survived\":{\"hs\":\"\",\"g5\":\"\"}}\n\nPassages:\n\n" + blocks;
-};
-P.transcribe = "Transcribe all text in the attached image(s) exactly as written, including any attribution line (who said it, where, when). Keep line breaks. If an image contains no text, write [no text]. Separate images with a line containing only ---. Reply with the transcription only.";
+var P = window.DeflatePrompts;
 
 /* ---------- state ---------- */
 var S = {health:null, ai:null, runs:[], runId:null, b:null, turns:[], busy:false, abort:null};
@@ -209,10 +171,11 @@ $("lvl5").addEventListener("click", function(){ setLevel("5"); });
 async function boot(){
   try { S.health = await API.health(); } catch(e){ setStore("off","Cannot reach the local server. Is it running? (npm start)"); return; }
   S.ai = S.health.ai; S.research = S.health.research || null;
-  setStore(S.ai ? "ready" : "busy", (S.ai ? (S.ai.mock ? "Server connected · MOCK model (placeholders only)" : "Server connected · " + S.ai.model) : "Server connected · source search ready; analysis asks for a key once") + (S.research ? (S.research.mock ? " · MOCK research" : " · research: " + S.research.adapters.join(", ")) : ""));
+  setStore("ready", "Ready · " + S.health.version + (S.ai && S.ai.mock ? " · MOCK output" : "") + (S.research && S.research.mock ? " · MOCK sources" : ""));
   await refreshList();
   var want = hashRun() || rememberedRun();
   if (want && S.runs.some(function(r){ return r.id === want; })) selectRun(want);
+  else $("newRun").click();
 }
 function hashRun(){ var m = /^#run-([A-Za-z0-9_-]+)$/.exec(location.hash||""); return m ? m[1] : null; }
 function rememberedRun(){ try { return localStorage.getItem("deflate-run"); } catch(e){ return null; } }
@@ -238,7 +201,7 @@ function renderRunList(){
     li.append(b); ul.append(li);
   });
 }
-function stageName(s){ return ({draft:"Intake", attributed:"Attributed", segmented:"Segmented", analyzed:"Deflated", complete:"Complete"})[s] || s || "draft"; }
+function stageName(s){ return ({draft:"Saved", attributed:"Preparing", segmented:"Preparing", analyzed:"Reading", complete:"Ready"})[s] || s || "draft"; }
 function blockWhileBusy(){
   if (!S.busy) return false;
   alert("Wait for the current task to finish before changing runs or input.");
@@ -281,20 +244,68 @@ function renderRun(){
   var r = run();
   if (!r){ view.hidden = true; welcome.hidden = false; return; }
   welcome.hidden = true; view.hidden = false; clear(view);
-  var head = h("div",{class:"row"},
-    h("div",{}, h("p",{class:"eyebrow",text:"Run"}), h("h2",{style:"font-size:24px;font-weight:700"}, document.createTextNode(r.title || "Untitled run"), r.example ? h("span",{class:"badge example",style:"margin-left:10px",text:"supplied example · read-only"}) : null)),
+  view.append(h("div",{class:"row reading-heading"},
+    h("div",{}, h("p",{class:"eyebrow",text:r.id ? "Reading" : "Start here"}), h("h2",{text:r.id ? r.title || "Your reading" : "Upload or paste. Then read."})),
     h("span",{class:"spacer"}),
-    r.id && r.example ? h("button",{class:"btn primary",type:"button",text:"Copy as a new run",onclick:async function(){ try { var nb = await API.duplicateRun(r.id); await refreshList(); selectRun(nb.run.id); } catch(e){ alert(errCopy(e)); } }}) : null,
-    r.id && !r.example ? h("button",{class:"btn quiet danger",type:"button",text:"Move to trash",onclick:confirmDelete}) : null);
-  view.append(head);
-  if (r.example) view.append(h("div",{class:"note info"}, h("p",{text:"This run ships with the app as an example. Its analysis was written in chat by Claude on 2 October 2026 and corrected after a second-reader review; its attribution came from content cues and has not been confirmed by a person. It cannot be edited here. Copy it to confirm attribution, add receipts, or re-run passages with your own model."})));
-  if (r.copiedFrom) view.append(h("p",{class:"hint",text:"Copied from " + r.copiedFrom + " on " + fmtDate(r.copiedAt) + ". Passages carried over keep their original analyzedBy; anything you re-run is labeled with your model."}));
+    r.example ? h("button",{class:"btn primary",type:"button",text:"Copy and read this example",onclick:async function(){
+      if (blockWhileBusy()) return; S.busy = true;
+      try { var nb = await API.duplicateRun(r.id); S.busy = false; await refreshList(); await selectRun(nb.run.id); await startReading(); }
+      catch(e){ S.busy = false; alert(errCopy(e)); }
+    }}) : null));
   view.append(renderIntake());
-  if (!isClaimRun()) view.append(renderProvenance());
+  if (!r.id) return;
+  var status = renderReadStatus(); view.append(status);
   view.append(renderDeflate());
-  if (!isClaimRun()) view.append(renderPatternsPanel());
-  view.append(renderExport());
+  if (!isClaimRun() && S.b.summary) view.append(renderPatternsPanel()); else patternsBody = null;
+  var record = h("details",{class:"processing-record"},h("summary",{text:"Original text, checks, and downloads"}));
+  if (!isClaimRun()) record.append(renderProvenance());
+  if (r.intake) record.append(h("p",{class:"hint"},document.createTextNode(r.intake.changed ? "Material outside the dialogue was removed before reading. " : "Your input was kept. "),h("a",{href:"/api/runs/"+r.id+"/original-input.txt",target:"_blank",text:"Open the original input"})));
+  record.append(renderExport());
+  if (!r.example) record.append(h("button",{class:"btn quiet danger",type:"button",text:"Move to trash",onclick:confirmDelete}));
+  view.append(record);
   renderPassages(); renderDeflateList(); renderPatterns(); renderExportBlock();
+  var proc = r.processing;
+  if (proc && proc.status === "awaiting_key" && !S.ai) ensureAI(status, startReading);
+  watchReading();
+}
+var readingPoll = null;
+function renderReadStatus(){
+  var r = run(), proc = r.processing || {}, active = proc.status === "running";
+  var ready = S.b.passages.filter(function(p){return p.readingGate && p.readingGate.status === "ready";}).length;
+  var done = proc.status === "complete" && proc.inputHash === (r.input && r.input.sha256) && ready === S.b.passages.length && attributionOk() && (isClaimRun() || S.b.passages.length < 2 || S.b.summary && S.b.summary.readingGate.status === "ready");
+  var box = h("div",{class:"read-status" + (active ? " running" : ""),id:"reading-status"});
+  var message = r.example ? "Copy this example to prepare a reading. Its old analysis is held back until it passes the checks." : proc.message || "Press Read this. Speaker checks, reading, and review happen automatically.";
+  if (done) message = "Your reading is ready.";
+  else if (proc.status === "complete") message = "This reading has changed. Press Read this to prepare the current version.";
+  box.append(h("p",{role:"status","aria-live":"polite",class:"reading-message",text:message}));
+  if (!r.example && active) box.append(h("button",{class:"btn quiet",type:"button",text:"Stop",onclick:async function(){try {await reload(await API.stopReading(r.id));}catch(e){alert(errCopy(e));}}}));
+  else if (!r.example && !done) box.append(h("button",{class:"btn primary",type:"button",text:"Read this",onclick:startReading}));
+  if (proc.error && proc.error.code === "bad_key") box.append(h("button",{class:"btn",type:"button",text:"Replace model key",onclick:function(){S.ai=null;ensureAI(box,startReading);}}));
+  if (proc.error || (proc.issues||[]).length) {
+    var details = h("details",{},h("summary",{text:"See the check record"}));
+    if (proc.error) details.append(h("p",{class:"hint",text:proc.error.message}));
+    (proc.issues||[]).forEach(function(x){details.append(h("p",{class:"hint",text:x.message}));});
+    box.append(details);
+  }
+  return box;
+}
+async function startReading(){
+  if (blockWhileBusy() || !S.runId) return;
+  var id = S.runId; S.busy = true;
+  try { await reload(await API.readRun(id)); }
+  catch(e) { var host = $("reading-status"); if(host) host.append(h("p",{class:"note err",text:errCopy(e)})); }
+  finally { S.busy = false; }
+}
+function watchReading(){
+  if (readingPoll) { clearTimeout(readingPoll); readingPoll = null; }
+  if (!run() || !run().processing || run().processing.status !== "running") return;
+  var id = S.runId;
+  readingPoll = setTimeout(async function(){
+    readingPoll = null;
+    if (S.runId !== id) return;
+    try { var b = await API.getRun(id); if (S.runId !== id) return; await reload(b); if(b.run.processing.status !== "running") await refreshList(); }
+    catch(e) { if (S.runId === id) { var host = $("reading-status"); if(host) host.append(h("p",{class:"hint",text:"The server could not be reached. Your saved reading will be here when it restarts."})); } }
+  }, 1000);
 }
 function panel(id, num, title, state, open){
   if (UI.collapsed[id] !== undefined) open = !UI.collapsed[id];
@@ -310,42 +321,47 @@ function body(p){ return p.querySelector(".body"); }
 /* ---- 1 Intake: paste what you have and go ----
    One box first. The kind of input is read from the text (a claim, a transcript, a link); everything else is optional
    context under a fold. A link is fetched through the importer, which either returns readable text or says why not. */
-function describeKind(text, labels){
+function describeKind(text){
   var d = SH.detectKind(text);
-  if (d.kind === "empty") return {d:d, text:"Paste a claim, a quote, a transcript, or a link.", go:"Go"};
-  if (d.kind === "link") { var host = ""; try { host = new URL(d.url).hostname; } catch(e){} return {d:d, text:"Looks like a link to " + host + ". It will be fetched and its readable text put here for you to check.", go:"Fetch the link"}; }
-  if (d.kind === "claim") return {d:d, text:"Looks like a claim or a quote. It becomes one checkable claim with a search query made for it and is searched at once; no title, date or speaker needed.", go:"Check this claim"};
-  var turns = SH.parseTranscript(text, {mode: d.labels.length ? "transcript" : "text"}).filter(function(t){ return !t.heading; }).length;
-  if (!d.labels.length) return {d:d, text:"Looks like text with no speaker labels: " + plural(d.paragraphs, "paragraph") + ". It will be read as Speaker unknown; nothing to attribute.", go:"Save and continue"};
-  return {d:d, text:"Looks like a transcript: " + plural(d.labels.length, "speaker") + " (" + d.labels.join(", ") + "), " + plural(turns, "turn") + "." + (d.labels.length > 1 ? " Who said what gets checked before anything is graded." : ""), go:"Save and continue"};
+  return {d:d, go:"Read this", text:d.kind === "empty" ? "Upload a transcript, or paste text or a link. Everything else is optional." : d.kind === "link" ? "I’ll open the link and prepare its readable text." : "Ready to read. I’ll handle the preparation and checks."};
 }
 function renderIntake(){
   var r = run(), ro = readOnly(), isNew = !r.id;
   var open = isNew || !S.turns.length;
-  var p = panel("stage-intake","1", isNew ? "Start" : "Input", r.id ? (S.turns.length ? "Saved · " + plural(S.turns.filter(function(t){return !t.heading;}).length, "turn") : "Saved") : "", open);
+  var p = panel("stage-intake","1", isNew ? "What would you like to read?" : "Your input", r.id ? (S.turns.length ? "Saved · " + plural(S.turns.filter(function(t){return !t.heading;}).length, "turn") : "Saved") : "", open);
   var b = body(p);
   var ta = h("textarea",{id:"f-text",placeholder:"Paste a claim, quote, transcript, or link.",disabled:ro?"":null, style:"min-height:" + (isNew ? "160px" : "120px")});
   ta.value = S.b.transcript || "";
   var file = h("input",{id:"f-file",type:"file",accept:".txt,.md,.srt,.vtt,.json,text/plain"}); file.style.display = "none";
-  file.addEventListener("change", function(){ var f = file.files && file.files[0]; if (!f) return; f.text().then(function(t){ ta.value = (ta.value.trim() ? ta.value.trim() + "\n\n" : "") + t; updateStats(); }); });
+  async function loadFile(f){
+    if (!f) return;
+    if (!/\.(txt|md|srt|vtt|json)$/i.test(f.name || "")) { stats.textContent = "Use a transcript file (.txt, .srt, .vtt, or .md), or paste the text or a readable link."; return; }
+    if (go) go.disabled = true; stats.textContent = "Opening " + f.name + "…";
+    try { ta.value = await f.text(); updateStats(); }
+    catch(e) { stats.textContent = "Could not open the file. Paste the transcript instead."; }
+    finally { if(go) go.disabled = false; }
+  }
+  file.addEventListener("change", function(){ return loadFile(file.files && file.files[0]); });
   var stats = h("p",{class:"hint", id:"f-kind"});
-  b.append(h("div",{class:"field"}, ta));
+  var uploadZone = h("div",{class:"field upload-zone"}, ta); b.append(uploadZone);
+  uploadZone.addEventListener("dragover",function(e){ e.preventDefault(); });
+  uploadZone.addEventListener("drop",function(e){ e.preventDefault(); if(!ro) loadFile(e.dataTransfer && e.dataTransfer.files[0]); });
   var speakers = (r.speakers||[]).map(function(s){ return Object.assign({}, s); });
   var kindNow = null;
   function updateStats(){
     var k = describeKind(ta.value); kindNow = k.d;
-    stats.textContent = k.text; if (go) go.textContent = isNew ? k.go : "Save changes";
+    stats.textContent = k.text; if (go) go.textContent = k.go;
     syncSpeakers(k.d.kind === "transcript" ? k.d.labels : []);
   }
   var msg = h("div");
   var go = null;
   if (!ro){
     go = h("button",{class:"btn primary",type:"button",text:"Go",onclick:async function(){ await onGo(); }});
-    b.append(h("div",{class:"row"}, go, h("label",{class:"btn",for:"f-file",text:"Upload a file"}), file, stats), msg);
+    b.append(h("div",{class:"row"}, go, h("label",{class:"btn",for:"f-file",text:"Upload transcript"}), file, stats), msg);
   } else b.append(stats);
 
   // optional context
-  var ctx = h("details",{class:"ctx", open: (!isNew && (r.sourceUrl || r.sourceDate || (r.speakers||[]).some(function(s){ return s.bio; }))) ? "" : null}, h("summary",{text:"Add context · optional"}));
+  var ctx = h("details",{class:"ctx"}, h("summary",{text:"Add context · optional"}));
   var title = h("input",{id:"f-title",type:"text",value:r.title||"",placeholder:"Optional. Made from the text if left empty.",disabled:ro?"":null});
   var url = h("input",{id:"f-url",type:"url",value:r.sourceUrl||"",placeholder:"Optional. Where the words come from; shown at the end.",disabled:ro?"":null});
   var label = h("input",{id:"f-label",type:"text",value:r.sourceLabel||"",placeholder:"Optional. e.g. The Joe Rogan Experience #2308",disabled:ro?"":null});
@@ -394,56 +410,23 @@ function renderIntake(){
     if (!go || blockWhileBusy()) return; S.busy = true; go.disabled = true; clear(msg);
     var text = ta.value, k = kindNow || describeKind(text).d;
     try {
-      if (k.kind === "empty"){ msg.append(h("div",{class:"note",text:"Nothing to work with yet. Paste a claim, a quote, a transcript, or a link."})); go.disabled = false; return; }
-      if (isNew && k.kind === "link"){
-        msg.append(h("div",{class:"note info",text:"Fetching " + k.url + "…"}));
-        var imp = null;
-        try { imp = await API.importUrl(k.url); } catch(e){ imp = {ok:false, reason: errCopy(e)}; }
-        clear(msg);
-        if (imp && imp.ok){
-          ta.value = imp.text; if (!url.value) url.value = imp.url || k.url; if (!label.value && imp.title) label.value = imp.title; S.pendingImport = {url: imp.url || k.url, title: imp.title || "", fetchedAt: imp.fetchedAt, chars: imp.chars, method: imp.method};
-          updateStats();
-          msg.append(h("div",{class:"note ok",text:"Read " + imp.chars.toLocaleString() + " characters" + (imp.title ? " from “" + imp.title + "”" : "") + ". Check the text, trim what is not the interview, then click " + (go.textContent || "Go") + ". Nothing was graded yet; only the page text was fetched."}));
-        } else {
-          msg.append(h("div",{class:"note",text:(imp && imp.reason) || "Could not read that link."}), h("p",{class:"hint",text:"The link is kept as the source if you add it under Add context. Paste the transcript, or upload a .txt, .srt or .vtt file."}));
-          if (!url.value) url.value = k.url;
-        }
-        go.disabled = false; return;
-      }
-      var doc = {title: title.value.trim(), sourceUrl: url.value.trim(), sourceLabel: label.value.trim(), sourceDate: date.value || "", speakers: speakers.filter(function(s){ return s.key; })};
+      if (k.kind === "empty") { msg.append(h("p",{class:"note",text:"Upload a transcript or paste something to read."})); return; }
+      msg.append(h("p",{class:"note info",text:k.kind === "link" ? "Opening the link and preparing your reading…" : "Saving and preparing your reading…"}));
+      var doc = {title:title.value.trim(), sourceUrl:url.value.trim(), sourceLabel:label.value.trim(), sourceDate:date.value||"", speakers:speakers.filter(function(s){return s.key;})};
       if (!doc.title) delete doc.title;
-      if (S.pendingImport) doc.import = S.pendingImport;
-      if (isNew){
-        if (k.kind === "claim") doc.kind = "claim";
-        var nb = await API.createRun(doc, text);
-        S.pendingImport = null; await refreshList();
-        S.runId = nb.run.id; UI.detailsOpen = {}; try { location.hash = "run-" + S.runId; localStorage.setItem("deflate-run", S.runId); } catch(e){}
-        await reload(nb);
-        if (k.kind === "transcript" && !nb.run.provenance.notApplicable){
-          if (S.ai){ S.abort = new AbortController(); await reload(await API.prepareSpeakers(nb.run.id, S.abort.signal)); }
-          else ensureAI(view, runSpeakerPreparation);
-        }
-        var m = view.querySelector("#stage-intake .body");
-        if (k.kind === "claim" && S.research && nb.passages[0] && nb.passages[0].analysis && nb.passages[0].analysis.claims[0]){
-          // one click: the claim is saved and searched at once; nothing is attached until a person decides
-          var c0 = nb.passages[0].analysis.claims[0], searched = null;
-          try { searched = await API.searchClaim(nb.run.id, "p001", c0.id, nb.passages[0].readingRev || 0); await reload(searched.bundle); } catch(e){ searched = null; }
-          var m0 = view.querySelector("#stage-intake .body");
-          if (m0) m0.append(h("div",{class:"note ok",text: searched ? "Saved as one claim and searched at once: " + plural((searched.candidates||[]).length, "candidate document") + " waiting for you to judge (open Details on the card). Nothing is attached until you decide. You can also explain and grade the claim with the model." : "Saved as one claim. The search could not run just now; search from Details on the card."}));
-        } else {
-          var m = view.querySelector("#stage-intake .body");
-          if (m) m.append(h("div",{class:"note ok",text: k.kind === "claim" ? "Saved as one claim. Its card is below: search for sources from Details, or explain and grade it with the model." : (nb.run.provenance && nb.run.provenance.notApplicable ? "Saved. " + nb.run.provenance.method + " Next: split into passages and deflate." : "Saved. Speaker preparation runs before the reading becomes available.")}));
-        }
-        var card = document.querySelector("#stage-deflate .card"); if (k.kind === "claim" && card && card.scrollIntoView) card.scrollIntoView({block:"start"});
+      var nb;
+      if (isNew || k.kind === "link") {
+        if (!isNew) { delete doc.title; doc.sourceDate=""; doc.speakers=[]; }
+        nb = await API.intake(text,doc);
+        S.runId = nb.run.id; UI.detailsOpen = {}; S.pendingImport = null;
+        try {location.hash="run-"+S.runId;localStorage.setItem("deflate-run",S.runId);}catch(e){}
       } else {
-        var changed = text !== S.b.transcript;
-        var nb2 = await API.saveRun(r.id, doc, text);
-        S.pendingImport = null; await refreshList(); await reload(nb2);
-        var m2 = view.querySelector("#stage-intake .body");
-        if (m2) m2.append(h("div",{class:"note ok",text: changed ? "Saved. " + (nb2.run.provenance && nb2.run.provenance.transcriptNote ? nb2.run.provenance.transcriptNote.replace(/^Transcript edited \S+ ?/, "Transcript edited ") + " " : "") + "Existing cards are marked stale and their quotes were re-checked against the new text." : "Saved."}));
+        await API.saveRun(r.id,doc,text);
+        nb = await API.readRun(r.id);
       }
-    } catch(e){ msg.replaceChildren(h("div",{class:"note err",text:"Could not save: " + errCopy(e)})); go.disabled = false; }
-    finally { S.busy = false; }
+      await refreshList(); await reload(nb);
+    } catch(e) { msg.replaceChildren(h("div",{class:"note err",text:errCopy(e)})); }
+    finally { S.busy = false; go.disabled = false; }
   }
   return p;
 }
@@ -605,27 +588,23 @@ async function runAudit(prog, msg, btn, stopBtn){
 /* ---- 3 Deflate ---- */
 var deflateListEl = null, cardsEl = null;
 function renderDeflate(){
-  var r = run(), pr = r.provenance || {}, ro = readOnly(), claimRun = isClaimRun();
-  var ok = attributionOk() && !ro;
-  var done = S.b.passages.filter(function(p){ return p.status === "done" && p.readingGate && p.readingGate.status === "ready"; }).length;
-  var stale = S.b.passages.filter(function(p){ return (p.stale||[]).length; }).length;
-  var p = panel("stage-deflate", claimRun ? "2" : "3", claimRun ? "The claim" : "Deflate", !r.id ? "" : (claimRun ? (done ? "Ready" : "") : (S.b.passages.length ? done + " of " + S.b.passages.length + " readings ready" + (stale ? " · " + stale + " stale" : "") + (attributionOk() ? "" : " · attribution unconfirmed") : (ok ? "Not segmented" : "Waiting on attribution"))), ok || done > 0);
-  var b = body(p);
-  if (!r.id || !S.turns.length){ b.append(h("p",{class:"hint",text:"Save some text first."})); return p; }
-  if (claimRun){ deflateListEl = null; if ((r.orphans||[]).length) b.append(renderOrphans(r)); cardsEl = h("div",{style:"display:grid;gap:18px"}); b.append(cardsEl); return p; }
-  if (ro) b.append(h("div",{class:"note info",text:"This example has unverified speaker changes. Copy and prepare it before reading."}));
-  else if (!attributionOk()) b.append(h("div",{class:"note info",text:"Speaker preparation must pass before reading. Use Prepare speakers automatically above; the correction record is optional."}));
-  var prog = h("div",{class:"progress",hidden:true}, h("div",{class:"track"},h("div",{class:"fill"})), h("span",{class:"hint"}));
-  var msg = h("div");
-  var stopBtn = h("button",{class:"btn",type:"button",text:"Stop",hidden:true,onclick:function(){ if (S.abort) S.abort.abort(); }});
-  if (!ro){
-    var segBtn = h("button",{class:"btn" + (S.b.passages.length ? "" : " primary"),type:"button",text: S.b.passages.length ? "Re-segment (archives current passages)" : "Split into passages",disabled:!ok?"":null,onclick:function(){ if (!ensureAI(b, function(){ segBtn.click(); })) return; runSegment(prog,msg,segBtn,stopBtn); }});
-    var runBtn = h("button",{class:"btn primary",type:"button",text:"Deflate selected",disabled:(!ok||!S.b.passages.length)?"":null,onclick:function(){ if (!ensureAI(b, function(){ runBtn.click(); })) return; runDeflate(prog,msg,runBtn,stopBtn,null); }});
-    b.append(h("div",{class:"row"}, segBtn, runBtn, stopBtn), prog, msg);
+  var r = run(), ro = readOnly(), claimRun = isClaimRun(), ok = attributionOk() && !ro;
+  var p = h("section",{class:"reading-section",id:"stage-deflate"});
+  var b = h("div",{class:"body"}); p.append(b);
+  cardsEl = h("div",{class:"reading-cards"}); b.append(cardsEl);
+  deflateListEl = null;
+  if (!claimRun && !ro) {
+    var more = h("details",{class:"manual-controls"},h("summary",{text:"Processing options"}));
+    var prog = h("div",{class:"progress",hidden:true},h("div",{class:"track"},h("div",{class:"fill"})),h("span",{class:"hint"}));
+    var msg = h("div");
+    var stop = h("button",{class:"btn",text:"Stop",hidden:true,onclick:function(){if(S.abort)S.abort.abort();}});
+    var segment = h("button",{class:"btn",text:"Reorganize passages",disabled:!ok?"":null,onclick:function(){if(ensureAI(more,function(){segment.click();}))runSegment(prog,msg,segment,stop);}});
+    var selected = h("button",{class:"btn",text:"Read selected passages again",disabled:!ok||!S.b.passages.length?"":null,onclick:function(){if(ensureAI(more,function(){selected.click();}))runDeflate(prog,msg,selected,stop,null);}});
+    more.append(h("div",{class:"row"},segment,selected,stop),prog,msg);
+    deflateListEl = h("div",{class:"plist"}); more.append(deflateListEl);
+    if((r.orphans||[]).length)more.append(renderOrphans(r));
+    b.append(more);
   }
-  deflateListEl = h("div",{class:"plist"}); b.append(deflateListEl);
-  if ((r.orphans||[]).length) b.append(renderOrphans(r));
-  cardsEl = h("div",{style:"display:grid;gap:18px"}); b.append(cardsEl);
   return p;
 }
 /* Records a re-segment parked on the run: sources, searches and rejections whose claims no longer exist. They are adopted
@@ -716,13 +695,6 @@ async function runDeflate(prog,msg,btn,stopBtn,single){
 /* A claim a person typed, explained and graded by the model. The wording and identity of the claim never change:
    the model's typing, basis, what-would-settle and query are written onto that one claim. The server keeps the
    previous (person-only) reading in history. */
-P.claim = function(run, text){
-  return "You are a deflation reader grading ONE claim exactly as a person typed it. Do not reword the claim. Say in plain language what it asserts, type it, say what would settle it, name the source types and a search query a reference librarian would use. Keep a neutral register. You cannot browse.\n\n" +
-  "Two reading levels for EVERY text you write: hs (a careful senior-high reader) and g5 (a ten-year-old; short concrete sentences).\n\n" +
-  "Claim types: fact (empirical, supported in general knowledge) | contested (empirical, evidence mixed or disputed) | unsupported (empirical, no support known to you) | interpretation | value | image | unscorable (say what would make it scorable).\n" +
-  "expectedSources: one or two of [academic_paper, survey_report, government_data, agency_report, news_coverage, book_or_edition, company_statement, transcript_or_recording, federal_court_filing, corporate_filing]. searchQuery: four to eight words.\n\n" +
-  "Reply with ONLY JSON of this exact shape:\n{\"deflated\":{\"hs\":\"what the claim asserts, in plain words, with every hedge the claim has\",\"g5\":\"\"},\"type\":\"fact|contested|unsupported|interpretation|value|image|unscorable\",\"basis\":{\"hs\":\"why this type\",\"g5\":\"\"},\"wouldSettle\":\"\",\"settle\":{\"hs\":\"what evidence would settle it\",\"g5\":\"\"},\"expectedSources\":[\"academic_paper\"],\"searchQuery\":\"\",\"judgments\":{\"evidence\":\"n/a\",\"inference\":\"valid|gap|unfalsifiable|n/a\"}}\n\nThe claim:\n" + text;
-};
 async function runClaimExplain(p){
   if (!S.ai || S.busy) return;
   var r = run(), readingRev = p.readingRev || 0, transcriptAt = r.transcriptUpdatedAt, attrSigAt = S.b.attrSig;
@@ -927,7 +899,7 @@ function passageCard(p){
         w.append(h("p",{class:"hint"}, h("a",{href:"#",onclick:function(e){ e.preventDefault(); openDetails(card, idx); },text:"Open Details to read, accept or reject candidates"}))); return w;
       });
     } else {
-      cchips.addChip("Not checked", "", function(){ var w = h("div",{}); w.append(L("No one has looked for sources for this claim. The model cannot search or browse; a search or an attached source only happens when a person asks for it." + (withdrawn.length ? " " + plural(withdrawn.length, "earlier source was", "earlier sources were") + " withdrawn." : ""), "Nobody has looked for proof yet. The computer cannot search the web. A person has to start it.")); var st0 = settleOf(c); if (st0) w.append(st0); w.append(h("p",{class:"hint"}, h("a",{href:"#",onclick:function(e){ e.preventDefault(); openDetails(card, idx); },text:"Open Details to search or attach a source"}))); return w; });
+      cchips.addChip("Not checked", "", function(){ var w = h("div",{}); w.append(L("No source search is on record yet. Automatic reading searches checkable claims after preparing the cards; you can also search or attach a source in Details." + (withdrawn.length ? " " + plural(withdrawn.length, "earlier source was", "earlier sources were") + " withdrawn." : ""), "We have not searched for this claim yet. The app searches after it prepares the reading. You can also search or add a link in Details.")); var st0 = settleOf(c); if (st0) w.append(st0); w.append(h("p",{class:"hint"}, h("a",{href:"#",onclick:function(e){ e.preventDefault(); openDetails(card, idx); },text:"Open Details to search or attach a source"}))); return w; });
     }
     row.append(body); claimsSec.append(row);
   });
@@ -1044,7 +1016,7 @@ function claimDetail(card, p, c, idx, ro){
 var patternsBody = null;
 function renderPatternsPanel(){
   var done = S.b.passages.filter(function(p){ return p.status === "done" && p.readingGate && p.readingGate.status === "ready"; }).length;
-  var p = panel("stage-patterns","4","Patterns across the run", S.b.summary ? ((S.b.summary.stale||[]).length ? "Done · stale" : "Done") : (done ? "Ready" : "Waiting on cards"), !!S.b.summary || done > 1);
+  var p = panel("stage-patterns","","What repeats across the interview", S.b.summary ? ((S.b.summary.stale||[]).length ? "Done · stale" : "Done") : (done ? "Ready" : "Waiting on cards"), !!S.b.summary || done > 1);
   patternsBody = body(p);
   return p;
 }
@@ -1070,7 +1042,7 @@ function renderPatterns(){
       } catch(e){ msg.replaceChildren(h("div",{class:"note err",text:errCopy(e)})); btn.disabled = false; }
       finally { S.busy = false; S.abort = null; }
     }});
-    patternsBody.append(h("div",{class:"row"}, btn, h("span",{class:"hint",text: done.length < 2 ? "Needs at least two prepared readings." + (leftOut.length ? " " + plural(leftOut.length, "held card") + " left out; re-run them first." : "") : "Reads every fresh card in full and looks for moves that recur, then lists what came through intact." + (leftOut.length ? " " + plural(leftOut.length, "held card") + " will be left out." : "")}), msg));
+    patternsBody.append(h("details",{class:"manual-controls"},h("summary",{text:"Refresh overview"}),h("div",{class:"row"}, btn, h("span",{class:"hint",text: done.length < 2 ? "Needs at least two prepared readings." + (leftOut.length ? " " + plural(leftOut.length, "held card") + " left out; re-run them first." : "") : "Reads every fresh card in full and looks for moves that recur, then lists what came through intact." + (leftOut.length ? " " + plural(leftOut.length, "held card") + " will be left out." : "")}), msg)));
   }
   if (!S.b.summary) return;
   if (S.b.summary.readingGate && S.b.summary.readingGate.status !== "ready") { patternsBody.append(h("div",{class:"note info",text:"Patterns are held until the readings they use have passed preparation."})); return; }

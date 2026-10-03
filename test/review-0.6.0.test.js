@@ -198,7 +198,7 @@ test("F6: an empty analysis cannot become a finished card, in either mode", asyn
 });
 
 test("F7: the patterns prompt carries the defense and tells the model to respect the revised judgment", () => {
-  const app = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+  const app = fs.readFileSync(path.join(__dirname, "..", "shared", "prompts.js"), "utf8");
   const src = app.slice(app.indexOf("P.patterns = function"), app.indexOf("P.transcribe"));
   assert.match(src, /In fairness to the speaker \(the strongest defense, from the quoted words\): " \+ \(a\.defense && a\.defense\.hs/);
   assert.match(src, /respect the revised judgment/); assert.match(src, /Where it jumps \(the critique\)/); assert.match(src, /the revised judgment; jump survives/);

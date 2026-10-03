@@ -21,10 +21,10 @@
 
 <div class="layout">
   <aside class="rail">
-    <div class="row"><span class="eyebrow">Runs</span><span class="spacer"></span><button class="btn" id="newRun" type="button">New run</button></div>
+    <div class="row"><span class="eyebrow">Readings</span><span class="spacer"></span><button class="btn" id="newRun" type="button">New reading</button></div>
     <ul class="runs" id="runList"><li class="hint" style="padding:6px 10px">Loading runs from the data folder…</li></ul>
     <div id="trash" hidden></div>
-    <p class="hint" style="padding:0 6px">A run is one transcript taken through five stages. Everything written at a stage is kept on disk in the data folder, with who confirmed what. Nothing is deleted by the app: earlier readings go to history, replaced passages to an archive, deleted runs to the trash.</p>
+    <p class="hint" style="padding:0 6px">Upload or paste, then press Read this. Preparation happens automatically. Your input, readings, and sources stay saved on this computer.</p>
   </aside>
 
   <main>
@@ -32,9 +32,9 @@
       <section class="panel" id="welcome">
         <div class="empty">
           <p class="eyebrow">How it works</p>
-          <h2>Paste what you have. Take the costume off the argument, then grade what is left.</h2>
-          <p>A claim, a quote, a whole transcript, or a link: paste it and go. A claim gets a search query and can be checked against the academic databases at once. A transcript is split into passages; each one is rewritten in plain words at two reading levels, with the single step where the argument jumps, the fairest defense of the speaker, what is left after it, and every claim graded on its own. Who said what is checked first when more than one person speaks. The speaker is never graded.</p>
-          <p class="hint">Pick a run on the left, or click New run. Paste a claim to search sources without a key. Preparation and analysis ask for your Anthropic API key once and keep it on this computer. Saved work stays in the data folder.</p>
+          <h2>Upload or paste. Then read.</h2>
+          <p>Upload a transcript, paste text, or give it a readable link. Press Read this. The app checks the speakers, prepares plain-language readings, reviews them before display, and finds possible sources.</p>
+          <p class="hint">High school or Fifth grade: choose at the top of the page or any card. Explanations, original quotes, and source links are there when you want them.</p>
         </div>
       </section>
       <div id="runView" hidden></div>
@@ -43,6 +43,7 @@
 </div>
 
 <script src="/shared/transcript.js"></script>
+<script src="/shared/prompts.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

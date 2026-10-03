@@ -1,6 +1,21 @@
 "use strict";
 const crypto = require("node:crypto");
 const shared = require("../shared/transcript");
+const V = require("./validate");
+
+function summaryHash(summary) {
+  const s = V.validateSummary(summary);
+  return crypto.createHash("sha256").update(JSON.stringify({ patterns: s.patterns, survived: s.survived })).digest("hex");
+}
+function summaryIssues(summary, passages) {
+  const s = V.validateSummary(summary), ids = new Set(passages.map(p => p.id)), issues = [];
+  if (!s.survived.hs || !s.survived.g5) issues.push("The overview needs both reading levels.");
+  for (const p of s.patterns) {
+    if (!p.title.hs || !p.title.g5 || !p.body.hs || !p.body.g5) issues.push("Every pattern needs both reading levels.");
+    if (new Set(p.passages).size < 2 || p.passages.some(x => !ids.has(x))) issues.push("A recurring pattern must cite at least two prepared cards.");
+  }
+  return [...new Set(issues)];
+}
 
 function analysisHash(analysis) {
   const a = shared.sanitizeAnalysis(analysis);
@@ -84,4 +99,4 @@ function readingGate(b, p) {
   if (!review || !review.approved || review.analysisHash !== analysisHash(p.analysis)) reasons.push("This reading has not passed the preparation review.");
   return { status: reasons.length ? "held" : "ready", reasons: [...new Set(reasons)], method: "Quotes, reading levels and a separate model review checked before display; empirical sources remain separate." };
 }
-module.exports = { analysisHash, attributionGate, contentIssues, repairQuotes, readingGate };
+module.exports = { analysisHash, summaryHash, summaryIssues, attributionGate, contentIssues, repairQuotes, readingGate };

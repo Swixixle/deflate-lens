@@ -22,12 +22,12 @@ const { verify } = require("../scripts/verify-export");
 
 const sha = s => crypto.createHash("sha256").update(s, "utf8").digest("hex");
 async function start(dataDir, extra) {
-  const { app, ready, store } = createApp(Object.assign({ dataDir, ai: createMockAI(), research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }) }, extra || {}));
+  const { app, ready, store, reader } = createApp(Object.assign({ dataDir, ai: createMockAI(), research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }) }, extra || {}));
   await ready;
   const server = await new Promise(res => { const s = app.listen(0, "127.0.0.1", () => res(s)); });
   const base = "http://127.0.0.1:" + server.address().port;
   const api = async (method, p, body) => { const r = await fetch(base + p, { method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined }); const text = await r.text(); let data = null; try { data = JSON.parse(text); } catch (e) { data = text; } return { status: r.status, data, text }; };
-  return { server, base, api, store, close: () => new Promise(r => server.close(r)) };
+  return { server, base, api, store, reader, close: () => new Promise(r => server.close(r)) };
 }
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "deflate-reuse-"));
 const T1 = "A: Growth was 1.5% last year.\nB: Growth was 1-5% last year.\nA: The treatment helps.";
@@ -239,10 +239,17 @@ test("provenance: every model call is recorded by the server; a reading names it
     // a bogus callId is recorded as unrecorded, not invented
     b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", reading(["Growth is 1.5%."], "t2", { callId: "call_nope" }))).data;
     assert.equal(b.passages[0].provenance.recorded, false); assert.match(b.passages[0].provenance.note, /no call with this id/); assert.equal(b.passages[0].history[0].provenance.requestId, r.provenance.requestId, "the earlier reading's record went to history with it");
-    // the summary too
-    const r2 = (await s.api("POST", "/api/sample", { prompt: "Below are the results of deflating", json: true, runId: id, purpose: "patterns" })).data;
-    b = (await s.api("PUT", "/api/runs/" + id + "/summary", { patterns: [], survived: { hs: "s", g5: "s" }, callId: r2.provenance.callId, provenance: { forged: true }, basedOn: { passagesSig: "" } })).data;
-    assert.equal(b.summary.provenance.callId, r2.provenance.callId); assert.equal(b.summary.provenance.forged, undefined);
+    // The summary too: the new gate first requires actual prepared cards and a bound input.
+    const blocked = await s.api("POST", "/api/sample", {prompt:"Below are the results of deflating",json:true,runId:id,purpose:"patterns"});
+    assert.equal(blocked.status,409,"an unprepared summary must not bypass the display gate");
+    const auto = (await s.api("POST","/api/intake",{input:Array.from({length:18},(_,i)=>(i%2?"B":"A")+": This passage has enough words for the speaker to make an argument "+i+".").join("\n")})).data;
+    const job=s.reader.jobs.get(auto.run.id); if(job)await job.done;
+    const prepared=await s.store.bundle(auto.run.id);
+    const r2=(await s.api("POST","/api/sample",{prompt:"Below are the results of deflating",json:true,runId:auto.run.id,purpose:"patterns",basedOn:{transcriptUpdatedAt:prepared.run.transcriptUpdatedAt,attrSig:prepared.attrSig,preparedOnly:true,passagesSig:prepared.passages.map(p=>p.id+"@"+(p.analyzedAt||"")).join(",")}})).data;
+    assert.ok(r2.provenance.review.approved);
+    b=(await s.api("PUT","/api/runs/"+auto.run.id+"/summary",{patterns:[],survived:{hs:"s",g5:"s"},callId:r2.provenance.callId,provenance:{forged:true},basedOn:{passagesSig:""}})).data;
+    assert.equal(b.summary.provenance.callId,r2.provenance.callId);assert.equal(b.summary.provenance.forged,undefined);
+    assert.equal(b.summary.readingGate.status,"held","changing an approved overview cannot keep its approval");
     // a call for no run goes to the data root; the export carries the passage record
     const r3 = (await s.api("POST", "/api/sample", { prompt: "Transcribe all text", purpose: "transcribe" })).data; assert.ok(r3.provenance.callId);
     assert.ok(fs.existsSync(path.join(dataDir, "calls.jsonl")));

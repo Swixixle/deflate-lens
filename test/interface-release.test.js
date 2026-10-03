@@ -64,7 +64,7 @@ test("the page saves a typed claim even when the model unexpectedly returns extr
   const errors = [];
   let saved;
   const context = {
-    P: {}, S: { ai: { model: "test" }, b: bundle, busy: false }, UI: { detailsOpen: {} },
+    P: require("../shared/prompts"), S: { ai: { model: "test" }, b: bundle, busy: false }, UI: { detailsOpen: {} },
     AbortController, run: () => bundle.run, nowISO: () => new Date().toISOString(),
     analyzedByLabel: () => "test model", errCopy: e => e.message, alert: e => errors.push(e),
     sanitizeAnalysis: a => shared.sanitizeAnalysis(a), reload: async b => { saved = b; },
@@ -79,7 +79,7 @@ test("the page saves a typed claim even when the model unexpectedly returns extr
     },
   };
   const source = fs.readFileSync(path.join(__dirname, "../public/app.js"), "utf8");
-  vm.runInNewContext(source.slice(source.indexOf("P.claim ="), source.indexOf("function sanitizeAnalysis(o, p)")), context);
+  vm.runInNewContext(source.slice(source.indexOf("async function runClaimExplain("), source.indexOf("function sanitizeAnalysis(o, p)")), context);
   assert.ok(!context.P.claim(bundle.run, bundle.transcript).includes('"hidden"'));
   await context.runClaimExplain(bundle.passages[0]);
   assert.deepEqual(errors, []);

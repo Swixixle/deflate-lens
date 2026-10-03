@@ -292,7 +292,9 @@ class Store {
     if (summary) {
       const used = new Set(String(summary.basedOn.passagesSig || "").split(",").map(x => x.split("@")[0]));
       const counted = passages.filter(p => used.has(p.id));
-      summary.readingGate = { status: b.attributionGate.status !== "ready" || summary.stale.length || counted.length < 2 || counted.some(p => p.readingGate.status !== "ready") ? "held" : "ready" };
+      const review = summary.provenance && summary.provenance.review;
+      summary.readingGate = { status: b.attributionGate.status !== "ready" || summary.stale.length || counted.length < 2 || counted.some(p => p.readingGate.status !== "ready") ||
+        Q.summaryIssues(summary, counted).length || !review || !review.approved || review.summaryHash !== Q.summaryHash(summary) ? "held" : "ready" };
     }
     return b;
   }
@@ -306,6 +308,50 @@ class Store {
     run.updatedAt = nowISO(); delete run.id;
     await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
   }); }
+
+  // Intake and processing records are owned by the server. Generic page saves cannot set them.
+  async saveIntake(id, original, record) { return this.withLock(id, async () => {
+    const run = await this.getRun(id);
+    if (!run || run.example) throw Object.assign(new Error("This input cannot be saved."), { status: run ? 403 : 404 });
+    const name = newId("input") + ".txt";
+    await writeAtomic(path.join(this.runDir(id), "inputs", name), original);
+    run.intakeHistory = (run.intakeHistory || []).concat(run.intake ? [run.intake] : []);
+    run.intake = Object.assign({}, record, { file: name });
+    delete run.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
+  }); }
+
+  async repairIntake(id, text, doc, original, record, expectedHash) { return this.withLock(id, async () => {
+    const run = await this.getRun(id), current = await this.getTranscript(id);
+    if (!run || run.example) throw Object.assign(new Error("This input cannot be edited."), { status: run ? 403 : 404 });
+    if (sha256(current) !== expectedHash) throw Object.assign(new Error("The input changed; try Read this again."), { status: 409, code: "input_changed" });
+    const name = newId("input") + ".txt";
+    await writeAtomic(path.join(this.runDir(id), "inputs", name), original);
+    run.intakeHistory = (run.intakeHistory || []).concat(run.intake ? [run.intake] : []);
+    run.intake = Object.assign({}, record, { file: name });
+    delete run.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
+    return this._saveRun(id, doc, text);
+  }); }
+
+  async saveProcessing(id, value, expectedJobId) { return this.withLock(id, async () => {
+    const run = await this.getRun(id);
+    if (!run || run.example) throw Object.assign(new Error("This reading cannot be started."), { status: run ? 403 : 404 });
+    if (expectedJobId && (!run.processing || run.processing.id !== expectedJobId)) throw Object.assign(new Error("A newer reading has started."), { status: 409, code: "job_changed" });
+    run.processing = Object.assign({}, run.processing || {}, value, { updatedAt: nowISO() });
+    run.updatedAt = nowISO(); delete run.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
+    return run.processing;
+  }); }
+
+  async checkWriteBasis(run, id, opts) {
+    if (!opts) return;
+    if (opts.expectedInputHash && sha256(await this.getTranscript(id)) !== opts.expectedInputHash ||
+        opts.expectedAttrSig && shared.attrSig(run.provenance && run.provenance.overrides) !== opts.expectedAttrSig)
+      throw Object.assign(new Error("The input changed during reading; use Read this on the current text."), { status: 409, code: "input_changed" });
+    if (opts.jobId && (!run.processing || run.processing.id !== opts.jobId || run.processing.status !== "running"))
+      throw Object.assign(new Error("This reading was stopped."), { status: 409, code: "cancelled" });
+  }
 
   /* A run from whatever the person has. kind "transcript" (default) or "claim" (one claim or quote; it becomes a
      single finished passage with one person-supplied claim, routed by heuristics, ready to search with no model).
@@ -402,6 +448,7 @@ class Store {
     const run = await this.getRun(id);
     if (!run) { const e = new Error("run not found"); e.status = 404; throw e; }
     if (run.example) { const e = new Error("the supplied example is read-only; copy it to edit"); e.status = 403; throw e; }
+    await this.checkWriteBasis(run, id, opts);
     const file = path.join(this.runDir(id), "passages", pid + ".json");
     const cur = await readJSON(file, null);
     if (cur) { ensureClaimIds(Object.assign(cur, { id: pid })); ensureReceiptIds(cur); }
@@ -607,11 +654,12 @@ class Store {
   }
 
   /* Re-segmenting replaces the passage set. The old set and summary move to archive/<stamp>/. */
-  async replacePassages(id, list) { return this.withLock(id, () => this._replacePassages(id, list)); }
-  async _replacePassages(id, list) {
+  async replacePassages(id, list, opts) { return this.withLock(id, () => this._replacePassages(id, list, opts)); }
+  async _replacePassages(id, list, opts) {
     const run = await this.getRun(id);
     if (!run) { const e = new Error("run not found"); e.status = 404; throw e; }
     if (run.example) { const e = new Error("the supplied example is read-only; copy it to edit"); e.status = 403; throw e; }
+    await this.checkWriteBasis(run, id, opts);
     if (run.kind === "claim") throw V.bad("a typed claim is one card; it cannot be re-segmented");
     const transcript = await this.getTranscript(id);
     const turns = this.parseFor(run, transcript);
@@ -653,11 +701,12 @@ class Store {
     return list.length;
   }
 
-  async saveSummary(id, doc) { return this.withLock(id, () => this._saveSummary(id, doc)); }
-  async _saveSummary(id, doc) {
+  async saveSummary(id, doc, opts) { return this.withLock(id, () => this._saveSummary(id, doc, opts)); }
+  async _saveSummary(id, doc, opts) {
     const run = await this.getRun(id);
     if (!run) { const e = new Error("run not found"); e.status = 404; throw e; }
     if (run.example) { const e = new Error("the supplied example is read-only; copy it to edit"); e.status = 403; throw e; }
+    await this.checkWriteBasis(run, id, opts);
     const d = V.validateSummary(doc);
     const known = new Set((await this.listPassages(id)).map(p => p.id));
     d.patterns.forEach(p => { p.passages = p.passages.filter(x => known.has(x)); });

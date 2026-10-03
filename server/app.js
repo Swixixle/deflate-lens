@@ -11,7 +11,10 @@ const { createSettings } = require("./settings");
 const { createAI } = require("./ai");
 const V = require("./validate");
 const Q = require("./quality");
-const { prepareSpeakers, reviewedReading } = require("./preparation");
+const { prepareSpeakers, reviewedReading, reviewedOverview } = require("./preparation");
+const { createClaimSearch } = require("./claim-search");
+const { createReader } = require("./reading");
+const { readInput } = require("./intake");
 
 /* createApp({ dataDir, ai, research, examplesDir, envPath }) -> { app, store, state, ready }
    state.ai is null when no key is configured; the page then shows the example and asks for a key once when real
@@ -20,7 +23,9 @@ function createApp(opts) {
   const store = new Store(opts.dataDir);
   const state = { ai: opts.ai || null };
   const research = opts.research || null;
+  const searchClaim = createClaimSearch(store, research);
   const importer = createImporter({ fetch: opts.fetch || globalThis.fetch });
+  const reader = createReader({ store, getAI: () => state.ai, searchClaim, research });
   const envPath = opts.envPath || path.join(__dirname, "..", ".env");
   const settings = createSettings({ envPath, examplePath: path.join(__dirname, "..", ".env.example") });
   const app = express();
@@ -34,6 +39,7 @@ function createApp(opts) {
       const folder = path.join(exDir, name);
       if (fs.existsSync(path.join(folder, "run.json"))) { try { await store.installExample(name, folder); } catch (e) { console.error("example install failed:", name, e.message); } }
     }
+    await reader.recover();
   })();
   app.use(async (req, res, next) => { try { await ready; next(); } catch (e) { next(e); } });
 
@@ -53,6 +59,22 @@ function createApp(opts) {
 
   /* Link importer: readable text or a plain reason it could not be read. Stores nothing. */
   app.post("/api/import", wrap(async (req, res) => { const out = await importer(req.body && req.body.url); res.json(out); }));
+
+  /* The normal page uses one action: save what was uploaded/pasted, then prepare the entire
+     reading in the background. No optional context or manual stage is required. */
+  app.post("/api/intake", wrap(async (req, res) => {
+    const input = await readInput(req.body && req.body.input, req.body && req.body.context, importer);
+    const id = await store.createRun(input.doc, input.text);
+    await store.saveIntake(id, input.original, input.intake);
+    res.status(202).json(await reader.start(id));
+  }));
+  app.post("/api/runs/:id/read", wrap(async (req, res) => { res.status(202).json(await reader.start(req.params.id)); }));
+  app.post("/api/runs/:id/stop", wrap(async (req, res) => { res.json(await reader.stop(req.params.id)); }));
+  app.get("/api/runs/:id/original-input.txt", wrap(async (req, res) => {
+    const run = await store.getRun(req.params.id);
+    if (!run || !run.intake || !/^input[A-Za-z0-9_-]+\.txt$/.test(run.intake.file || "")) return res.status(404).json({error:"No original upload is stored for this reading."});
+    res.type("text/plain"); res.sendFile(path.join(store.runDir(req.params.id), "inputs", run.intake.file));
+  }));
 
   app.get("/api/runs", wrap(async (req, res) => res.json(await store.listRuns())));
   app.post("/api/runs", wrap(async (req, res) => { const id = await store.createRun(req.body.run || {}, req.body.transcript || ""); res.json(await store.bundle(id)); }));
@@ -94,48 +116,16 @@ function createApp(opts) {
      A client may send expectedReadingRev (the reading it rendered); a mismatch is refused with 409 instead of being
      written over the newer reading. Nothing here writes a client snapshot back; see store.mutateClaim. */
   async function loadClaim(id, pid, cid) {
-    const b = await store.bundle(id); if (!b) { const e = new Error("run not found"); e.status = 404; throw e; }
-    const p = b.passages.find(x => x.id === pid); if (!p || !p.analysis) { const e = new Error("passage not found or not analysed"); e.status = 404; throw e; }
-    const i = (p.analysis.claims || []).findIndex(x => x.id === cid); const c = i === -1 ? null : p.analysis.claims[i];
-    if (!c) { const e = new Error("that claim is not in the current reading of this passage"); e.status = 404; e.code = "claim_not_current"; throw e; }
-    return { b, p, c, i };
-  }
-  function provisionalReasons(b, p) {
-    const out = (p.stale || []).slice();
-    const pr = b.run.provenance || {};
-    if (Q.attributionGate(b).status !== "ready") out.push("speaker preparation is unresolved");
-    if (p.readingGate && p.readingGate.status !== "ready") out.push("reading held before display");
-    return out;
+    const b = await store.bundle(id);
+    if (!b) throw Object.assign(new Error("run not found"), {status:404});
+    const p = b.passages.find(x => x.id === pid);
+    const c = p && p.analysis && p.analysis.claims.find(x => x.id === cid);
+    if (!c) throw Object.assign(new Error("that claim is not in the current reading of this passage"), {status:404,code:"claim_not_current"});
+    return {b,p,c};
   }
   const rev = req => (req.body && req.body.expectedReadingRev != null) ? Number(req.body.expectedReadingRev) : null;
-
-  app.post("/api/runs/:id/passages/:pid/claims/:cid/search", wrap(async (req, res) => {
-    if (!research) return res.status(503).json({ error: "research is not configured", code: "no_research" });
-    const { b, p, c, i } = await loadClaim(req.params.id, req.params.pid, req.params.cid);
-    if (b.run.example) return res.status(403).json({ error: "the supplied example is read-only; copy it to search" });
-    if (rev(req) != null && rev(req) !== (p.readingRev || 0)) return res.status(409).json({ error: "the card changed since you looked; reload and search again", code: "stale_reading" });
-    const readingRev = p.readingRev || 0, provisional = provisionalReasons(b, p);
-    const startedWith = { claimId: c.id, claimText: c.text, speaker: c.speaker || "", readingRev };
-    const out = await research.searchClaim({ run: b.run, passage: p, claim: c, idx: i, limit: 8 });   // no lock held while the services answer
-    const attempts = out.attempts.map(a => Object.assign({ runStartedAt: out.startedAt, readingRev, provisional: provisional.length ? provisional : undefined }, a));
-    // commit into the latest document; if the claim is gone from the current reading, park the result instead
-    let fresh = [], parked = null, late = false;
-    try {
-      await store.mutateClaim(req.params.id, req.params.pid, c.id, (claim, cur) => {
-        late = (cur.readingRev || 0) !== readingRev;
-        claim.obligation = out.obligation;
-        claim.searches = (claim.searches || []).concat(attempts.map(a => late ? Object.assign({ late: true, attachedReadingRev: cur.readingRev || 0 }, a) : a));
-        const keep = (claim.candidates || []).filter(x => x.status !== "candidate");
-        const decidedKeys = new Set(keep.map(x => x.doi ? "doi:" + x.doi : "id:" + x.id));
-        fresh = out.candidates.filter(x => !decidedKeys.has(x.doi ? "doi:" + x.doi : "id:" + x.id));
-        claim.candidates = keep.concat(fresh);
-        claim.lastSearchedAt = out.finishedAt;
-      });
-    } catch (e) {
-      if (e.code !== "claim_not_current") throw e;
-      parked = await store.parkRecords(req.params.id, { claimId: startedWith.claimId, claimText: startedWith.claimText, speaker: startedWith.speaker, from: { reading: readingRev, passage: req.params.pid, title: p.title || "", turnStart: p.turnStart, turnEnd: p.turnEnd }, searches: attempts.map(a => Object.assign({ late: true }, a)), candidates: out.candidates, obligation: out.obligation, why: "the reading changed while the search ran; the claim is no longer in it" });
-    }
-    res.json({ attempts, candidates: parked ? [] : fresh, obligation: out.obligation, provisional, late, parked: parked ? { id: parked.id, why: parked.why } : null, bundle: await store.bundle(req.params.id) });
+  app.post("/api/runs/:id/passages/:pid/claims/:cid/search", wrap(async (req,res) => {
+    res.json(await searchClaim(req.params.id, req.params.pid, req.params.cid, rev(req)));
   }));
 
   app.post("/api/runs/:id/passages/:pid/claims/:cid/candidates/:cand/accept", wrap(async (req, res) => {
@@ -254,6 +244,15 @@ function createApp(opts) {
       if (!basis || basis.origin === "unknown" || basis.inputHash !== b.run.input.sha256 || basis.attrSig !== b.attrSig) throw Object.assign(new Error("Reload the current input before preparing the reading."), { status: 409, code: "input_changed" });
       return res.json(await reviewedReading({ ai, store, b, p, purpose, prompt, signal: ctl.signal, basis }));
     }
+    if (runId && purpose === "patterns") {
+      const b = await store.bundle(runId);
+      if (!b) throw Object.assign(new Error("Reading not found."),{status:404});
+      if (b.run.example) throw Object.assign(new Error("Copy the example before reading it."),{status:403});
+      const basis = await store.captureCallBasis(runId,basedOn,purpose);
+      const ready = b.passages.filter(p=>p.readingGate.status==="ready");
+      if (!basis || basis.origin==="unknown" || Q.attributionGate(b).status!=="ready") throw Object.assign(new Error("Prepare the current reading first."),{status:409,code:"input_changed"});
+      return res.json(await reviewedOverview({ai,store,b,prompt:require("../shared/prompts").patterns(b.run,ready),basis,signal:ctl.signal}));
+    }
     const call = { callId: newId("call"), at: new Date().toISOString(), purpose: String(purpose || "").replace(/[^a-z0-9_]/gi, "").slice(0, 40), runId: typeof runId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(runId) ? runId : "", provider: ai.kind, modelRequested: ai.model, mock: !!ai.mock,
       promptHash: sha256(prompt), promptChars: prompt.length, images: imgs.map(im => ({ mediaType: String(im && im.mediaType || ""), sha256: crypto.createHash("sha256").update(String(im && im.data || ""), "base64").digest("hex") })), json: !!json };
     // Resolve the page's input version before the provider starts. The stored record, not a later browser save,
@@ -283,7 +282,7 @@ function createApp(opts) {
     res.status(status).json(Object.assign({ error: err.message || "server error" }, err.code ? { code: err.code } : {}));
   });
 
-  return { app, store, state, get ai() { return state.ai; }, ready };
+  return { app, store, state, reader, get ai() { return state.ai; }, ready };
 }
 
 function safeName(s) { return String(s || "run").replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 60) || "run"; }
