@@ -1,6 +1,6 @@
 {
   "name": "deflate-lens",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "private": true,
   "description": "Local web app: rewrite an interview as plain claims, name the jump, defend the speaker, grade every claim.",
   "main": "server/index.js",
@@ -18,7 +18,8 @@
     "launch": "node scripts/launch.js",
     "open": "node scripts/launch.js",
     "update": "bash scripts/update.sh",
-    "transcript-smoke": "node scripts/transcript-smoke.js"
+    "transcript-smoke": "node scripts/transcript-smoke.js",
+    "screenshots": "node scripts/screenshots.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

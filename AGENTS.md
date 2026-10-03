@@ -71,11 +71,13 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 
 ## Checks you can run
 
-- `npm test` — 149 regression tests, no external network or key; uses local HTTP servers.
+- `npm test` — 153 regression tests, no external network or key; uses local HTTP servers.
 - `npm run doctor` — prints what is configured without printing secrets.
 - `npm run transcript-smoke` — hits Apple's catalogue, two podcast feeds and YouTube for the transcript chain (needs network; `-- --local` also transcribes a five-minute episode with the local engine).
 - `npm run research-smoke` — hits the live Crossref and PubMed services for two example claims (needs network).
-- `node scripts/ui-check.js` — optional headless-browser check; needs `npm install --no-save playwright && npx playwright install chromium` first.
+- `node scripts/ui-check.js` — optional headless-browser check; `npm run screenshots` regenerates the README pictures. Both need `npm install --no-save playwright && npx playwright install chromium` first.
+
+`docs/technical.md` has the details behind all of this: how readings are checked, every record kept, and what was and was not verified.
 
 ## What not to do
 
