@@ -246,3 +246,7 @@ details.ctx > *:not(summary){margin-top:10px}
 .keybox input[type=password]{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
 .pill.claim{background:var(--accent);color:var(--accent-ink)}
 .rc select[multiple]{min-width:180px;font-size:11.5px}
+
+/* Reading choices belong at the start of every card, outside its optional record. */
+.card-level{justify-content:flex-end;flex-wrap:wrap;margin:10px 0}
+.more pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:420px;overflow:auto;font-size:12px}

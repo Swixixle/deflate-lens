@@ -56,7 +56,7 @@ function openBrowser(url) {
   while (Date.now() - t0 < 20000) { if (exited) break; h = await health(port); if (h && !h.foreign) break; h = null; await new Promise(r => setTimeout(r, 300)); }
   if (!h) { console.error("\n  The server did not answer within 20 seconds" + (exited ? " (it exited with code " + exited.code + ")" : "") + ". See the lines above for the reason; the usual ones are a missing dependency (run  npm run setup ) or a bad .env line."); if (!exited) child.kill("SIGINT"); process.exit(1); }
   const url = urlFor(port);
-  console.log("\n  Ready and answering at " + url + "  (version " + h.version + ", model " + (h.ai ? h.ai.model + (h.ai.mock ? " MOCK" : "") : "none: example only until a key is added") + ")");
+  console.log("\n  Ready and answering at " + url + "  (version " + h.version + ", model " + (h.ai ? h.ai.model + (h.ai.mock ? " MOCK" : "") : "none: source search ready; analysis asks for a key") + ")");
   if (openBrowser(url)) console.log("  Opened it in your browser. If no window appeared, open that address yourself."); else console.log("  Open that address in your browser.");
   if (detach) { console.log("  Left running (--check), server pid " + child.pid + "."); child.unref(); process.exit(0); }
   console.log("  Stop with Ctrl+C.\n");

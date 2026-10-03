@@ -1,6 +1,6 @@
 {
   "name": "deflate-lens",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "private": true,
   "description": "Local web app: rewrite an interview as plain claims, name the jump, defend the speaker, grade every claim.",
   "main": "server/index.js",

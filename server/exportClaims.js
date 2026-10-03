@@ -7,6 +7,7 @@
    meanings are in `relationMeaning`. The export carries the SHA-256 of the transcript it was made from and, on every
    passage, the hash of the text that reading was made from, so `scripts/verify-export.js` can check an export against a
    transcript file. */
+const Q = require("./quality");
 const { RELATION_MEANING } = require("./research/types");
 
 const STATUS_MEANING = {
@@ -23,7 +24,7 @@ function speakerName(key, run) {
 }
 function activeReceipts(c) { return (c.receipts || []).filter(x => !x.withdrawnAt); }
 /* Why a claim's research should be read as provisional: its card is stale, or attribution is needed and unconfirmed. */
-function provisionalFor(b, p) { const out = (p.stale || []).slice(); const pr = b.run.provenance || {}; if (!pr.notApplicable && !pr.confirmedAt) out.push("attribution not confirmed by a person"); return out; }
+function provisionalFor(b, p) { const out = (p.stale || []).slice(); const pr = b.run.provenance || {}; if (Q.attributionGate(b).status !== "ready") out.push("speaker preparation is unresolved"); if (p.readingGate && p.readingGate.status !== "ready") out.push("reading held before display"); return out; }
 function claimStatus(c) { return activeReceipts(c).length ? "receipt" : (c.searches && c.searches.length ? "searched" : "unchecked"); }
 
 function buildExport(b) {
@@ -35,7 +36,7 @@ function buildExport(b) {
     plain: c.plain || null, settle: c.settle || null,
     status: claimStatus(c), wouldSettle: c.wouldSettle || "", turns: [p.turnStart, p.turnEnd], provisional: provisionalFor(b, p),
     expectedSources: c.expectedSources || [], searchQuery: c.searchQuery || "", obligationId: c.obligation && c.obligation.id || "",
-    stale: p.stale || [],
+    stale: p.stale || [], readingGate: p.readingGate || null,
     relations: relationCounts(activeReceipts(c)),
     receipts: (c.receipts || []).map(x => ({ rid: x.rid || "", kind: x.kind || "link", url: x.url, note: x.note || "", addedBy: x.addedBy || "", at: x.at || "", title: x.title || "", doi: x.doi || "", pmid: x.pmid || "", journal: x.journal || "", outlet: x.outlet || "", sourceType: x.sourceType || "", publishedAt: x.publishedAt || "", retrievedAt: x.retrievedAt || "", foundBy: x.foundBy || [], notices: x.notices || [],
       relation: x.relation || "unstated", relationBy: x.relationBy || "", relationAt: x.relationAt || "", relationHistory: x.relationHistory || [],
@@ -52,21 +53,23 @@ function buildExport(b) {
     relationMeaning: RELATION_MEANING,
     verify: "run `node scripts/verify-export.js <this file> <transcript.txt>` to check that run.transcript.sha256 is the SHA-256 of that file's text and which passages were read from exactly that text",
     run: {
-      id: r.id, title: r.title, kind: r.kind || "transcript", parseMode: r.parseMode || "transcript", example: !!r.example, copiedFrom: r.copiedFrom || "", import: r.import || null,
+      id: r.id, title: r.title, kind: r.kind || "transcript", parseMode: r.parseMode || "transcript", example: !!r.example, copiedFrom: r.copiedFrom || "", import: r.import || null, attributionGate: b.attributionGate || Q.attributionGate(b),
       source: { url: r.sourceUrl || "", label: r.sourceLabel || "", date: r.sourceDate || "" },
       transcript: { updatedAt: r.transcriptUpdatedAt || "", characters: (b.transcript || "").length, sha256: r.input && r.input.sha256 || "", bytes: r.input && r.input.bytes || null, parseMode: r.input && r.input.parseMode || r.parseMode || "transcript", earlierVersions: (r.inputHistory || []).map(x => ({ sha256: x.sha256, chars: x.chars, transcriptUpdatedAt: x.transcriptUpdatedAt, replacedAt: x.replacedAt })) },
       provenance: { confirmedAt: pr.confirmedAt || "", confirmedBy: pr.confirmedBy || "", notApplicable: !!pr.notApplicable, method: pr.method || "", attrSig: b.attrSig, transcriptNote: pr.transcriptNote || "",
+        preparation: r.preparation || null,
         corrected: Object.keys(pr.overrides || {}).map(i => ({ turn: Number(i), speaker: pr.overrides[i] })), flagged: (pr.flags || []).map(f => f.turn), earlierDecisions: (r.provenanceHistory || []).length },
       speakers: (r.speakers || []).map(s => ({ key: s.key, name: s.name || s.key })),
       orphans: (r.orphans || []).map(o => ({ id: o.id, claimText: o.claimText, from: o.from, receipts: (o.receipts || []).length, searches: (o.searches || []).length, rejections: (o.rejections || []).length, parkedAt: o.parkedAt })),
     },
     passages: done.map(p => ({ id: p.id, title: p.title, turnStart: p.turnStart, turnEnd: p.turnEnd, speakers: p.speakers || [], analyzedAt: p.analyzedAt || "", analyzedBy: p.analyzedBy || "", model: p.model || "", stale: p.stale || [], rev: p.rev || 0, readingRev: p.readingRev || 0, earlierReadings: (p.history || []).length,
       basedOn: { inputHash: p.basedOn && p.basedOn.inputHash || "", attrSig: p.basedOn && p.basedOn.attrSig || "", transcriptUpdatedAt: p.basedOn && p.basedOn.transcriptUpdatedAt || "" },
-      provenance: p.provenance || null,
+      provenance: p.provenance || null, readingGate: p.readingGate || null,
       quoteCheck: p.quoteCheck || null,
       quotes: (p.analysis.asSaid || []).map(q => ({ turn: q.turn, matchedTurn: q.matchedTurn == null ? null : q.matchedTurn, relocated: !!q.relocated, speakerClaimed: q.speaker, speakerNow: q.speakerNow || "", speakerMismatch: !!q.speakerMismatch, quote: q.quote, verbatim: !!q.verbatim, turnOk: q.turnOk !== false, foundIn: q.foundIn || [] })),
       judgments: p.analysis.judgments, fidelity: p.analysis.fidelity.grade, jump: { present: p.analysis.jump.present, pivot: p.analysis.jump.pivot || "", pivotVerbatim: p.analysis.jump.pivotVerbatim, survives: p.analysis.revision.jumpSurvives || "" } })),
     patterns: (b.summary && b.summary.patterns || []).map(x => ({ title: x.title.hs, passages: x.passages })),
+    patternsGate: b.summary && b.summary.readingGate || null,
     claims,
   };
 }
@@ -82,7 +85,7 @@ function buildMarkdown(b, level) {
   if (r.example) out.push("_Supplied example. Analysis written in chat by Claude, corrected after a second-reader review; attribution not confirmed by a person._\n");
   out.push("_Quotes are exact words from the transcript, checked word for word. A source attached to a claim records a person's judgment that it is relevant, and the relation shown in brackets ([supports], [contradicts], [mentions]) is what that person said the document does; neither makes the claim verified._" + (r.input && r.input.sha256 ? " _Transcript sha256: " + r.input.sha256 + "._" : "") + "\n");
   b.passages.forEach(p => {
-    if (p.status !== "done" || !p.analysis) return; const a = p.analysis, qc = p.quoteCheck;
+    if (p.status !== "done" || !p.analysis) return; if (p.readingGate && p.readingGate.status !== "ready") { out.push("## " + p.title + "\n\nReading held: preparation has not passed.\n"); return; } const a = p.analysis, qc = p.quoteCheck;
     out.push("## " + p.title + " (turns " + p.turnStart + "–" + p.turnEnd + ")" + ((p.stale || []).length ? " — STALE: " + p.stale.join("; ") : "") + "\n");
     out.push("**In plain words.** " + T(a.deflated) + "\n");
     out.push((a.jump.present ? "**Where it jumps.** " : "**No jump.** ") + T({ hs: a.jump.hs, g5: a.jump.g5 }) + (a.jump.pivot ? " Pivot: “" + a.jump.pivot + "”" + (a.jump.pivotVerbatim === false ? " (not found word for word)" : "") : "") + "\n");
@@ -95,7 +98,7 @@ function buildMarkdown(b, level) {
     out.push("\n_Rewrite checked: " + (a.fidelity.grade || "unrated") + " — " + T(a.fidelity.notes) + "_");
     out.push("_Evidence: " + a.judgments.evidence + " · Inference: " + a.judgments.inference + (qc ? " · Quotes matched: " + qc.matched + "/" + qc.quotes : "") + (p.analyzedBy ? " · by " + p.analyzedBy : "") + (p.provenance && p.provenance.recorded ? " · model call " + (p.provenance.requestId || p.provenance.callId) + (p.provenance.modelReturned ? " (" + p.provenance.modelReturned + ")" : "") : "") + (p.basedOn && p.basedOn.inputHash ? " · read from text sha256:" + p.basedOn.inputHash.slice(0, 12) + "…" : "") + "_\n");
   });
-  if (b.summary) { out.push("## Patterns\n"); (b.summary.patterns || []).forEach((x, i) => out.push((i + 1) + ". **" + T(x.title) + "** " + T(x.body))); out.push("\n## What survived\n" + T(b.summary.survived) + "\n"); }
+  if (b.summary && (!b.summary.readingGate || b.summary.readingGate.status === "ready")) { out.push("## Patterns\n"); (b.summary.patterns || []).forEach((x, i) => out.push((i + 1) + ". **" + T(x.title) + "** " + T(x.body))); out.push("\n## What survived\n" + T(b.summary.survived) + "\n"); }
   return out.join("\n");
 }
 

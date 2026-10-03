@@ -10,7 +10,7 @@ if (!fs.existsSync(envPath)) console.log(".env missing: run  npm run setup  (the
 else {
   require("dotenv").config({ path: envPath });
   if (process.env.DEFLATE_MOCK_AI === "1") console.log(".env: DEFLATE_MOCK_AI=1, so analyses will be MOCK placeholders");
-  else if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(process.env.ANTHROPIC_API_KEY || "")) console.log(".env: no model key yet; the example works, and the page asks for the key once when real analysis is requested");
+  else if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(process.env.ANTHROPIC_API_KEY || "")) console.log(".env: no model key yet; source search works, and the page asks for the key once when preparation or analysis is requested");
   else console.log(".env: API key present  ok");
   console.log("Model: " + (process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5 (default)"));
   if (process.env.DEFLATE_MOCK_RESEARCH === "1") console.log("Research: DEFLATE_MOCK_RESEARCH=1, so Search sources returns MOCK candidates");

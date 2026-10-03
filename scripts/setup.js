@@ -64,5 +64,5 @@ if (args.has("--test")) {
 
 console.log("\n  Ready. Start it with:  npm run launch     (starts the server, waits until it answers, opens the page)");
 console.log("  Or without a browser:  npm start          Stop with Ctrl+C.");
-if (!hasKey && !mock) console.log("  The supplied example works without a key. Real analysis asks for your Anthropic API key once, in the page.");
+if (!hasKey && !mock) console.log("  Source search works without a key. Real analysis and preparation ask for your Anthropic API key once, in the page.");
 console.log("");

@@ -9,6 +9,14 @@ Vocabulary, so no consumer mistakes a record for a verdict: a claim's `status` i
 `searched` (a search ran; candidates may be waiting), or `receipt` (a person attached at least one document, not
 withdrawn, that they judged relevant). None of these means verified. The export repeats this in `statusMeaning`.
 
+## Preparation before display
+
+The server computes `attributionGate` for the run and `readingGate` for each card on every read. Generated readings need current input, resolved attribution, matching quotes, both reading levels and a recorded approved review whose `analysisHash` matches the reading. A person's untouched typed claim is searchable without this model review. Editing a reviewed reading cannot keep the old approval.
+
+`run.preparation` stores automatic speaker decisions, supporting quotations, corrections, unresolved turns and both call ids. A disputed short reply stays unresolved even when both model passes guess the same speaker. `passage.provenance.review` stores the review call id, issues, automatic quote corrections, attempt count and content hash; this is copied only from the server's own call record. No person confirmation is invented.
+
+The reading page and Markdown withhold held card bodies. JSON preserves their records for inspection, carrying `run.attributionGate`, `passages[].readingGate`, `claims[].readingGate`, `patternsGate` and provisional reasons; consumers must honor those statuses. A passed preparation check is a text review, not proof of who spoke or of factual truth.
+
 ## Revisions and addressing
 
 Every passage carries `rev` (moves on every write) and `readingRev` (moves only when the analysis changes: a re-run,

@@ -304,6 +304,6 @@ test("quotes: the server checks every quote on every read against the transcript
     assert.equal(b.run.provenanceHistory.length, 1); assert.equal(b.run.provenanceHistory[0].keptInPlace, true);
     // markdown at the fifth-grade level
     const md = await s.api("GET", "/api/runs/" + id + "/export.md?level=g5");
-    assert.match(String(md.data), /fifth-grade reading level/); assert.match(String(md.data), /not found word for word/);
+    assert.match(String(md.data), /fifth-grade reading level/); assert.match(String(md.data), /Reading held/); assert.doesNotMatch(String(md.data), /— not found word for word/);
   } finally { await s.close(); fs.rmSync(dataDir, { recursive: true, force: true }); }
 });

@@ -142,13 +142,13 @@ test("F4: patterns and obligations reflect stale attribution; research on a stal
     b = (await s.api("PUT", "/api/runs/" + id + "/summary", { patterns: [{ title: "t", body: "b", passages: ["p001"] }], survived: "s", basedOn: { passagesSig: "p001@t1", transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig } })).data;
     assert.deepEqual(b.summary.stale, []); assert.ok(b.summary.basedOn.attrSig, "the summary records the attribution it was based on");
     let ob = (await s.api("GET", "/api/runs/" + id + "/obligations.json")).data;
-    assert.equal(ob.obligations[0].provisional, false); assert.deepEqual(ob.obligations[0].stale, []); assert.ok(ob.obligations[0].claim_id); assert.equal(ob.obligations[0].reading_rev, 1);
+    assert.equal(ob.obligations[0].provisional, true); assert.ok(ob.obligations[0].provisional_reasons.includes("reading held before display"), "the manually supplied legacy reading has not passed preparation"); assert.deepEqual(ob.obligations[0].stale, []); assert.ok(ob.obligations[0].claim_id); assert.equal(ob.obligations[0].reading_rev, 1);
     // attribution changes: confirmation clears, the card is stale, and so is the summary
     b = (await s.api("PUT", "/api/runs/" + id, { run: { provenance: { overrides: { "1": "A" }, flags: [] } } })).data;
     assert.ok(b.passages[0].stale.includes("attribution changed since this analysis"));
     assert.ok(b.summary.stale.includes("attribution changed since the patterns were found")); assert.ok(b.summary.stale.includes("a card it was based on is stale"));
     ob = (await s.api("GET", "/api/runs/" + id + "/obligations.json")).data;
-    assert.equal(ob.obligations[0].provisional, true); assert.ok(ob.obligations[0].provisional_reasons.includes("attribution changed since this analysis")); assert.ok(ob.obligations[0].provisional_reasons.includes("attribution not confirmed by a person")); assert.equal(ob.run.attributionConfirmed, false);
+    assert.equal(ob.obligations[0].provisional, true); assert.ok(ob.obligations[0].provisional_reasons.includes("attribution changed since this analysis")); assert.ok(ob.obligations[0].provisional_reasons.includes("speaker preparation is unresolved")); assert.equal(ob.run.attributionConfirmed, false);
     const cid = b.passages[0].analysis.claims[0].id;
     const sr = (await s.api("POST", "/api/runs/" + id + "/passages/p001/claims/" + cid + "/search", {}));
     assert.equal(sr.status, 200, "provisional research remains available"); assert.ok(sr.data.provisional.length >= 2); assert.ok(sr.data.attempts.every(a => a.provisional && a.provisional.length));

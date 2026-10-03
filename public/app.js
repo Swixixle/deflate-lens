@@ -60,6 +60,8 @@ function errCopy(e){
     stale_reading:"This card changed since you looked (another tab, a re-run, or an edit). It has been reloaded; try again.",
     claim_not_current:"That claim is no longer in the current reading of this card. The page has been reloaded.",
     claim_edited:"The claim was edited while the explanation ran. Run it again on the current wording.",
+    reading_held:"The reading did not pass preparation. Its check record is saved; no unfinished reading was published.",
+    attribution_held:"Speaker preparation must finish before reading.",
     upstream_error:"The model request failed. Check the server terminal for details and try again."
   };
   return map[c] || ((e && e.message) ? String(e.message) : "Something failed.");
@@ -95,6 +97,7 @@ var API = {
   createRun(run, transcript){ return API.req("POST","/api/runs", {run:run, transcript:transcript}); },
   saveRun(id, run, transcript){ return API.req("PUT","/api/runs/" + id, {run:run, transcript:transcript}); },
   deleteRun(id){ return API.req("DELETE","/api/runs/" + id); },
+  prepareSpeakers(id, signal){ return API.req("POST","/api/runs/" + id + "/prepare-speakers", {}, signal); },
   duplicateRun(id){ return API.req("POST","/api/runs/" + id + "/duplicate"); },
   savePassage(id, pid, doc){ return API.req("PUT","/api/runs/" + id + "/passages/" + pid, doc); },
   replacePassages(id, list){ return API.req("POST","/api/runs/" + id + "/passages", {passages:list}); },
@@ -106,12 +109,13 @@ var API = {
     opts = opts || {};
     var b = S.b, r = b && b.run;
     var basedOn = opts.basedOn || (r ? {
+      preparedOnly: true,
       inputHash: r.input && r.input.sha256 || "",
       transcriptUpdatedAt: r.transcriptUpdatedAt,
       attrSig: b.attrSig,
-      passagesSig: (b.passages || []).filter(function(p){ return p.status === "done" && p.analysis && !(p.stale || []).length; }).map(function(p){ return p.id + "@" + (p.analyzedAt || ""); }).join(",")
+      passagesSig: (b.passages || []).filter(function(p){ return p.status === "done" && p.analysis && !(p.stale || []).length && (!p.readingGate || p.readingGate.status === "ready"); }).map(function(p){ return p.id + "@" + (p.analyzedAt || ""); }).join(",")
     } : null);
-    return API.req("POST","/api/sample", {prompt:prompt, json:!!opts.json, images:opts.images||[], runId: opts.runId || (r ? r.id : ""), purpose: opts.purpose || "", basedOn:basedOn}, opts.signal);
+    return API.req("POST","/api/sample", {prompt:prompt, json:!!opts.json, images:opts.images||[], runId: opts.runId || (r ? r.id : ""), purpose: opts.purpose || "", passageId:opts.passageId||"", basedOn:basedOn}, opts.signal);
   },
   /* Every claim mutation names the claim by its id and the reading the page rendered; the server refuses (409) when
      the card moved on, instead of writing over a newer reading. */
@@ -183,7 +187,7 @@ function run(){ return S.b && S.b.run; }
 function overrides(){ var r = run(); return r && r.provenance && r.provenance.overrides || {}; }
 function effSpeaker(t){ return SH.effSpeaker(t, overrides()); }
 function speakerName(key){ var r = run(); var s = r && (r.speakers||[]).filter(function(x){ return x.key === key; })[0]; return (s && s.name) ? s.name : (key === "UNLABELED" ? "Speaker unknown" : key); }
-function attributionOk(){ var r = run(), pr = r && r.provenance || {}; return !!(pr.confirmedAt || pr.notApplicable); }
+function attributionOk(){ var r = run(), pr = r && r.provenance || {}; return !!(S.b && S.b.attributionGate && S.b.attributionGate.status === "ready" || pr.confirmedAt || pr.notApplicable); }
 function isClaimRun(){ var r = run(); return !!(r && r.kind === "claim"); }
 function fmtTurns(from, to, ov){ return SH.fmtTurns(S.turns, ov === undefined ? overrides() : ov, from, to); }
 function readOnly(){ var r = run(); return !!(r && r.example); }
@@ -205,7 +209,7 @@ $("lvl5").addEventListener("click", function(){ setLevel("5"); });
 async function boot(){
   try { S.health = await API.health(); } catch(e){ setStore("off","Cannot reach the local server. Is it running? (npm start)"); return; }
   S.ai = S.health.ai; S.research = S.health.research || null;
-  setStore(S.ai ? "ready" : "busy", (S.ai ? (S.ai.mock ? "Server connected · MOCK model (placeholders only)" : "Server connected · " + S.ai.model) : "Server connected · example only until you add a key (asked for once)") + (S.research ? (S.research.mock ? " · MOCK research" : " · research: " + S.research.adapters.join(", ")) : ""));
+  setStore(S.ai ? "ready" : "busy", (S.ai ? (S.ai.mock ? "Server connected · MOCK model (placeholders only)" : "Server connected · " + S.ai.model) : "Server connected · source search ready; analysis asks for a key once") + (S.research ? (S.research.mock ? " · MOCK research" : " · research: " + S.research.adapters.join(", ")) : ""));
   await refreshList();
   var want = hashRun() || rememberedRun();
   if (want && S.runs.some(function(r){ return r.id === want; })) selectRun(want);
@@ -415,6 +419,10 @@ function renderIntake(){
         S.pendingImport = null; await refreshList();
         S.runId = nb.run.id; UI.detailsOpen = {}; try { location.hash = "run-" + S.runId; localStorage.setItem("deflate-run", S.runId); } catch(e){}
         await reload(nb);
+        if (k.kind === "transcript" && !nb.run.provenance.notApplicable){
+          if (S.ai){ S.abort = new AbortController(); await reload(await API.prepareSpeakers(nb.run.id, S.abort.signal)); }
+          else ensureAI(view, runSpeakerPreparation);
+        }
         var m = view.querySelector("#stage-intake .body");
         if (k.kind === "claim" && S.research && nb.passages[0] && nb.passages[0].analysis && nb.passages[0].analysis.claims[0]){
           // one click: the claim is saved and searched at once; nothing is attached until a person decides
@@ -424,7 +432,7 @@ function renderIntake(){
           if (m0) m0.append(h("div",{class:"note ok",text: searched ? "Saved as one claim and searched at once: " + plural((searched.candidates||[]).length, "candidate document") + " waiting for you to judge (open Details on the card). Nothing is attached until you decide. You can also explain and grade the claim with the model." : "Saved as one claim. The search could not run just now; search from Details on the card."}));
         } else {
           var m = view.querySelector("#stage-intake .body");
-          if (m) m.append(h("div",{class:"note ok",text: k.kind === "claim" ? "Saved as one claim. Its card is below: search for sources from Details, or explain and grade it with the model." : (nb.run.provenance && nb.run.provenance.notApplicable ? "Saved. " + nb.run.provenance.method + " Next: split into passages and deflate." : "Saved. Next: check who said what.")}));
+          if (m) m.append(h("div",{class:"note ok",text: k.kind === "claim" ? "Saved as one claim. Its card is below: search for sources from Details, or explain and grade it with the model." : (nb.run.provenance && nb.run.provenance.notApplicable ? "Saved. " + nb.run.provenance.method + " Next: split into passages and deflate." : "Saved. Speaker preparation runs before the reading becomes available.")}));
         }
         var card = document.querySelector("#stage-deflate .card"); if (k.kind === "claim" && card && card.scrollIntoView) card.scrollIntoView({block:"start"});
       } else {
@@ -447,33 +455,55 @@ function ensureAI(where, continueWith){
   var host = where || view; var old = host.querySelector(".keybox"); if (old) old.remove();
   var inp = h("input",{type:"password",placeholder:"sk-ant-…",autocomplete:"off",style:"min-width:260px"});
   var save = h("button",{class:"btn primary",type:"button",text:"Save key and continue",onclick:async function(){
-    save.disabled = true;
-    try { var out = await API.setKey(inp.value); S.ai = out.ai; inp.value = ""; box.remove(); setStore("ready", "Server connected · " + (S.ai ? S.ai.model : "")); if (continueWith) await continueWith(); else renderRun(); }
-    catch(e){ save.disabled = false; note.textContent = errCopy(e); }
+    if (S.busy) return; S.busy = true; save.disabled = true;
+    try { var out = await API.setKey(inp.value); S.ai = out.ai; inp.value = ""; box.remove(); S.busy = false; setStore("ready", "Server connected · " + (S.ai ? S.ai.model : "")); if (continueWith) await continueWith(); else renderRun(); }
+    catch(e){ S.busy = false; save.disabled = false; note.textContent = errCopy(e); }
   }});
   var note = h("p",{class:"hint",text:"Get a key at console.anthropic.com (API keys). Usage is billed to that account. The key is written to the .env file in the app folder on this computer and is not sent back to the browser, logged, or stored anywhere else."});
-  var box = h("div",{class:"note info keybox"}, h("p",{text:"Real analysis needs your Anthropic API key, once. The supplied example works without it."}), h("div",{class:"row"}, inp, save), note);
+  var box = h("div",{class:"note info keybox"}, h("p",{text:"Real analysis needs your Anthropic API key, once. Searching sources works without it."}), h("div",{class:"row"}, inp, save), note);
   host.insertBefore(box, host.firstChild);
   box.scrollIntoView({block:"nearest"});
   return false;
 }
 
 /* ---- 2 Provenance ---- */
+async function runSpeakerPreparation(){
+  if (blockWhileBusy() || !S.ai || !run() || readOnly()) return;
+  S.busy = true; S.abort = new AbortController();
+  setStore("ready", "Preparing speakers before reading…");
+  try { await reload(await API.prepareSpeakers(run().id, S.abort.signal)); }
+  catch(e){ alert(errCopy(e)); }
+  finally { S.busy = false; S.abort = null; setStore("ready", "Server connected"); }
+}
 function renderProvenance(){
   var r = run(), pr = r.provenance || {overrides:{},flags:[]}, ro = readOnly();
-  var confirmed = !!pr.confirmedAt;
-  var state = !r.id ? "Save first" : pr.notApplicable ? "Not needed" : confirmed ? "Confirmed" : (pr.auditedAt ? "Audited · needs confirmation" : "Not checked");
+  var confirmed = attributionOk();
+  var state = !r.id ? "Save first" : pr.notApplicable ? "Not needed" : confirmed ? "Prepared" : "Reading held";
   var p = panel("stage-prov","2","Who said what", state, !!r.id && !confirmed && !pr.notApplicable && S.turns.length > 0 && !ro);
   var b = body(p);
   if (!r.id || !S.turns.length){ b.append(h("p",{class:"hint",text:"Save some text first."})); return p; }
   if (pr.notApplicable){ b.append(h("div",{class:"note ok",text:pr.method || "Nothing to attribute."})); b.append(h("p",{class:"hint",text:"Turns with no label are shown as Speaker unknown. Conclusions that depend on who said something stay provisional."})); return p; }
+  var top = b, prep = r.preparation;
+  top.append(h("div",{class:"note " + (confirmed ? "ok" : "info"),text: confirmed ? "Speaker preparation passed. The correction record is available below." : "The reading is held while speaker labels are unresolved. Preparation applies supported corrections and checks them again before any reading is shown."}));
+  if (!ro) top.append(h("button",{class:"btn primary",type:"button",text: confirmed ? "Speakers prepared" : "Prepare speakers automatically",disabled:confirmed?"":null,onclick:function(){ if (!ensureAI(top, runSpeakerPreparation)) return; runSpeakerPreparation(); }}));
+  else top.append(h("button",{class:"btn primary",type:"button",text:"Copy and prepare this example",onclick:async function(){
+    if (blockWhileBusy()) return; S.busy = true;
+    try { var copy = await API.duplicateRun(r.id); S.runId = copy.run.id; UI.detailsOpen = {}; await refreshList(); await reload(copy); }
+    catch(e){ alert(errCopy(e)); }
+    finally { S.busy = false; }
+    if (!readOnly() && ensureAI(view, runSpeakerPreparation)) runSpeakerPreparation();
+  }}));
+  if (prep) top.append(h("p",{class:"hint",text: prep.status === "ready" ? prep.corrections.length + " supported speaker changes applied before reading." : "The text checks could not settle every speaker. A reliable transcript or recording is needed for the remaining labels."}));
+  var recordDetails = h("details",{class:"more"},h("summary",{text:"Preparation record and optional manual correction"}));
+  b = h("div",{}); recordDetails.append(b); top.append(recordDetails);
+  if (prep) b.append(h("p",{class:"hint",text:prep.method}),h("pre",{text:JSON.stringify({corrections:prep.corrections,unresolved:prep.unresolved,calls:prep.calls},null,2)}));
   var speakers = speakerLabels(S.turns), ov = overrides();
   b.append(h("div",{class:"stat"},
     h("span",{},"Turns ",h("b",{text:String(S.turns.filter(function(t){return !t.heading;}).length)})),
     h("span",{},"Labels ",h("b",{text:speakers.join(", ")})),
     h("span",{},"Flagged ",h("b",{text:String((pr.flags||[]).length)})),
     h("span",{},"Corrected ",h("b",{text:String(Object.keys(ov).length)}))));
-  b.append(h("p",{class:"hint",text:"Transcription services shift and swap labels. Every later grade inherits an attribution error, so this stage asks the model to read each turn against the speakers' bios and flag conflicts, then you decide. Deflation stays locked until a person confirms."}));
+  b.append(h("p",{class:"hint",text:"Automatic preparation checks the labels twice and applies supported changes before reading. This optional record also lets you correct a label or confirm it from a reliable recording yourself."}));
   if (pr.transcriptNote) b.append(h("div",{class:"note",text:pr.transcriptNote}));
   if ((r.provenanceHistory||[]).length) b.append(h("p",{class:"hint",text:plural(r.provenanceHistory.length, "earlier set") + " of attribution decisions " + (r.provenanceHistory.length===1?"is":"are") + " kept in the run file (provenanceHistory): " + r.provenanceHistory.map(function(x){ return fmtDate(x.replacedAt) + " (" + Object.keys(x.provenance && x.provenance.overrides || {}).length + " corrections, " + (x.keptInPlace ? "kept in place" : "archived") + ")"; }).join("; ") + "."}));
   if (pr.shiftNote) b.append(h("div",{class:"note",text:"Shift detected: " + pr.shiftNote}));
@@ -496,10 +526,10 @@ function renderProvenance(){
       var apply = (!ro && f.likely && f.likely !== "UNSURE" && speakers.indexOf(f.likely) !== -1 && effSpeaker(t) !== f.likely) ? h("button",{class:"btn quiet",type:"button",text:"Use suggestion",onclick:function(){ setOverride(t.i, f.likely); }}) : null;
       flagsWrap.append(h("div",{class:"flag"}, h("span",{class:"n",text:"[" + t.i + "]"}),
         h("div",{}, h("p",{class:"q",text:t.text.length > 320 ? t.text.slice(0,320) + "…" : t.text}),
-          h("p",{class:"cue",text:"Labeled " + f.labeled + " · likely " + (f.likely||"?") + (typeof f.confidence === "number" ? " (" + Math.round(f.confidence*100) + "%)" : "") + (f.cue ? " · cue: “" + f.cue + "”" : "")}),
+          h("p",{class:"cue",text:"Labeled " + f.labeled + " · likely " + (f.likely||"?") + (f.cue ? " · cue: “" + f.cue + "”" : "")}),
           h("div",{class:"pick"}, h("span",{text:"Speaker:"}), sel, apply, ov[String(t.i)] ? h("span",{class:"hint",text:"corrected"}) : null))));
     });
-  } else if (pr.auditedAt) b.append(h("div",{class:"note ok",text:"The check found no turns whose content conflicts with its label."}));
+  } else if (pr.auditedAt) b.append(h("div",{class:"note ok",text:"The check found no conflicts in the text. This alone is not preparation approval."}));
   b.append(flagsWrap);
   var det = h("details",{open: UI.turnsOpen ? "" : null}, h("summary",{class:"hint",style:"cursor:pointer",text:"Browse every turn" + (ro ? "" : " and set speakers by hand")}));
   det.addEventListener("toggle", function(){ UI.turnsOpen = det.open; });
@@ -535,7 +565,7 @@ function renderProvenance(){
     }});
     b.append(h("div",{class:"row"}, confirmBtn, confirmMsg));
   }
-  if (confirmed) b.append(h("p",{class:"hint",text:"Confirmed " + fmtDate(pr.confirmedAt) + (pr.confirmedBy ? " by " + pr.confirmedBy : "") + ". " + (pr.method||"")}));
+  if (pr.confirmedAt) b.append(h("p",{class:"hint",text:"Confirmed " + fmtDate(pr.confirmedAt) + (pr.confirmedBy ? " by " + pr.confirmedBy : "") + ". " + (pr.method||"")}));
   return p;
 }
 async function setOverride(i, key){
@@ -577,15 +607,14 @@ var deflateListEl = null, cardsEl = null;
 function renderDeflate(){
   var r = run(), pr = r.provenance || {}, ro = readOnly(), claimRun = isClaimRun();
   var ok = attributionOk() && !ro;
-  var done = S.b.passages.filter(function(p){ return p.status === "done"; }).length;
+  var done = S.b.passages.filter(function(p){ return p.status === "done" && p.readingGate && p.readingGate.status === "ready"; }).length;
   var stale = S.b.passages.filter(function(p){ return (p.stale||[]).length; }).length;
-  var p = panel("stage-deflate", claimRun ? "2" : "3", claimRun ? "The claim" : "Deflate", !r.id ? "" : (claimRun ? (done ? "Ready" : "") : (S.b.passages.length ? done + " of " + S.b.passages.length + " passages done" + (stale ? " · " + stale + " stale" : "") + (attributionOk() ? "" : " · attribution unconfirmed") : (ok ? "Not segmented" : "Waiting on attribution"))), ok || done > 0);
+  var p = panel("stage-deflate", claimRun ? "2" : "3", claimRun ? "The claim" : "Deflate", !r.id ? "" : (claimRun ? (done ? "Ready" : "") : (S.b.passages.length ? done + " of " + S.b.passages.length + " readings ready" + (stale ? " · " + stale + " stale" : "") + (attributionOk() ? "" : " · attribution unconfirmed") : (ok ? "Not segmented" : "Waiting on attribution"))), ok || done > 0);
   var b = body(p);
   if (!r.id || !S.turns.length){ b.append(h("p",{class:"hint",text:"Save some text first."})); return p; }
   if (claimRun){ deflateListEl = null; if ((r.orphans||[]).length) b.append(renderOrphans(r)); cardsEl = h("div",{style:"display:grid;gap:18px"}); b.append(cardsEl); return p; }
-  if (ro) b.append(h("div",{class:"note info",text:"Read-only example. Copy the run to re-run passages."}));
-  else if (!attributionOk() && S.b.passages.length) b.append(h("div",{class:"note",text:"These cards were produced before a person confirmed the attribution. Confirm it in stage 2, then re-run any passage whose speakers changed."}));
-  else if (!attributionOk()) b.append(h("div",{class:"note info",text:"Confirm who said what before deflating. A wrong label here becomes a wrong grade later."}));
+  if (ro) b.append(h("div",{class:"note info",text:"This example has unverified speaker changes. Copy and prepare it before reading."}));
+  else if (!attributionOk()) b.append(h("div",{class:"note info",text:"Speaker preparation must pass before reading. Use Prepare speakers automatically above; the correction record is optional."}));
   var prog = h("div",{class:"progress",hidden:true}, h("div",{class:"track"},h("div",{class:"fill"})), h("span",{class:"hint"}));
   var msg = h("div");
   var stopBtn = h("button",{class:"btn",type:"button",text:"Stop",hidden:true,onclick:function(){ if (S.abort) S.abort.abort(); }});
@@ -664,7 +693,7 @@ async function runDeflate(prog,msg,btn,stopBtn,single){
       base.status = "running"; base.expectedReadingRev = p.readingRev || 0; await API.savePassage(r.id, p.id, base); // a stale tab is refused here too
       S.abort = new AbortController();
       try {
-        var res = await API.sample(P.deflate(r, p, fmtTurns(p.turnStart, p.turnEnd)), {json:true, signal:S.abort.signal, purpose:"deflate"});
+        var res = await API.sample(P.deflate(r, p, fmtTurns(p.turnStart, p.turnEnd)), {json:true, signal:S.abort.signal, purpose:"deflate", passageId:p.id});
         // The server keeps the previous reading in history and carries a person's records to matching claims (store.savePassage).
         base.analysis = sanitizeAnalysis(res.data, p); base.status = "done"; base.analyzedAt = nowISO(); base.analyzedBy = analyzedByLabel(); base.model = res.model || ""; base.usage = res.usage || null; base.callId = res.provenance ? res.provenance.callId : "";
         base.speakers = speakersIn(p.turnStart, p.turnEnd); base.basedOn = {transcriptUpdatedAt: r.transcriptUpdatedAt, attrSig: S.b.attrSig};
@@ -703,7 +732,7 @@ async function runClaimExplain(p){
   S.busy = true;
   try {
     S.abort = new AbortController();
-    var res = await API.sample(P.claim(r, text), {json:true, signal:S.abort.signal, purpose:"claim"}); var o = res.data || {};
+    var res = await API.sample(P.claim(r, text), {json:true, signal:S.abort.signal, purpose:"claim", passageId:p.id}); var o = res.data || {};
     var base = JSON.parse(JSON.stringify(p)); delete base.id; delete base.stale; delete base.quoteCheck;
     var lvx = function(x){ x = x && typeof x === "object" ? x : {hs:String(x||""), g5:""}; return {hs:String(x.hs||""), g5:String(x.g5||"")}; };
     var first = {text:text, id:c0 && c0.text === text ? c0.id : undefined, userSupplied:true, speaker:"", type:String(o.type||"unscorable"), basis:lvx(o.basis), plain:lvx(o.deflated), wouldSettle:String(o.wouldSettle||""), settle:lvx(o.settle), expectedSources:Array.isArray(o.expectedSources)?o.expectedSources:(c0 ? c0.expectedSources : []), searchQuery:String(o.searchQuery||(c0 && c0.searchQuery)||"")};
@@ -728,7 +757,16 @@ function sanitizeAnalysis(o, p){ var a = SH.sanitizeAnalysis(o, {sourceTypes: SO
    inside the collapsed Details block. Finding or attaching a source never produces a "verified" mark. */
 function renderPassages(){
   if (!cardsEl) return; clear(cardsEl);
-  var done = S.b.passages.filter(function(p){ return p.status === "done" && p.analysis; });
+  var allDone = S.b.passages.filter(function(p){ return p.status === "done" && p.analysis; });
+  var done = allDone.filter(function(p){ return p.readingGate && p.readingGate.status === "ready"; });
+  var held = allDone.filter(function(p){ return !p.readingGate || p.readingGate.status !== "ready"; });
+  if (held.length){
+    var notice = h("div",{class:"note info"},h("p",{text:"Reading held: preparation has not passed. Unfinished drafts are kept in the record and are not presented as the reading."}));
+    var checks = h("details",{},h("summary",{text:"See the preparation record"}));
+    held.forEach(function(p){ checks.append(h("p",{text:(p.title||p.id) + ": " + (p.readingGate && p.readingGate.reasons || ["Not prepared."]).join("; ")})); });
+    if (!readOnly() && attributionOk()) checks.append(h("button",{class:"btn",type:"button",text:"Prepare the first held reading again",onclick:function(){ if (!ensureAI(checks,function(){runDeflate(null,null,null,null,held[0]);})) return; runDeflate(null,null,null,null,held[0]); }}));
+    notice.append(checks); cardsEl.append(notice);
+  }
   if (!done.length) return;
   cardsEl.append(h("p",{class:"eyebrow",style:"margin-top:6px",text:"Cards"}));
   done.forEach(function(p){ cardsEl.append(passageCard(p)); });
@@ -738,7 +776,7 @@ function L(hs, g5){ return lvl({hs:hs, g5:g5 || hs}); }
 function personOnlyA(a){ return a && a.by === "person"; }
 /* What would settle a claim, at both levels; older data has only the one string, shown at both levels as is. */
 function settleOf(c){ if (c.settle && (c.settle.hs || c.settle.g5)) return lvl(c.settle); if (c.wouldSettle) return L("Would settle it: " + c.wouldSettle, "What would settle it: " + c.wouldSettle); return null; }
-function provisionalOf(p){ var pr = run().provenance || {}; var out = (p.stale||[]).slice(); if (!pr.notApplicable && !pr.confirmedAt) out.push("attribution not confirmed by a person"); return out; }
+function provisionalOf(p){ var pr = run().provenance || {}; var out = (p.stale||[]).slice(); if (!attributionOk()) out.push("speaker preparation is unresolved"); if (p.readingGate && p.readingGate.status !== "ready") out.push("reading held before display"); return out; }
 function activeReceipts(c){ return (c.receipts||[]).filter(function(x){ return !x.withdrawnAt; }); }
 function claimStatus(c){ return activeReceipts(c).length ? "receipt" : ((c.searches||[]).length ? "searched" : "unchecked"); }
 function plural(n, one, many){ return n + " " + (n === 1 ? one : (many || one + "s")); }
@@ -785,8 +823,13 @@ function passageCard(p){
   var card = h("article",{class:"card", id:"card-" + p.id});
   var hdr = h("header",{});
   hdr.append(h("div",{class:"toprow"}, h("h3",{text:p.title||p.id}), (p.stale||[]).length ? h("span",{class:"badge stale",text:"stale"}) : null, /MOCK/.test(p.analyzedBy||"") ? h("span",{class:"badge mock",text:"mock output"}) : null));
+  hdr.append(h("div",{class:"row card-level"}, h("span",{class:"hint",text:"Reading level"}), levelToggle(card)));
   hdr.append(h("p",{class:"who",text: isClaimRun() ? ("Typed claim" + (p.analyzedAt ? " · " + (a.by === "person" ? "saved " : "graded ") + fmtDate(p.analyzedAt) : "") + (p.analyzedBy && a.by !== "person" ? " · " + p.analyzedBy : "")) : ((p.speakers||[]).map(speakerName).join(" · ") + " · turns " + p.turnStart + "–" + p.turnEnd + (p.analyzedAt ? " · deflated " + fmtDate(p.analyzedAt) : "") + (p.analyzedBy ? " · " + p.analyzedBy : ""))}));
   var chips = chipRow(hdr);
+  if (p.provenance && p.provenance.review) chips.addChip("Preparation · passed", "good", function(){
+    var review = p.provenance.review;
+    return h("div",{}, L("Quotes and reading levels were checked before display, followed by a separate model review. Supported corrections were applied before you saw the card. This checks the reading, not the truth of an empirical claim.", "The app checked the words and asked the model to check the reading again before showing it. This does not prove the claim is true."), h("p",{class:"hint",text:review.corrections.length + " automatic quote corrections; " + review.attempts + " draft attempt(s). Review call: " + review.callId}));
+  });
 
   // chip: quotes
   var allOk = qc.matched === qc.quotes && !qc.mismatched;
@@ -895,7 +938,6 @@ function passageCard(p){
   var det = h("details",{class:"more", open: UI.detailsOpen[card.id] ? "" : null}, h("summary",{text:"Details: the exact words, the checks, sources and history"}));
   det.addEventListener("toggle", function(){ UI.detailsOpen[card.id] = det.open; });
   var more = h("div",{class:"more-body"});
-  more.append(h("div",{class:"row"}, h("span",{class:"eyebrow",text:"Reading level for this card"}), levelToggle(card)));
   var said = h("div",{class:"said"}, h("p",{class:"eyebrow",text:"The words as said"}));
   (a.asSaid||[]).forEach(function(q){ said.append(quoteLine(q)); });
   if (!(a.asSaid||[]).length) said.append(h("p",{class:"hint",text:"No quotes were recorded for this passage."}));
@@ -1001,7 +1043,7 @@ function claimDetail(card, p, c, idx, ro){
 /* ---- 4 Patterns ---- */
 var patternsBody = null;
 function renderPatternsPanel(){
-  var done = S.b.passages.filter(function(p){ return p.status === "done"; }).length;
+  var done = S.b.passages.filter(function(p){ return p.status === "done" && p.readingGate && p.readingGate.status === "ready"; }).length;
   var p = panel("stage-patterns","4","Patterns across the run", S.b.summary ? ((S.b.summary.stale||[]).length ? "Done · stale" : "Done") : (done ? "Ready" : "Waiting on cards"), !!S.b.summary || done > 1);
   patternsBody = body(p);
   return p;
@@ -1010,7 +1052,7 @@ function renderPatterns(){
   if (!patternsBody) return; clear(patternsBody);
   var r = run(); if (!r) return;
   var doneAll = S.b.passages.filter(function(p){ return p.status === "done" && p.analysis; });
-  var done = doneAll.filter(function(p){ return !(p.stale||[]).length; }), leftOut = doneAll.filter(function(p){ return (p.stale||[]).length; }).map(function(p){ return p.id; });
+  var done = doneAll.filter(function(p){ return !(p.stale||[]).length && p.readingGate && p.readingGate.status === "ready"; }), leftOut = doneAll.filter(function(p){ return (p.stale||[]).length || !p.readingGate || p.readingGate.status !== "ready"; }).map(function(p){ return p.id; });
   var msg = h("div");
   if (!readOnly()){
     var btn = h("button",{class:"btn primary",type:"button",text: S.b.summary ? "Re-run patterns" : "Find patterns",disabled:(done.length<2)?"":null,onclick:async function(){
@@ -1028,9 +1070,10 @@ function renderPatterns(){
       } catch(e){ msg.replaceChildren(h("div",{class:"note err",text:errCopy(e)})); btn.disabled = false; }
       finally { S.busy = false; S.abort = null; }
     }});
-    patternsBody.append(h("div",{class:"row"}, btn, h("span",{class:"hint",text: done.length < 2 ? "Needs at least two fresh deflated passages." + (leftOut.length ? " " + plural(leftOut.length, "stale card") + " left out; re-run them first." : "") : "Reads every fresh card in full and looks for moves that recur, then lists what came through intact." + (leftOut.length ? " " + plural(leftOut.length, "stale card") + " will be left out." : "")}), msg));
+    patternsBody.append(h("div",{class:"row"}, btn, h("span",{class:"hint",text: done.length < 2 ? "Needs at least two prepared readings." + (leftOut.length ? " " + plural(leftOut.length, "held card") + " left out; re-run them first." : "") : "Reads every fresh card in full and looks for moves that recur, then lists what came through intact." + (leftOut.length ? " " + plural(leftOut.length, "held card") + " will be left out." : "")}), msg));
   }
   if (!S.b.summary) return;
+  if (S.b.summary.readingGate && S.b.summary.readingGate.status !== "ready") { patternsBody.append(h("div",{class:"note info",text:"Patterns are held until the readings they use have passed preparation."})); return; }
   var sm = S.b.summary, wrap = h("div",{});
   if ((sm.stale||[]).length) wrap.append(h("div",{class:"stale-note",text:"Stale: " + sm.stale.join("; ") + ". Re-run patterns to refresh."}));
   if ((sm.leftOut||[]).length) wrap.append(h("p",{class:"hint",text:"Left out as stale when these patterns were found: " + sm.leftOut.join(", ") + "."}));
@@ -1062,15 +1105,15 @@ function renderExportBlock(){
   kv.append(h("span",{class:"k",text:"Interview"}), r.sourceUrl ? h("a",{href:r.sourceUrl,target:"_blank",rel:"noopener",text:r.sourceLabel || r.sourceUrl}) : h("span",{class:"hint",text:"Add the interview link in Intake so every reader can check the original."}));
   if (r.sourceDate) kv.append(h("span",{class:"k",text:"Recorded / released"}), h("span",{text:fmtDate(r.sourceDate)}));
   kv.append(h("span",{class:"k",text:"Transcript"}), h("span",{text: S.turns.length ? S.turns.filter(function(t){return !t.heading;}).length + " turns, " + (S.b.transcript.length||0).toLocaleString() + " characters, saved " + fmtDate(r.transcriptUpdatedAt) : "none"}));
-  kv.append(h("span",{class:"k",text:"Attribution"}), h("span",{text: pr.notApplicable ? "Not needed. " + (pr.method||"") : pr.confirmedAt ? ("Confirmed " + fmtDate(pr.confirmedAt) + (pr.confirmedBy ? " by " + pr.confirmedBy : "") + ". " + (pr.method||"")) : (pr.auditedAt ? "Audited" + (pr.auditedBy ? " by " + pr.auditedBy : "") + ", not yet confirmed by a person." : "Not checked. Labels are as the transcript gave them.")}));
+  kv.append(h("span",{class:"k",text:"Attribution"}), h("span",{text: pr.notApplicable ? "Not needed. " + (pr.method||"") : pr.confirmedAt ? ("Confirmed " + fmtDate(pr.confirmedAt) + (pr.confirmedBy ? " by " + pr.confirmedBy : "") + ". " + (pr.method||"")) : attributionOk() ? "Automatic text checks passed. The preparation record is in Who said what." : "Reading held: speaker preparation has not passed. The preparation record is in Who said what."}));
   if (r.import) kv.append(h("span",{class:"k",text:"Imported"}), h("span",{text:"Text fetched from " + r.import.url + " on " + fmtDate(r.import.fetchedAt) + " (" + r.import.chars.toLocaleString() + " characters). The page text was read; the link was not graded."}));
-  if (pr.flags && pr.flags.length) kv.append(h("span",{class:"k",text:"Flagged turns"}), h("span",{text: pr.flags.map(function(f){ return "[" + f.turn + "]"; }).join(" ")}));
+  if (pr.flags && pr.flags.length) kv.append(h("span",{class:"k",text:"Earlier flags"}), h("span",{text: pr.flags.length + " turns in the optional attribution record."}));
   var over = Object.keys(pr.overrides||{});
-  if (over.length) kv.append(h("span",{class:"k",text:"Labels corrected"}), h("span",{text: over.map(function(i){ return "[" + i + "] → " + speakerName(pr.overrides[i]); }).join(", ")}));
-  var doneN = S.b.passages.filter(function(p){return p.status==="done";}).length, staleN = S.b.passages.filter(function(p){ return (p.stale||[]).length; }).length;
+  if (over.length) kv.append(h("span",{class:"k",text:"Label overrides"}), h("span",{text: over.length + " saved; their preparation status is shown above."}));
+  var doneN = S.b.passages.filter(function(p){return p.status==="done" && p.readingGate && p.readingGate.status==="ready";}).length, staleN = S.b.passages.filter(function(p){ return (p.stale||[]).length; }).length;
   var claimsAll = []; S.b.passages.forEach(function(p){ if (p.status==="done"&&p.analysis) (p.analysis.claims||[]).forEach(function(c){ claimsAll.push(c); }); });
   var emp = claimsAll.filter(function(c){ return EMPIRICAL.indexOf(c.type) !== -1; }), withR = emp.filter(function(c){ return claimStatus(c) === "receipt"; }).length, searched = emp.filter(function(c){ return claimStatus(c) === "searched"; }).length;
-  kv.append(h("span",{class:"k",text:"Analysis"}), h("span",{text: doneN + " of " + S.b.passages.length + " passages deflated" + (staleN ? ", " + staleN + " stale" : "") + (S.b.summary ? "; patterns found" : "") + ". " + plural(emp.length, "checkable claim") + ": " + withR + " with a source a person attached, " + searched + " searched with nothing attached, " + (emp.length - withR - searched) + " not checked. A source records a person's judgment of relevance; nothing here marks a claim verified."}));
+  kv.append(h("span",{class:"k",text:"Analysis"}), h("span",{text: doneN + " of " + S.b.passages.length + " readings prepared" + (staleN ? ", " + staleN + " stale" : "") + (S.b.summary ? (S.b.summary.readingGate && S.b.summary.readingGate.status === "ready" ? "; patterns prepared" : "; patterns held") : "") + ". The stored research record has " + plural(emp.length, "checkable claim") + ": " + withR + " with a source a person attached, " + searched + " searched with nothing attached, " + (emp.length - withR - searched) + " not checked. A source records a person's judgment of relevance; nothing here marks a claim verified."}));
   var qcs = S.b.passages.filter(function(p){ return p.quoteCheck; }); if (qcs.length){ var tq = 0, mq = 0, mm = 0; qcs.forEach(function(p){ tq += p.quoteCheck.quotes; mq += p.quoteCheck.matched; mm += p.quoteCheck.mismatched; }); kv.append(h("span",{class:"k",text:"Quotes"}), h("span",{text: mq + " of " + tq + " quotes match the transcript word for word" + (mm ? "; " + mm + " credited by the model to a different speaker than the transcript shows" : "") + ". Checked on every load against the transcript as saved."})); }
   if ((r.orphans||[]).length) kv.append(h("span",{class:"k",text:"Parked records"}), h("span",{text:plural(r.orphans.length, "set") + " from an earlier segmentation, waiting in stage 3."}));
   if (r.pilotNote) kv.append(h("span",{class:"k",text:"Note"}), h("span",{text:r.pilotNote}));

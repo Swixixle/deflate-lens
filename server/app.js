@@ -10,6 +10,8 @@ const { createImporter } = require("./importer");
 const { createSettings } = require("./settings");
 const { createAI } = require("./ai");
 const V = require("./validate");
+const Q = require("./quality");
+const { prepareSpeakers, reviewedReading } = require("./preparation");
 
 /* createApp({ dataDir, ai, research, examplesDir, envPath }) -> { app, store, state, ready }
    state.ai is null when no key is configured; the page then shows the example and asks for a key once when real
@@ -62,6 +64,10 @@ function createApp(opts) {
   /* Records parked by a re-segment, reattached by hand to a claim of the current reading. */
   app.post("/api/runs/:id/orphans/:oid/attach", wrap(async (req, res) => { await store.attachOrphan(req.params.id, req.params.oid, req.body && req.body.pid, req.body && req.body.idx); res.json(await store.bundle(req.params.id)); }));
   app.post("/api/runs/:id/duplicate", wrap(async (req, res) => { const nid = await store.duplicateRun(req.params.id); res.json(await store.bundle(nid)); }));
+  app.post("/api/runs/:id/prepare-speakers", wrap(async (req, res) => {
+    const ctl = new AbortController(); res.on("close", () => { if (!res.writableEnded) ctl.abort(); });
+    res.json(await prepareSpeakers({ ai: state.ai, store, id: req.params.id, signal: ctl.signal }));
+  }));
 
   app.put("/api/runs/:id/passages/:pid", wrap(async (req, res) => { const body = req.body || {}; const expectedReadingRev = body.expectedReadingRev; delete body.expectedReadingRev; await store.savePassage(req.params.id, req.params.pid, body, { expectedReadingRev }); res.json(await store.bundle(req.params.id)); }));
   app.post("/api/runs/:id/passages", wrap(async (req, res) => { const list = Array.isArray(req.body.passages) ? req.body.passages : []; await store.replacePassages(req.params.id, list); res.json(await store.bundle(req.params.id)); }));
@@ -97,7 +103,8 @@ function createApp(opts) {
   function provisionalReasons(b, p) {
     const out = (p.stale || []).slice();
     const pr = b.run.provenance || {};
-    if (!pr.notApplicable && !pr.confirmedAt) out.push("attribution not confirmed by a person");
+    if (Q.attributionGate(b).status !== "ready") out.push("speaker preparation is unresolved");
+    if (p.readingGate && p.readingGate.status !== "ready") out.push("reading held before display");
     return out;
   }
   const rev = req => (req.body && req.body.expectedReadingRev != null) ? Number(req.body.expectedReadingRev) : null;
@@ -228,13 +235,25 @@ function createApp(opts) {
   app.post("/api/sample", wrap(async (req, res) => {
     const ai = state.ai;
     if (!ai) return res.status(503).json({ error: "No model configured. Add your Anthropic API key (the page asks for it once, or put ANTHROPIC_API_KEY in .env and restart).", code: "no_ai" });
-    const { prompt, json, images, runId, purpose, basedOn } = req.body || {};
+    const { prompt, json, images, runId, purpose, basedOn, passageId } = req.body || {};
     if (!prompt || typeof prompt !== "string") return res.status(400).json({ error: "prompt required", code: "invalid_request" });
     if (Buffer.byteLength(prompt, "utf8") > 400000) return res.status(400).json({ error: "prompt too large", code: "prompt_too_large" });
     const ctl = new AbortController();
     res.on("close", () => { if (!res.writableEnded) ctl.abort(); });
     const imgs = Array.isArray(images) ? images.slice(0, 8) : [];
     if (imgs.some(im => !im || !/^image\/(png|jpeg|webp|gif)$/.test(String(im.mediaType || "")) || typeof im.data !== "string")) return res.status(400).json({ error: "pictures must be png, jpeg, webp or gif with base64 data", code: "invalid_request" });
+    // New readings are sifted on the server before the browser ever receives them. Legacy calls remain on file,
+    // but cannot acquire the server-owned review record by sending fields in a later passage save.
+    if (["deflate", "claim"].includes(purpose) && typeof runId === "string" && passageId) {
+      const b = await store.bundle(runId), p = b && b.passages.find(x => x.id === passageId);
+      if (!p) throw Object.assign(new Error("passage not found"), { status: 404 });
+      if ((purpose === "claim") !== (b.run.kind === "claim")) throw Object.assign(new Error("The reading request does not match this input type."), { status: 400 });
+      if (b.run.example) throw Object.assign(new Error("Copy the example before preparing it."), { status: 403 });
+      if (Q.attributionGate(b).status !== "ready") throw Object.assign(new Error("Speaker preparation must finish before a reading is made."), { status: 409, code: "attribution_held" });
+      const basis = await store.captureCallBasis(runId, basedOn, purpose);
+      if (!basis || basis.origin === "unknown" || basis.inputHash !== b.run.input.sha256 || basis.attrSig !== b.attrSig) throw Object.assign(new Error("Reload the current input before preparing the reading."), { status: 409, code: "input_changed" });
+      return res.json(await reviewedReading({ ai, store, b, p, purpose, prompt, signal: ctl.signal, basis }));
+    }
     const call = { callId: newId("call"), at: new Date().toISOString(), purpose: String(purpose || "").replace(/[^a-z0-9_]/gi, "").slice(0, 40), runId: typeof runId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(runId) ? runId : "", provider: ai.kind, modelRequested: ai.model, mock: !!ai.mock,
       promptHash: sha256(prompt), promptChars: prompt.length, images: imgs.map(im => ({ mediaType: String(im && im.mediaType || ""), sha256: crypto.createHash("sha256").update(String(im && im.data || ""), "base64").digest("hex") })), json: !!json };
     // Resolve the page's input version before the provider starts. The stored record, not a later browser save,

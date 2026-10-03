@@ -1,8 +1,8 @@
 "use strict";
 /* Optional browser check (needs Playwright + Chromium; see README "Checks"). Starts the server on a free port with a
-   temporary data folder, the MOCK model and MOCK research, then drives the page: opens the example, counts cards,
-   creates a run, saves a transcript, runs the attribution check, confirms, segments, deflates, then on a card:
-   the default view has no editing controls; chips open explanations; Details holds the controls; search → reject → accept
+   temporary data folder, the MOCK model and MOCK research, then drives the page: holds the unresolved example,
+   creates a run, automatically prepares its speakers, segments, deflates, then on a card:
+   reading-level buttons are in the header; chips open explanations; Details holds evidence controls; search → reject → accept
    → the chip reads "Sources · 1"; re-run keeps the source and the history; withdraw drops the chip back; the reading
    level switch changes every generated explanation; patterns; exports; stale; trash and restore.
    Usage:  node scripts/ui-check.js   (set PLAYWRIGHT_BROWSERS_PATH or run `npx playwright install chromium` first) */
@@ -29,16 +29,16 @@ const T = ["HOST: Welcome back. Today we talk about plans.", "GUEST: Thanks for 
     page.on("console", m => { if (m.type() === "error") out.errors.push("console: " + m.text()); });
     await page.goto(base, { waitUntil: "networkidle" });
     out.chip = await page.textContent("#storeText");
-    // example: cards, chips, no editing controls in the default view
+    // The old example has unresolved attribution and never appears as a prepared reading.
     await page.click("#runList button");
-    await page.waitForSelector(".card");
+    await page.waitForSelector("#stage-deflate .note");
     out.exampleCards = await page.locator(".card").count();
-    out.exampleQuoteChips = await page.locator(".card .chip-ev:has-text('Quotes')").count();
-    out.exampleAllQuotesMatched = await page.locator(".card .chip-ev:has-text('Quotes · '):not(:has-text('/'))").count() === 0 && (await page.locator(".card .chip-ev.good:has-text('Quotes')").count()) === out.exampleCards;
+    out.exampleHeld = out.exampleCards === 0 && /Reading held/.test(await page.textContent("#stage-deflate"));
+    if (!out.exampleHeld) throw new Error("Unprepared pilot reading appeared");
+    out.preparationRecordClosed = !(await page.locator("#stage-prov details.more").evaluate(d => d.open));
     out.exampleReadOnly = await page.locator(".badge.example").count() > 0;
     out.exampleSourceLink = await page.locator("#stage-export a[href^='https://www.youtube.com']").count();
-    out.exampleDefaultViewControls = await page.locator(".card > header input, .card > header select, .card .read input, .card .read select, .card .read button:not(.chip-ev), .card > header button:not(.chip-ev)").count();
-    await page.locator(".card").first().screenshot({ path: path.join(shots, "example-card.png") });
+    await page.locator("#stage-prov").screenshot({ path: path.join(shots, "example-held.png") });
     // paste-and-go: a bare claim with nothing else becomes a searchable card
     await page.click("#newRun");
     out.contextFoldClosed = !(await page.locator("#stage-intake details.ctx").evaluate(d => d.open));
@@ -80,14 +80,10 @@ const T = ["HOST: Welcome back. Today we talk about plans.", "GUEST: Thanks for 
     await page.fill("#f-text", T);
     out.kindTranscript = /Looks like a transcript: 2 speakers/.test(await page.textContent("#f-kind"));
     await page.click("#stage-intake .btn.primary");
-    await page.waitForSelector("#stage-prov .btn.primary");
+    await page.waitForFunction(() => /Prepared/.test(document.querySelector("#stage-prov header .state").textContent), null, { timeout: 30000 });
     out.afterSave = await page.textContent("#stage-intake header .state");
     out.autoTitle = await page.textContent("#runView h2");
-    await page.click("#stage-prov .btn.primary");
-    await page.waitForSelector("#stage-prov .flag", { timeout: 20000 });
-    out.flags = await page.locator("#stage-prov .flag").count();
-    await page.click("text=Confirm attribution");
-    await page.waitForFunction(() => /Confirmed/.test(document.querySelector("#stage-prov header .state").textContent), null, { timeout: 10000 });
+    out.speakersPreparedAutomatically = true;
     await page.click("#stage-deflate button:has-text('Split into passages')");
     await page.waitForSelector("#stage-deflate .pitem", { timeout: 20000 });
     out.passages = await page.locator("#stage-deflate .pitem").count();
@@ -99,11 +95,16 @@ const T = ["HOST: Welcome back. Today we talk about plans.", "GUEST: Thanks for 
     const card = page.locator("#stage-deflate .card").first();
     // default view: readable sections, chips, no controls
     out.readSections = await card.locator(".read > section").count();
-    out.defaultViewControls = await card.locator("header input, header select, .read input, .read select, .read button:not(.chip-ev), header button:not(.chip-ev)").count();
+    out.defaultViewControls = await card.locator("header input, header select, .read input, .read select, .read button:not(.chip-ev), header button:not(.chip-ev):not([aria-pressed])").count();
+    out.cardLevelButtonsAtTop = await card.locator("header .card-level button").count();
+    if (out.cardLevelButtonsAtTop !== 3) throw new Error("Reading level missing from card header");
+    await card.locator("header .card-level button:has-text('Fifth grade')").click();
+    if (await card.getAttribute("data-level") !== "5") throw new Error("Card reading-level button did not work");
+    await card.locator("header .card-level button:has-text('Follow page')").click();
     out.detailsClosed = !(await card.locator("details.more").evaluate(d => d.open));
     // chips open explanations
     await card.locator(".chip-ev:has-text('Quotes')").click();
-    out.quotePanel = /checked word for word/.test(await card.locator(".chip-panel").first().textContent());
+    out.quotePanel = /checked word for word/.test(await card.locator(".chip-panel:not([hidden])").first().textContent());
     await card.locator(".chip-ev:has-text('Not checked')").first().click();
     out.notCheckedPanel = /No one has looked for sources/.test(await card.locator(".claim .chip-panel:not([hidden])").first().textContent());
     // open details: the controls live there
@@ -174,11 +175,13 @@ const T = ["HOST: Welcome back. Today we talk about plans.", "GUEST: Thanks for 
     const [dl] = await Promise.all([page.waitForEvent("download"), page.click("text=Download claims JSON")]);
     const exp = JSON.parse(fs.readFileSync(await dl.path(), "utf8"));
     out.exportClaims = exp.claims.length; out.exportSchema = exp.schema; out.exportSaysNotVerification = /not verification/.test(exp.statusMeaning.receipt);
-    // stale after attribution change
+    // Changing attribution holds readings again, rather than exposing stale cards.
     await page.click("#stage-prov header");
-    await page.selectOption("#stage-prov .flag select >> nth=0", { index: 0 });
-    await page.waitForSelector(".badge.stale", { timeout: 10000 });
-    out.staleBadges = await page.locator(".badge.stale").count();
+    await page.locator("#stage-prov details.more > summary").click();
+    await page.locator("#stage-prov details:not(.more) > summary").click();
+    await page.locator("#stage-prov .turn select").first().selectOption("GUEST");
+    await page.waitForFunction(() => /Reading held/.test(document.querySelector("#stage-deflate").textContent) && !document.querySelector("#stage-deflate .card"), null, { timeout: 10000 });
+    out.staleReadingsHeld = true;
     // trash and restore
     await page.click("text=Move to trash");
     await page.click(".note.err button:has-text('Move to trash')");
@@ -189,7 +192,7 @@ const T = ["HOST: Welcome back. Today we talk about plans.", "GUEST: Thanks for 
     await page.waitForFunction(() => /Welcome back/.test(document.querySelector("#runView h2") ? document.querySelector("#runView h2").textContent : ""), null, { timeout: 10000 });
     out.restored = await page.locator("#stage-deflate .card").count();
     await page.screenshot({ path: path.join(shots, "run.png"), fullPage: false });
-    // no model configured: the example works, and real analysis asks for the key once (nothing is sent without one)
+    // No model configured: unresolved example stays held and analysis asks for the key once.
     const dataDir2 = fs.mkdtempSync(path.join(os.tmpdir(), "deflate-ui-nokey-"));
     const envPath2 = path.join(dataDir2, ".env");
     const app2 = createApp({ dataDir: dataDir2, ai: null, research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), envPath: envPath2 });
@@ -197,12 +200,10 @@ const T = ["HOST: Welcome back. Today we talk about plans.", "GUEST: Thanks for 
     try {
       const page2 = await browser.newPage({ viewport: { width: 1200, height: 900 } });
       await page2.goto("http://127.0.0.1:" + server2.address().port, { waitUntil: "networkidle" });
-      out.noKeyChip = /example only until you add a key/.test(await page2.textContent("#storeText"));
-      await page2.click("#runList button"); await page2.waitForSelector(".card");
+      out.noKeyChip = /source search ready/.test(await page2.textContent("#storeText"));
+      await page2.click("#runList button"); await page2.waitForSelector("#stage-deflate .note");
       out.noKeyExampleCards = await page2.locator(".card").count();
       await page2.click("#newRun"); await page2.fill("#f-text", T); await page2.click("#stage-intake .btn.primary");
-      await page2.waitForSelector("#stage-prov .btn.primary");
-      await page2.click("#stage-prov .btn.primary");
       await page2.waitForSelector(".keybox", { timeout: 10000 });
       out.keyPromptShown = /needs your Anthropic API key, once/.test(await page2.textContent(".keybox"));
       await page2.fill(".keybox input", "not-a-key"); await page2.click(".keybox button");

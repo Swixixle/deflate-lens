@@ -8,6 +8,6 @@ The Joe Rogan Experience #2308 with Jordan Peterson, released 22 April 2025. Sou
 
 - `transcript.txt`: the transcript as supplied by the user. It has no source attached and was not checked against the audio. Its speaker labels are wrong in long stretches, which is what the attribution stage exists to catch.
 - `build-pilot.js`: the actual source of this example. The analysis was written by Claude in chat on 2 October 2026, then corrected after a second reader (GPT) flagged four overreaches and the percentage scores. Running `npm run build-pilot` regenerates `run.json`, `passages/` and `summary.json` and fails if any quote stops being verbatim.
-- Attribution: 110 turns flagged and 108 labels corrected from content cues by Claude. **No person has confirmed it**; `provenance.confirmedAt` is deliberately absent and the app shows it as unconfirmed.
+- Attribution: 110 turns flagged and 108 labels corrected from content cues by Claude. **No person has confirmed it**; `provenance.confirmedAt` is deliberately absent and the app holds its old readings until attribution and reading preparation pass. The matching quotes remain inspectable in the stored records.
 - Receipts: 6 claims carry receipts that Claude checked against sources in chat (`addedBy: "claude-in-chat"`). The other 54 are graded from the model's general knowledge and stay "unchecked".
 - Every one of the 63 quotes and all pivots verify verbatim against the transcript (`npm test`).

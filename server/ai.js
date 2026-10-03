@@ -59,8 +59,14 @@ function createMockAI() {
     async sample({ prompt, json }) {
       const p = String(prompt || "");
       let data;
+      if (/^(Prepare transcript speaker labels|Review transcript speaker labels independently)/.test(p)) {
+        const t = turnsFrom(p);
+        data = { decisions: t.map(x => ({ turn: x.i, status: "keep", speaker: x.label, evidenceKind: "source_label", evidenceQuote: "", reason: "MOCK: keeps undisputed fixture labels; no real check." })) };
+      } else if (p.startsWith("Review this reading before it is shown")) {
+        data = { approved: true, issues: [] }; // fixture-only; the UI still labels every output as MOCK
+      } else
       if (p.startsWith("Transcribe all text")) return { text: "[MOCK transcription] no image reader in mock mode", usage: null, model: "mock" };
-      if (p.startsWith("You are a deflation reader grading ONE claim")) {
+      else if (p.startsWith("You are a deflation reader grading ONE claim")) {
         const claim = (p.split("The claim:\n")[1] || "").trim();
         data = { deflated: { hs: "MOCK plain version of: " + claim, g5: "MOCK simple version of: " + claim }, type: "unsupported", basis: { hs: "MOCK: typed as unsupported because mock mode knows nothing.", g5: "MOCK basis." }, wouldSettle: "MOCK: a real model run.", settle: { hs: "MOCK: what would settle it (senior high).", g5: "MOCK: what would settle it (fifth grade)." }, expectedSources: ["academic_paper"], searchQuery: "MOCK query " + claim.split(" ").slice(0, 3).join(" "), hidden: [], judgments: { evidence: "n/a", inference: "n/a" } };
       } else if (p.startsWith("You are checking speaker attribution")) {

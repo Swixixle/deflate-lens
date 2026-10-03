@@ -214,7 +214,7 @@ test("relations: stated by the person on accept or attach, default unstated, cha
     const ec = exp.claims[0]; assert.deepEqual(ec.relations, { supports: 1, contradicts: 0, mentions: 1, unstated: 1 }, "active receipts only"); assert.equal(ec.receipts[1].relation, "contradicts"); assert.equal(ec.receipts[1].withdrawn, true); assert.equal(ec.receipts[0].relationHistory.length, 1);
     assert.equal(typeof exp.relationMeaning.supports, "string"); assert.match(exp.statusMeaning.receipt, /never inferred from a search/);
     const md = (await s.api("GET", "/api/runs/" + id + "/export.md")).text;
-    assert.match(md, /sources attached: 3 \(1 marked supports, 1 marked mentions, 1 with no relation stated\)/); assert.match(md, /https:\/\/example\.org\/doc \[supports\]/); assert.match(md, /Transcript sha256: [0-9a-f]{64}/);
+    assert.match(md, /Reading held/); assert.doesNotMatch(md, /sources attached:/, "an unprepared reading is excluded from the normal Markdown export; the raw export above preserves every relation"); assert.match(md, /Transcript sha256: [0-9a-f]{64}/);
     // a relation never changes a claim's status vocabulary: still "receipt", never "verified" anywhere
     assert.equal(ec.status, "receipt"); assert.ok(!/verified/i.test(JSON.stringify(exp.claims)));
   } finally { await s.close(); }

@@ -30,6 +30,7 @@ const crypto = require("crypto");
 const shared = require("../shared/transcript");
 const V = require("./validate");
 const T = require("./research/types");
+const Q = require("./quality");
 
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 function assertId(id, what) { if (!ID_RE.test(String(id || ""))) { const e = new Error("invalid " + (what || "id")); e.status = 400; throw e; } }
@@ -41,7 +42,7 @@ function sha256(s) { return crypto.createHash("sha256").update(String(s == null 
    record was made. Readings are bound to this hash; the export carries it; scripts/verify-export.js recomputes it. */
 function inputRecord(text, parseMode, at) { const t = String(text == null ? "" : text); return { sha256: sha256(t), chars: t.length, bytes: Buffer.byteLength(t, "utf8"), parseMode: parseMode === "text" ? "text" : "transcript", recordedAt: at || nowISO() }; }
 /* The fields of a call record a reading keeps. */
-function provenanceOf(call) { const keep = {}; ["callId", "at", "purpose", "runId", "provider", "modelRequested", "modelReturned", "requestId", "stopReason", "usage", "latencyMs", "promptHash", "promptChars", "outputHash", "images", "mock", "error", "basedOn"].forEach(k => { if (call[k] !== undefined) keep[k] = call[k]; }); keep.recorded = true; return keep; }
+function provenanceOf(call) { const keep = {}; ["callId", "at", "purpose", "runId", "provider", "modelRequested", "modelReturned", "requestId", "stopReason", "usage", "latencyMs", "promptHash", "promptChars", "outputHash", "images", "mock", "error", "basedOn", "review"].forEach(k => { if (call[k] !== undefined) keep[k] = call[k]; }); keep.recorded = true; return keep; }
 
 function unknownBasis() { return { transcriptUpdatedAt: "", inputHash: "", attrSig: "", origin: "unknown" }; }
 function passagesSignature(passages) { return passages.filter(p => p.status === "done").map(p => p.id + "@" + (p.analyzedAt || "")).join(","); }
@@ -274,7 +275,8 @@ class Store {
       if (p.analysis) p.quoteCheck = shared.verifyPassage(turns, overrides, p);
     });
     if (summary) {
-      const cur = passagesSignature(passages.filter(p => !p.stale.length));
+      const snapshot = { run, transcript, passages, attrSig: sig };
+      const cur = passagesSignature(passages.filter(p => !p.stale.length && (!(summary.basedOn && summary.basedOn.preparedOnly) || Q.readingGate(snapshot, p).status === "ready")));
       summary.stale = [];
       if (!summary.basedOn || summary.basedOn.origin === "unknown") summary.stale.push("the input used for these patterns is unknown");
       summary.basedOn = summary.basedOn || unknownBasis();
@@ -284,8 +286,26 @@ class Store {
       const used = new Set(String(summary.basedOn.passagesSig || "").split(",").map(x => x.split("@")[0]));
       if (passages.some(p => used.has(p.id) && p.stale.length)) summary.stale.push("a card it was based on is stale");
     }
-    return { run, transcript, passages, summary, attachments, attrSig: sig };
+    const b = { run, transcript, passages, summary, attachments, attrSig: sig };
+    b.attributionGate = Q.attributionGate(b);
+    for (const p of passages) p.readingGate = Q.readingGate(b, p);
+    if (summary) {
+      const used = new Set(String(summary.basedOn.passagesSig || "").split(",").map(x => x.split("@")[0]));
+      const counted = passages.filter(p => used.has(p.id));
+      summary.readingGate = { status: b.attributionGate.status !== "ready" || summary.stale.length || counted.length < 2 || counted.some(p => p.readingGate.status !== "ready") ? "held" : "ready" };
+    }
+    return b;
   }
+
+  async commitPreparation(id, basis, preparation) { return this.withLock(id, async () => {
+    const run = await this.getRun(id), transcript = await this.getTranscript(id);
+    if (!run || run.example) throw Object.assign(new Error("This run cannot be prepared."), { status: run ? 403 : 404 });
+    if (sha256(transcript) !== basis.inputHash || shared.attrSig(run.provenance.overrides) !== basis.attrSig) throw Object.assign(new Error("The input changed during preparation; try again on the current text."), { status: 409, code: "input_changed" });
+    run.provenance = Object.assign({}, run.provenance, { overrides: preparation.overrides });
+    run.preparation = Object.assign({}, preparation, { inputHash: basis.inputHash, attrSig: shared.attrSig(preparation.overrides) });
+    run.updatedAt = nowISO(); delete run.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
+  }); }
 
   /* A run from whatever the person has. kind "transcript" (default) or "claim" (one claim or quote; it becomes a
      single finished passage with one person-supplied claim, routed by heuristics, ready to search with no model).
@@ -500,11 +520,12 @@ class Store {
         const e = new Error("the input changed before this analysis started; reload and try again"); e.status = 409; e.code = "input_changed"; throw e;
       }
       if (purpose === "patterns") {
-        const current = passagesSignature((await this.bundle(id)).passages.filter(p => !p.stale.length));
+        const current = passagesSignature((await this.bundle(id)).passages.filter(p => !p.stale.length && (!requested.preparedOnly || p.readingGate.status === "ready")));
         if (typeof requested.passagesSig !== "string" || requested.passagesSig !== current) {
           const e = new Error("the cards changed before these patterns started; reload and try again"); e.status = 409; e.code = "stale_reading"; throw e;
         }
         basis.passagesSig = current;
+        basis.preparedOnly = !!requested.preparedOnly;
       }
       return basis;
     });

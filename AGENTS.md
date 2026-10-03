@@ -40,7 +40,7 @@ APIs (Crossref, PubMed, GDELT for news; OpenAlex with an optional key) and needs
      `npm run launch -- --port 4000` to choose a port, `npm start` to run without the launcher.
 5. **Check health yourself** if you want to confirm: `curl -s http://127.0.0.1:3123/api/health` returns `{"ok":true,…}`
    with `ai` null (no key yet) or the model name, and `version`.
-6. **Present the address** to the person. The supplied example (a Rogan–Peterson episode, 16 cards) opens without a key.
+6. **Present the address** to the person. The supplied example opens without a key, but its old readings are held until preparation passes. A pasted claim can be searched without a key; **Copy and prepare this example** starts model preparation and asks for the key when needed.
 
 ## The API key
 
@@ -67,7 +67,7 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 
 ## Checks you can run
 
-- `npm test` — 86 regression tests, no external network or key; uses local HTTP servers.
+- `npm test` — 102 regression tests, no external network or key; uses local HTTP servers.
 - `npm run doctor` — prints what is configured without printing secrets.
 - `npm run research-smoke` — hits the live Crossref and PubMed services for two example claims (needs network).
 - `node scripts/ui-check.js` — optional headless-browser check; needs `npm install --no-save playwright && npx playwright install chromium` first.
