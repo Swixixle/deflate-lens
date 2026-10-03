@@ -1,14 +1,21 @@
 "use strict";
-/* Builds the exports from a run bundle. The JSON is the seam to other tools (schema deflate-lens/claims@0.2): every
+/* Builds the exports from a run bundle. The JSON is the seam to other tools (schema deflate-lens/claims@0.5): every
    claim carries its speaker, turn range, type, judgments and records. Vocabulary: a claim's `status` is unchecked
    (nobody has looked), searched (a search ran; candidates may be waiting), or receipt (a person attached at least one
-   document they judged relevant). None of these means verified; the export says so in `statusMeaning`. */
+   document they judged relevant). None of these means verified; the export says so in `statusMeaning`. A receipt's
+   `relation` is what the attaching person said the document does (supports / contradicts / mentions / unstated); the
+   meanings are in `relationMeaning`. The export carries the SHA-256 of the transcript it was made from and, on every
+   passage, the hash of the text that reading was made from, so `scripts/verify-export.js` can check an export against a
+   transcript file. */
+const { RELATION_MEANING } = require("./research/types");
 
 const STATUS_MEANING = {
   unchecked: "No one has looked for sources yet. The model cannot search.",
   searched: "A search ran and its attempts are on record; any candidates are waiting for a person's judgment.",
-  receipt: "A person attached one or more documents they judged relevant and wrote a note. This records a judgment of relevance, not verification of the claim.",
+  receipt: "A person attached one or more documents they judged relevant and wrote a note. This records a judgment of relevance, not verification of the claim. Each receipt's `relation` is that person's stated reading of the document (see relationMeaning); it is never inferred from a search.",
 };
+function relationCounts(receipts) { const out = { supports: 0, contradicts: 0, mentions: 0, unstated: 0 }; receipts.forEach(x => { const r = x.relation || "unstated"; out[r in out ? r : "unstated"]++; }); return out; }
+function relationPhrase(rc) { const n = relationCounts(rc); const parts = []; if (n.supports) parts.push(n.supports + " marked supports"); if (n.contradicts) parts.push(n.contradicts + " marked contradicts"); if (n.mentions) parts.push(n.mentions + " marked mentions"); if (n.unstated) parts.push(n.unstated + " with no relation stated"); return parts.join(", "); }
 
 function speakerName(key, run) {
   const s = (run.speakers || []).find(x => x.key === key);
@@ -29,27 +36,33 @@ function buildExport(b) {
     status: claimStatus(c), wouldSettle: c.wouldSettle || "", turns: [p.turnStart, p.turnEnd], provisional: provisionalFor(b, p),
     expectedSources: c.expectedSources || [], searchQuery: c.searchQuery || "", obligationId: c.obligation && c.obligation.id || "",
     stale: p.stale || [],
-    receipts: (c.receipts || []).map(x => ({ rid: x.rid || "", kind: x.kind || "link", url: x.url, note: x.note || "", addedBy: x.addedBy || "", at: x.at || "", title: x.title || "", doi: x.doi || "", pmid: x.pmid || "", journal: x.journal || "", publishedAt: x.publishedAt || "", retrievedAt: x.retrievedAt || "", foundBy: x.foundBy || [], notices: x.notices || [],
+    relations: relationCounts(activeReceipts(c)),
+    receipts: (c.receipts || []).map(x => ({ rid: x.rid || "", kind: x.kind || "link", url: x.url, note: x.note || "", addedBy: x.addedBy || "", at: x.at || "", title: x.title || "", doi: x.doi || "", pmid: x.pmid || "", journal: x.journal || "", outlet: x.outlet || "", sourceType: x.sourceType || "", publishedAt: x.publishedAt || "", retrievedAt: x.retrievedAt || "", foundBy: x.foundBy || [], notices: x.notices || [],
+      relation: x.relation || "unstated", relationBy: x.relationBy || "", relationAt: x.relationAt || "", relationHistory: x.relationHistory || [],
       withdrawn: !!x.withdrawnAt, withdrawnAt: x.withdrawnAt || "", withdrawReason: x.withdrawReason || "", reattached: x.reattached || null })),
     searches: (c.searches || []).map(a => ({ adapter: a.adapter, field: a.field || "", query: a.query, hitCount: a.hitCount, totalReported: a.totalReported == null ? null : a.totalReported, error: a.error || null, at: a.at || "", readingRev: a.readingRev == null ? null : a.readingRev, late: !!a.late, provisional: a.provisional || [] })),
     candidatesPending: (c.candidates || []).filter(x => x.status === "candidate").length,
     rejections: (c.rejections || []).map(x => ({ doi: x.doi || "", url: x.url || "", reason: x.reason, detail: x.detail || "", at: x.at || "" }))
   })));
   return {
-    schema: "deflate-lens/claims@0.4",
+    schema: "deflate-lens/claims@0.5",
     exportedAt: new Date().toISOString(),
     generator: "deflate-lens local app",
     statusMeaning: STATUS_MEANING,
+    relationMeaning: RELATION_MEANING,
+    verify: "run `node scripts/verify-export.js <this file> <transcript.txt>` to check that run.transcript.sha256 is the SHA-256 of that file's text and which passages were read from exactly that text",
     run: {
       id: r.id, title: r.title, kind: r.kind || "transcript", parseMode: r.parseMode || "transcript", example: !!r.example, copiedFrom: r.copiedFrom || "", import: r.import || null,
       source: { url: r.sourceUrl || "", label: r.sourceLabel || "", date: r.sourceDate || "" },
-      transcript: { updatedAt: r.transcriptUpdatedAt || "", characters: (b.transcript || "").length },
+      transcript: { updatedAt: r.transcriptUpdatedAt || "", characters: (b.transcript || "").length, sha256: r.input && r.input.sha256 || "", bytes: r.input && r.input.bytes || null, parseMode: r.input && r.input.parseMode || r.parseMode || "transcript", earlierVersions: (r.inputHistory || []).map(x => ({ sha256: x.sha256, chars: x.chars, transcriptUpdatedAt: x.transcriptUpdatedAt, replacedAt: x.replacedAt })) },
       provenance: { confirmedAt: pr.confirmedAt || "", confirmedBy: pr.confirmedBy || "", notApplicable: !!pr.notApplicable, method: pr.method || "", attrSig: b.attrSig, transcriptNote: pr.transcriptNote || "",
         corrected: Object.keys(pr.overrides || {}).map(i => ({ turn: Number(i), speaker: pr.overrides[i] })), flagged: (pr.flags || []).map(f => f.turn), earlierDecisions: (r.provenanceHistory || []).length },
       speakers: (r.speakers || []).map(s => ({ key: s.key, name: s.name || s.key })),
       orphans: (r.orphans || []).map(o => ({ id: o.id, claimText: o.claimText, from: o.from, receipts: (o.receipts || []).length, searches: (o.searches || []).length, rejections: (o.rejections || []).length, parkedAt: o.parkedAt })),
     },
     passages: done.map(p => ({ id: p.id, title: p.title, turnStart: p.turnStart, turnEnd: p.turnEnd, speakers: p.speakers || [], analyzedAt: p.analyzedAt || "", analyzedBy: p.analyzedBy || "", model: p.model || "", stale: p.stale || [], rev: p.rev || 0, readingRev: p.readingRev || 0, earlierReadings: (p.history || []).length,
+      basedOn: { inputHash: p.basedOn && p.basedOn.inputHash || "", attrSig: p.basedOn && p.basedOn.attrSig || "", transcriptUpdatedAt: p.basedOn && p.basedOn.transcriptUpdatedAt || "" },
+      provenance: p.provenance || null,
       quoteCheck: p.quoteCheck || null,
       quotes: (p.analysis.asSaid || []).map(q => ({ turn: q.turn, matchedTurn: q.matchedTurn == null ? null : q.matchedTurn, relocated: !!q.relocated, speakerClaimed: q.speaker, speakerNow: q.speakerNow || "", speakerMismatch: !!q.speakerMismatch, quote: q.quote, verbatim: !!q.verbatim, turnOk: q.turnOk !== false, foundIn: q.foundIn || [] })),
       judgments: p.analysis.judgments, fidelity: p.analysis.fidelity.grade, jump: { present: p.analysis.jump.present, pivot: p.analysis.jump.pivot || "", pivotVerbatim: p.analysis.jump.pivotVerbatim, survives: p.analysis.revision.jumpSurvives || "" } })),
@@ -67,7 +80,7 @@ function buildMarkdown(b, level) {
   if (r.kind === "claim") out.push("_A claim supplied by a person, not taken from a transcript. Nothing here was graded by a model unless a card says so._\n");
   if (r.sourceUrl) out.push("Source: " + (r.sourceLabel || "") + " " + r.sourceUrl + "\n");
   if (r.example) out.push("_Supplied example. Analysis written in chat by Claude, corrected after a second-reader review; attribution not confirmed by a person._\n");
-  out.push("_Quotes are exact words from the transcript, checked word for word. A source attached to a claim records a person's judgment that it is relevant; it does not make the claim verified._\n");
+  out.push("_Quotes are exact words from the transcript, checked word for word. A source attached to a claim records a person's judgment that it is relevant, and the relation shown in brackets ([supports], [contradicts], [mentions]) is what that person said the document does; neither makes the claim verified._" + (r.input && r.input.sha256 ? " _Transcript sha256: " + r.input.sha256 + "._" : "") + "\n");
   b.passages.forEach(p => {
     if (p.status !== "done" || !p.analysis) return; const a = p.analysis, qc = p.quoteCheck;
     out.push("## " + p.title + " (turns " + p.turnStart + "–" + p.turnEnd + ")" + ((p.stale || []).length ? " — STALE: " + p.stale.join("; ") : "") + "\n");
@@ -76,11 +89,11 @@ function buildMarkdown(b, level) {
     out.push("**In fairness to the speaker.** " + T(a.defense) + "\n");
     out.push("**What is left" + (a.revision.jumpSurvives ? " (the jump " + ({ yes: "stands", partly: "partly stands", no: "does not stand" })[a.revision.jumpSurvives] + ")" : "") + ".** " + T({ hs: a.revision.hs, g5: a.revision.g5 }) + "\n");
     out.push("**Claims.**");
-    (a.claims || []).forEach(c => { const rc = activeReceipts(c); const settle = (c.settle && (c.settle[L] || c.settle.hs)) || c.wouldSettle || ""; out.push("- [" + c.type + "] " + c.text + (c.plain && (c.plain[L] || c.plain.hs) ? " — in plain words: " + (c.plain[L] || c.plain.hs) : "") + " — " + T(c.basis) + (settle ? " · would settle it: " + settle : "") + " · " + ({ receipt: "sources attached: " + rc.length, searched: "searched, no source attached", unchecked: "not checked" })[claimStatus(c)] + (rc.length ? " (" + rc.map(x => x.url).join(" ") + ")" : "")); });
+    (a.claims || []).forEach(c => { const rc = activeReceipts(c); const settle = (c.settle && (c.settle[L] || c.settle.hs)) || c.wouldSettle || ""; out.push("- [" + c.type + "] " + c.text + (c.plain && (c.plain[L] || c.plain.hs) ? " — in plain words: " + (c.plain[L] || c.plain.hs) : "") + " — " + T(c.basis) + (settle ? " · would settle it: " + settle : "") + " · " + ({ receipt: "sources attached: " + rc.length + " (" + relationPhrase(rc) + ")", searched: "searched, no source attached", unchecked: "not checked" })[claimStatus(c)] + (rc.length ? " (" + rc.map(x => x.url + (x.relation && x.relation !== "unstated" ? " [" + x.relation + "]" : "")).join(" ") + ")" : "")); });
     out.push("\n**The words as said.**");
     (a.asSaid || []).forEach(q => out.push("> " + speakerName(q.speakerNow || q.speaker, r) + " [" + (q.matchedTurn != null ? q.matchedTurn : q.turn) + "]: “" + q.quote + "”" + (q.verbatim ? "" : " (not found word for word)") + (q.relocated ? " (the card named turn " + q.turn + "; the words are in turn " + q.matchedTurn + ")" : "") + (q.speakerMismatch ? " (the model labelled this " + speakerName(q.speaker, r) + ")" : "")));
     out.push("\n_Rewrite checked: " + (a.fidelity.grade || "unrated") + " — " + T(a.fidelity.notes) + "_");
-    out.push("_Evidence: " + a.judgments.evidence + " · Inference: " + a.judgments.inference + (qc ? " · Quotes matched: " + qc.matched + "/" + qc.quotes : "") + (p.analyzedBy ? " · by " + p.analyzedBy : "") + "_\n");
+    out.push("_Evidence: " + a.judgments.evidence + " · Inference: " + a.judgments.inference + (qc ? " · Quotes matched: " + qc.matched + "/" + qc.quotes : "") + (p.analyzedBy ? " · by " + p.analyzedBy : "") + (p.provenance && p.provenance.recorded ? " · model call " + (p.provenance.requestId || p.provenance.callId) + (p.provenance.modelReturned ? " (" + p.provenance.modelReturned + ")" : "") : "") + (p.basedOn && p.basedOn.inputHash ? " · read from text sha256:" + p.basedOn.inputHash.slice(0, 12) + "…" : "") + "_\n");
   });
   if (b.summary) { out.push("## Patterns\n"); (b.summary.patterns || []).forEach((x, i) => out.push((i + 1) + ". **" + T(x.title) + "** " + T(x.body))); out.push("\n## What survived\n" + T(b.summary.survived) + "\n"); }
   return out.join("\n");
@@ -95,4 +108,4 @@ function buildObligations(b) {
   return { schema: "deflate-lens/obligations@0.2", compatible_with: "Receipts src/surfacing/obligations.py EvidenceObligation.to_json", exportedAt: new Date().toISOString(), statusMeaning: STATUS_MEANING, run: { id: b.run.id, title: b.run.title, source: { url: b.run.sourceUrl || "", label: b.run.sourceLabel || "", date: b.run.sourceDate || "" }, attributionConfirmed: !!(b.run.provenance && b.run.provenance.confirmedAt) }, obligations };
 }
 
-module.exports = { buildExport, buildMarkdown, buildObligations, claimStatus, activeReceipts, STATUS_MEANING };
+module.exports = { buildExport, buildMarkdown, buildObligations, claimStatus, activeReceipts, relationCounts, STATUS_MEANING };

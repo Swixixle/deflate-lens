@@ -37,8 +37,11 @@ function createAnthropicAI({ apiKey, model, maxTokens }) {
       }
       const text = (res.content || []).filter(c => c.type === "text").map(c => c.text).join("\n");
       const usage = res.usage ? { input: res.usage.input_tokens, output: res.usage.output_tokens } : null;
-      if (json) return { data: parseJSONLoose(text), text, usage, model: res.model || mdl };
-      return { text, usage, model: res.model || mdl };
+      // the provider's own identifiers travel with the answer so the server can record which call produced which reading
+      const meta = { usage, model: res.model || mdl, requestId: res.id || "", stopReason: res.stop_reason || "" };
+      if (!json) return Object.assign({ text }, meta);
+      try { return Object.assign({ data: parseJSONLoose(text), text }, meta); }
+      catch (e) { e.meta = meta; throw e; } // the provider did answer: the record keeps its id, model and usage
     }
   };
 }
@@ -88,7 +91,8 @@ function createMockAI() {
         data = { patterns: [{ title: { hs: "MOCK pattern", g5: "MOCK pattern" }, body: { hs: "MOCK: patterns are not computed in mock mode.", g5: "MOCK." }, passages: [] }], survived: { hs: "MOCK: not computed.", g5: "MOCK." } };
       } else data = { note: "MOCK: unrecognised prompt" };
       const text = JSON.stringify(data);
-      return json ? { data, text, usage: null, model: "mock" } : { text, usage: null, model: "mock" };
+      const meta = { usage: null, model: "mock", requestId: "mock_" + Math.random().toString(36).slice(2, 8), stopReason: "end_turn" };
+      return json ? Object.assign({ data, text }, meta) : Object.assign({ text }, meta);
     }
   };
 }

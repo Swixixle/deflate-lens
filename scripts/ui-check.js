@@ -115,13 +115,25 @@ const T = ["HOST: Welcome back. Today we talk about plans.", "GUEST: Thanks for 
     out.retractionBadge = await card.locator(".more-body .badge.stale:has-text('Retraction')").count();
     out.searchedChip = await card.locator(".chip-ev:has-text('Searched · 2 waiting')").count();
     const retractedRow = card.locator(".more-body .cand:has(.badge.stale:has-text('Retraction'))").first();
-    await retractedRow.locator("select").selectOption("retracted_or_corrected");
+    await retractedRow.locator("select").last().selectOption("retracted_or_corrected"); // the last select is the rejection reason; the first is the relation
     await retractedRow.locator("button:has-text('Reject')").click();
     await page.waitForFunction(() => document.querySelectorAll("#stage-deflate .card .more-body button").length && document.querySelectorAll("#stage-deflate .card .more-body .cand").length === 1, null, { timeout: 10000 });
     const cleanRow = card.locator(".more-body .cand").first();
-    await cleanRow.locator("input[type=text]").fill("UI check: supports the claim");
+    await cleanRow.locator("input[type=text]").fill("UI check: read it, it cuts the other way");
+    // the person says what the document does for the claim (0.8.0): here, that it contradicts it
+    out.relationChoices = await cleanRow.locator("select").first().locator("option").count();
+    await cleanRow.locator("select").first().selectOption("contradicts");
     await cleanRow.locator("button:has-text('Accept as a source')").click();
+    await page.waitForFunction(() => Array.from(document.querySelectorAll("#stage-deflate .card .chip-ev")).some(b => /Sources · 1 · 1 contradicts/.test(b.textContent)), null, { timeout: 10000 });
+    out.contradictsChip = await card.locator(".claim .chip-ev:has-text('1 contradicts')").count();
+    out.cardContradictedChip = await card.locator("header .chip-ev:has-text('1 contradicted')").count();
+    await card.locator(".claim .chip-ev:has-text('1 contradicts')").click();
+    out.contradictsPanel = /contradicts it/.test(await card.locator(".claim .chip-panel:not([hidden])").first().textContent());
+    out.relationPill = await card.locator(".more-body .rc .pill.rel.contradicts").count();
+    // the relation can be changed from Details; the previous value stays on record
+    await card.locator(".more-body .rc select[aria-label='Relation to the claim']").first().selectOption("supports");
     await page.waitForFunction(() => Array.from(document.querySelectorAll("#stage-deflate .card .chip-ev")).some(b => /Sources · 1$/.test(b.textContent)), null, { timeout: 10000 });
+    out.relationChanged = /relation changed 1 time \(was contradicts\)/.test(await card.locator(".more-body").textContent());
     out.sourcesChip = await card.locator(".claim .chip-ev:has-text('Sources · 1')").count();
     out.cardSourcesChip = await card.locator("header .chip-ev:has-text('Sources · 1 of 1 checkable claim')").count();
     out.noVerifiedWord = !/verified/i.test(await card.locator(".chips, .read").allTextContents().then(a => a.join(" ")));

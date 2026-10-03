@@ -9,7 +9,7 @@
    Every connector therefore paces its own requests and retries a 429 once after the Retry-After interval. */
 const { normalizeDoi } = require("./types");
 
-const UA = "deflate-lens/0.7 (local research tool; contact via RESEARCH_CONTACT_EMAIL)";
+const UA = "deflate-lens/0.8 (local research tool; contact via RESEARCH_CONTACT_EMAIL)";
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /* Spaces calls at least `minIntervalMs` apart, in order. One limiter per service. */
@@ -78,10 +78,11 @@ function crossref({ fetch: fetchFn, mailto, minIntervalMs }) {
           const r = await pacedFetch(fetchFn, limiter, url);
           attempt.msElapsed = Date.now() - t0;
           if (r.status !== 200 || !r.data || !r.data.message) { attempt.error = "HTTP " + r.status + (r.rateLimited ? " (rate limited twice; try again in a minute)" : ""); return { candidates: [], attempt }; }
-          const items = r.data.message.items || [];
+          if (!Array.isArray(r.data.message.items)) { attempt.error = "Crossref returned an invalid works response; no search result was read"; return { candidates: [], attempt }; }
+          const items = r.data.message.items;
           attempt.totalReported = Number(r.data.message["total-results"]); if (!Number.isFinite(attempt.totalReported)) attempt.totalReported = null;
           const candidates = items.map(it => ({
-            adapter: "crossref", doi: normalizeDoi(it.DOI), title: (it.title || [])[0] || "", journal: (it["container-title"] || [])[0] || "",
+            adapter: "crossref", doi: normalizeDoi(it.DOI), title: String((it.title || [])[0] || "").slice(0, 500), journal: String((it["container-title"] || [])[0] || "").slice(0, 300),
             authors: (it.author || []).slice(0, 6).map(a => [a.given, a.family].filter(Boolean).join(" ")).filter(Boolean),
             publishedAt: datePartsToISO(it.issued), docType: it.type || "", url: it.URL || (it.DOI ? "https://doi.org/" + it.DOI : ""), publisher: it.publisher || "",
             notices: noticesFrom(it["updated-by"]), noticesFromSearch: true, matchedBy: [field],
@@ -102,6 +103,7 @@ function crossref({ fetch: fetchFn, mailto, minIntervalMs }) {
         const r = await pacedFetch(fetchFn, limiter, base + "/" + encodeURIComponent(d) + (polite ? "?" + polite : ""));
         if (r.status === 404) return { notices: [], checked: true, error: null, note: "DOI not in Crossref" };
         if (r.status !== 200 || !r.data || !r.data.message) return { notices: [], checked: false, error: "HTTP " + r.status };
+        if (typeof r.data.message !== "object" || Array.isArray(r.data.message) || (!r.data.message.DOI && !Array.isArray(r.data.message["updated-by"]))) return { notices: [], checked: false, error: "Crossref returned an invalid work response; publication status was not checked" };
         return { notices: noticesFrom(r.data.message["updated-by"]), checked: true, error: null };
       } catch (e) { return { notices: [], checked: false, error: errText(e) }; }
     },
@@ -135,16 +137,18 @@ function pubmed({ fetch: fetchFn, apiKey, email, minIntervalMs }) {
       try {
         const es = await pacedFetch(fetchFn, limiter, esUrl + common);
         if (es.status !== 200 || !es.data || !es.data.esearchresult) { attempt.msElapsed = Date.now() - t0; attempt.error = "HTTP " + es.status + (es.rateLimited ? " (rate limited twice; add NCBI_API_KEY or wait a minute)" : ""); return { candidates: [], attempt }; }
-        const ids = es.data.esearchresult.idlist || [];
+        if (es.data.error || es.data.ERROR || es.data.esearchresult.error || es.data.esearchresult.ERROR || !Array.isArray(es.data.esearchresult.idlist)) { attempt.msElapsed = Date.now() - t0; attempt.error = "PubMed returned an error or invalid search response; no search result was read"; return { candidates: [], attempt }; }
+        const ids = es.data.esearchresult.idlist;
         attempt.totalReported = Number(es.data.esearchresult.count); if (!Number.isFinite(attempt.totalReported)) attempt.totalReported = null;
         if (!ids.length) { attempt.msElapsed = Date.now() - t0; return { candidates: [], attempt }; }
         const su = await pacedFetch(fetchFn, limiter, base + "esummary.fcgi?db=pubmed&retmode=json&id=" + ids.join(",") + common);
         attempt.msElapsed = Date.now() - t0;
         if (su.status !== 200 || !su.data || !su.data.result) { attempt.error = "esummary HTTP " + su.status; return { candidates: [], attempt }; }
+        if (su.data.error || su.data.ERROR || !ids.some(id => su.data.result[id] && su.data.result[id].title)) { attempt.error = "PubMed found article IDs but returned no readable summaries; the search is incomplete"; return { candidates: [], attempt }; }
         const candidates = ids.map(id => su.data.result[id]).filter(Boolean).map(r => {
           const idsArr = r.articleids || [];
           const get = t => { const a = idsArr.find(x => x.idtype === t); return a ? a.value : ""; };
-          return { adapter: "pubmed", pmid: String(r.uid || ""), pmc: get("pmc"), doi: normalizeDoi(get("doi")), title: r.title || "", journal: r.fulljournalname || r.source || "",
+          return { adapter: "pubmed", pmid: String(r.uid || ""), pmc: get("pmc"), doi: normalizeDoi(get("doi")), title: String(r.title || "").slice(0, 500), journal: String(r.fulljournalname || r.source || "").slice(0, 300),
             authors: (r.authors || []).slice(0, 6).map(a => a.name).filter(Boolean), publishedAt: pubdateToISO(r.pubdate), docType: (r.pubtype || []).join("; "),
             url: "https://pubmed.ncbi.nlm.nih.gov/" + r.uid + "/", fullTextUrl: get("pmc") ? "https://pmc.ncbi.nlm.nih.gov/articles/" + get("pmc") + "/" : "", notices: [] };
         }).filter(c => c.title);
@@ -174,10 +178,11 @@ function openalex({ fetch: fetchFn, apiKey, mailto, minIntervalMs }) {
         const r = await pacedFetch(fetchFn, limiter, url + "&api_key=" + encodeURIComponent(apiKey) + (mailto ? "&mailto=" + encodeURIComponent(mailto) : ""));
         attempt.msElapsed = Date.now() - t0;
         if (r.status !== 200 || !r.data) { attempt.error = "HTTP " + r.status + (r.data && r.data.message ? ": " + String(r.data.message).slice(0, 160) : ""); return { candidates: [], attempt }; }
-        const items = r.data.results || [];
+        if (!Array.isArray(r.data.results) || r.data.error || r.data.ERROR) { attempt.error = "OpenAlex returned an error or invalid works response; no search result was read"; return { candidates: [], attempt }; }
+        const items = r.data.results;
         attempt.totalReported = Number(r.data.meta && r.data.meta.count); if (!Number.isFinite(attempt.totalReported)) attempt.totalReported = null;
         const candidates = items.map(w => ({
-          adapter: "openalex", openalexId: w.id || "", doi: normalizeDoi(w.doi), title: w.title || "", journal: (w.primary_location && w.primary_location.source && w.primary_location.source.display_name) || "",
+          adapter: "openalex", openalexId: w.id || "", doi: normalizeDoi(w.doi), title: String(w.title || "").slice(0, 500), journal: String((w.primary_location && w.primary_location.source && w.primary_location.source.display_name) || "").slice(0, 300),
           authors: (w.authorships || []).slice(0, 6).map(a => a.author && a.author.display_name).filter(Boolean), publishedAt: w.publication_date || "", docType: w.type || "",
           url: w.doi || w.id || "", fullTextUrl: (w.open_access && w.open_access.oa_url) || "", notices: w.is_retracted ? [{ type: "retraction", label: "Retracted (OpenAlex flag)", source: "openalex", noticeDoi: "", date: "" }] : [],
         })).filter(c => c.title);
@@ -189,4 +194,67 @@ function openalex({ fetch: fetchFn, apiKey, mailto, minIntervalMs }) {
   };
 }
 
-module.exports = { crossref, pubmed, openalex, noticesFrom, titleFlag, datePartsToISO, pubdateToISO, makeLimiter, CROSSREF_TYPES, OPENALEX_TYPES };
+/* ---------------- GDELT DOC 2.0 (news coverage, no key) ----------------
+   GDELT indexes online news worldwide since 1 January 2017 and answers a keyword query with article records (URL,
+   title, outlet domain, the moment GDELT saw it, language, country). It is the only free, keyless, searchable
+   news index of its size; Public Eye uses the same route. What it returns is COVERAGE: that an outlet published an
+   article matching the words. It carries no abstract, no stance and no relevance score worth the name, so a news
+   candidate is a lead for a person to read, never more. Measured 2026-10-02 from this build: one request every
+   5 seconds per address; a faster burst gets HTTP 429 with a plain-text body beginning "Please limit requests";
+   an empty result is `{}` rather than an empty list; a date range back to 2017 is honoured. Rate-limit bodies also
+   arrive with HTTP 200 on some paths, so the body is checked, not only the status. */
+function gdeltDateStamp(d) { return d.toISOString().replace(/[-:T]/g, "").slice(0, 14); }
+/* The same web address with its scheme and host case-folded; the path is kept as is (paths can be case-sensitive). */
+function normalizeUrl(u) { try { const x = new URL(String(u)); return x.protocol.toLowerCase() + "//" + x.host.toLowerCase() + x.pathname + x.search; } catch (e) { return String(u || ""); } }
+function gdeltSeenToISO(s) { const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(String(s || "")); return m ? m[1] + "-" + m[2] + "-" + m[3] + "T" + m[4] + ":" + m[5] + ":" + m[6] + "Z" : ""; }
+/* GDELT's query language has operators (domain:, sourcelang:, sourcecountry:, theme:, tone:, near:, a leading minus, OR,
+   parentheses). A claim's query is words, so operators in it are stripped before the connector adds its own language
+   clause: the query a person or the model wrote cannot redirect the search to one outlet or one country unseen. */
+const GDELT_OPERATOR = /^-?(domain|domainis|sourcelang|sourcecountry|theme|tone|toneabs|imagetag|imagewebtag|imageocrmeta|imagenumfaces|imagefacetone|imagewebcount|near\d*|repeat\d*|proximity)\s*:/i;
+function gdeltWords(q) { return String(q || "").replace(/[()]/g, " ").split(/\s+/).filter(Boolean).filter(w => !GDELT_OPERATOR.test(w) && !/^OR$/.test(w)).map(w => w.replace(/^-+/, "")).filter(Boolean); }
+const clip = (x, n) => (typeof x === "string" || typeof x === "number" ? String(x) : "").replace(/\s+/g, " ").trim().slice(0, n);
+function gdelt({ fetch: fetchFn, minIntervalMs, language, now }) {
+  const base = "https://api.gdeltproject.org/api/v2/doc/doc";
+  const limiter = makeLimiter(minIntervalMs == null ? 5500 : minIntervalMs);
+  const lang = language === undefined ? "english" : String(language || "").trim().toLowerCase().replace(/[^a-z]/g, "");
+  return {
+    name: "gdelt",
+    async search({ query, limit }) {
+      const words = gdeltWords(query);
+      const q = words.join(" ");
+      const attempt = Object.assign(attemptBase("gdelt", q), { field: "fulltext", coverage: "news since 2017-01-01" + (lang ? ", " + lang + "-language outlets" : "") }); const t0 = Date.now();
+      if (q !== String(query || "").replace(/\s+/g, " ").trim()) attempt.note = "search operators were removed from the query";
+      if (words.length < 2) { attempt.error = "the query has fewer than two words; GDELT would return unrelated articles for it. Edit the query in Details."; return { candidates: [], attempt }; }
+      const n = Number.isFinite(Number(limit)) ? Math.floor(Number(limit)) : 8;
+      try {
+        const end = now ? new Date(now()) : new Date();
+        if (isNaN(end.getTime())) throw new Error("clock unavailable");
+        const url = base + "?query=" + encodeURIComponent(q + (lang ? " sourcelang:" + lang : "")) + "&mode=artlist&maxrecords=" + Math.min(Math.max(n || 8, 1), 25) + "&format=json&sort=hybridrel&startdatetime=20170101000000&enddatetime=" + gdeltDateStamp(end);
+        attempt.url = url;
+        let r = await pacedFetch(fetchFn, limiter, url, 30000);
+        const limitedText = x => /^\s*Please limit requests/i.test(x.text || "");
+        if (r.status === 200 && limitedText(r)) { await sleep(Math.max(5500, minIntervalMs == null ? 5500 : minIntervalMs)); r = await limiter(() => timedFetchJSON(fetchFn, url, null, 30000)); if (limitedText(r)) r.rateLimited = true; } // the limit text also arrives with HTTP 200
+        attempt.msElapsed = Date.now() - t0;
+        const limited = r.status === 429 || limitedText(r);
+        if (limited) { attempt.error = "GDELT rate limit (one request every 5 seconds per address" + (r.rateLimited ? "; hit twice" : "") + "). Wait a few seconds and search again."; return { candidates: [], attempt }; }
+        if (r.status !== 200) { attempt.error = "HTTP " + r.status + (r.text && !r.data ? ": " + String(r.text).replace(/\s+/g, " ").slice(0, 160) : ""); return { candidates: [], attempt }; }
+        if (!r.data || typeof r.data !== "object") { attempt.error = "GDELT answered with something other than JSON: " + String(r.text || "").replace(/\s+/g, " ").slice(0, 160); return { candidates: [], attempt }; }
+        // Only the documented empty object means nothing was found. An error object or an unexpected envelope
+        // must stay a failed attempt, even when the provider sends HTTP 200.
+        if (Array.isArray(r.data) || r.data.error || r.data.ERROR || (!Array.isArray(r.data.articles) && Object.keys(r.data).length)) { attempt.error = "GDELT returned an error or invalid article response; no search result was read"; return { candidates: [], attempt }; }
+        const items = (r.data.articles || []).filter(a => a && typeof a === "object"); // `{}` is GDELT's empty result
+        const seen = new Set();
+        const candidates = items.map(a => ({
+          adapter: "gdelt", sourceType: "news_coverage", title: clip(a.title, 300), url: clip(a.url, 2000), outlet: clip(a.domain, 200).toLowerCase(),
+          journal: "", authors: [], publishedAt: gdeltSeenToISO(a.seendate), seenAt: gdeltSeenToISO(a.seendate), language: clip(a.language, 40), sourceCountry: clip(a.sourcecountry, 80),
+          docType: "news-article", notices: [], noDoiReason: "news articles carry no DOI; the retraction registries do not cover them",
+        })).filter(c => c.title && /^https?:\/\/\S+$/i.test(c.url) && !seen.has(normalizeUrl(c.url)) && seen.add(normalizeUrl(c.url)));
+        attempt.hitCount = candidates.length; attempt.totalReported = null; // GDELT reports no total
+        attempt.topTitles = candidates.slice(0, 5).map(c => c.title);
+        return { candidates, attempt };
+      } catch (e) { attempt.msElapsed = Date.now() - t0; attempt.error = errText(e); return { candidates: [], attempt }; }
+    },
+  };
+}
+
+module.exports = { crossref, pubmed, openalex, gdelt, gdeltWords, normalizeUrl, noticesFrom, titleFlag, datePartsToISO, pubdateToISO, gdeltSeenToISO, makeLimiter, CROSSREF_TYPES, OPENALEX_TYPES };

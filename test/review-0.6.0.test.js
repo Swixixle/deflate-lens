@@ -137,8 +137,9 @@ test("F4: patterns and obligations reflect stale attribution; research on a stal
   const dataDir = tmp(); const s = await start(dataDir);
   try {
     const id = await labeledRun(s.api);
-    let b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", reading(["Growth was 1.5%."], "t1"))).data;
-    b = (await s.api("PUT", "/api/runs/" + id + "/summary", { patterns: [{ title: "t", body: "b", passages: ["p001"] }], survived: "s", basedOn: { passagesSig: "p001@t1" } })).data;
+    const source = (await s.api("GET", "/api/runs/" + id)).data;
+    let b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", reading(["Growth was 1.5%."], "t1", { basedOn: { transcriptUpdatedAt: source.run.transcriptUpdatedAt, attrSig: source.attrSig } }))).data;
+    b = (await s.api("PUT", "/api/runs/" + id + "/summary", { patterns: [{ title: "t", body: "b", passages: ["p001"] }], survived: "s", basedOn: { passagesSig: "p001@t1", transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig } })).data;
     assert.deepEqual(b.summary.stale, []); assert.ok(b.summary.basedOn.attrSig, "the summary records the attribution it was based on");
     let ob = (await s.api("GET", "/api/runs/" + id + "/obligations.json")).data;
     assert.equal(ob.obligations[0].provisional, false); assert.deepEqual(ob.obligations[0].stale, []); assert.ok(ob.obligations[0].claim_id); assert.equal(ob.obligations[0].reading_rev, 1);

@@ -15,8 +15,8 @@ const fail = m => { console.error("\n  Setup stopped: " + m + "\n"); process.exi
 console.log("\nDeflate Lens setup\n");
 
 // 1. Node
-const major = Number(process.versions.node.split(".")[0]);
-if (major < 18) fail("Node " + process.versions.node + " is too old. Install Node 18 or newer from https://nodejs.org (the LTS download), then run this again.");
+const [major, minor] = process.versions.node.split(".").map(Number);
+if (major < 18 || (major === 18 && minor < 17)) fail("Node " + process.versions.node + " is too old. Install Node 18.17 or newer from https://nodejs.org (the LTS download), then run this again.");
 log("Node " + process.versions.node + "  ok");
 
 // 2. npm (the one that launched us, or the one on the PATH)

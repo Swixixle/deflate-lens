@@ -13,11 +13,11 @@ yourself."*
 A local web app (Node.js + Express, no build step, no database) that runs on `127.0.0.1` and stores everything as
 JSON and text under `data/` inside the project folder. It ships with one read-only example run. Real analysis uses the
 person's own Anthropic API key, which the page asks for once and writes to `.env`. Searching sources uses free public
-APIs (Crossref, PubMed; OpenAlex with an optional key) and needs no key.
+APIs (Crossref, PubMed, GDELT for news; OpenAlex with an optional key) and needs no key.
 
 ## Steps
 
-1. **Inspect the environment.** `node --version` must be 18 or newer; `npm --version` must answer. If Node is missing
+1. **Inspect the environment.** `node --version` must be 18.17 or newer; `npm --version` must answer. If Node is missing
    or old, tell the person to install the LTS from https://nodejs.org (or use their package manager if they prefer:
    `brew install node` on a Mac with Homebrew). Do not install Node without asking; that is a system-level change.
 2. **Get the code.** Either unzip the ZIP the person has, or run
@@ -29,6 +29,7 @@ APIs (Crossref, PubMed; OpenAlex with an optional key) and needs no key.
    - If it stops, its last line says why and what to do. Fix that and run it again; it is safe to repeat.
    - On a machine that must not install packages itself, run `npm run setup -- --no-install` and install the
      dependencies the way that host allows (`npm ci` in the project folder).
+   On macOS, `Start-Deflate.command` runs setup followed by launch when double-clicked in Finder.
 4. **Start and open:** `npm run launch`
    - Starts the server, waits until `GET /api/health` answers, prints the address actually in use, and opens the
      page with the platform opener (`open` on macOS, `xdg-open` on Linux, `start` on Windows) when one exists.
@@ -58,7 +59,7 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 
 ## Where things are
 
-- `data/runs/<id>/` — one folder per run: `run.json`, `transcript.txt`, `passages/*.json`, `summary.json`, `attachments/`.
+- `data/runs/<id>/` — one folder per run: `run.json`, `transcript.txt`, `passages/*.json`, `summary.json`, `calls.jsonl` (model-call records: hashes, never prompt text), `attachments/`.
 - `data/runs/<id>/archive/` — passages replaced by a re-segment. `data/trash/` — runs deleted in the app. The app
   never removes files.
 - `.env` — local settings, including the key. Mode 600 when the app writes it.
@@ -66,7 +67,7 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 
 ## Checks you can run
 
-- `npm test` — 47 tests, no network, no key, about fifteen seconds.
+- `npm test` — 86 regression tests, no external network or key; uses local HTTP servers.
 - `npm run doctor` — prints what is configured without printing secrets.
 - `npm run research-smoke` — hits the live Crossref and PubMed services for two example claims (needs network).
 - `node scripts/ui-check.js` — optional headless-browser check; needs `npm install --no-save playwright && npx playwright install chromium` first.

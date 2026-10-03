@@ -2,8 +2,8 @@
 
 Every empirical claim (type `fact`, `contested` or `unsupported`) carries four lists on its passage record
 (`data/runs/<id>/passages/pNNN.json`, inside `analysis.claims[n]`) and they are copied into the claims export
-(`deflate-lens/claims@0.3`). Nothing in these lists is written by the model. Searches are written by the connectors;
-receipts, rejections and withdrawals are written only when a person clicks.
+(`deflate-lens/claims@0.5`). Nothing in these lists is written by the model. Searches are written by the connectors;
+receipts, rejections, withdrawals and relations are written only when a person clicks.
 
 Vocabulary, so no consumer mistakes a record for a verdict: a claim's `status` is `unchecked` (nobody has looked),
 `searched` (a search ran; candidates may be waiting), or `receipt` (a person attached at least one document, not
@@ -133,6 +133,14 @@ WITHDRAWN, RETRACTED, RETRACTION, EXPRESSION OF CONCERN, CORRIGENDUM or ERRATUM.
 `type` values seen: `retraction`, `correction`, `withdrawal`, `expression-of-concern`, `update`. OpenAlex's
 `is_retracted` flag becomes `{type: "retraction", source: "openalex"}`.
 
+A news candidate (connector `gdelt`, source type `news_coverage` or `long_form_journalism`; 0.8.0) has no DOI, PMID
+or authors; it carries `url`, `title`, `outlet` (the domain), `publishedAt` and `seenAt` (the moment GDELT saw it,
+UTC), `language`, `sourceCountry`, `docType: "news-article"`, `sourceType: "news_coverage"`, and
+`statusCheck: {checked: false, note: "news articles carry no DOI; the retraction registries do not cover them"}`.
+Its identity for dedupe is its address (two outlets printing the same wire headline are two candidates). The attempt
+for it records `field: "fulltext"` and `coverage: "news since 2017-01-01, english-language outlets"` (or without the
+language clause when `NEWS_LANGUAGE` is blank). GDELT reports no total, so `totalReported` is null.
+
 ## Receipt (a person's decision that this document bears on the claim)
 
 Appended to `receipts[]` when a person clicks **Accept as receipt**, or types a URL into **Attach receipt**.
@@ -151,8 +159,22 @@ Appended to `receipts[]` when a person clicks **Accept as receipt**, or types a 
 
 `kind` is `document` (from a candidate) or `link` (typed by hand via `POST …/claims/:idx/receipts {url, note}`; only
 `url`, `note`, `addedBy`, `at`). A receipt records that a person judged the document relevant. It does not record what
-the document shows beyond the note, and it does not change the claim's type or the card's judgments; those stay the
-model's reading, corrected by hand.
+the document shows beyond the note and the relation, and it does not change the claim's type or the card's judgments;
+those stay the model's reading, corrected by hand.
+
+**Relation (0.8.0).** `relation` is what the attaching person said the document does for the claim: `supports`,
+`contradicts`, `mentions`, or `unstated` (the default, meaning exactly that nothing was said). It is set from the
+`relation` field of the accept or attach request, or changed later with `PUT …/receipts/<rid>/relation {relation}`,
+which keeps the previous value in `relationHistory[] {relation, by, at, replacedAt}`. A stated relation carries
+`relationBy` and `relationAt`. It is never inferred: a search finding a document says nothing about its relation, and
+the server writes `unstated` for anything outside the closed set. A withdrawn receipt's relation is frozen (409
+`receipt_withdrawn`). The export carries `relation` per receipt, `relations` counts per claim (active receipts only), and
+`relationMeaning`. A relation does not change the claim's `status` vocabulary; `contradicts` is shown on the chip
+(`Sources · 2 · 1 contradicts`) and nothing else moves. The shape is Rabbit_Hole's `ClaimSupportEdge.supportKind` with
+the person recorded, which that repository's schema lacked.
+
+A receipt accepted from a news candidate (see *Candidate*) also carries `outlet`, `sourceType: "news_coverage"` and
+`language`; its `statusCheck` is `{checked: false, note: "news articles carry no DOI; …"}`.
 
 A receipt is never deleted. `POST …/claims/<claim id>/receipts/<rid>/withdraw {reason}` sets `withdrawnAt`,
 `withdrawnBy` and `withdrawReason`; a withdrawn receipt no longer counts toward `status` but stays in the list and in
@@ -162,7 +184,17 @@ or a re-run carries `reattached: {orphanId, from, by, at, originalClaimText}`.
 Decisions are explicit and reversible on record: accepting a candidate that is already accepted changes nothing
 (`outcome: "already accepted"`); rejecting a candidate that was accepted withdraws its receipt with
 `withdrawReason: "candidate rejected: <reason>"` and the rejection carries `withdrewReceipt: true`; accepting a
-rejected candidate is refused (409 `candidate_rejected`; attach it by hand if you mean it).
+rejected candidate is refused (409 `candidate_rejected`; attach it by hand if you mean it); accepting a candidate again
+after withdrawing its receipt is a new decision, so it makes a new receipt with its own id (`rc_<candidate>_2`, marked
+`reaccepted: true`) and the withdrawn one stays on record (`outcome: "accepted again after a withdrawal"`).
+
+**Whole-passage saves and records (0.8.0).** The page saves the whole passage it loaded (on a re-run, say), and that
+copy may be older than the disk. A record the disk already has therefore wins whole: a save cannot change or strip a
+receipt's relation, its withdrawal, a candidate's decision, or any other field of a record the server holds. A record
+the disk does not have is added after a shape check (a receipt needs an http(s) link; its relation is kept only from the
+closed set and its relation provenance is the server's; a candidate arrives undecided). `history`, `adopted`, `rerun`
+and `provenance` on a passage are server-owned and ignored on a save; a save that marks the card `running` or `pending`
+carries no reading at all, so the reading on disk stays whatever the copy held.
 
 ## Rejection (a person's decision that a candidate does not count)
 
@@ -231,10 +263,52 @@ connector should produce, so that a number can be re-derived rather than trusted
 No connector in this build writes this shape (Dataverse, GSS, Census, BLS, World Bank, NASA/NOAA and DataCite were
 proposed but not built). It is here so the next build has a target and the exports are stable.
 
+## Input record and reading binding (`run.input`, `basedOn.inputHash`; 0.8.0)
+
+The server hashes the transcript as stored (`run.input = {sha256, chars, bytes, parseMode, recordedAt}`; SHA-256 of
+the UTF-8 text with no normalisation, so a changed line ending is a changed text) when a run is created and whenever
+the transcript changes; the previous hash goes to `run.inputHistory[] {sha256, chars, transcriptUpdatedAt, replacedAt}`
+(hashes only, never the text; capped at 200). A client cannot set either field.
+
+For a reading or summary with a known origin, the server resolves `basedOn.inputHash`: the client names the version it read
+(`basedOn.transcriptUpdatedAt`), the server looks the hash up, from the current text or from `inputHistory`, and writes
+it; a client-supplied `inputHash` is overwritten; a version the run does not remember gets `""`. Staleness
+("transcript changed since this analysis") is then `basedOn.inputHash !== run.input.sha256`, so an edit that is undone
+makes the cards fresh again, which the timestamp rule could not say. Readings saved before 0.8.0 carry no hash and keep
+the timestamp rule; runs saved before 0.8.0 get an input record derived from their text on read and persisted on the
+next save. Since 0.8.1, a missing input version stays explicitly unknown/stale instead of being stamped current. A model request captures its input hash and attribution signature before contacting the provider; a stale request is refused before the call. Saving with its recorded `callId` uses that original snapshot, not a later client-supplied version. Pattern calls also capture the signature of the fresh cards they received. The claims export carries `run.transcript.sha256`, `earlierVersions`, and `basedOn` per passage;
+`node scripts/verify-export.js <export.json> <transcript.txt>` recomputes the file's hash and says, card by card,
+whether the reading was made from exactly that text, from an earlier version the run remembers, or from a text the
+export cannot name. This is CDIL's server-side hash at intake and Wordicon's read-time identity check, reduced to
+`node:crypto`; it proves that an export and a file describe the same text, not that any reading is fair.
+
+## Model-call record (`calls.jsonl`, `passage.provenance`; 0.8.0)
+
+Every request to the model is recorded by the server as one JSON line in `data/runs/<id>/calls.jsonl` (or
+`data/calls.jsonl` when the request names no run): `{callId, at, purpose, runId, provider, modelRequested,
+modelReturned, requestId, stopReason, usage: {input, output}, latencyMs, promptHash, promptChars, outputHash,
+outputChars, images: [{mediaType, sha256}], json, mock, basedOn: {inputHash, transcriptUpdatedAt, attrSig, passagesSig?}}`; a failed call is recorded with `error` and `errorMessage`
+instead of the output fields. The record holds hashes of the prompt and the answer, never their text. The page saves
+the reading with `callId`; the server copies its own record onto the passage as `provenance` (plus `recorded: true`)
+and drops whatever the client sent under that name; an unknown id, or an id recorded for another run or for no run, is
+recorded as `{callId, recorded: false, note}`, never invented. A same-reading save never replaces a recorded call with
+an unrecorded one; a copy of a run takes its `calls.jsonl` with it. A re-run moves the previous record into `history[]` with the reading it belongs to; a save of the same
+reading keeps it. The export carries `provenance` per passage. This is the orchestrator's minimal raw record
+(`{id, model, stop_reason, usage}`) with a prompt hash, latency and failure recording added, and it is per call, not
+per run.
+
+**Leak scan.** Nothing written under the data folder may contain a string shaped like an Anthropic key
+(`sk-ant-` followed by 20 or more key characters): the write is refused with 400 `key_in_document` and nothing is
+stored. A prompt containing one is not stored anyway (only its hash), so the call itself goes through.
+
 ## What each record proves
 
 | record | proves | does not prove |
 |---|---|---|
+| input record | the run's text had this SHA-256 at this time; a reading with the same `inputHash` was read from exactly that text | that the text is a faithful transcript of anything |
+| model-call record | the server sent a prompt with this hash to this provider at this time, and this model answered with this request id, these tokens, this output hash | that the answer is right |
+| relation | a person stated, at this time, that the document supports / contradicts / mentions the claim | what the document establishes; that the person read it correctly |
+| news candidate (GDELT) | an outlet at this address published an article whose text matched the query, seen by GDELT at this time | relevance, stance, or that the outlet is reliable |
 | search attempt | this query was sent to this service at this time and this came back | that the query was the right one |
 | candidate | the service returned a document with these identifiers | relevance |
 | status check | Crossref listed these notices (or none) for the DOI at that time | that an unlisted work is sound |

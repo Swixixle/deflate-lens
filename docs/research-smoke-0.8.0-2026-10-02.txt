@@ -1,0 +1,99 @@
+Adapters: crossref, pubmed, openalex, gdelt | OpenAlex key: no | contact email: no (set RESEARCH_CONTACT_EMAIL)
+
+=== Claim: Rising status raises serotonin and changes emotional sensitivity in humans. [contested]
+    would settle: Human studies manipulating social status and measuring serotonergic markers; reviews of tryptophan-depletion and status research.
+    obligation: obl_run_p005_c1 | types: academic_paper | query: social status serotonin humans dominance
+    attempt  crossref  hits:     6  ms:   509 
+    attempt  crossref  hits:     6  ms:   347 
+    attempt  pubmed    hits:     6  ms:   635 
+    attempt  openalex  hits:     0  ms:     0  ERROR: no OPENALEX_API_KEY configured (OpenAlex refuses unkeyed requests once the shared daily budget is spent)
+    candidates after dedupe: 15
+      - 2001 | Serotonin reverses dominant social status
+         doi:10.1016/s0166-4328(00)00393-4 | found by: crossref | status: no notice found
+      - 2006 | 6. Social dominance and serotonin receptor genes in crayfish.
+         doi:10.1016/s0070-2153(06)74006-6 | found by: pubmed | status: no notice found
+      - 1997 | Serotonin, social status and aggression
+         doi:10.1016/s0959-4388(97)80140-7 | found by: crossref+pubmed | status: no notice found
+      - 2023 | Sex influences the effects of social status on socioemotional behavior and serotonin neurochemi
+         doi:10.1186/s13293-023-00562-3 | found by: pubmed | status: no notice found
+      - 2011 | Social status gates social attention in humans
+         doi:10.1098/rsbl.2011.0881 | found by: crossref | status: no notice found
+      - 2017 | An Integrative Interdisciplinary Perspective on Social Dominance Hierarchies.
+         doi:10.1016/j.tics.2017.08.004 | found by: pubmed | status: no notice found
+      - 2022 | Dominance in humans
+         doi:10.1098/rstb.2020.0451 | found by: crossref | status: no notice found
+      - 2015 | Social inequalities in health in nonhuman primates.
+         doi:10.1016/j.ynstr.2014.11.005 | found by: pubmed | status: no notice found
+      - 2021 | Cues of Social Status: Associations Between Attractiveness, Dominance, and Status
+         doi:10.1177/14747049211056160 | found by: crossref | status: no notice found
+      - 2010 | Social status and day-to-day behaviour of male serotonin transporter knockout mice.
+         doi:10.1016/j.bbr.2010.03.035 | found by: pubmed | status: no notice found
+      - 1939 | Social Dominance and Sexual Status in the Chimpanzee
+         doi:10.1086/394580 | found by: crossref | status: no notice found
+      - 2019 | Social status dominates attention: Understanding the low dominance bias of non-spatial attentio
+         doi:10.26226/morressier.5cf632bfaf72dec2b055472f | found by: crossref | status: no notice found
+      - 1997 | Social dominance as a confounding factor in studies of primate aggression and serotonin
+         doi:10.1016/s0006-3223(97)00239-4 | found by: crossref | status: no notice found
+      - 2017 | Reciprocation under status ambiguity: How dominance motives and spread of status value shape gi
+         doi:10.1016/j.socnet.2016.08.004 | found by: crossref | status: no notice found
+      - 2020 | Does the β-measure make empirical sense? A vignette experiment on humans’ judgment of social do
+         doi:10.1016/j.socnet.2020.02.002 | found by: crossref | status: no notice found
+
+=== Claim: The planet is 20% greener than 30 years ago (NASA). [contested]
+    would settle: —
+    obligation: obl_run_p012_c1 | types: academic_paper, government_data | query: greening of the Earth and its drivers leaf area
+    attempt  crossref  hits:     6  ms:   607 
+    attempt  crossref  hits:     6  ms:   665 
+    attempt  pubmed    hits:     6  ms:   469 
+    attempt  openalex  hits:     0  ms:     0  ERROR: no OPENALEX_API_KEY configured (OpenAlex refuses unkeyed requests once the shared daily budget is spent)
+    candidates after dedupe: 15
+      - 2016 | Greening of the Earth and its drivers
+         doi:10.1038/nclimate3004 | found by: crossref | status: no notice found
+      - 2023 | Structural complexity biases vegetation greenness measures.
+         doi:10.1038/s41559-023-02187-6 | found by: pubmed | status: no notice found
+      - 2025 | WITHDRAWN: Antarctic Greening and Its Drivers
+         doi:10.21203/rs.3.rs-7215888/v1 | found by: crossref | status: NOTICE: Title marked WITHDRAWN
+      - 2023 | Greening of human-dominated ecosystems in India.
+         doi:10.1038/s43247-023-01078-9 | found by: pubmed | status: NOTICE: Correction 2024-08-14
+      - 2025 | WITHDRAWN: Antarctic Greening and Its Drivers
+         doi:10.21203/rs.3.rs-7215888/v2 | found by: crossref | status: NOTICE: Title marked WITHDRAWN
+      - 2019 | China and India lead in greening of the world through land-use management.
+         doi:10.1038/s41893-019-0220-7 | found by: pubmed | status: no notice found
+      - 2022 | Unraveling the Multiple Drivers of Greening-Browning and Leaf Area Variability in a Socioeconom
+         doi:10.3390/cli10050070 | found by: crossref | status: no notice found
+      - 2024 | Water deficit and storm disturbances co-regulate Amazon rainforest seasonality.
+         doi:10.1126/sciadv.adk5861 | found by: pubmed | status: no notice found
+      - 2015 | Greening the Earth
+         doi:10.1093/biosci/biv142 | found by: crossref | status: no notice found
+      - 2017 | Climate drivers of the Amazon forest greening.
+         doi:10.1371/journal.pone.0180932 | found by: pubmed | status: no notice found
+      - 2009 | Re-Greening Earth
+         doi:10.4148/2378-5853.1468 | found by: crossref | status: no notice found
+      - 2022 | Vegetation-based climate mitigation in a warmer and greener World.
+         doi:10.1038/s41467-022-28305-9 | found by: pubmed | status: no notice found
+      - 2019 | Survey of Hymenoscyphus fraxineus in a central European urban area and exploration of its possi
+         doi:10.1016/j.ufug.2018.05.013 | found by: crossref | status: no notice found
+      - 2025 | Turning a new leaf: Social and land use drivers of urban tree canopy change in the Chicago Metr
+         doi:10.1016/j.ufug.2025.128999 | found by: crossref | status: no notice found
+      - 2015 | Estimation of leaf area index in isolated trees with digital photography and its application to
+         doi:10.1016/j.ufug.2015.04.001 | found by: crossref | status: no notice found
+
+=== News coverage (GDELT, no key): the greening claim routed to news_coverage
+    attempt  gdelt     hits:     0  ms: 15110  (news since 2017-01-01, english-language outlets)  ERROR: HTTP 503: upstream connect error or disconnect/reset before headers. retried and the latest reset reason: connection timeout
+
+=== Publication-status check on a DOI known to be retracted: 10.1016/s0140-6736(97)11096-0
+    Correction (retraction-watch, 2004-03-06, notice doi 10.1016/s0140-6736(04)15715-2); Retraction (retraction-watch, 2010-02-06, notice doi 10.1016/s0140-6736(10)60175-4)
+
+Done. No files were written.
+attempt {"hits":0,"ms":15242,"error":"HTTP 503: upstream connect error or disconnect/reset before headers. retried and the latest reset reason: connection timeout","coverage":"news since 2017-01-01, english-language outlets"}
+attempt {"hits":0,"ms":15197,"error":"HTTP 503: upstream connect error or disconnect/reset before headers. retried and the latest reset reason: connection timeout","coverage":"news since 2017-01-01, english-language outlets"}
+
+Note on the GDELT lines above (2026-10-02, build environment): the three connector attempts were cut off by the build
+sandbox's outbound proxy, which closes a connection that has not answered within about 15 seconds ("upstream connect
+error ... connection timeout" is the proxy's text, not GDELT's). GDELT answered the same query to curl from the same
+sandbox in 14.2 s with HTTP 200, and earlier direct probes the same day returned article lists (greening query: 1 hit,
+k2radio.com 2026-08-20; "Jordan Peterson" lobster in 2018: 5 hits across news.sina.com.tw, whaleoil.co.nz,
+varsity.co.uk, aftonbladet.se, nzz.ch), an empty result as `{}`, and HTTP 429 with the body "Please limit requests to
+one every 5 seconds" on a burst. The connector's fixtures in test/reuse-0.8.0.test.js are taken from those responses.
+The connector's own live run has NOT been seen to succeed from this sandbox; on a computer without that proxy it has a
+30-second timeout. Run `npm run research-smoke` on your machine to see what GDELT actually returns there.

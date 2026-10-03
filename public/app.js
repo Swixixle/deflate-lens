@@ -76,6 +76,10 @@ function download(filename, text, type){
 var SOURCE_TYPES = ["corporate_filing","congressional_record","hearing_transcript","federal_court_filing","state_court_filing","regulatory_rule","regulatory_comment","campaign_finance_record","lobbying_disclosure","agency_report","news_coverage","long_form_journalism","academic_paper","patent","government_data","investigative_document","network_record","federal_contract","book_or_edition","company_statement","survey_report","transcript_or_recording"];
 var REJECTION_REASONS = [["does_not_address_claim","Does not address the claim"],["wrong_document_type","Wrong kind of document"],["no_primary_source","Not a primary source"],["out_of_date_window","Outside the relevant period"],["retracted_or_corrected","Retracted or corrected"],["duplicate","Duplicate of an accepted source"],["below_score_threshold","Too weak to count"]];
 var EMPIRICAL = ["fact","contested","unsupported","claim"];
+/* What a person says a source does for the claim. Default "unstated": attaching a document never implies support. */
+var RELATIONS = [["unstated","Relation not stated"],["supports","Supports the claim"],["contradicts","Contradicts the claim"],["mentions","Mentions it, settles nothing"]];
+function relationLabel(r){ var f = RELATIONS.filter(function(x){ return x[0] === (r||"unstated"); })[0]; return f ? f[1] : "Relation not stated"; }
+function relationCounts(rc){ var n = {supports:0, contradicts:0, mentions:0, unstated:0}; rc.forEach(function(x){ var r = x.relation || "unstated"; n[r in n ? r : "unstated"]++; }); return n; }
 
 /* ---------- API ---------- */
 var API = {
@@ -96,13 +100,26 @@ var API = {
   replacePassages(id, list){ return API.req("POST","/api/runs/" + id + "/passages", {passages:list}); },
   saveSummary(id, doc){ return API.req("PUT","/api/runs/" + id + "/summary", doc); },
   addAttachment(id, payload){ return API.req("POST","/api/runs/" + id + "/attachments", payload); },
-  sample(prompt, opts){ opts = opts || {}; return API.req("POST","/api/sample", {prompt:prompt, json:!!opts.json, images:opts.images||[]}, opts.signal); },
+  /* Every model call names the run it is for and its purpose; the server records the call and returns `provenance`,
+     whose callId the page puts on the reading it saves (the server then copies its own record onto the passage). */
+  sample(prompt, opts){
+    opts = opts || {};
+    var b = S.b, r = b && b.run;
+    var basedOn = opts.basedOn || (r ? {
+      inputHash: r.input && r.input.sha256 || "",
+      transcriptUpdatedAt: r.transcriptUpdatedAt,
+      attrSig: b.attrSig,
+      passagesSig: (b.passages || []).filter(function(p){ return p.status === "done" && p.analysis && !(p.stale || []).length; }).map(function(p){ return p.id + "@" + (p.analyzedAt || ""); }).join(",")
+    } : null);
+    return API.req("POST","/api/sample", {prompt:prompt, json:!!opts.json, images:opts.images||[], runId: opts.runId || (r ? r.id : ""), purpose: opts.purpose || "", basedOn:basedOn}, opts.signal);
+  },
   /* Every claim mutation names the claim by its id and the reading the page rendered; the server refuses (409) when
      the card moved on, instead of writing over a newer reading. */
   searchClaim(id, pid, cid, rev){ return API.req("POST","/api/runs/" + id + "/passages/" + pid + "/claims/" + cid + "/search", {expectedReadingRev:rev}); },
-  acceptCandidate(id, pid, cid, cand, note, rev){ return API.req("POST","/api/runs/" + id + "/passages/" + pid + "/claims/" + cid + "/candidates/" + cand + "/accept", {note:note||"", expectedReadingRev:rev}); },
+  acceptCandidate(id, pid, cid, cand, note, rev, relation){ return API.req("POST","/api/runs/" + id + "/passages/" + pid + "/claims/" + cid + "/candidates/" + cand + "/accept", {note:note||"", relation:relation||"unstated", expectedReadingRev:rev}); },
   rejectCandidate(id, pid, cid, cand, reason, detail, rev){ return API.req("POST","/api/runs/" + id + "/passages/" + pid + "/claims/" + cid + "/candidates/" + cand + "/reject", {reason:reason, detail:detail||"", expectedReadingRev:rev}); },
-  addReceipt(id, pid, cid, url, note, rev){ return API.req("POST","/api/runs/" + id + "/passages/" + pid + "/claims/" + cid + "/receipts", {url:url, note:note||"", expectedReadingRev:rev}); },
+  addReceipt(id, pid, cid, url, note, rev, relation){ return API.req("POST","/api/runs/" + id + "/passages/" + pid + "/claims/" + cid + "/receipts", {url:url, note:note||"", relation:relation||"unstated", expectedReadingRev:rev}); },
+  setRelation(id, pid, cid, rid, relation, rev){ return API.req("PUT","/api/runs/" + id + "/passages/" + pid + "/claims/" + cid + "/receipts/" + rid + "/relation", {relation:relation, expectedReadingRev:rev}); },
   withdrawReceipt(id, pid, cid, rid, reason, rev){ return API.req("POST","/api/runs/" + id + "/passages/" + pid + "/claims/" + cid + "/receipts/" + rid + "/withdraw", {reason:reason||"", expectedReadingRev:rev}); },
   attachOrphan(id, oid, pid, cid){ return API.req("POST","/api/runs/" + id + "/orphans/" + oid + "/attach", {pid:pid, idx:cid}); },
   importUrl(url){ return API.req("POST","/api/import", {url:url}); },
@@ -218,7 +235,13 @@ function renderRunList(){
   });
 }
 function stageName(s){ return ({draft:"Intake", attributed:"Attributed", segmented:"Segmented", analyzed:"Deflated", complete:"Complete"})[s] || s || "draft"; }
+function blockWhileBusy(){
+  if (!S.busy) return false;
+  alert("Wait for the current task to finish before changing runs or input.");
+  return true;
+}
 $("newRun").addEventListener("click", function(){
+  if (blockWhileBusy()) return;
   S.runId = null; UI.detailsOpen = {};
   S.b = {run:{id:null, title:"", sourceUrl:"", sourceLabel:"", sourceDate:"", speakers:[], status:"draft", kind:"transcript", provenance:{overrides:{}, flags:[], notes:""}, createdAt:nowISO(), updatedAt:nowISO()}, transcript:"", passages:[], summary:null, attachments:[], attrSig:attrSig({})};
   S.pendingImport = null;
@@ -228,6 +251,7 @@ $("newRun").addEventListener("click", function(){
 
 /* ---------- selecting / reloading a run ---------- */
 async function selectRun(id){
+  if (blockWhileBusy()) { try { location.hash = S.runId ? "run-" + S.runId : ""; } catch(e){} return false; }
   if (id !== S.runId) UI.detailsOpen = {};
   S.runId = id;
   try { location.hash = "run-" + id; } catch(e){}
@@ -236,10 +260,15 @@ async function selectRun(id){
   renderRunList();
 }
 async function reload(bundle){
-  if (!S.runId) return;
-  try { S.b = bundle || await API.getRun(S.runId); } catch(e){ S.b = null; S.runId = null; renderRun(); return; }
+  var selectedId = S.runId;
+  if (!selectedId || (bundle && (!bundle.run || bundle.run.id !== selectedId))) return false;
+  var loaded;
+  try { loaded = bundle || await API.getRun(selectedId); } catch(e){ if (S.runId !== selectedId) return false; S.b = null; S.runId = null; renderRun(); return false; }
+  if (S.runId !== selectedId || !loaded || !loaded.run || loaded.run.id !== selectedId) return false;
+  S.b = loaded;
   S.turns = parseTranscript(S.b.transcript || "", {mode: S.b.run && S.b.run.parseMode === "text" ? "text" : "transcript"});
   renderRun();
+  return true;
 }
 
 /* ---------- run view ---------- */
@@ -331,7 +360,7 @@ function renderIntake(){
       imgBtn.textContent = "Transcribing…";
       try {
         var images = []; for (var i = 0; i < files.length; i++) images.push({mediaType: files[i].type, data: await fileToBase64(files[i])});
-        var res = await API.sample(P.transcribe, {images: images});
+        var res = await API.sample(P.transcribe, {images: images, purpose:"transcribe"});
         var pieces = String(res.text||"").split(/\n---\n/);
         ta.value = (ta.value.trim() ? ta.value.trim() + "\n\n" : "") + pieces.map(function(t,i){ return "IMAGE " + (i+1) + ": " + t.trim(); }).join("\n\n"); updateStats();
         if (r.id) for (var j = 0; j < files.length; j++){ try { await API.addAttachment(r.id, {name:files[j].name||"", mediaType:files[j].type, data:images[j].data, transcribedText:(pieces[j]||"").trim()}); } catch(e){} }
@@ -358,7 +387,7 @@ function renderIntake(){
   if (!isNew && r.import) b.append(h("p",{class:"hint",text:"Fetched from " + r.import.url + " on " + fmtDate(r.import.fetchedAt) + " (" + r.import.chars.toLocaleString() + " characters, " + r.import.method + "). The text above is what was read; the link itself was not graded."}));
 
   async function onGo(){
-    if (!go) return; go.disabled = true; clear(msg);
+    if (!go || blockWhileBusy()) return; S.busy = true; go.disabled = true; clear(msg);
     var text = ta.value, k = kindNow || describeKind(text).d;
     try {
       if (k.kind === "empty"){ msg.append(h("div",{class:"note",text:"Nothing to work with yet. Paste a claim, a quote, a transcript, or a link."})); go.disabled = false; return; }
@@ -406,19 +435,20 @@ function renderIntake(){
         if (m2) m2.append(h("div",{class:"note ok",text: changed ? "Saved. " + (nb2.run.provenance && nb2.run.provenance.transcriptNote ? nb2.run.provenance.transcriptNote.replace(/^Transcript edited \S+ ?/, "Transcript edited ") + " " : "") + "Existing cards are marked stale and their quotes were re-checked against the new text." : "Saved."}));
       }
     } catch(e){ msg.replaceChildren(h("div",{class:"note err",text:"Could not save: " + errCopy(e)})); go.disabled = false; }
+    finally { S.busy = false; }
   }
   return p;
 }
 
 /* The one-time key prompt: shown when real analysis is asked for and no model is configured. The key goes to the
    server, which writes it to .env on this computer; it is never kept or shown in the page. */
-function ensureAI(where){
+function ensureAI(where, continueWith){
   if (S.ai) return true;
   var host = where || view; var old = host.querySelector(".keybox"); if (old) old.remove();
   var inp = h("input",{type:"password",placeholder:"sk-ant-…",autocomplete:"off",style:"min-width:260px"});
   var save = h("button",{class:"btn primary",type:"button",text:"Save key and continue",onclick:async function(){
     save.disabled = true;
-    try { var out = await API.setKey(inp.value); S.ai = out.ai; inp.value = ""; box.remove(); setStore("ready", "Server connected · " + (S.ai ? S.ai.model : "")); renderRun(); }
+    try { var out = await API.setKey(inp.value); S.ai = out.ai; inp.value = ""; box.remove(); setStore("ready", "Server connected · " + (S.ai ? S.ai.model : "")); if (continueWith) await continueWith(); else renderRun(); }
     catch(e){ save.disabled = false; note.textContent = errCopy(e); }
   }});
   var note = h("p",{class:"hint",text:"Get a key at console.anthropic.com (API keys). Usage is billed to that account. The key is written to the .env file in the app folder on this computer and is not sent back to the browser, logged, or stored anywhere else."});
@@ -452,7 +482,7 @@ function renderProvenance(){
   var msg = h("div");
   var stopBtn = h("button",{class:"btn",type:"button",text:"Stop",hidden:true,onclick:function(){ if (S.abort) S.abort.abort(); }});
   if (!ro){
-    var auditBtn = h("button",{class:"btn primary",type:"button",text: pr.auditedAt ? "Re-run attribution check" : "Check attribution with the model", onclick:function(){ if (!ensureAI(b)) return; runAudit(prog, msg, auditBtn, stopBtn); }});
+    var auditBtn = h("button",{class:"btn primary",type:"button",text: pr.auditedAt ? "Re-run attribution check" : "Check attribution with the model", onclick:function(){ if (!ensureAI(b, function(){ auditBtn.click(); })) return; runAudit(prog, msg, auditBtn, stopBtn); }});
     b.append(h("div",{class:"row"}, auditBtn, stopBtn, h("span",{class:"hint",text:(r.speakers||[]).some(function(x){ return x.bio; }) ? "" : "No bios given; the check works from the words alone. Bios under Add context make it sharper."})), prog, msg);
   }
   var flagsWrap = h("div",{});
@@ -480,7 +510,7 @@ function renderProvenance(){
       var row = h("div",{class:"turn" + (t.heading ? " heading":"") + (ov[String(t.i)] ? " changed":"")});
       row.append(h("span",{class:"n",text:"[" + t.i + "]"}));
       if (t.heading){ row.append(h("span",{class:"hint",text:"§ heading"}), h("span",{class:"txt",text:t.text})); }
-      else { var sel = h("select",{disabled:ro?"":null}); speakers.forEach(function(k){ sel.append(h("option",{value:k,text:speakerName(k), selected: effSpeaker(t) === k ? "selected":null})); }); sel.addEventListener("change", function(){ setOverride(t.i, sel.value); }); row.append(sel, h("span",{class:"txt",text:t.text})); }
+      else { var sel = h("select",{disabled:ro?"":null}); speakers.forEach(function(k){ sel.append(h("option",{value:k,text:speakerName(k), selected: effSpeaker(t) === k ? "selected":null})); }); sel.addEventListener("change", function(){ if (S.busy) { blockWhileBusy(); sel.value = effSpeaker(t); return; } setOverride(t.i, sel.value); }); row.append(sel, h("span",{class:"txt",text:t.text})); }
       list.append(row);
     });
     clear(pager);
@@ -493,6 +523,7 @@ function renderProvenance(){
   if (!ro){
     var confirmMsg = h("div");
     var confirmBtn = h("button",{class:"btn primary",type:"button",text: confirmed ? "Re-confirm attribution" : "Confirm attribution",onclick:async function(){
+      if (blockWhileBusy()) return; S.busy = true;
       try {
         var prov = JSON.parse(JSON.stringify(r.provenance || {}));
         prov.confirmedAt = nowISO(); prov.confirmedBy = "person at this computer";
@@ -500,6 +531,7 @@ function renderProvenance(){
         var nb = await API.saveRun(r.id, {provenance: prov, status: r.status === "draft" ? "attributed" : r.status});
         await refreshList(); await reload(nb);
       } catch(e){ confirmMsg.replaceChildren(h("div",{class:"note err",text:"Could not save: " + errCopy(e)})); }
+      finally { S.busy = false; }
     }});
     b.append(h("div",{class:"row"}, confirmBtn, confirmMsg));
   }
@@ -507,11 +539,14 @@ function renderProvenance(){
   return p;
 }
 async function setOverride(i, key){
+  if (blockWhileBusy()) return;
   var r = run(); if (!r || readOnly()) return;
   var prov = JSON.parse(JSON.stringify(r.provenance || {})); prov.overrides = prov.overrides || {};
   if (S.turns[i].label === key) delete prov.overrides[String(i)]; else prov.overrides[String(i)] = key;
   delete prov.confirmedAt; delete prov.confirmedBy;
+  S.busy = true;
   try { var nb = await API.saveRun(r.id, {provenance: prov}); await reload(nb); } catch(e){ alert(errCopy(e)); }
+  finally { S.busy = false; }
 }
 async function runAudit(prog, msg, btn, stopBtn){
   if (!S.ai || S.busy) return;
@@ -522,7 +557,7 @@ async function runAudit(prog, msg, btn, stopBtn){
       prog.querySelector(".fill").style.width = Math.round((c/ranges.length)*100) + "%";
       prog.querySelector(".hint").textContent = "Reading chunk " + (c+1) + " of " + ranges.length + "… this can take a minute per chunk.";
       S.abort = new AbortController();
-      var out = (await API.sample(P.audit(r, fmtTurns(ranges[c][0], ranges[c][1], {})), {json:true, signal:S.abort.signal})).data;
+      var out = (await API.sample(P.audit(r, fmtTurns(ranges[c][0], ranges[c][1], {})), {json:true, signal:S.abort.signal, purpose:"audit"})).data;
       (out && out.flags || []).forEach(function(f){ if (typeof f.turn === "number" && S.turns[f.turn]) flags.push({turn:f.turn, labeled:String(f.labeled||S.turns[f.turn].label), likely:String(f.likely||"UNSURE").toUpperCase(), confidence: typeof f.confidence==="number"?f.confidence:null, cue:String(f.cue||"").slice(0,200)}); });
       if (out && out.shift && out.shift.detected && out.shift.note) shiftNotes.push(String(out.shift.note));
     }
@@ -555,8 +590,8 @@ function renderDeflate(){
   var msg = h("div");
   var stopBtn = h("button",{class:"btn",type:"button",text:"Stop",hidden:true,onclick:function(){ if (S.abort) S.abort.abort(); }});
   if (!ro){
-    var segBtn = h("button",{class:"btn" + (S.b.passages.length ? "" : " primary"),type:"button",text: S.b.passages.length ? "Re-segment (archives current passages)" : "Split into passages",disabled:!ok?"":null,onclick:function(){ if (!ensureAI(b)) return; runSegment(prog,msg,segBtn,stopBtn); }});
-    var runBtn = h("button",{class:"btn primary",type:"button",text:"Deflate selected",disabled:(!ok||!S.b.passages.length)?"":null,onclick:function(){ if (!ensureAI(b)) return; runDeflate(prog,msg,runBtn,stopBtn,null); }});
+    var segBtn = h("button",{class:"btn" + (S.b.passages.length ? "" : " primary"),type:"button",text: S.b.passages.length ? "Re-segment (archives current passages)" : "Split into passages",disabled:!ok?"":null,onclick:function(){ if (!ensureAI(b, function(){ segBtn.click(); })) return; runSegment(prog,msg,segBtn,stopBtn); }});
+    var runBtn = h("button",{class:"btn primary",type:"button",text:"Deflate selected",disabled:(!ok||!S.b.passages.length)?"":null,onclick:function(){ if (!ensureAI(b, function(){ runBtn.click(); })) return; runDeflate(prog,msg,runBtn,stopBtn,null); }});
     b.append(h("div",{class:"row"}, segBtn, runBtn, stopBtn), prog, msg);
   }
   deflateListEl = h("div",{class:"plist"}); b.append(deflateListEl);
@@ -603,7 +638,7 @@ async function runSegment(prog,msg,btn,stopBtn){
       prog.querySelector(".fill").style.width = Math.round((c/ranges.length)*100) + "%";
       prog.querySelector(".hint").textContent = "Segmenting chunk " + (c+1) + " of " + ranges.length + "…";
       S.abort = new AbortController();
-      var out = (await API.sample(P.segment(r, fmtTurns(ranges[c][0], ranges[c][1])), {json:true, signal:S.abort.signal})).data;
+      var out = (await API.sample(P.segment(r, fmtTurns(ranges[c][0], ranges[c][1])), {json:true, signal:S.abort.signal, purpose:"segment"})).data;
       (out && out.passages || []).forEach(function(x){ var a = Number(x.turnStart), z = Number(x.turnEnd); if (isFinite(a) && isFinite(z) && a <= z && S.turns[a] && S.turns[z]) found.push({title:String(x.title||"").slice(0,120), turnStart:a, turnEnd:z, stake:String(x.stake||"").slice(0,300), speakers:speakersIn(a,z), status:"pending", segmentedBy:analyzedByLabel()}); });
     }
     found.sort(function(a,b){ return a.turnStart-b.turnStart; });
@@ -626,12 +661,12 @@ async function runDeflate(prog,msg,btn,stopBtn,single){
       var p = targets[i];
       if (prog){ prog.querySelector(".fill").style.width = Math.round((i/targets.length)*100) + "%"; prog.querySelector(".hint").textContent = "Deflating " + (i+1) + " of " + targets.length + ": " + (p.title||p.id) + "…"; }
       var base = JSON.parse(JSON.stringify(p)); delete base.id; delete base.stale;
-      base.status = "running"; await API.savePassage(r.id, p.id, base);
+      base.status = "running"; base.expectedReadingRev = p.readingRev || 0; await API.savePassage(r.id, p.id, base); // a stale tab is refused here too
       S.abort = new AbortController();
       try {
-        var res = await API.sample(P.deflate(r, p, fmtTurns(p.turnStart, p.turnEnd)), {json:true, signal:S.abort.signal});
+        var res = await API.sample(P.deflate(r, p, fmtTurns(p.turnStart, p.turnEnd)), {json:true, signal:S.abort.signal, purpose:"deflate"});
         // The server keeps the previous reading in history and carries a person's records to matching claims (store.savePassage).
-        base.analysis = sanitizeAnalysis(res.data, p); base.status = "done"; base.analyzedAt = nowISO(); base.analyzedBy = analyzedByLabel(); base.model = res.model || ""; base.usage = res.usage || null;
+        base.analysis = sanitizeAnalysis(res.data, p); base.status = "done"; base.analyzedAt = nowISO(); base.analyzedBy = analyzedByLabel(); base.model = res.model || ""; base.usage = res.usage || null; base.callId = res.provenance ? res.provenance.callId : "";
         base.speakers = speakersIn(p.turnStart, p.turnEnd); base.basedOn = {transcriptUpdatedAt: r.transcriptUpdatedAt, attrSig: S.b.attrSig};
         base.expectedReadingRev = p.readingRev || 0; // an edit or another tab's re-run while the model worked is refused, not overwritten
         delete base.error;
@@ -650,14 +685,14 @@ async function runDeflate(prog,msg,btn,stopBtn,single){
   S.busy = false; if (btn) btn.disabled = false; if (stopBtn) stopBtn.hidden = true; if (prog) prog.hidden = true; S.abort = null;
 }
 /* A claim a person typed, explained and graded by the model. The wording and identity of the claim never change:
-   the model's typing, basis, what-would-settle and query are written onto the person's claim; extra claims it finds
-   are appended. The server keeps the previous (person-only) reading in history. */
+   the model's typing, basis, what-would-settle and query are written onto that one claim. The server keeps the
+   previous (person-only) reading in history. */
 P.claim = function(run, text){
   return "You are a deflation reader grading ONE claim exactly as a person typed it. Do not reword the claim. Say in plain language what it asserts, type it, say what would settle it, name the source types and a search query a reference librarian would use. Keep a neutral register. You cannot browse.\n\n" +
   "Two reading levels for EVERY text you write: hs (a careful senior-high reader) and g5 (a ten-year-old; short concrete sentences).\n\n" +
   "Claim types: fact (empirical, supported in general knowledge) | contested (empirical, evidence mixed or disputed) | unsupported (empirical, no support known to you) | interpretation | value | image | unscorable (say what would make it scorable).\n" +
   "expectedSources: one or two of [academic_paper, survey_report, government_data, agency_report, news_coverage, book_or_edition, company_statement, transcript_or_recording, federal_court_filing, corporate_filing]. searchQuery: four to eight words.\n\n" +
-  "Reply with ONLY JSON of this exact shape:\n{\"deflated\":{\"hs\":\"what the claim asserts, in plain words, with every hedge the claim has\",\"g5\":\"\"},\"type\":\"fact|contested|unsupported|interpretation|value|image|unscorable\",\"basis\":{\"hs\":\"why this type\",\"g5\":\"\"},\"wouldSettle\":\"\",\"settle\":{\"hs\":\"what evidence would settle it\",\"g5\":\"\"},\"expectedSources\":[\"academic_paper\"],\"searchQuery\":\"\",\"hidden\":[{\"text\":\"a further claim the sentence quietly makes, if any\",\"type\":\"\",\"plain\":{\"hs\":\"\",\"g5\":\"\"},\"basis\":{\"hs\":\"\",\"g5\":\"\"},\"wouldSettle\":\"\",\"settle\":{\"hs\":\"\",\"g5\":\"\"},\"expectedSources\":[],\"searchQuery\":\"\"}],\"judgments\":{\"evidence\":\"n/a\",\"inference\":\"valid|gap|unfalsifiable|n/a\"}}\n\nThe claim:\n" + text;
+  "Reply with ONLY JSON of this exact shape:\n{\"deflated\":{\"hs\":\"what the claim asserts, in plain words, with every hedge the claim has\",\"g5\":\"\"},\"type\":\"fact|contested|unsupported|interpretation|value|image|unscorable\",\"basis\":{\"hs\":\"why this type\",\"g5\":\"\"},\"wouldSettle\":\"\",\"settle\":{\"hs\":\"what evidence would settle it\",\"g5\":\"\"},\"expectedSources\":[\"academic_paper\"],\"searchQuery\":\"\",\"judgments\":{\"evidence\":\"n/a\",\"inference\":\"valid|gap|unfalsifiable|n/a\"}}\n\nThe claim:\n" + text;
 };
 async function runClaimExplain(p){
   if (!S.ai || S.busy) return;
@@ -668,15 +703,14 @@ async function runClaimExplain(p){
   S.busy = true;
   try {
     S.abort = new AbortController();
-    var res = await API.sample(P.claim(r, text), {json:true, signal:S.abort.signal}); var o = res.data || {};
+    var res = await API.sample(P.claim(r, text), {json:true, signal:S.abort.signal, purpose:"claim"}); var o = res.data || {};
     var base = JSON.parse(JSON.stringify(p)); delete base.id; delete base.stale; delete base.quoteCheck;
     var lvx = function(x){ x = x && typeof x === "object" ? x : {hs:String(x||""), g5:""}; return {hs:String(x.hs||""), g5:String(x.g5||"")}; };
     var first = {text:text, id:c0 && c0.text === text ? c0.id : undefined, userSupplied:true, speaker:"", type:String(o.type||"unscorable"), basis:lvx(o.basis), plain:lvx(o.deflated), wouldSettle:String(o.wouldSettle||""), settle:lvx(o.settle), expectedSources:Array.isArray(o.expectedSources)?o.expectedSources:(c0 ? c0.expectedSources : []), searchQuery:String(o.searchQuery||(c0 && c0.searchQuery)||"")};
     if (c0 && c0.routingEditedAt && c0.text === text){ first.searchQuery = c0.searchQuery; first.expectedSources = c0.expectedSources; first.routingEditedAt = c0.routingEditedAt; first.routingEditedBy = c0.routingEditedBy; }
-    var extra = (Array.isArray(o.hidden) ? o.hidden : []).filter(function(x){ return x && x.text; }).map(function(x){ return {text:String(x.text), speaker:"", type:String(x.type||"unscorable"), plain:lvx(x.plain), basis:lvx(x.basis), wouldSettle:String(x.wouldSettle||""), settle:lvx(x.settle), expectedSources:Array.isArray(x.expectedSources)?x.expectedSources:[], searchQuery:String(x.searchQuery||"")}; });
-    base.analysis = sanitizeAnalysis({by:"model", asSaid:[], deflated:lvx(o.deflated), fidelity:{grade:"unrated", notes:{hs:"", g5:""}}, jump:{present:false, pivot:"", hs:"", g5:""}, defense:{hs:"", g5:""}, revision:{jumpSurvives:"", hs:"", g5:""}, claims:[first].concat(extra), judgments:o.judgments||{}}, p);
+    base.analysis = sanitizeAnalysis({by:"model", asSaid:[], deflated:lvx(o.deflated), fidelity:{grade:"unrated", notes:{hs:"", g5:""}}, jump:{present:false, pivot:"", hs:"", g5:""}, defense:{hs:"", g5:""}, revision:{jumpSurvives:"", hs:"", g5:""}, claims:[first], judgments:o.judgments||{}}, p);
     base.analysis.by = "model";
-    base.status = "done"; base.analyzedAt = nowISO(); base.analyzedBy = analyzedByLabel(); base.model = res.model || ""; base.usage = res.usage || null;
+    base.status = "done"; base.analyzedAt = nowISO(); base.analyzedBy = analyzedByLabel(); base.model = res.model || ""; base.usage = res.usage || null; base.callId = res.provenance ? res.provenance.callId : "";
     // stamped with the input and attribution the explanation was MADE FROM, so an edit during the run leaves it stale
     base.basedOn = {transcriptUpdatedAt: transcriptAt, attrSig: attrSigAt};
     base.expectedReadingRev = readingRev;
@@ -788,8 +822,9 @@ function passageCard(p){
   // chip: sources across the card's claims
   var emp = (a.claims||[]).filter(function(c){ return EMPIRICAL.indexOf(c.type) !== -1; });
   var withS = emp.filter(function(c){ return claimStatus(c) === "receipt"; }).length, searched = emp.filter(function(c){ return claimStatus(c) === "searched"; }).length;
-  if (emp.length) chips.addChip("Sources · " + withS + " of " + plural(emp.length, "checkable claim") + (searched ? " · " + searched + " searched" : ""), withS ? "" : "", function(){
-    var w = h("div",{}); w.append(L(withS + " of " + plural(emp.length, "checkable claim") + " on this card " + (withS === 1 ? "has" : "have") + " a source a person attached; " + searched + " " + (searched === 1 ? "has" : "have") + " a search on record with nothing attached; " + (emp.length - withS - searched) + " " + (emp.length - withS - searched === 1 ? "is" : "are") + " unchecked. A source records a person's judgment that a document is relevant. It does not mark the claim verified.", withS + " of " + plural(emp.length, "claim") + " here " + (withS === 1 ? "has" : "have") + " a source a person picked. " + (emp.length - withS - searched) + " " + (emp.length - withS - searched === 1 ? "has" : "have") + " not been looked at. A source means someone found it useful, not that the claim is true.")); return w;
+  var contra = emp.filter(function(c){ return activeReceipts(c).some(function(x){ return x.relation === "contradicts"; }); }).length;
+  if (emp.length) chips.addChip("Sources · " + withS + " of " + plural(emp.length, "checkable claim") + (searched ? " · " + searched + " searched" : "") + (contra ? " · " + contra + " contradicted" : ""), contra ? "warn" : "", function(){
+    var w = h("div",{}); w.append(L(withS + " of " + plural(emp.length, "checkable claim") + " on this card " + (withS === 1 ? "has" : "have") + " a source a person attached; " + searched + " " + (searched === 1 ? "has" : "have") + " a search on record with nothing attached; " + (emp.length - withS - searched) + " " + (emp.length - withS - searched === 1 ? "is" : "are") + " unchecked. A source records a person's judgment that a document is relevant. It does not mark the claim verified." + (contra ? " On " + plural(contra, "claim") + " a person marked a source as contradicting the claim; the claim's own chip says which." : ""), withS + " of " + plural(emp.length, "claim") + " here " + (withS === 1 ? "has" : "have") + " a source a person picked. " + (emp.length - withS - searched) + " " + (emp.length - withS - searched === 1 ? "has" : "have") + " not been looked at. A source means someone found it useful, not that the claim is true." + (contra ? " For " + plural(contra, "claim") + " someone said a source goes against it." : ""))); return w;
   });
   card.append(hdr);
   if ((p.stale||[]).length) card.append(h("div",{class:"stale-note",text:"Stale: " + p.stale.join("; ") + ". The card is kept; re-run it from Details to refresh."}));
@@ -822,12 +857,16 @@ function passageCard(p){
       var kind = {interpretation:["an interpretation: a reading of a text, event or data","a way of reading something"], value:["a value judgment: a moral or aesthetic position","an opinion about what is good or bad"], image:["an image: a metaphor or frame that carries meaning but is not offered as evidence","a picture in words, not proof"], unscorable:["too vague or unbounded to grade as stated","too vague to check"]}[c.type] || ["not a checkable claim","not a checkable claim"];
       cchips.addChip("Not a checkable claim", "", function(){ return L("This is " + kind[0] + ". It is not the kind of claim a document settles, so no source is expected.", "This is " + kind[1] + ". No paper could prove it, so we do not look for one."); });
     } else if (st === "receipt"){
-      cchips.addChip("Sources · " + rc.length, "good", function(){
+      var rn = relationCounts(rc), stated = rc.length - rn.unstated;
+      cchips.addChip("Sources · " + rc.length + (rn.contradicts ? " · " + rn.contradicts + " contradict" + (rn.contradicts === 1 ? "s" : "") : ""), rn.contradicts ? "warn" : "good", function(){
         var w = h("div",{});
-        w.append(L("A person attached " + plural(rc.length, "document") + " as relevant and wrote a note on each. Attaching a source records a judgment of relevance; it does not make the claim verified.", "A person picked " + plural(rc.length, "paper") + " and said why. That means someone found them useful. It does not prove the claim is true."));
+        w.append(L("A person attached " + plural(rc.length, "document") + " as relevant and wrote a note on each. Attaching a source records a judgment of relevance; it does not make the claim verified.", "A person picked " + plural(rc.length, "document") + " and said why. That means someone found them useful. It does not prove the claim is true."));
+        if (stated) w.append(L("What the person said each one does: " + [rn.supports ? plural(rn.supports, "supports the claim as worded", "support the claim as worded") : "", rn.contradicts ? plural(rn.contradicts, "contradicts it", "contradict it") : "", rn.mentions ? plural(rn.mentions, "mentions it without settling it", "mention it without settling it") : "", rn.unstated ? rn.unstated + " with no relation stated" : ""].filter(Boolean).join("; ") + ". This is that person's reading of each document, on record with their name and the time; it is not a verification.",
+          "The person also said what each one does: " + [rn.supports ? rn.supports + " back" + (rn.supports === 1 ? "s" : "") + " the claim" : "", rn.contradicts ? rn.contradicts + " go" + (rn.contradicts === 1 ? "es" : "") + " against it" : "", rn.mentions ? rn.mentions + " just talk" + (rn.mentions === 1 ? "s" : "") + " about it" : "", rn.unstated ? rn.unstated + " not said" : ""].filter(Boolean).join("; ") + ". That is one person's opinion of each paper, written down. It does not prove anything."));
+        else w.append(L("The person did not say what the documents do for the claim (support, contradict, or only mention it); they can, in Details.", "The person did not say whether these back the claim or go against it. They can say so in Details."));
         var st1 = settleOf(c); if (st1) w.append(st1);
         var prov1 = provisionalOf(p); if (prov1.length) w.append(L("Provisional: " + prov1.join("; ") + ". Re-run the card to settle it.", "Careful: this card is out of date (" + prov1.join("; ") + ")."));
-        rc.forEach(function(x){ w.append(h("p",{class:"src"}, h("a",{href:x.url,target:"_blank",rel:"noopener",text:(x.title || x.url) + (x.journal ? " · " + x.journal : "") + (x.publishedAt ? " · " + String(x.publishedAt).slice(0,4) : "")}), x.note ? h("span",{class:"hint",text:" — " + x.note}) : null, h("span",{class:"hint",text:" (" + (x.addedBy||"") + (x.at ? ", " + fmtDate(x.at) : "") + ")"}), (x.notices||[]).length ? h("span",{class:"badge stale",style:"margin-left:6px",text:x.notices.map(function(n){ return n.label || n.type; }).join("; ")}) : null)); });
+        rc.forEach(function(x){ w.append(h("p",{class:"src"}, x.relation && x.relation !== "unstated" ? h("span",{class:"pill rel " + x.relation,text:x.relation}) : null, h("a",{href:x.url,target:"_blank",rel:"noopener",text:(x.title || x.url) + (x.outlet || x.journal ? " · " + (x.outlet || x.journal) : "") + (x.publishedAt ? " · " + String(x.publishedAt).slice(0,4) : "")}), x.note ? h("span",{class:"hint",text:" — " + x.note}) : null, h("span",{class:"hint",text:" (" + (x.addedBy||"") + (x.at ? ", " + fmtDate(x.at) : "") + ")"}), (x.notices||[]).length ? h("span",{class:"badge stale",style:"margin-left:6px",text:x.notices.map(function(n){ return n.label || n.type; }).join("; ")}) : null)); });
         if (withdrawn.length) w.append(L(plural(withdrawn.length, "earlier source was", "earlier sources were") + " withdrawn: " + withdrawn.map(function(x){ return (x.title || x.url) + (x.withdrawReason ? " (" + x.withdrawReason + ")" : ""); }).join("; ") + ".", plural(withdrawn.length, "earlier source was", "earlier sources were") + " taken back."));
         w.append(h("p",{class:"hint"}, h("a",{href:"#",onclick:function(e){ e.preventDefault(); openDetails(card, idx); },text:"Open Details to add, search or withdraw sources"}))); return w;
       });
@@ -873,8 +912,8 @@ function passageCard(p){
     if ((p.adopted||[]).length) hist.append(h("p",{class:"hint",text:plural(p.adopted.length, "set") + " of records from an earlier segmentation " + (p.adopted.length===1?"was":"were") + " reattached here: " + p.adopted.map(function(x){ return "“" + x.claimText + "” from " + (x.from && x.from.title || x.from && x.from.passage || "?"); }).join("; ") + "."}));
     more.append(hist);
   }
-  if (!ro && isClaimRun()) more.append(h("div",{class:"row"}, h("button",{class:"btn quiet",type:"button",text: a.by === "person" ? "Explain and grade with the model" : "Explain and grade again",onclick:function(){ if (!ensureAI(more)) return; runClaimExplain(p); }}), h("span",{class:"hint",text:"Types the claim, writes the plain explanation at both levels, says what would settle it and refines the search query. The claim's wording and identity stay as you typed them."})));
-  else if (!ro && attributionOk()) more.append(h("div",{class:"row"}, h("button",{class:"btn quiet",type:"button",text:"Re-run this passage",onclick:function(){ if (!ensureAI(more)) return; runDeflate(null,null,null,null,p); }}), h("span",{class:"hint",text:"A re-run keeps this reading in history and carries sources to claims with the same text."})));
+  if (!ro && isClaimRun()) more.append(h("div",{class:"row"}, h("button",{class:"btn quiet",type:"button",text: a.by === "person" ? "Explain and grade with the model" : "Explain and grade again",onclick:function(){ if (!ensureAI(more, function(){ return runClaimExplain(p); })) return; runClaimExplain(p); }}), h("span",{class:"hint",text:"Types the claim, writes the plain explanation at both levels, says what would settle it and refines the search query. The claim's wording and identity stay as you typed them."})));
+  else if (!ro && attributionOk()) more.append(h("div",{class:"row"}, h("button",{class:"btn quiet",type:"button",text:"Re-run this passage",onclick:function(){ if (!ensureAI(more, function(){ return runDeflate(null,null,null,null,p); })) return; runDeflate(null,null,null,null,p); }}), h("span",{class:"hint",text:"A re-run keeps this reading in history and carries sources to claims with the same text."})));
   det.append(more); card.append(det);
   return card;
 }
@@ -899,24 +938,29 @@ function claimDetail(card, p, c, idx, ro){
   (c.receipts||[]).forEach(function(x, ri){
     var line = h("div",{class:"rc"});
     line.append(h("span",{class:"pill status" + (x.withdrawnAt ? "" : " receipt"),text: x.withdrawnAt ? "withdrawn" : "source"}));
-    line.append(h("a",{href:x.url,target:"_blank",rel:"noopener",text:(x.title || x.note || x.url) + (x.journal ? " · " + x.journal : "") + (x.publishedAt ? " · " + String(x.publishedAt).slice(0,4) : "")}));
+    if (x.relation && x.relation !== "unstated") line.append(h("span",{class:"pill rel " + x.relation,text:x.relation}));
+    line.append(h("a",{href:x.url,target:"_blank",rel:"noopener",text:(x.title || x.note || x.url) + (x.outlet || x.journal ? " · " + (x.outlet || x.journal) : "") + (x.publishedAt ? " · " + String(x.publishedAt).slice(0,4) : "")}));
     line.append(h("span",{class:"hint",text:" " + (x.note && x.title ? "— " + x.note + " " : "") + "(" + (x.addedBy||"") + (x.at ? ", " + fmtDate(x.at) : "") + (x.foundBy && x.foundBy.length ? ", via " + x.foundBy.join("+") : "") + (x.reattached ? ", reattached from an earlier segmentation" : "") + ")"}));
     (x.notices||[]).forEach(function(n){ line.append(h("span",{class:"badge stale",text:(n.label || n.type) + (n.date ? " " + n.date : "")})); });
     if (x.withdrawnAt) line.append(h("span",{class:"hint",text:"Withdrawn " + fmtDate(x.withdrawnAt) + (x.withdrawReason ? ": " + x.withdrawReason : "")}));
     else if (!ro){
+      var relSel = h("select",{title:"What does this document do for the claim? Your reading, on record.","aria-label":"Relation to the claim"}); RELATIONS.forEach(function(rr){ relSel.append(h("option",{value:rr[0],text:rr[1],selected:(x.relation||"unstated") === rr[0] ? "selected" : null})); });
+      relSel.addEventListener("change", async function(){ relSel.disabled = true; try { await reload(await API.setRelation(r.id, p.id, c.id, x.rid, relSel.value, rv)); openDetails(card, idx); } catch(e){ alert(errCopy(e)); if (e && e.status === 409) await reload(); } });
       var why = h("input",{type:"text",placeholder:"Why withdraw it?",style:"min-width:160px"});
       var wd = h("button",{class:"btn quiet",type:"button",text:"Withdraw",onclick:async function(){ wd.disabled = true; try { await reload(await API.withdrawReceipt(r.id, p.id, c.id, x.rid, why.value, rv)); } catch(e){ wd.textContent = errCopy(e); if (e && e.status === 409) await reload(); } }});
-      line.append(why, wd);
+      line.append(relSel, why, wd);
     }
+    if ((x.relationHistory||[]).length) line.append(h("span",{class:"hint",text:" relation changed " + plural(x.relationHistory.length, "time") + " (was " + x.relationHistory.map(function(hh){ return hh.relation; }).join(", then ") + ")"}));
     box.append(line);
   });
   if (!ro){
     var u = h("input",{type:"url",placeholder:"Link to a document"}), n = h("input",{type:"text",placeholder:"What it shows (one line)"});
+    var relAdd = h("select",{title:"What does it do for the claim? Leave as is if you are not saying."}); RELATIONS.forEach(function(rr){ relAdd.append(h("option",{value:rr[0],text:rr[1]})); });
     var add = h("button",{class:"btn quiet",type:"button",text:"Attach as a source",onclick:async function(){
       if (!u.value.trim()) return; add.disabled = true;
-      try { await reload(await API.addReceipt(r.id, p.id, c.id, u.value.trim(), n.value.trim(), rv)); } catch(e){ add.textContent = errCopy(e); add.disabled = false; if (e && e.status === 409) await reload(); }
+      try { await reload(await API.addReceipt(r.id, p.id, c.id, u.value.trim(), n.value.trim(), rv, relAdd.value)); } catch(e){ add.textContent = errCopy(e); add.disabled = false; if (e && e.status === 409) await reload(); }
     }});
-    var ctl = h("div",{class:"rc"}, u, n, add);
+    var ctl = h("div",{class:"rc"}, u, n, relAdd, add);
     if (S.research && EMPIRICAL.indexOf(c.type) !== -1){
       var sb = h("button",{class:"btn quiet",type:"button",text: nSearches ? "Search sources again" : "Search sources",onclick:async function(){
         sb.disabled = true; sb.textContent = "Searching…";
@@ -933,18 +977,20 @@ function claimDetail(card, p, c, idx, ro){
   }
   pending.forEach(function(x){
     var row = h("div",{class:"cand"});
-    var head = h("div",{}, h("a",{href:x.url,target:"_blank",rel:"noopener",text:x.title}), h("span",{class:"hint",text:" " + [x.docType, x.journal, x.publishedAt ? String(x.publishedAt).slice(0,10) : "", (x.authors||[]).slice(0,3).join(", "), x.doi ? "doi:" + x.doi : (x.pmid ? "pmid:" + x.pmid : ""), "found by " + (x.foundBy||[x.adapter]).join("+") + (x.matchedBy && x.matchedBy.length ? " [" + x.matchedBy.join(", ") + " match]" : "")].filter(Boolean).join(" · ")}));
+    var head = h("div",{}, h("a",{href:x.url,target:"_blank",rel:"noopener",text:x.title}), h("span",{class:"hint",text:" " + [x.docType, x.outlet || x.journal, x.language && x.language !== "English" ? x.language : "", x.publishedAt ? String(x.publishedAt).slice(0,10) : "", (x.authors||[]).slice(0,3).join(", "), x.doi ? "doi:" + x.doi : (x.pmid ? "pmid:" + x.pmid : ""), "found by " + (x.foundBy||[x.adapter]).join("+") + (x.matchedBy && x.matchedBy.length ? " [" + x.matchedBy.join(", ") + " match]" : "")].filter(Boolean).join(" · ")}));
+    if (x.sourceType === "news_coverage") head.append(h("span",{class:"hint",text:" · news coverage: an outlet published an article matching the query. It says nothing about what the article concludes; read it."}));
     (x.notices||[]).forEach(function(nn){ head.append(h("span",{class:"badge stale",style:"margin-left:6px",text:(nn.label||nn.type) + (nn.source ? " (" + nn.source + ")" : "") + (nn.date ? " " + nn.date : "")})); });
-    if (x.statusCheck && !x.statusCheck.checked) head.append(h("span",{class:"hint",text:" · status not checked" + (x.statusCheck.note ? ": " + x.statusCheck.note : "")}));
+    if (x.statusCheck && !x.statusCheck.checked && x.sourceType !== "news_coverage") head.append(h("span",{class:"hint",text:" · status not checked" + (x.statusCheck.note ? ": " + x.statusCheck.note : "")}));
     else if (x.statusCheck && x.statusCheck.checked && !(x.notices||[]).length) head.append(h("span",{class:"hint",text:" · no retraction or correction notice found (not an endorsement)"}));
     if (x.fullTextUrl) head.append(h("a",{href:x.fullTextUrl,target:"_blank",rel:"noopener",class:"hint",style:"margin-left:6px",text:"full text"}));
     row.append(head);
     if (!ro){
       var note = h("input",{type:"text",placeholder:"What it shows (one line)",style:"min-width:220px"});
+      var relC = h("select",{title:"What does it do for the claim? Leave as is if you are not saying."}); RELATIONS.forEach(function(rr){ relC.append(h("option",{value:rr[0],text:rr[1]})); });
       var sel = h("select"); REJECTION_REASONS.forEach(function(rr){ sel.append(h("option",{value:rr[0],text:rr[1]})); });
-      var acc = h("button",{class:"btn quiet",type:"button",text:"Accept as a source",onclick:async function(){ acc.disabled = true; try { await reload(await API.acceptCandidate(r.id, p.id, c.id, x.id, note.value, rv)); openDetails(card, idx); } catch(e){ acc.textContent = errCopy(e); if (e && e.status === 409) await reload(); } }});
+      var acc = h("button",{class:"btn quiet",type:"button",text:"Accept as a source",onclick:async function(){ acc.disabled = true; try { await reload(await API.acceptCandidate(r.id, p.id, c.id, x.id, note.value, rv, relC.value)); openDetails(card, idx); } catch(e){ acc.textContent = errCopy(e); if (e && e.status === 409) await reload(); } }});
       var rej = h("button",{class:"btn quiet",type:"button",text:"Reject",onclick:async function(){ rej.disabled = true; try { await reload(await API.rejectCandidate(r.id, p.id, c.id, x.id, sel.value, note.value, rv)); openDetails(card, idx); } catch(e){ rej.textContent = errCopy(e); if (e && e.status === 409) await reload(); } }});
-      row.append(h("div",{class:"row"}, note, acc, sel, rej));
+      row.append(h("div",{class:"row"}, note, relC, acc, sel, rej));
     }
     box.append(row);
   });
@@ -968,17 +1014,19 @@ function renderPatterns(){
   var msg = h("div");
   if (!readOnly()){
     var btn = h("button",{class:"btn primary",type:"button",text: S.b.summary ? "Re-run patterns" : "Find patterns",disabled:(done.length<2)?"":null,onclick:async function(){
-      if (S.busy) return; if (!ensureAI(patternsBody)) return;
+      if (S.busy) return; if (!ensureAI(patternsBody, function(){ btn.click(); })) return;
+      S.busy = true;
       btn.disabled = true; msg.replaceChildren(h("div",{class:"note info",text:"Thinking…"}));
       try {
         S.abort = new AbortController();
-        var res = await API.sample(P.patterns(r, done), {json:true, signal:S.abort.signal}); var out = res.data;
+        var res = await API.sample(P.patterns(r, done), {json:true, signal:S.abort.signal, purpose:"patterns"}); var out = res.data;
         var known = done.map(function(p){ return p.id; });
         var pats = (Array.isArray(out && out.patterns) ? out.patterns : []).slice(0,12).map(function(x){ return {title:{hs:String(x.title&&x.title.hs||"").slice(0,200), g5:String(x.title&&x.title.g5||"").slice(0,200)}, body:{hs:String(x.body&&x.body.hs||"").slice(0,3000), g5:String(x.body&&x.body.g5||"").slice(0,3000)}, passages:(Array.isArray(x.passages)?x.passages:[]).map(String).filter(function(id){ return known.indexOf(id) !== -1; }).slice(0,30)}; });
         var surv = {hs:String(out && out.survived && out.survived.hs || "").slice(0,4000), g5:String(out && out.survived && out.survived.g5 || "").slice(0,4000)};
-        await API.saveSummary(r.id, {patterns:pats, survived:surv, createdAt:nowISO(), passagesCounted:done.length, leftOut:leftOut, by:analyzedByLabel(), model:res.model||"", basedOn:{passagesSig: done.map(function(p){ return p.id + "@" + (p.analyzedAt||""); }).join(",")}});
+        await API.saveSummary(r.id, {patterns:pats, survived:surv, createdAt:nowISO(), passagesCounted:done.length, leftOut:leftOut, by:analyzedByLabel(), model:res.model||"", callId: res.provenance ? res.provenance.callId : "", basedOn:{passagesSig: done.map(function(p){ return p.id + "@" + (p.analyzedAt||""); }).join(",")}});
         var nb = await API.saveRun(r.id, {status:"complete"}); await refreshList(); await reload(nb);
       } catch(e){ msg.replaceChildren(h("div",{class:"note err",text:errCopy(e)})); btn.disabled = false; }
+      finally { S.busy = false; S.abort = null; }
     }});
     patternsBody.append(h("div",{class:"row"}, btn, h("span",{class:"hint",text: done.length < 2 ? "Needs at least two fresh deflated passages." + (leftOut.length ? " " + plural(leftOut.length, "stale card") + " left out; re-run them first." : "") : "Reads every fresh card in full and looks for moves that recur, then lists what came through intact." + (leftOut.length ? " " + plural(leftOut.length, "stale card") + " will be left out." : "")}), msg));
   }
@@ -1041,14 +1089,14 @@ function renderExportBlock(){
     var cp = h("button",{class:"btn",type:"button",text:"Copy claims JSON",onclick:async function(){ try { var t = await (await fetch("/api/runs/" + r.id + "/export.json")).text(); copyText(t, cp); } catch(e){ cp.textContent = "Failed"; } }}); row.append(cp);
     exportBody.append(row);
   }
-  exportBody.append(h("p",{class:"hint",text:"Claims JSON (deflate-lens/claims@0.2) carries every claim with its speaker, turn range, type, judgments, staleness, quote checks, search attempts, sources and withdrawals, and says what each status means. The Markdown follows the reading level selected at the top. Obligations JSON is the checkable claims in the shape Receipts routes (EvidenceObligation.to_json)."}));
+  exportBody.append(h("p",{class:"hint",text:"Claims JSON (deflate-lens/claims@0.5) carries every claim with its speaker, turn range, type, judgments, staleness, quote checks, search attempts, sources with the relation a person stated, withdrawals, the SHA-256 of the transcript and of the text each card was read from, and the model-call record behind each card; it says what each status and relation means. The Markdown follows the reading level selected at the top. Obligations JSON is the checkable claims in the shape Receipts routes (EvidenceObligation.to_json)."}));
 }
 
 /* ---- delete ---- */
 function confirmDelete(){
   var r = run(); if (!r || !r.id) return;
   var box = h("div",{class:"note err"}, h("p",{text:"Move this run to the trash? It is moved to the trash folder inside the data folder, not removed, and can be restored from the Trash list on the left."}), h("div",{class:"row"},
-    h("button",{class:"btn danger",type:"button",text:"Move to trash",onclick:async function(){ try { await API.deleteRun(r.id); S.runId = null; S.b = null; try { location.hash = ""; localStorage.removeItem("deflate-run"); } catch(e){} await refreshList(); renderRun(); } catch(e){ box.append(h("p",{text:"Could not move it: " + errCopy(e)})); } }}),
+    h("button",{class:"btn danger",type:"button",text:"Move to trash",onclick:async function(){ if (blockWhileBusy()) return; try { await API.deleteRun(r.id); S.runId = null; S.b = null; try { location.hash = ""; localStorage.removeItem("deflate-run"); } catch(e){} await refreshList(); renderRun(); } catch(e){ box.append(h("p",{text:"Could not move it: " + errCopy(e)})); } }}),
     h("button",{class:"btn quiet",type:"button",text:"Keep it",onclick:function(){ box.remove(); }})));
   view.insertBefore(box, view.children[1] || null);
 }

@@ -2,7 +2,7 @@
 /* Server-side validation. Every document a client can save passes through here, so a malformed save is refused
    with a plain message instead of being written. The page produces valid documents; this is for everything else. */
 const shared = require("../shared/transcript");
-const { SOURCE_TYPES } = require("./research/types");
+const { SOURCE_TYPES, RELATIONS } = require("./research/types");
 
 function bad(msg) { const e = new Error(msg); e.status = 400; e.code = "invalid"; return e; }
 const STATUSES = ["draft", "attributed", "segmented", "analyzed", "complete"];
@@ -62,7 +62,8 @@ function validatePassageDoc(doc, turnsCount, ctx) {
   if (Number.isInteger(turnsCount) && z >= turnsCount) throw bad("turnEnd " + z + " is past the last turn (" + (turnsCount - 1) + ")");
   const out = { title: str(doc.title, 200).trim() || ("Turns " + a + "–" + z), turnStart: a, turnEnd: z, stake: str(doc.stake, 300), speakers: Array.isArray(doc.speakers) ? doc.speakers.map(s => str(s, 40)).slice(0, 40) : [],
     status: ["pending", "running", "done", "error"].includes(doc.status) ? doc.status : "pending" };
-  for (const k of ["order", "createdAt", "analyzedAt", "analyzedBy", "model", "segmentedBy", "error", "copiedFrom", "savedAt"]) if (doc[k] != null) out[k] = k === "order" ? Number(doc[k]) || 0 : str(doc[k], 300);
+  for (const k of ["order", "createdAt", "analyzedAt", "analyzedBy", "model", "segmentedBy", "error", "copiedFrom", "savedAt", "callId"]) if (doc[k] != null) out[k] = k === "order" ? Number(doc[k]) || 0 : str(doc[k], 300);
+  // `provenance` is never taken from a client: the server fills it from its own record of the call named by callId
   if (doc.usage && typeof doc.usage === "object") out.usage = doc.usage;
   if (doc.basedOn && typeof doc.basedOn === "object") out.basedOn = { transcriptUpdatedAt: str(doc.basedOn.transcriptUpdatedAt, 40), attrSig: str(doc.basedOn.attrSig, 40) };
   if (doc.analysis && typeof doc.analysis === "object") out.analysis = shared.sanitizeAnalysis(doc.analysis, { sourceTypes: SOURCE_TYPES });
@@ -90,19 +91,23 @@ function validateSummary(doc) {
   const out = {
     patterns: (Array.isArray(doc.patterns) ? doc.patterns : []).slice(0, 12).map(p => { p = p && typeof p === "object" ? p : {}; return { title: lv(p.title), body: lv(p.body), passages: (Array.isArray(p.passages) ? p.passages : []).map(String).filter(x => /^p\d{3}$/.test(x)).slice(0, 60) }; }),
     survived: lv(doc.survived),
-    basedOn: doc.basedOn && typeof doc.basedOn === "object" ? { passagesSig: str(doc.basedOn.passagesSig, 4000) } : { passagesSig: "" },
+    basedOn: doc.basedOn && typeof doc.basedOn === "object" ? { passagesSig: str(doc.basedOn.passagesSig, 4000), transcriptUpdatedAt: str(doc.basedOn.transcriptUpdatedAt, 40), attrSig: str(doc.basedOn.attrSig, 40) } : { passagesSig: "", transcriptUpdatedAt: "", attrSig: "" },
   };
-  for (const k of ["createdAt", "by", "model", "note", "copiedFrom"]) if (doc[k] != null) out[k] = str(doc[k], 500);
+  for (const k of ["createdAt", "by", "model", "note", "copiedFrom", "callId"]) if (doc[k] != null) out[k] = str(doc[k], 500);
   if (doc.passagesCounted != null) out.passagesCounted = Number(doc.passagesCounted) || 0;
   if (Array.isArray(doc.leftOut)) out.leftOut = doc.leftOut.map(String).slice(0, 60);
   return out;
 }
 
 /* Records a person makes on a claim; shapes checked where the client can supply them. */
-function validateReceiptLink(url, note) {
+function validateReceiptLink(url, note, relation) {
   const u = str(url, 2000).trim(); if (!isUrl(u)) throw bad("a source needs an http(s) link");
-  return { kind: "link", url: u, note: str(note, 500).trim(), addedBy: "person at this computer", at: new Date().toISOString() };
+  const at = new Date().toISOString();
+  return Object.assign({ kind: "link", url: u, note: str(note, 500).trim(), addedBy: "person at this computer", at }, relationFields(relation, at));
 }
+/* What the attaching person says the document does for the claim. Anything outside the closed set is "unstated". */
+function validateRelation(relation) { const r = str(relation, 20).trim().toLowerCase(); return RELATIONS.includes(r) ? r : "unstated"; }
+function relationFields(relation, at) { const r = validateRelation(relation); return r === "unstated" ? { relation: "unstated" } : { relation: r, relationBy: "person at this computer", relationAt: at || new Date().toISOString() }; }
 function validateRouting(body) {
   body = body && typeof body === "object" ? body : {};
   const out = {};
@@ -111,4 +116,4 @@ function validateRouting(body) {
   return out;
 }
 
-module.exports = { validateRunDoc, validateProvenance, validatePassageDoc, validateSummary, validateReceiptLink, validateRouting, bad, STATUSES, KINDS, PARSE_MODES };
+module.exports = { validateRunDoc, validateProvenance, validatePassageDoc, validateSummary, validateReceiptLink, validateRelation, relationFields, validateRouting, bad, STATUSES, KINDS, PARSE_MODES };

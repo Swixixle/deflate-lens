@@ -2,7 +2,8 @@
 const path = require("path");
 const fs = require("fs");
 const express = require("express");
-const { Store } = require("./store");
+const crypto = require("crypto");
+const { Store, newId, sha256 } = require("./store");
 const { buildExport, buildMarkdown, buildObligations } = require("./exportClaims");
 const { REJECTION_REASONS } = require("./research/types");
 const { createImporter } = require("./importer");
@@ -138,10 +139,13 @@ function createApp(opts) {
       const cand = (c.candidates || []).find(x => x.id === req.params.cand); if (!cand) { const e = new Error("candidate not found"); e.status = 404; throw e; }
       if (cand.status === "accepted") { outcome = "already accepted"; return; } // idempotent: one candidate, one active receipt
       if (cand.status === "rejected") { const e = new Error("this candidate was rejected (" + ((c.rejections || []).find(r => r.candidateId === cand.id) || {}).reason + "); to use it, reject the rejection first by attaching it as a source by hand"); e.status = 409; e.code = "candidate_rejected"; throw e; }
+      // accepting again after a withdrawal is a new decision on record: a new receipt with its own id, the withdrawn one kept
+      const earlier = (c.receipts || []).filter(r => r.candidateId === cand.id).length;
+      if (cand.status === "withdrawn") outcome = "accepted again after a withdrawal";
       cand.status = "accepted"; cand.decidedAt = new Date().toISOString();
-      c.receipts = (c.receipts || []).concat([{ rid: "rc_" + cand.id, kind: "document", url: cand.url, note: String(req.body && req.body.note || "").slice(0, 500), addedBy: "person at this computer", at: cand.decidedAt,
-        title: cand.title, doi: cand.doi || "", pmid: cand.pmid || "", pmc: cand.pmc || "", journal: cand.journal || "", authors: cand.authors || [], publishedAt: cand.publishedAt || "", retrievedAt: cand.retrievedAt || "",
-        foundBy: cand.foundBy || [cand.adapter], notices: cand.notices || [], statusCheck: cand.statusCheck || null, candidateId: cand.id }]);
+      c.receipts = (c.receipts || []).concat([Object.assign({ rid: "rc_" + cand.id + (earlier ? "_" + (earlier + 1) : ""), reaccepted: earlier > 0 || undefined, kind: "document", url: cand.url, note: String(req.body && req.body.note || "").slice(0, 500), addedBy: "person at this computer", at: cand.decidedAt,
+        title: cand.title, doi: cand.doi || "", pmid: cand.pmid || "", pmc: cand.pmc || "", journal: cand.journal || "", outlet: cand.outlet || "", sourceType: cand.sourceType || "", language: cand.language || "", authors: cand.authors || [], publishedAt: cand.publishedAt || "", retrievedAt: cand.retrievedAt || "",
+        foundBy: cand.foundBy || [cand.adapter], notices: cand.notices || [], statusCheck: cand.statusCheck || null, candidateId: cand.id }, V.relationFields(req.body && req.body.relation, cand.decidedAt))]);
     }, { expectedReadingRev: rev(req) });
     res.json(Object.assign({ outcome }, await store.bundle(req.params.id)));
   }));
@@ -164,11 +168,12 @@ function createApp(opts) {
     res.json(Object.assign({ outcome }, await store.bundle(req.params.id)));
   }));
 
-  /* A source attached by hand: a link and a one-line note. Recorded as a person's judgment of relevance, nothing more. */
+  /* A source attached by hand: a link, a one-line note, and (optionally) what the person says it does for the claim.
+     Recorded as a person's judgment, nothing more. */
   app.post("/api/runs/:id/passages/:pid/claims/:cid/receipts", wrap(async (req, res) => {
     const { b } = await loadClaim(req.params.id, req.params.pid, req.params.cid);
     if (b.run.example) return res.status(403).json({ error: "the supplied example is read-only" });
-    const rc = V.validateReceiptLink(req.body && req.body.url, req.body && req.body.note);
+    const rc = V.validateReceiptLink(req.body && req.body.url, req.body && req.body.note, req.body && req.body.relation);
     await store.mutateClaim(req.params.id, req.params.pid, req.params.cid, (c) => { c.receipts = (c.receipts || []).concat([Object.assign({ rid: "rl_" + Math.random().toString(36).slice(2, 10) }, rc)]); }, { expectedReadingRev: rev(req) });
     res.json(await store.bundle(req.params.id));
   }));
@@ -179,6 +184,24 @@ function createApp(opts) {
     if (b.run.example) return res.status(403).json({ error: "the supplied example is read-only" });
     const r = V.validateRouting(req.body);
     await store.mutateClaim(req.params.id, req.params.pid, req.params.cid, (c) => { if ("searchQuery" in r) c.searchQuery = r.searchQuery; if ("expectedSources" in r) c.expectedSources = r.expectedSources; c.routingEditedAt = new Date().toISOString(); c.routingEditedBy = "person at this computer"; }, { expectedReadingRev: rev(req) });
+    res.json(await store.bundle(req.params.id));
+  }));
+
+  /* The relation a person states for a source (supports / contradicts / mentions / unstated). Changing it is recorded with
+     the previous value, so the history of the judgment stays on the receipt. */
+  app.put("/api/runs/:id/passages/:pid/claims/:cid/receipts/:rid/relation", wrap(async (req, res) => {
+    const { b } = await loadClaim(req.params.id, req.params.pid, req.params.cid);
+    if (b.run.example) return res.status(403).json({ error: "the supplied example is read-only" });
+    const relation = V.validateRelation(req.body && req.body.relation);
+    await store.mutateClaim(req.params.id, req.params.pid, req.params.cid, (c) => {
+      const rc = (c.receipts || []).find(x => x.rid === req.params.rid); if (!rc) { const e = new Error("receipt not found"); e.status = 404; throw e; }
+      if (rc.withdrawnAt) { const e = new Error("this source was withdrawn; its relation is on record and cannot change"); e.status = 409; e.code = "receipt_withdrawn"; throw e; }
+      const was = rc.relation || "unstated";
+      if (was === relation) return;
+      const now = new Date().toISOString();
+      rc.relationHistory = (rc.relationHistory || []).concat([{ relation: was, by: rc.relationBy || "", at: rc.relationAt || "", replacedAt: now }]);
+      Object.assign(rc, { relation, relationBy: "person at this computer", relationAt: now });
+    }, { expectedReadingRev: rev(req) });
     res.json(await store.bundle(req.params.id));
   }));
 
@@ -197,21 +220,38 @@ function createApp(opts) {
   app.get("/api/runs/:id/export.json", wrap(async (req, res) => { const b = await store.bundle(req.params.id); if (!b) return res.status(404).json({ error: "run not found" }); res.setHeader("Content-Disposition", "attachment; filename=\"" + safeName(b.run.title) + ".deflate.json\""); res.json(buildExport(b)); }));
   app.get("/api/runs/:id/export.md", wrap(async (req, res) => { const b = await store.bundle(req.params.id); if (!b) return res.status(404).json({ error: "run not found" }); const level = req.query.level === "g5" ? "g5" : "hs"; res.setHeader("Content-Disposition", "attachment; filename=\"" + safeName(b.run.title) + (level === "g5" ? ".fifth-grade" : "") + ".deflate.md\""); res.type("text/markdown").send(buildMarkdown(b, level)); }));
 
-  /* The model call. The page sends {prompt, json, images:[{mediaType,data}]} and gets {data|text, usage, model}. */
+  /* The model call. The page sends {prompt, json, images:[{mediaType,data}], runId?, purpose?} and gets
+     {data|text, usage, model, provenance}. Every call is recorded by the server (store.recordCall) with the provider's
+     request id, the model that answered, token usage, latency, and hashes of the prompt and the answer; the page names the
+     record by callId when it saves the reading, and the server copies its own record onto the passage. Failures are
+     recorded too, so "the model was asked and did not answer" is on file. */
   app.post("/api/sample", wrap(async (req, res) => {
     const ai = state.ai;
     if (!ai) return res.status(503).json({ error: "No model configured. Add your Anthropic API key (the page asks for it once, or put ANTHROPIC_API_KEY in .env and restart).", code: "no_ai" });
-    const { prompt, json, images } = req.body || {};
+    const { prompt, json, images, runId, purpose, basedOn } = req.body || {};
     if (!prompt || typeof prompt !== "string") return res.status(400).json({ error: "prompt required", code: "invalid_request" });
     if (Buffer.byteLength(prompt, "utf8") > 400000) return res.status(400).json({ error: "prompt too large", code: "prompt_too_large" });
     const ctl = new AbortController();
-    req.on("close", () => { if (!res.writableEnded) ctl.abort(); });
+    res.on("close", () => { if (!res.writableEnded) ctl.abort(); });
+    const imgs = Array.isArray(images) ? images.slice(0, 8) : [];
+    if (imgs.some(im => !im || !/^image\/(png|jpeg|webp|gif)$/.test(String(im.mediaType || "")) || typeof im.data !== "string")) return res.status(400).json({ error: "pictures must be png, jpeg, webp or gif with base64 data", code: "invalid_request" });
+    const call = { callId: newId("call"), at: new Date().toISOString(), purpose: String(purpose || "").replace(/[^a-z0-9_]/gi, "").slice(0, 40), runId: typeof runId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(runId) ? runId : "", provider: ai.kind, modelRequested: ai.model, mock: !!ai.mock,
+      promptHash: sha256(prompt), promptChars: prompt.length, images: imgs.map(im => ({ mediaType: String(im && im.mediaType || ""), sha256: crypto.createHash("sha256").update(String(im && im.data || ""), "base64").digest("hex") })), json: !!json };
+    // Resolve the page's input version before the provider starts. The stored record, not a later browser save,
+    // determines what a completed reading was based on. Unknown origins remain unknown.
+    call.basedOn = await store.captureCallBasis(call.runId, basedOn, call.purpose);
+    const t0 = Date.now();
     try {
-      const out = await ai.sample({ prompt, json: !!json, images: Array.isArray(images) ? images.slice(0, 8) : [], signal: ctl.signal });
-      res.json(out);
+      const out = await ai.sample({ prompt, json: !!json, images: imgs, signal: ctl.signal });
+      Object.assign(call, { latencyMs: Date.now() - t0, modelReturned: out.model || "", requestId: out.requestId || "", stopReason: out.stopReason || "", usage: out.usage || null, outputHash: sha256(out.text || ""), outputChars: String(out.text || "").length });
+      const rec = await store.recordCall(call.runId, call).catch(e => { console.error("call record failed:", e.message); return call; });
+      res.json(Object.assign({}, out, { provenance: rec }));
     } catch (e) {
+      Object.assign(call, { latencyMs: Date.now() - t0, error: e.code || "upstream_error", errorMessage: String(e.message || "").slice(0, 300) });
+      if (e.meta) Object.assign(call, { modelReturned: e.meta.model || "", requestId: e.meta.requestId || "", stopReason: e.meta.stopReason || "", usage: e.meta.usage || null, outputHash: sha256(e.text || ""), outputChars: String(e.text || "").length }); // answered, but not as JSON
       if (ctl.signal.aborted) return;
-      res.status(e.code === "bad_key" ? 401 : e.code === "rate_limited" ? 429 : e.code === "invalid_json" ? 422 : 502).json({ error: e.message, code: e.code || "upstream_error", text: e.text });
+      const rec = await store.recordCall(call.runId, call).catch(() => call);
+      res.status(e.code === "bad_key" ? 401 : e.code === "rate_limited" ? 429 : e.code === "invalid_json" ? 422 : 502).json({ error: e.message, code: e.code || "upstream_error", text: e.text, provenance: rec });
     }
   }));
 

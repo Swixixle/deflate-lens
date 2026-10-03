@@ -177,6 +177,9 @@ body.level-5 .lvl-hs{display:none} body.level-5 .lvl-5{display:block}
 .pill.unscorable{background:transparent;color:var(--muted);border:1px dashed var(--muted)}
 .pill.status{background:transparent;color:var(--muted);border:1px solid var(--line)}
 .pill.status.receipt{color:var(--ok);border-color:var(--ok)}
+/* what a person said a source does for the claim; stated, never inferred */
+.pill.rel{background:transparent;border:1px solid currentColor;margin-right:4px}
+.pill.rel.supports{color:var(--ok)} .pill.rel.contradicts{color:var(--bad)} .pill.rel.mentions{color:var(--muted)}
 details.more{border-top:1px solid var(--line)}
 details.more > summary{padding:10px 18px;font-family:var(--display);font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
 details.more > summary::-webkit-details-marker{display:none}

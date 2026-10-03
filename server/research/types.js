@@ -21,17 +21,30 @@ const REJECTION_REASONS = [
 /* Claims a document can bear on: the model's empirical types, plus "claim" = text a person typed to check. */
 const EMPIRICAL_TYPES = ["fact", "contested", "unsupported", "claim"];
 
-/* Which adapters serve which source types. Only academic_paper is live in this build; the others are listed so the
-   audit can say "no adapter for this type" instead of silently searching the wrong place. */
+/* Which adapters serve which source types. Academic types go to the bibliographic databases; news coverage goes to
+   GDELT's document index (no key). Types with an empty list are kept so the audit can say "no adapter for this type"
+   instead of silently searching the wrong place. */
 const ADAPTERS_FOR_TYPE = {
   academic_paper: ["crossref", "pubmed", "openalex"],
   survey_report: ["crossref", "openalex"],
   agency_report: ["crossref"],
   government_data: [],
-  news_coverage: [],
+  news_coverage: ["gdelt"],
+  long_form_journalism: ["gdelt"],
   book_or_edition: ["crossref"],
   company_statement: [],
   transcript_or_recording: [],
+};
+
+/* What a person says an attached source does for the claim. Stated by the person who attaches it, never inferred
+   from the fact that a search found it; "unstated" is the default and means exactly that. A relation is that
+   person's reading of the document, on record with their name and time; it is not a verification of the claim. */
+const RELATIONS = ["unstated", "supports", "contradicts", "mentions"];
+const RELATION_MEANING = {
+  unstated: "The person attached the document as bearing on the claim and did not say how.",
+  supports: "In the attaching person's reading, the document supports the claim as worded.",
+  contradicts: "In the attaching person's reading, the document contradicts the claim as worded.",
+  mentions: "The document discusses the claim or its subject without, in the attaching person's reading, settling it either way.",
 };
 
 function normalizeDoi(doi) {
@@ -68,4 +81,4 @@ function guessSourceTypes(claimText, wouldSettle) {
   return out.length ? out.slice(0, 2) : ["academic_paper"];
 }
 
-module.exports = { SOURCE_TYPES, REJECTION_REASONS, EMPIRICAL_TYPES, ADAPTERS_FOR_TYPE, normalizeDoi, compileQuery, guessSourceTypes };
+module.exports = { SOURCE_TYPES, REJECTION_REASONS, EMPIRICAL_TYPES, ADAPTERS_FOR_TYPE, RELATIONS, RELATION_MEANING, normalizeDoi, compileQuery, guessSourceTypes };

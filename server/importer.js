@@ -47,7 +47,7 @@ function createImporter(deps) {
     for (const [re, reason] of NO_IMPORTER) if (re.test(parsed.hostname)) return { ok: false, reason, host: parsed.hostname, noImporter: true };
     const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 20000);
     try {
-      const res = await fetchFn(u, { signal: ctl.signal, redirect: "follow", headers: { "User-Agent": "deflate-lens/0.7 (local transcript importer)", "Accept": "text/html,text/plain,text/vtt,application/x-subrip;q=0.9,*/*;q=0.5" } });
+      const res = await fetchFn(u, { signal: ctl.signal, redirect: "follow", headers: { "User-Agent": "deflate-lens/0.8 (local transcript importer)", "Accept": "text/html,text/plain,text/vtt,application/x-subrip;q=0.9,*/*;q=0.5" } });
       const ctype = String(res.headers && typeof res.headers.get === "function" ? res.headers.get("content-type") || "" : "").toLowerCase();
       if (res.status >= 400) return { ok: false, reason: "The site answered HTTP " + res.status + (res.status === 401 || res.status === 403 ? ": it wants a login or blocks automated fetches" : "") + ". Paste the text or upload a file.", status: res.status };
       const body = await res.text();

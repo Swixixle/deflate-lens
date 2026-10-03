@@ -78,12 +78,12 @@ test("full workflow with mock model, persistence across restart, staleness, expo
     assert.equal(b.passages[0].status, "done"); assert.deepEqual(b.passages[0].stale, []);
 
     // summary
-    b = (await s.api("PUT", "/api/runs/" + id + "/summary", { patterns: [], survived: { hs: "x", g5: "y" }, basedOn: { passagesSig: "p001@" + b.passages[0].analyzedAt } })).data;
+    b = (await s.api("PUT", "/api/runs/" + id + "/summary", { patterns: [], survived: { hs: "x", g5: "y" }, basedOn: { passagesSig: "p001@" + b.passages[0].analyzedAt, transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig } })).data;
     assert.deepEqual(b.summary.stale, []);
 
     // exports
     const ej = await s.api("GET", "/api/runs/" + id + "/export.json");
-    assert.equal(ej.status, 200); assert.equal(ej.data.schema, "deflate-lens/claims@0.4"); assert.ok(ej.data.statusMeaning.receipt.includes("not verification")); assert.equal(ej.data.claims.length, 2, "mock emits one unscorable and one empirical claim per passage"); assert.equal(ej.data.run.source.url, "https://example.org/ep1");
+    assert.equal(ej.status, 200); assert.equal(ej.data.schema, "deflate-lens/claims@0.5"); assert.ok(ej.data.statusMeaning.receipt.includes("not verification")); assert.equal(ej.data.claims.length, 2, "mock emits one unscorable and one empirical claim per passage"); assert.equal(ej.data.run.source.url, "https://example.org/ep1");
     assert.match(ej.headers.get("content-disposition"), /attachment/);
     const em = await s.api("GET", "/api/runs/" + id + "/export.md");
     assert.equal(em.status, 200); assert.match(String(em.data), /# Test run — deflated/);
