@@ -20,8 +20,8 @@ APIs (Crossref, PubMed; OpenAlex with an optional key) and needs no key.
 1. **Inspect the environment.** `node --version` must be 18 or newer; `npm --version` must answer. If Node is missing
    or old, tell the person to install the LTS from https://nodejs.org (or use their package manager if they prefer:
    `brew install node` on a Mac with Homebrew). Do not install Node without asking; that is a system-level change.
-2. **Get the code.** Either unzip the ZIP the person has, or `git clone <repository url>` (the URL is in the README once
-   the repository is published). `cd` into the folder that contains `package.json`.
+2. **Get the code.** Either unzip the ZIP the person has, or run
+   `git clone https://github.com/Swixixle/deflate-lens.git`. `cd` into the folder that contains `package.json`.
 3. **Run the one setup command:** `npm run setup`
    - It checks Node and npm, runs `npm ci` from the lockfile only when dependencies are missing or stale, creates
      `.env` from `.env.example` only if `.env` does not exist, creates `data/` if needed, and prints what it found.

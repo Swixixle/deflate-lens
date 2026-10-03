@@ -4,12 +4,16 @@ Paste what you have, a claim, a quote, a whole interview transcript, or a link, 
 
 ## Quick start
 
-Needs Node.js 18 or newer (<https://nodejs.org>, the LTS download). Then, in a terminal, inside the project folder:
+Needs Node.js 18 or newer (<https://nodejs.org>, the LTS download). To get the code and start it, run these commands in a terminal:
 
-```
+```sh
+git clone https://github.com/Swixixle/deflate-lens.git
+cd deflate-lens
 npm run setup
 npm run launch
 ```
+
+If you already cloned the repository or downloaded and unzipped it, open a terminal in the folder containing `package.json` and run only `npm run setup` and `npm run launch`.
 
 `setup` checks Node and npm, installs the locked dependencies, creates `.env` from the example if you have none, and makes the data folder. It is safe to run again; it never overwrites your settings or your saved work. `launch` starts the server, waits until it answers, prints the address (normally <http://127.0.0.1:3123>) and opens it in your browser. Stop with `Ctrl+C`; start again later with `npm run launch`.
 
@@ -38,7 +42,7 @@ If `npm run launch` finds a Deflate Lens server already answering, it reuses it 
 ### Setup on macOS, step by step
 
 1. Open Terminal (`⌘ Space`, type `Terminal`, Return). Type `node -v`. A version of 18 or higher means Node is there; otherwise install it from <https://nodejs.org> (LTS) or with Homebrew (`brew install node`), then close and reopen Terminal.
-2. Get the code: unzip the ZIP, or `git clone https://github.com/YOUR-USERNAME/deflate-lens.git` (replace the address with the published repository's; this placeholder is replaced at publication).
+2. Get the code: unzip the ZIP, or `git clone https://github.com/Swixixle/deflate-lens.git`.
 3. `cd` into the folder (type `cd ` and drag the folder from Finder into the Terminal window, then Return).
 4. `npm run setup`, then `npm run launch`.
 
@@ -155,7 +159,10 @@ Not verified:
 - The parser's heading rules (transcript mode) are tuned to the format of the supplied transcript. Other formats may mis-split turns; the who-said-what stage shows every turn so a person can catch it. Text without speaker labels and typed claims use the text mode, which has no heading rules. A run's mode is fixed when it is created and shown in the export.
 - A link is only ever "read" when the importer returned its text and you saved that text. The run then records the fetch (address, time, characters). A link added under Add context is a citation, nothing more.
 - No login. Localhost only by default.
-- No license file is included. Pick one before making the repository public.
+
+## License
+
+MIT. See [LICENSE](LICENSE) for the full terms.
 
 ## Project layout
 
