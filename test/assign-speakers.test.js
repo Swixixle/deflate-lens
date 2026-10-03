@@ -30,14 +30,14 @@ test("cutTurns cuts the original text at the model's starts and never rewrites a
   const r = cutTurns(text, [{ speaker: "Host", start: "Welcome back to the show" }, { speaker: "guest", start: "Thanks for having me, it is" }, { speaker: "HOST", start: "So tell me about the" }, { speaker: "GUEST", start: "Well, the book took five years" }], keys);
   assert.deepEqual(r.turns.map(t => t.speaker), ["HOST", "GUEST", "HOST", "GUEST"]); assert.equal(r.dropped, 0);
   assert.equal(r.turns.map(t => t.text).join(" "), text);
-  // a start the model misspelled or invented is dropped and its words stay with the previous turn; an unknown name is UNKNOWN
+  // a start the model misspelled or invented makes its containing span unknown; an unknown name is UNKNOWN
   const r2 = cutTurns(text, [{ speaker: "HOST", start: "Welcome back" }, { speaker: "GUEST", start: "Thanks for having you" }, { speaker: "Producer", start: "So tell me about the" }], keys);
-  assert.deepEqual(r2.turns.map(t => t.speaker), ["HOST", "UNKNOWN"]); assert.equal(r2.dropped, 1);
-  assert.equal(r2.turns[0].text, "Welcome back to the show. Thanks for having me, it is good to be here.");
+  assert.deepEqual(r2.turns.map(t => t.speaker), ["UNKNOWN"]); assert.equal(r2.dropped, 1);
+  assert.equal(r2.turns[0].text, text);
   assert.equal(r2.turns.map(t => t.text).join(" "), text);
   // a start the model placed out of order is dropped, not applied backwards
   const r3 = cutTurns(text, [{ speaker: "HOST", start: "Welcome back" }, { speaker: "GUEST", start: "So tell me about the" }, { speaker: "HOST", start: "Thanks for having me" }], keys);
-  assert.deepEqual(r3.turns.map(t => t.speaker), ["HOST", "GUEST"]); assert.equal(r3.dropped, 1);
+  assert.deepEqual(r3.turns.map(t => t.speaker), ["HOST", "UNKNOWN"]); assert.equal(r3.dropped, 1);
   assert.equal(r3.turns.map(t => t.text).join(" "), text);
   assert.deepEqual(cleanNames("Joe Rogan, jordan peterson,, Joe Rogan").map(n => n.key), ["JOE ROGAN", "JORDAN PETERSON"]);
   assert.throws(() => cleanNames("A Very Long Name With Six Words"), /four words/);

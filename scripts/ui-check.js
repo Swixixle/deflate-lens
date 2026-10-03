@@ -22,7 +22,7 @@ const T = Array.from({length:18},(_,i)=>(i%2?"GUEST":"HOST")+": This is an argum
   let browser;
   const errors=[],report={};
   try{
-    browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1280,height:900}});
+    browser=await chromium.launch({headless:true, ...(process.env.DEFLATE_CHROMIUM_EXECUTABLE ? {executablePath:process.env.DEFLATE_CHROMIUM_EXECUTABLE} : {})});const context=await browser.newContext({viewport:{width:1280,height:900}});const page=await context.newPage();
     page.on("pageerror",e=>errors.push(e.message));
     await page.goto("http://127.0.0.1:"+server.address().port);await page.waitForSelector("#f-text");
     report.contextClosed=!(await page.locator("details.ctx").evaluate(d=>d.open));
@@ -71,7 +71,7 @@ const T = Array.from({length:18},(_,i)=>(i%2?"GUEST":"HOST")+": This is an argum
     await page.waitForSelector("#stage-intake .episodes .btn.ep",{timeout:20000});await page.locator("#stage-intake .episodes .btn.ep").nth(1).click();
     await page.waitForSelector("#stage-intake .enginebox",{timeout:20000});
     const body0=await page.textContent("#stage-intake .body");
-    report.noTranscriptSteps=/feed transcript: the feed has no transcript/.test(body0)&&/youtube search: needs yt-dlp/.test(body0);
+    report.noTranscriptSteps=/feed transcript: the feed has no transcript/.test(body0)&&/youtube search:.*title-only search cannot establish/.test(body0);
     report.engineChoiceOffered=/can be transcribed\. Choose once/.test(body0)&&(await page.locator("#stage-intake .enginebox button:has-text('Install local transcription')").count())===1&&(await page.locator("#stage-intake .enginebox input[type=password]").count())===1;
     await page.locator("#stage-intake .enginebox").screenshot({path:path.join(shots,"engine-choice.png")});
     await page.fill("#stage-intake .enginebox input[type=password]","short");await page.locator("#stage-intake .enginebox button:has-text('Save key and transcribe')").click();
@@ -85,12 +85,36 @@ const T = Array.from({length:18},(_,i)=>(i%2?"GUEST":"HOST")+": This is an argum
     // A fetch that was running before the page opened (a reload during a long transcription) is picked up and finishes
     // the same way; the person does not lose it and does not start it twice.
     const slow=await page.evaluate(()=>fetch("/api/transcript/resolve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:"https://slow.test/feed.xml",guid:"g-yes"})}).then(r=>r.json()));
-    await page.reload();await page.locator("#newRun").click();
+    await page.reload();
     await page.waitForFunction(()=>/Still finding the transcript/.test((document.querySelector("#stage-intake .body")||{}).textContent||""),null,{timeout:10000}).catch(async e=>{console.error("resume debug:",JSON.stringify(slow),await page.evaluate(()=>fetch("/api/transcript/engines").then(r=>r.json())),(await page.locator("#stage-intake").textContent()).slice(0,300));throw e;});
     report.resumedJob=await page.evaluate(()=>document.querySelector("#f-text").value)==="https://slow.test/feed.xml";
     await ready(page);
     report.resumedCards=await page.locator(".card").count()===3&&/Slow Show/.test(await page.locator("#runView").textContent());
     report.resumedOnce=(await page.evaluate(()=>fetch("/api/transcript/engines").then(r=>r.json()))).running.length===0&&!!slow.jobId;
+    // Return only after the server has finished; an old remembered run must not hide the fetch.
+    const rootURL="http://127.0.0.1:"+server.address().port;
+    const closed=await page.evaluate(()=>fetch("/api/transcript/resolve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:"https://show.test/feed.xml",guid:"g-yes"})}).then(r=>r.json()));
+    await page.goto("about:blank");
+    for(let n=0;n<100;n++){if((await system.jobs.get(closed.jobId)).state!=="running")break;await new Promise(r=>setTimeout(r,20));}
+    const beforeClosed=(await system.store.listRuns()).length;
+    await page.goto(rootURL);await ready(page);
+    report.completedWhileClosed=(await system.store.listRuns()).length===beforeClosed+1 && (await system.jobs.get(closed.jobId)).runId===await page.evaluate(()=>location.hash.slice(5));
+    // Both pages race to import one finished fetch; each must open the same saved reading.
+    await page.goto("about:blank");
+    const raced=await fetch(rootURL+"/api/transcript/resolve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:"https://show.test/feed.xml",guid:"g-yes"})}).then(r=>r.json());
+    for(let n=0;n<100;n++){if((await system.jobs.get(raced.jobId)).state!=="running")break;await new Promise(r=>setTimeout(r,20));}
+    const beforeRace=(await system.store.listRuns()).length, other=await page.context().newPage();
+    const engineReplies=[];
+    await context.route("**/api/transcript/engines",async route=>{
+      const response=await route.fetch();engineReplies.push({route,response});
+      if(engineReplies.length===2)await Promise.all(engineReplies.map(x=>x.route.fulfill({response:x.response})));
+    });
+    await Promise.all([page.goto(rootURL),other.goto(rootURL)]);
+    try { await Promise.all([ready(page),ready(other)]); } catch(e) { console.error("two-tab debug",await page.locator("#runView").textContent(),await other.locator("#runView").textContent());throw e; }
+    await context.unroute("**/api/transcript/engines");
+    const racedId=(await system.jobs.get(raced.jobId)).runId;
+    report.twoTabsOneImport=(await system.store.listRuns()).length===beforeRace+1 && await page.evaluate(()=>location.hash.slice(5))===racedId && await other.evaluate(()=>location.hash.slice(5))===racedId;
+    await other.close();
     // A transcript with no speaker labels reads as Speaker unknown; naming the speakers (under Add context) labels
     // the turns with the model, says so, and reads again by itself.
     await page.locator("#newRun").click();
@@ -120,7 +144,7 @@ const T = Array.from({length:18},(_,i)=>(i%2?"GUEST":"HOST")+": This is an argum
     await page.setViewportSize({width:390,height:844});await page.locator("#lvl5").click();
     report.phoneFits=await page.evaluate(()=>document.body.scrollWidth<=innerWidth+1);
     await page.screenshot({path:path.join(shots,"automatic-reading-phone.png"),fullPage:true});
-    for(const name of ["contextClosed","processingClosed","cardDetailsClosed","sourceAccepted","exampleHeld","linkWording","episodeListMarksTranscript","chainOrigin","chainIntakeRecord","noTranscriptSteps","engineChoiceOffered","badDeepgramKeyRefused","linkNotSavedAsRun","youtubeHonest","resumedJob","resumedCards","resumedOnce","unlabeledReads","nameBoxBuried","namedSpeakers","namedOnCard","namedSaidSo","keyContinued","phoneFits"])assert.equal(report[name],true,name);
+    for(const name of ["contextClosed","processingClosed","cardDetailsClosed","sourceAccepted","exampleHeld","linkWording","episodeListMarksTranscript","chainOrigin","chainIntakeRecord","noTranscriptSteps","engineChoiceOffered","badDeepgramKeyRefused","linkNotSavedAsRun","youtubeHonest","resumedJob","resumedCards","resumedOnce","unlabeledReads","nameBoxBuried","namedSpeakers","namedOnCard","namedSaidSo","keyContinued","phoneFits","completedWhileClosed","twoTabsOneImport"])assert.equal(report[name],true,name);
     assert.deepEqual(errors,[]);report.errors=errors;console.log(JSON.stringify(report,null,2));
   }finally{
     for(const job of system.reader.jobs.values())job.controller.abort();await Promise.all([...system.reader.jobs.values()].map(j=>j.done));

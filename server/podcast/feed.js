@@ -66,13 +66,20 @@ function matchEpisode(feed, want) {
   want = want || {};
   const items = feed.items || [];
   if (want.guid) { const hit = items.find(i => i.guid && i.guid === want.guid); if (hit) return { item: hit, matchedBy: "guid" }; }
-  if (want.enclosureUrl) { const u = String(want.enclosureUrl).replace(/\?.*$/, ""); const hit = items.find(i => i.enclosure && i.enclosure.url.replace(/\?.*$/, "") === u); if (hit) return { item: hit, matchedBy: "audio file" }; }
-  if (want.title) {
-    const t = norm(want.title);
-    let hit = items.find(i => norm(i.title) === t); if (hit) return { item: hit, matchedBy: "title" };
-    hit = items.find(i => norm(i.title).includes(t) || t.includes(norm(i.title))); if (hit && norm(hit.title).length > 12) return { item: hit, matchedBy: "title (partial)" };
+  if (want.enclosureUrl) {
+    const exact = items.filter(i => i.enclosure && i.enclosure.url === want.enclosureUrl);
+    if (exact.length === 1) return {item:exact[0], matchedBy:"audio file"};
+    const u = String(want.enclosureUrl).replace(/\?.*$/, "");
+    if (/\.(mp3|m4a|wav|ogg)$/i.test(u)) { const hits=items.filter(i=>i.enclosure && i.enclosure.url.replace(/\?.*$/, "")===u); if(hits.length===1)return {item:hits[0],matchedBy:"audio file"}; }
   }
-  if (want.pubDate) { const d = String(want.pubDate).slice(0, 10); const hit = items.find(i => i.pubDate.slice(0, 10) === d); if (hit) return { item: hit, matchedBy: "publication date" }; }
+  if (want.title) {
+    const t=norm(want.title); if(!t)return null;
+    const hits=items.filter(i=>norm(i.title)===t);
+    if(hits.length===1)return {item:hits[0],matchedBy:"title"};
+    if(hits.length>1 && want.pubDate){const dated=hits.filter(i=>i.pubDate.slice(0,10)===String(want.pubDate).slice(0,10));if(dated.length===1)return {item:dated[0],matchedBy:"title and publication date"};}
+    return null;
+  }
+  if(want.pubDate){const hits=items.filter(i=>i.pubDate.slice(0,10)===String(want.pubDate).slice(0,10));if(hits.length===1)return {item:hits[0],matchedBy:"publication date"};}
   return null;
 }
 

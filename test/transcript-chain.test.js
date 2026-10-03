@@ -35,7 +35,7 @@ const APPLE_LOOKUP = { resultCount: 3, results: [
   { wrapperType: "podcastEpisode", kind: "podcast-episode", trackId: 1002, trackName: "Ep 2: Greener & browner", episodeGuid: "g-2", episodeUrl: "https://cdn.test/ep2.mp3", releaseDate: "2026-10-02T10:00:00Z", feedUrl: "https://show.test/feed.xml", collectionName: "The Test Show", collectionId: 999 },
 ] };
 const PLAYER = { playabilityStatus: { status: "OK" }, captions: { playerCaptionsTracklistRenderer: { captionTracks: [{ baseUrl: "https://www.youtube.com/api/timedtext?v=AbCdEfGhIjK&lang=en&kind=asr", languageCode: "en", kind: "asr", name: { simpleText: "English (auto-generated)" } }] } } };
-const JSON3 = { events: [{ segs: [{ utf8: "so today" }] }, { segs: [{ utf8: "so today we talk" }] }, { segs: [{ utf8: "about plans. " }] }, { segs: [{ utf8: "A bad plan beats no plan. " + "y ".repeat(150) }] }] };
+const JSON3 = { events: [{ tStartMs: 0, dDurationMs: 2000, segs: [{ utf8: "so today" }] }, { tStartMs: 1000, dDurationMs: 2000, segs: [{ utf8: "so today we talk" }] }, { segs: [{ utf8: "about plans. " }] }, { segs: [{ utf8: "A bad plan beats no plan. " + "y ".repeat(150) }] }] };
 
 /* An injected fetch that answers every address the chain can ask. */
 function fakeFetch(overrides) {
@@ -143,7 +143,7 @@ test("the four steps: the feed's transcript first (a failed file is skipped), th
   // ep1: no transcript, no video, a page without one, audio but no engine chosen or installed → an honest stop with the audio
   loc = await R.locate({ url: "https://show.test/feed.xml", guid: "g-1" }, step); w = await R.words(loc, { step });
   assert.equal(w.ok, false); assert.match(w.reason, /no transcript was published anywhere/); assert.deepEqual(w.needsTranscription, { audioUrl: "https://cdn.test/ep1.mp3", duration: 3600, available: { local: false, cloud: false }, wanted: null });
-  assert.deepEqual(w.tried.map(t => t.step), ["feed transcript", "youtube search", "episode page"]); assert.match(w.tried[1].error, /needs yt-dlp/); assert.match(w.tried[2].error, /no transcript on the page/);
+  assert.deepEqual(w.tried.map(t => t.step), ["feed transcript", "youtube search", "episode page"]); assert.match(w.tried[1].error, /title-only search cannot establish/); assert.match(w.tried[2].error, /no transcript on the page/);
   // a chosen engine that is not available says so rather than guessing
   w = await R.words(loc, { step, choice: "cloud" }); assert.equal(w.ok, false); assert.match(w.reason, /no Deepgram key is set/); assert.equal(w.needsTranscription.wanted, "cloud");
   // with the local engine installed and chosen, the audio is transcribed and the origin says which engine
@@ -173,10 +173,10 @@ test("youtube: yt-dlp is preferred when present (a fake writes the VTT), the bui
   await assert.rejects(YT.captions({ url: "https://youtu.be/AbCdEfGhIjK", fetch: refused, env: {}, run: noYtdlp }), /not a bot.*yt-dlp usually gets through/);
   const none = fakeFetch(u => /youtubei/.test(u) ? { body: { playabilityStatus: { status: "OK" }, captions: {} } } : null);
   await assert.rejects(YT.captions({ url: "https://youtu.be/AbCdEfGhIjK", fetch: none, env: {}, run: noYtdlp }), /no captions/);
-  // the chain's step 2 search uses yt-dlp when present and names the match
+  // A title-only search result must not silently become this episode’s transcript.
   const R = createResolver({ fetch: f, env: {}, engines: {}, run: fakeYtdlp });
   const loc = await R.locate({ url: "https://show.test/feed.xml", guid: "g-1" }, () => {}); const w = await R.words(loc, { step: () => {} });
-  assert.equal(w.ok, true); assert.equal(w.source.kind, "youtube-captions"); assert.match(w.source.note, /YouTube search by title.*confirm it is the same episode/);
+  assert.equal(w.ok, false); assert.ok(w.needsTranscription); assert.ok(w.tried.some(t=>/title-only search cannot establish/.test(t.error)));
 });
 
 test("engines: seam repeats collapse, audio downmixes and resamples, cuts land in quiet; the local engine says plainly when it is not installed", async () => {

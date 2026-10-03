@@ -67,7 +67,7 @@ function localEngine({ dataDir, env }) {
     const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), "deflate-audio-"));
     const audioFile = file || path.join(tmpDir, "audio.mp3");
     try {
-      if (!file) await download(audioUrl, audioFile, fetchFn || globalThis.fetch, (got, total) => report("downloading", { bytes: got, totalBytes: total, percent: total ? Math.round(100 * got / total) : null }), signal);
+      if (!file) await download(audioUrl, audioFile, fetchFn || require("./public-fetch").publicFetch, (got, total) => report("downloading", { bytes: got, totalBytes: total, percent: total ? Math.round(100 * got / total) : null }), signal);
       const bytes = (await fsp.stat(audioFile)).size;
       if (!durationSeconds) durationSeconds = Math.round(bytes * 8 / 128000); // a guess at 128 kbps, replaced by the decoded length as it goes
       report("loading model", { model, cached: modelCached() });
@@ -84,7 +84,7 @@ function localEngine({ dataDir, env }) {
         if (!final) { const cut = quietestCut(pcm); if (cut > 0 && cut < pcm.length) { carry = pcm.subarray(cut); pcm = pcm.subarray(0, cut); } }
         if (signal && signal.aborted) throw abortError();
         const out = await asr(pcm, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true }); // timestamps are what lets the library stitch the 30-second windows; without them text is dropped (measured)
-        const text = collapseStitchRepeats(String(out && out.text || "").trim()); if (text) pieces.push(text);
+        const text = String(out && out.text || "").trim(); if (text) pieces.push(text);
         done += pcm.length / RATE;
         report("transcribing", { secondsDone: Math.round(done), secondsTotal: Math.max(durationSeconds || 0, Math.round(done)), percent: durationSeconds ? Math.min(99, Math.round(100 * done / durationSeconds)) : null });
         if (carry) { seg.push(carry); segLen = carry.length; }

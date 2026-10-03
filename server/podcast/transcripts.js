@@ -19,13 +19,16 @@ function cuesFromVtt(body) {
     if (!l || /^WEBVTT/.test(l) || /^NOTE\b/.test(l) || /^STYLE\b/.test(l) || /^REGION\b/.test(l) || /^Kind:/.test(l) || /^Language:/.test(l)) { i++; continue; }
     if (TIME.test(l) || (lines[i + 1] && TIME.test(lines[i + 1].trim()))) {
       if (!TIME.test(l)) i++; // a cue identifier line precedes the timing line
+      const timing = lines[i].trim().split(/\s+-->\s+/);
+      const seconds = value => value.split(/\s/)[0].replace(",", ".").split(":").reduce((n, part) => n * 60 + Number(part), 0);
+      const start = seconds(timing[0]), end = seconds(timing[1]);
       i++;
       const textLines = []; while (i < lines.length && lines[i].trim()) textLines.push(lines[i]), i++;
       const raw = textLines.join(" ");
       const v = /^\s*<v(?:\.[^\s>]*)?\s+([^>]+)>/.exec(raw);
       const speaker = v ? clip(v[1]) : "";
       const text = clip(raw.replace(/<v[^>]*>/g, "").replace(/<\/v>/g, "").replace(/<\d{2}:\d{2}:\d{2}[.,]\d{3}>/g, "").replace(/<\/?c[^>]*>/g, "").replace(/&nbsp;/g, " "));
-      if (text) cues.push({ speaker, text });
+      if (text) cues.push({ speaker, text, start, end });
       continue;
     }
     i++;
@@ -55,7 +58,7 @@ function cuesFromJson(body) {
 /* YouTube json3: {events:[{segs:[{utf8}], tStartMs, dDurationMs}]}. */
 function cuesFromJson3(body) {
   let d = body; if (typeof d === "string") d = JSON.parse(d);
-  return ((d && Array.isArray(d.events) ? d.events : [])).map(e => ({ speaker: "", text: clip((e && Array.isArray(e.segs) ? e.segs : []).map(s => s && s.utf8 || "").join("")) })).filter(c => c.text);
+  return ((d && Array.isArray(d.events) ? d.events : [])).map(e => ({ speaker: "", start: e && Number.isFinite(e.tStartMs) ? e.tStartMs / 1000 : null, end: e && Number.isFinite(e.tStartMs) && Number.isFinite(e.dDurationMs) ? (e.tStartMs + e.dDurationMs) / 1000 : null, text: clip((e && Array.isArray(e.segs) ? e.segs : []).map(s => s && s.utf8 || "").join("")) })).filter(c => c.text);
 }
 
 /* YouTube's automatic captions repeat each line as the next one scrolls in; a cue that merely repeats the previous
@@ -64,12 +67,12 @@ function dedupeRolling(cues) {
   const out = [];
   for (const c of cues) {
     const prev = out[out.length - 1];
-    if (prev && prev.speaker === c.speaker) {
-      if (prev.text === c.text) continue;
-      if (c.text.startsWith(prev.text)) { prev.text = c.text; continue; }
-      if (prev.text.endsWith(c.text)) continue;
+    if (prev && prev.speaker === c.speaker && Number.isFinite(prev.start) && Number.isFinite(prev.end) && Number.isFinite(c.start) && Number.isFinite(c.end) && c.start >= prev.start && c.start < prev.end) {
+      if (prev.text === c.text) { prev.end = Math.max(prev.end, c.end); continue; }
+      if (c.text.startsWith(prev.text + " ")) { prev.text = c.text; prev.end = Math.max(prev.end, c.end); continue; }
+      if (prev.text.endsWith(" " + c.text)) { prev.end = Math.max(prev.end, c.end); continue; }
     }
-    out.push({ speaker: c.speaker, text: c.text });
+    out.push(Object.assign({}, c));
   }
   return out;
 }

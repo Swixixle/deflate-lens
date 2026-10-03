@@ -107,7 +107,7 @@ async function spotifyTitle(fetchFn, url) {
 
 /* ---- the chain ---- */
 function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
-  fetchFn = fetchFn || globalThis.fetch; env = env || {}; engines = engines || {};
+  fetchFn = fetchFn || require("./public-fetch").publicFetch; env = env || {}; engines = engines || {};
 
   /* A feed is read whole or not at all: a transfer cut short (seen through a proxy, HTTP 200 with a third of the
      bytes) is retried, and a feed that still arrives without its closing tag is used but marked incomplete. */
@@ -150,7 +150,9 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
       if (c.kind === "spotify-show") {
         step("Spotify", "show: " + title + "; looking it up at Apple");
         const shows = await appleSearchShows(fetchFn, title);
-        const show = shows.find(s => norm(s.name) === norm(title)) || shows[0];
+        const matches = shows.filter(s => norm(s.name) === norm(title));
+        if (matches.length !== 1) throw new Error("Spotify’s show title does not identify one feed. Paste the show’s RSS or Apple Podcasts link.");
+        const show = matches[0];
         if (!show || !show.feedUrl) throw new Error("no feed found for a show called “" + title + "”");
         const feed = await readFeed(show.feedUrl);
         if (!input.guid) return { kind: "choose", show, feed, episodes: episodesToChoose(feed), note: "matched from Spotify by show title" };
@@ -160,7 +162,8 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
       step("Spotify", "episode: " + title + "; looking it up at Apple by title");
       const hits = await appleSearchEpisodes(fetchFn, title);
       const exact = hits.filter(h => norm(h.title) === norm(title));
-      const pick = exact[0] || hits.find(h => norm(h.title).includes(norm(title))) || null;
+      if (exact.length > 1) throw new Error("More than one episode has this title. Paste the show’s RSS or Apple Podcasts link so the right episode is read.");
+      const pick = exact.length === 1 ? exact[0] : null;
       if (!pick || !pick.feedUrl) throw new Error("no podcast episode called “" + title + "” is listed at Apple; paste the show's Apple Podcasts link or its RSS feed instead");
       const feed = await readFeed(pick.feedUrl);
       const m = matchEpisode(feed, { guid: pick.guid, enclosureUrl: pick.audioUrl, title: pick.title, pubDate: pick.releaseDate });
@@ -185,6 +188,7 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
       const feedUrl = new URL(decodeEntities(feedLink[1]), r.url).href;
       step("Page", "it links to a feed: " + feedUrl);
       const feed = await readFeed(feedUrl);
+      if (input.guid) { const picked = matchEpisode(feed, {guid:input.guid}); if (!picked) throw new Error("That episode is not in the feed."); return {kind:"episode", show:{name:feed.title,feedUrl:feed.url,link:feed.link}, item:picked.item, matchedBy:"feed by guid"}; }
       const m = matchEpisode(feed, { title: decodeEntities((r.text.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [, ""])[1]).replace(/\s+/g, " ").trim() }) || (feed.items || []).map(i => i.link && i.link.replace(/\/$/, "") === c.url.replace(/\/$/, "") ? { item: i, matchedBy: "page link" } : null).find(Boolean);
       if (m) return { kind: "episode", show: { name: feed.title, feedUrl: feed.url, link: feed.link }, item: m.item, matchedBy: "the page's feed by " + m.matchedBy, pageHtml: r.text };
       if (input.guid) { const mm = matchEpisode(feed, { guid: input.guid }); if (mm) return { kind: "episode", show: { name: feed.title, feedUrl: feed.url, link: feed.link }, item: mm.item, matchedBy: "feed by guid" }; }
@@ -221,10 +225,7 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
     // 2. YouTube: a video link in the episode's notes, or a search by title when yt-dlp is installed
     let video = item.youtube ? { id: YT.videoId(item.youtube), via: "a link in the episode notes" } : null;
     if (!video) {
-      const q = (item.title || "") + " " + (located.show && located.show.name || "");
-      const rows = await YT.searchVideo(q, env, runFn).catch(e => { tried.push({ step: "youtube search", error: e.message }); return null; });
-      if (rows === null) tried.push({ step: "youtube search", error: "needs yt-dlp (brew install yt-dlp); not installed" });
-      else { const hit = (rows || []).find(v => norm(v.title).includes(norm(item.title).slice(0, 40)) || norm(item.title).includes(norm(v.title).slice(0, 40))); if (hit) video = { id: hit.id, via: "a YouTube search by title (" + hit.title + " — " + hit.channel + "); confirm it is the same episode" }; else tried.push({ step: "youtube search", error: "no video with a matching title" }); }
+      tried.push({step:"youtube search",error:"No video is linked from this episode. A title-only search cannot establish which video belongs to it; trying the episode’s own page and audio."});
     }
     if (video && video.id) {
       step("YouTube", "reading captions (" + video.via + ")");

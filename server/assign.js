@@ -46,18 +46,17 @@ function findStart(toks, norm, from) {
   }
   return -1;
 }
-/* Cut `text` into turns from the model's list of {speaker, start}. The first turn always starts at the first word;
-   a start that cannot be found in order is dropped (its words stay with the previous turn, under that turn's name,
-   and the drop is recorded). Returns {turns:[{speaker, text}], dropped}. */
+/* Cut the original text only at located boundaries. A missing boundary makes the containing span UNKNOWN;
+   neither the second model nor the previous label may restore a name to that uncertain span. */
 function cutTurns(text, proposed, keys) {
   const toks = tokens(text); if (!toks.length) return { turns: [], dropped: 0 };
   const cuts = []; let dropped = 0, from = 0;
   proposed.forEach((p, i) => {
     const sp = String(p && p.speaker || "").toUpperCase().trim();
     const speaker = keys.has(sp) ? sp : UNKNOWN;
-    if (i === 0) { cuts.push({ speaker, k: 0 }); from = 1; return; }
     const k = findStart(toks, shared.wordsOf(String(p && p.start || "")).split(" ").slice(0, 8).join(" "), from);
-    if (k === -1 || k === 0) { dropped++; return; }
+    if (k === -1) { dropped++; if (cuts.length) cuts[cuts.length - 1].speaker = UNKNOWN; else cuts.push({ speaker: UNKNOWN, k: 0 }); from = Math.max(1, from); return; }
+    if (!cuts.length && k > 0) cuts.push({ speaker: UNKNOWN, k: 0 });
     cuts.push({ speaker, k }); from = k + 1;
   });
   if (!cuts.length) cuts.push({ speaker: UNKNOWN, k: 0 });
@@ -79,6 +78,25 @@ function reviewPrompt(names, context, turns) {
     turns.map((t, i) => "[" + i + "] " + t.speaker + ": " + t.text).join("\n");
 }
 
+// A caption file can be a single paragraph hundreds of thousands of characters long.
+// Bound each request at whitespace without discarding headings, numbers, or other source text.
+function assignmentChunks(text, limit = 14000) {
+  const chunks = []; let current = "";
+  for (const paragraph of String(text).split(/\n\s*\n/).filter(p => p.trim())) {
+    let remaining = paragraph.trim();
+    while (remaining.length > limit) {
+      if (current) { chunks.push(current); current = ""; }
+      let cut = limit; while (cut > 0 && !/\s/.test(remaining[cut])) cut--;
+      if (!cut) throw Object.assign(new Error("The transcript contains a word too long to read safely."), {status:400});
+      chunks.push(remaining.slice(0, cut)); remaining = remaining.slice(cut).trimStart();
+    }
+    if (current && current.length + remaining.length + 2 > limit) { chunks.push(current); current = ""; }
+    current += (current ? "\n\n" : "") + remaining;
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
 /* Returns the new transcript text and the record of how it was made. Never writes; the caller saves. */
 async function assignSpeakers({ ai, store, id, names, context, signal }) {
   const b = await store.bundle(id);
@@ -91,15 +109,13 @@ async function assignSpeakers({ ai, store, id, names, context, signal }) {
   const people = cleanNames(names), keys = new Set(people.map(p => p.key));
   const ctx = String(context || "").replace(/\s+/g, " ").trim().slice(0, 600);
   const basis = await store.captureCallBasis(id, { transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig }, "assign_speakers");
-  const paras = shared.parseTranscript(b.transcript, { mode: b.run.parseMode }).filter(t => !t.heading).map(t => t.text);
-  const chunks = []; let cur = [];
-  for (const p of paras) { cur.push(p); if (cur.join("\n\n").length > 14000) { chunks.push(cur.join("\n\n")); cur = []; } }
-  if (cur.length) chunks.push(cur.join("\n\n"));
+  const chunks = assignmentChunks(b.transcript);
   const outTurns = [], calls = []; let dropped = 0, demoted = 0;
   for (const chunk of chunks) {
     if (signal && signal.aborted) throw Object.assign(new Error("Stopped"), { code: "cancelled" });
     const one = await callModel(ai, store, id, "assign_speakers", basis, assignPrompt(people, ctx, chunk), signal);
     await one.save(); calls.push(one.call.callId);
+    if (["max_tokens", "refusal"].includes(one.out.stopReason)) throw Object.assign(new Error("Speaker naming was incomplete; the original text was kept."), {status:422});
     const proposed = one.out.data && Array.isArray(one.out.data.turns) ? one.out.data.turns.slice(0, 2000) : [];
     const cut = cutTurns(chunk, proposed.length ? proposed : [{ speaker: UNKNOWN, start: "" }], keys);
     dropped += cut.dropped;
@@ -116,11 +132,11 @@ async function assignSpeakers({ ai, store, id, names, context, signal }) {
   }
   const text = outTurns.map(t => t.speaker + ": " + t.text).join("\n");
   // nothing is lost: the same words, in the same order
-  if (shared.wordsOf(text.replace(/^(?:[A-Z][A-Z0-9 .'\-]{0,40}): /gm, "")) !== shared.wordsOf(paras.join(" "))) throw Object.assign(new Error("The assignment would have changed the words; nothing was saved."), { status: 500, code: "words_changed" });
+  if (shared.wordsOf(text.replace(/^(?:[A-Z][A-Z0-9 .'\-]{0,40}): /gm, "")) !== shared.wordsOf(b.transcript)) throw Object.assign(new Error("The assignment would have changed the words; nothing was saved."), { status: 500, code: "words_changed" });
   const named = outTurns.filter(t => t.speaker !== UNKNOWN).length;
   const assignment = { by: "model", at: new Date().toISOString(), names: people, context: ctx, calls, turns: outTurns.length, named, unknown: outTurns.length - named, dropped, demoted,
     method: "Names supplied by a person. The model split the text into turns and named each from the words; a second pass reviewed every name and disagreements became UNKNOWN. The words were cut from the original text, never rewritten. These labels are not from the source and prove nothing about who spoke." };
   return { text, assignment, speakers: people.map(p => ({ key: p.key, name: p.name, bio: "" })).concat(outTurns.some(t => t.speaker === UNKNOWN) ? [{ key: UNKNOWN, name: "Speaker unknown", bio: "" }] : []), basis };
 }
 
-module.exports = { assignSpeakers, cutTurns, cleanNames, findStart, UNKNOWN };
+module.exports = { assignSpeakers, cutTurns, cleanNames, findStart, assignmentChunks, UNKNOWN };

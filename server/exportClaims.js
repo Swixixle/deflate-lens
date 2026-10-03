@@ -83,12 +83,12 @@ function buildMarkdown(b, level) {
   if (r.kind === "claim") out.push("_A claim supplied by a person, not taken from a transcript. Nothing here was graded by a model unless a card says so._\n");
   if (r.sourceUrl) out.push("Source: " + (r.sourceLabel || "") + " " + r.sourceUrl + "\n");
   if (r.example) out.push("_Supplied example. Analysis written in chat by Claude, corrected after a second-reader review; attribution not confirmed by a person._\n");
-  out.push("_Quotes are exact words from the transcript, checked word for word. A source attached to a claim records a person's judgment that it is relevant, and the relation shown in brackets ([supports], [contradicts], [mentions]) is what that person said the document does; neither makes the claim verified._" + (r.input && r.input.sha256 ? " _Transcript sha256: " + r.input.sha256 + "._" : "") + "\n");
+  out.push("_Quotes are checked against the saved transcript. When a match requires writing numbers differently, it is marked below. A source attached to a claim records a person's judgment that it is relevant, and the relation shown in brackets ([supports], [contradicts], [mentions]) is what that person said the document does; neither makes the claim verified._" + (r.input && r.input.sha256 ? " _Transcript sha256: " + r.input.sha256 + "._" : "") + "\n");
   b.passages.forEach(p => {
     if (p.status !== "done" || !p.analysis) return; if (p.readingGate && p.readingGate.status !== "ready") { out.push("## " + p.title + "\n\nReading held: preparation has not passed.\n"); return; } const a = p.analysis, qc = p.quoteCheck;
     out.push("## " + p.title + " (turns " + p.turnStart + "–" + p.turnEnd + ")" + ((p.stale || []).length ? " — STALE: " + p.stale.join("; ") : "") + "\n");
     out.push("**In plain words.** " + T(a.deflated) + "\n");
-    out.push((a.jump.present ? "**Where it jumps.** " : "**No jump.** ") + T({ hs: a.jump.hs, g5: a.jump.g5 }) + (a.jump.pivot ? " Pivot: “" + a.jump.pivot + "”" + (a.jump.pivotVerbatim === false ? " (not found word for word)" : "") : "") + "\n");
+    out.push((a.jump.present ? "**Where it jumps.** " : "**No jump.** ") + T({ hs: a.jump.hs, g5: a.jump.g5 }) + (a.jump.pivot ? " Pivot: “" + a.jump.pivot + "”" + (a.jump.pivotVerbatim === false ? " (not found word for word)" : (a.jump.pivotTolerated || []).length ? " (matched, numbers written differently)" : "") : "") + "\n");
     out.push("**In fairness to the speaker.** " + T(a.defense) + "\n");
     out.push("**What is left" + (a.revision.jumpSurvives ? " (the jump " + ({ yes: "stands", partly: "partly stands", no: "does not stand" })[a.revision.jumpSurvives] + ")" : "") + ".** " + T({ hs: a.revision.hs, g5: a.revision.g5 }) + "\n");
     out.push("**Claims.**");

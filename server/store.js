@@ -371,13 +371,15 @@ class Store {
   /* A run from whatever the person has. kind "transcript" (default) or "claim" (one claim or quote; it becomes a
      single finished passage with one person-supplied claim, routed by heuristics, ready to search with no model).
      The title is made from the text when none is given; dates and identities stay unknown. */
-  async createRun(doc, transcript) {
+  async createRun(doc, transcript, fixedId) {
     const text = String(transcript || "");
     const kind = doc && doc.kind === "claim" ? "claim" : "transcript";
     const detect = shared.detectKind(text);
     const parseMode = (doc && doc.parseMode) || (kind === "claim" || detect.unlabeled ? "text" : "transcript");
     const clean = V.validateRunDoc(Object.assign({}, doc, { kind, parseMode }), { turns: shared.parseTranscript(text, { mode: parseMode }) });
-    const id = newId("r");
+    const id = fixedId || newId("r");
+    assertId(id, "run id");
+    const target = fixedId ? path.join(this.dataDir, "incoming", id) : this.runDir(id);
     const now = nowISO();
     const turns = shared.parseTranscript(text, { mode: parseMode });
     const labels = shared.speakerLabels(turns);
@@ -387,16 +389,17 @@ class Store {
     if (!run.speakers.length) run.speakers = labels.map(k => ({ key: k, name: k === "UNLABELED" ? "Speaker unknown" : k.split(" ").map(w => w[0] + w.slice(1).toLowerCase()).join(" "), bio: "" }));
     if (kind === "claim") run.status = "analyzed";
     delete run.id;
-    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
-    await writeAtomic(path.join(this.runDir(id), "transcript.txt"), text);
-    if (kind === "claim") { const cp = claimPassage(text, run, now); cp.analysis = shared.sanitizeAnalysis(cp.analysis, { sourceTypes: T.SOURCE_TYPES }); cp.basedOn.inputHash = run.input.sha256; await writeAtomic(path.join(this.runDir(id), "passages", "p001.json"), JSON.stringify(cp, null, 2)); }
+    await writeAtomic(path.join(target, "run.json"), JSON.stringify(run, null, 2));
+    await writeAtomic(path.join(target, "transcript.txt"), text);
+    if (kind === "claim") { const cp = claimPassage(text, run, now); cp.analysis = shared.sanitizeAnalysis(cp.analysis, { sourceTypes: T.SOURCE_TYPES }); cp.basedOn.inputHash = run.input.sha256; await writeAtomic(path.join(target, "passages", "p001.json"), JSON.stringify(cp, null, 2)); }
+    if (fixedId) await fsp.rename(target, this.runDir(id));
     return id;
   }
 
   /* Replace the run document. If `transcript` is given and differs from what is stored, the transcript
      timestamp moves, provenance resets, and every finished passage is marked stale (kept, not deleted). */
   async saveRun(id, doc, transcript) { return this.withLock(id, () => this._saveRun(id, doc, transcript)); }
-  async _saveRun(id, doc, transcript) {
+  async _saveRun(id, doc, transcript, serverRecord) {
     const cur = await this.getRun(id);
     if (!cur) { const e = new Error("run not found"); e.status = 404; throw e; }
     if (cur.example) { const e = new Error("the supplied example is read-only; copy it to edit"); e.status = 403; throw e; }
@@ -406,6 +409,7 @@ class Store {
     // server-owned fields: a client cannot overwrite the records the server keeps on the run
     ["orphans", "provenanceHistory", "transcriptUpdatedAt", "createdAt", "example", "copiedFrom", "copiedAt", "kind", "parseMode", "input", "inputHistory"].forEach(k => delete incoming[k]);
     const next = Object.assign({}, cur, incoming);
+    if (serverRecord && serverRecord.transcriptJobId) next.transcriptJobId = serverRecord.transcriptJobId;
     // a model assignment of speaker names is a server record on the provenance; a client save never drops it
     if (incoming.provenance && cur.provenance && cur.provenance.assignment) { next.provenance = Object.assign({}, incoming.provenance, { assignment: cur.provenance.assignment, labelsOrigin: cur.provenance.labelsOrigin }); }
     delete next.id; next.example = false; next.createdAt = cur.createdAt; next.updatedAt = nowISO();

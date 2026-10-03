@@ -159,7 +159,8 @@ test("link importer: readable pages import; sites without transcripts, logins, t
   });
   await new Promise(r => fixture.listen(0, "127.0.0.1", r));
   const fx = "http://127.0.0.1:" + fixture.address().port;
-  const dataDir = tmp(); const s = await start(dataDir);
+  // Explicit test transport permits the local fixture; the production importer rejects private targets.
+  const dataDir = tmp(); const s = await start(dataDir, {fetch:globalThis.fetch});
   try {
     let r = await s.api("POST", "/api/import", { url: fx + "/article" });
     assert.equal(r.status, 200); assert.equal(r.data.ok, true); assert.equal(r.data.title, "Greening & its drivers"); assert.match(r.data.text, /^Greening of the Earth\nFirst paragraph/); assert.doesNotMatch(r.data.text, /menu|foot|var x/); assert.match(r.data.text, /CO₂ the largest/); assert.equal(r.data.method, "html-text");

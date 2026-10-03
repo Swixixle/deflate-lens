@@ -155,7 +155,7 @@
   var NUM_TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
   var NUM_SCALE = { hundred: 100, thousand: 1000, million: 1000000, billion: 1000000000, trillion: 1000000000000 };
   function readNumber(toks, i) {
-    var j = i, total = 0, cur = 0, high = null, any = false, scaled = false, lastKind = "";
+    var j = i, total = 0, cur = 0, high = null, any = false, scaled = false, lastKind = "", lastScale = Infinity, hundred = false;
     if ((toks[j] === "a" || toks[j] === "an") && NUM_SCALE[toks[j + 1]]) { cur = 1; j++; any = true; lastKind = "small"; }
     for (; j < toks.length; j++) {
       var w = toks[j];
@@ -170,13 +170,17 @@
         cur += NUM_TENS[w]; any = true; lastKind = "small";
       } else if (NUM_SCALE[w]) {
         if (!any) break;
-        if (w === "hundred") { if (high !== null) break; cur = (cur || 1) * 100; }
-        else { total += (cur || 1) * NUM_SCALE[w]; cur = 0; scaled = true; }
+        // Only descending cardinal scales are supported. Never guess at a repeated/ascending scale,
+        // mix a year with a scale, or substitute one for an explicitly spoken zero.
+        if (high !== null) return null;
+        if (w === "hundred") { if (hundred || lastKind === "scale") return null; cur *= 100; hundred = true; }
+        else { if (NUM_SCALE[w] >= lastScale || lastKind === "scale" && !hundred) return null; total += cur * NUM_SCALE[w]; cur = 0; scaled = true; lastScale = NUM_SCALE[w]; hundred = false; }
         any = true; lastKind = "scale";
       } else break;
     }
     if (!any) return null;
     var value = high !== null ? high * 100 + cur : total + cur;
+    if (!Number.isSafeInteger(value)) return null;
     var text = String(value);
     if (toks[j] === "point" && NUM_SMALL[toks[j + 1]] != null && NUM_SMALL[toks[j + 1]] < 10) { j++; var dec = ""; while (NUM_SMALL[toks[j]] != null && NUM_SMALL[toks[j]] < 10) { dec += NUM_SMALL[toks[j]]; j++; } text += "." + dec; }
     return { text: text, end: j };

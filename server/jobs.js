@@ -1,41 +1,56 @@
 "use strict";
-/* Background jobs for work that outlasts an HTTP request (a transcript chain that may transcribe an hour of audio;
-   an npm install). Each job keeps its steps and progress in memory for polling, can be stopped, and writes its result
-   to data/jobs/<id>.json when it finishes, so a page refresh or a server restart does not lose forty minutes of
-   transcription. Jobs are never run twice: the page starts one, polls it, and takes the result. */
+/* Fetch results survive a closed page. Unfinished work after a server restart is explicitly interrupted;
+   completed, unclaimed results remain discoverable until a page imports or dismisses them. */
 const fs = require("fs/promises");
 const path = require("path");
 const crypto = require("crypto");
-
 function createJobs({ dataDir }) {
-  const dir = path.join(dataDir, "jobs");
-  const jobs = new Map();
-  const view = (j, state) => ({ id: j.id, kind: j.kind, state: state || j.state, startedAt: j.startedAt, finishedAt: j.finishedAt || "", input: j.input, steps: j.steps, progress: j.progress || null, result: (state || j.state) === "done" ? j.result : null, error: j.error || null });
-  async function persist(v) { try { await fs.mkdir(dir, { recursive: true }); const tmp = path.join(dir, v.id + ".tmp"); await fs.writeFile(tmp, JSON.stringify(v, null, 2)); await fs.rename(tmp, path.join(dir, v.id + ".json")); } catch (e) { /* a job's result is also returned to the page; failing to persist it is not fatal */ } }
-  function start(kind, input, runner) {
-    const ctl = new AbortController();
-    const j = { id: "job" + Date.now().toString(36) + crypto.randomBytes(3).toString("hex"), kind, input: input || null, state: "running", startedAt: new Date().toISOString(), steps: [], progress: null, result: null, error: null, ctl };
-    jobs.set(j.id, j);
-    const ctx = {
-      signal: ctl.signal,
-      step: (name, note) => { j.steps.push({ at: new Date().toISOString(), name, note: String(note || "") }); if (j.steps.length > 200) j.steps.splice(0, j.steps.length - 200); },
-      progress: p => { j.progress = Object.assign({ at: new Date().toISOString() }, p || {}); },
+  const dir = path.join(dataDir, "jobs"), jobs = new Map();
+  const view = (j, state = j.state) => ({ id:j.id, kind:j.kind, state, startedAt:j.startedAt, finishedAt:j.finishedAt || "", input:j.input, steps:j.steps, progress:j.progress || null, result:state === "done" ? j.result : null, error:j.error || null, runId:j.runId || "", acknowledgedAt:j.acknowledgedAt || "" });
+  async function persist(v) { await fs.mkdir(dir,{recursive:true}); const tmp=path.join(dir,v.id+"."+crypto.randomBytes(6).toString("hex")+".tmp"); await fs.writeFile(tmp,JSON.stringify(v,null,2)); await fs.rename(tmp,path.join(dir,v.id+".json")); }
+  const ready = (async () => {
+    await fs.mkdir(dir,{recursive:true});
+    for (const name of await fs.readdir(dir)) {
+      if (!/^job[A-Za-z0-9]+\.json$/.test(name)) continue;
+      let j; try { j=JSON.parse(await fs.readFile(path.join(dir,name),"utf8")); } catch(e) { continue; }
+      if (j.id+".json" !== name) continue;
+      // 0.11.0 saved finished jobs but never recorded whether the page had imported them.
+      // Keep their results, but do not automatically create duplicate readings on upgrade.
+      if (!("acknowledgedAt" in j)) {
+        j.acknowledgedAt = j.finishedAt || new Date().toISOString();
+        j.recoveryNote = "Legacy fetch: prior import status was not recorded; automatic re-import is disabled.";
+        await persist(j);
+      }
+      if (j.state === "running") { j.state="interrupted"; j.error={code:"interrupted",message:"The server stopped before the fetch finished. Start the link again."}; await persist(j); }
+      delete j.result; j.diskOnly=true; jobs.set(j.id,j);
+    }
+  })();
+  function start(kind,input,runner) {
+    const ctl=new AbortController();
+    const j={id:"job"+Date.now().toString(36)+crypto.randomBytes(3).toString("hex"),kind,input:input||null,state:"running",startedAt:new Date().toISOString(),steps:[],progress:null,result:null,error:null,ctl};
+    // Do not write or run the new job until recovery has finished scanning the old files.
+    const ctx={signal:ctl.signal,step:(name,note)=>{j.steps.push({at:new Date().toISOString(),name,note:String(note||"")}); if(j.steps.length>200)j.steps.splice(0,j.steps.length-200);},progress:p=>{j.progress=Object.assign({at:new Date().toISOString()},p||{});}};
+    jobs.set(j.id,j);
+    j.saved=ready.then(()=>persist(view(j)));
+    const finish=async(state,result,error)=>{
+      if(ctl.signal.aborted){state="cancelled";result=null;}
+      j.result=result; j.error=error; j.finishedAt=new Date().toISOString();
+      try { await persist(view(j,state)); j.state=state; j.result=null; j.diskOnly=true; }
+      catch(e){j.state="error";j.error={code:"save_failed",message:"Could not save this fetch: "+e.message};}
     };
-    // the result is on disk before the job reports itself finished, so a poll that sees "done" can rely on the file
-    const finish = async (state, result, error) => { if (ctl.signal.aborted) { state = "cancelled"; result = null; } j.result = result; if (error) j.error = error; j.finishedAt = new Date().toISOString(); await persist(view(j, state)); j.state = state; evict(); };
-    Promise.resolve().then(() => runner(ctx)).then(result => finish("done", result, null), e => finish(ctl.signal.aborted || (e && e.code === "cancelled") ? "cancelled" : "error", null, { message: String(e && e.message || e), code: e && e.code || "" }));
+    j.done=j.saved.then(()=>{if(ctl.signal.aborted)throw Object.assign(new Error("Stopped"),{code:"cancelled"});return runner(ctx);}).then(result=>finish("done",result,null),e=>finish(ctl.signal.aborted || e.code==="cancelled"?"cancelled":"error",null,{message:String(e.message||e),code:e.code||""}));
     return view(j);
   }
-  /* Finished jobs stay in memory only briefly; their files remain on disk and `get` reads them from there. */
-  function evict() { const done = Array.from(jobs.values()).filter(x => x.state !== "running"); if (done.length > 50) done.sort((a, b) => (a.finishedAt || "").localeCompare(b.finishedAt || "")).slice(0, done.length - 50).forEach(x => jobs.delete(x.id)); }
-  async function get(id) {
-    if (!/^[A-Za-z0-9]+$/.test(String(id || ""))) return null;
-    const j = jobs.get(id); if (j) return view(j);
-    try { return JSON.parse(await fs.readFile(path.join(dir, id + ".json"), "utf8")); } catch (e) { return null; }
+  async function get(id){
+    await ready; if(!/^[A-Za-z0-9]+$/.test(String(id||"")))return null;
+    const j=jobs.get(id); if(j && j.saved)await j.saved.catch(()=>{});
+    if(j && !j.diskOnly)return view(j);
+    try { return JSON.parse(await fs.readFile(path.join(dir,id+".json"),"utf8")); } catch(e){if(e.code==="ENOENT")return null;throw e;}
   }
-  function cancel(id) { const j = jobs.get(id); if (!j) return false; if (j.state === "running") { j.error = { message: "stopped by the person", code: "cancelled" }; j.ctl.abort(); } return true; }
-  function running(kind) { return Array.from(jobs.values()).filter(j => j.state === "running" && (!kind || j.kind === kind)).map(view); }
-  return { start, get, cancel, running, dir };
+  function running(kind){return [...jobs.values()].filter(j=>j.state==="running"&&(!kind||j.kind===kind)).map(j=>view(j));}
+  async function pending(kind){await ready;return [...jobs.values()].filter(j=>(j.state==="running"||j.state==="done"||j.state==="interrupted")&&!j.acknowledgedAt&&(!kind||j.kind===kind)).map(j=>view(j)).sort((a,b)=>b.startedAt.localeCompare(a.startedAt));}
+  function cancel(id){const j=jobs.get(id);if(!j)return false;if(j.state==="running"&&j.ctl){j.ctl.abort();return true;}return false;}
+  async function acknowledge(id,runId){const current=await get(id);if(!current)return false;const v=Object.assign(current,{acknowledgedAt:new Date().toISOString(),runId:runId||current.runId||""});await persist(v);const j=jobs.get(id);if(j)Object.assign(j,{acknowledgedAt:v.acknowledgedAt,runId:v.runId});return true;}
+  return {start,get,cancel,running,pending,acknowledge,ready,dir};
 }
-
-module.exports = { createJobs };
+module.exports={createJobs};

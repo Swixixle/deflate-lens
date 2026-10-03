@@ -15,7 +15,14 @@ const path = require("path");
 const { transcriptToText } = require("./transcripts");
 
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
-function videoId(url) { const m = /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|live\/|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i.exec(String(url || "")); return m ? m[1] : ""; }
+function videoId(url) {
+  let u; try {u=new URL(String(url||""));}catch(e){return "";}
+  if(!/^https?:$/.test(u.protocol))return "";
+  const host=u.hostname.toLowerCase(), short=host==="youtu.be"||host==="www.youtu.be";
+  if(!short && !/^(www\.|m\.|music\.)?youtube\.com$/.test(host))return "";
+  const id=short ? u.pathname.slice(1) : u.pathname==="/watch" ? u.searchParams.get("v") : (/^\/(?:live|shorts|embed)\/([^/]+)\/?$/.exec(u.pathname)||[])[1];
+  return /^[A-Za-z0-9_-]{11}$/.test(id||"")?id:"";
+}
 
 async function fetchText(fetchFn, url, opts, timeoutMs) {
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), timeoutMs || 30000);
@@ -50,9 +57,10 @@ function run(cmd, args, opts) {
   return new Promise((resolve) => {
     let out = "", err = "";
     let child; try { child = spawn(cmd, args, Object.assign({ stdio: ["ignore", "pipe", "pipe"] }, opts || {})); } catch (e) { return resolve({ code: -1, out: "", err: e.message }); }
-    child.on("error", e => resolve({ code: -1, out, err: e.message }));
+    const timer = setTimeout(() => { child.kill("SIGTERM"); resolve({code:-1,out,err:"yt-dlp timed out"}); },120000); timer.unref();
+    child.on("error", e => {clearTimeout(timer);resolve({ code: -1, out, err: e.message });});
     child.stdout.on("data", d => { out += d; }); child.stderr.on("data", d => { err += d; });
-    child.on("close", code => resolve({ code, out, err }));
+    child.on("close", code => {clearTimeout(timer);resolve({ code, out, err });});
   });
 }
 async function ytdlpAvailable(env, runFn) { const r = await (runFn || run)(ytdlpPath(env), ["--version"]); return r.code === 0 ? r.out.trim() : ""; }
@@ -73,11 +81,11 @@ async function captionsYtdlp(id, language, env, runFn) {
 /* The captions for a video, by whichever reader works, with what each one said when it did not. */
 async function captions({ url, id, language, fetch: fetchFn, env, run: runFn }) {
   const vid = id || videoId(url); if (!vid) throw new Error("not a YouTube video link");
-  const meta = await oembed(fetchFn || globalThis.fetch, vid);
+  const meta = await oembed(fetchFn || require("./public-fetch").publicFetch, vid);
   const tried = [];
   if (await ytdlpAvailable(env, runFn)) { try { const r = await captionsYtdlp(vid, language, env, runFn); return Object.assign(r, { id: vid, title: meta && meta.title || "", channel: meta && meta.channel || "", tried }); } catch (e) { tried.push({ reader: "yt-dlp", error: e.message }); } }
   else tried.push({ reader: "yt-dlp", error: "not installed (brew install yt-dlp makes YouTube reliable)" });
-  try { const r = await captionsBuiltin(fetchFn || globalThis.fetch, vid, language); return Object.assign(r, { id: vid, title: meta && meta.title || "", channel: meta && meta.channel || "", tried }); } catch (e) { tried.push({ reader: "built-in", error: e.message }); }
+  try { const r = await captionsBuiltin(fetchFn || require("./public-fetch").publicFetch, vid, language); return Object.assign(r, { id: vid, title: meta && meta.title || "", channel: meta && meta.channel || "", tried }); } catch (e) { tried.push({ reader: "built-in", error: e.message }); }
   const err = new Error("no captions could be read: " + tried.map(t => t.reader + ": " + t.error).join("; ")); err.tried = tried; err.title = meta && meta.title || ""; throw err;
 }
 

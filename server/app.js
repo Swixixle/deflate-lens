@@ -41,7 +41,7 @@ function createApp(opts) {
   const state = { ai: opts.ai || null };
   const research = opts.research || null;
   const searchClaim = createClaimSearch(store, research);
-  const importer = createImporter({ fetch: opts.fetch || globalThis.fetch });
+  const importer = createImporter({ fetch: opts.fetch || require("./podcast/public-fetch").publicFetch });
   const reader = createReader({ store, getAI: () => state.ai, searchClaim, research });
   const envPath = opts.envPath || path.join(__dirname, "..", ".env");
   const settings = createSettings({ envPath, examplePath: path.join(__dirname, "..", ".env.example") });
@@ -49,7 +49,7 @@ function createApp(opts) {
      started with, and from a key the page sets later; the resolver and jobs are the same for every run. */
   const env = opts.env || process.env;
   const engines = { local: opts.localEngine || localEngine({ dataDir: opts.dataDir, env }), cloud: opts.cloudEngine || deepgramEngine({ apiKey: env.DEEPGRAM_API_KEY || "", fetch: opts.fetch || globalThis.fetch, env }) };
-  const resolver = opts.resolver || createResolver({ fetch: opts.fetch || globalThis.fetch, env, engines, run: opts.run });
+  const resolver = opts.resolver || createResolver({ fetch: opts.fetch || require("./podcast/public-fetch").publicFetch, env, engines, run: opts.run });
   const jobs = createJobs({ dataDir: opts.dataDir });
   const app = express();
   app.disable("x-powered-by");
@@ -57,6 +57,7 @@ function createApp(opts) {
 
   const ready = (async () => {
     await store.init();
+    await jobs.ready;
     const exDir = opts.examplesDir || path.join(__dirname, "..", "examples");
     if (fs.existsSync(exDir)) for (const name of fs.readdirSync(exDir)) {
       const folder = path.join(exDir, name);
@@ -98,12 +99,21 @@ function createApp(opts) {
      reading is prepared in the same action. A job's result is also written under data/jobs so a refresh does not lose it. */
   app.get("/api/transcript/engines", wrap(async (req, res) => {
     const ytdlp = await YT.ytdlpAvailable(env, opts.run).catch(() => "");
-    res.json({ local: { installed: engines.local.installed(), modelCached: engines.local.modelCached(), model: engines.local.model, packages: engines.local.packages }, cloud: { configured: engines.cloud.configured(), model: engines.cloud.model, provider: "deepgram" }, prefer: env.TRANSCRIBE_PREFER || "", ytdlp: ytdlp || "", installing: jobs.running("install-local").length > 0, running: jobs.running("resolve").map(j => ({ id: j.id, url: j.input && j.input.url || "", guid: j.input && j.input.guid || "", choice: j.input && j.input.choice || "", startedAt: j.startedAt, progress: j.progress })) });
+    const describe = j => ({ id:j.id, state:j.state, url:j.input && j.input.url || "", guid:j.input && j.input.guid || "", choice:j.input && j.input.choice || "", context:j.input && j.input.context || {}, targetRunId:j.input && j.input.targetRunId || "", startedAt:j.startedAt, progress:j.progress });
+    res.json({ local: { installed: engines.local.installed(), modelCached: engines.local.modelCached(), model: engines.local.model, packages: engines.local.packages }, cloud: { configured: engines.cloud.configured(), model: engines.cloud.model, provider: "deepgram" }, prefer: env.TRANSCRIBE_PREFER || "", ytdlp: ytdlp || "", installing: jobs.running("install-local").length > 0, running: jobs.running("resolve").map(describe), pending:(await jobs.pending("resolve")).map(describe) });
   }));
   app.post("/api/transcript/resolve", wrap(async (req, res) => {
     const { url, guid, choice } = req.body || {};
     if (!url || typeof url !== "string") return res.status(400).json({ error: "a link is required", code: "invalid_request" });
     const input = { url: url.trim().slice(0, 2000), guid: typeof guid === "string" ? guid.slice(0, 500) : "", choice: choice === "local" || choice === "cloud" ? choice : "" };
+    const context = req.body.context || {};
+    input.context = Object.fromEntries(["title", "sourceLabel", "sourceDate"].filter(k => typeof context[k] === "string" && context[k].trim()).map(k => [k, context[k].slice(0, 600)]));
+    if (req.body.targetRunId) {
+      const target = await store.getRun(req.body.targetRunId);
+      if (!target || target.example) throw Object.assign(new Error("This run cannot be replaced."), {status:target ? 403 : 404});
+      input.targetRunId = target.id;
+      input.expectedInputHash = sha256(await store.getTranscript(target.id));
+    }
     const job = jobs.start("resolve", input, async ctx => {
       const located = await resolver.locate(input, ctx.step);
       if (located.kind === "choose") return { kind: "choose", show: located.show, episodes: located.episodes, note: located.note || "" };
@@ -116,6 +126,49 @@ function createApp(opts) {
   }));
   app.get("/api/transcript/jobs/:id", wrap(async (req, res) => { const j = await jobs.get(req.params.id); if (!j) return res.status(404).json({ error: "no such job" }); res.json(j); }));
   app.post("/api/transcript/jobs/:id/cancel", wrap(async (req, res) => { res.json({ ok: jobs.cancel(req.params.id) }); }));
+  app.post("/api/transcript/jobs/:id/dismiss", wrap(async (req, res) => {
+    const job = await jobs.get(req.params.id);
+    if (!job) return res.status(404).json({error:"no such job"});
+    if (job.state === "running") return res.status(409).json({error:"Stop this fetch before dismissing it."});
+    res.json({ok:await store.withLock("consume_" + job.id, () => jobs.acknowledge(job.id))});
+  }));
+  // One server-owned import per fetch. Client retries, two tabs, and a restart after the
+  // run was written all converge on the same run; the browser never supplies the transcript.
+  app.post("/api/transcript/jobs/:id/consume", wrap(async (req, res) => {
+    const id = req.params.id;
+    if (!/^job[A-Za-z0-9]+$/.test(id)) return res.status(400).json({error:"invalid job id"});
+    const runId = await store.withLock("consume_" + id, async () => {
+      const job = await jobs.get(id);
+      if (!job) throw Object.assign(new Error("No such fetch."), {status:404});
+      if (job.runId) {
+        if (!await store.getRun(job.runId)) throw Object.assign(new Error("This reading was moved to trash. Restore it there."), {status:410});
+        return job.runId;
+      }
+      if (job.acknowledgedAt) throw Object.assign(new Error("This fetch was dismissed. Start the link again to make a new reading."), {status:409});
+      const result = job.result || {};
+      if (job.state !== "done" || !["transcript", "article"].includes(result.kind)) throw Object.assign(new Error("This fetch has no transcript ready to read."), {status:409});
+      const input = job.input || {}, src = result.source || {};
+      const show = result.show && result.show.name || "", title = result.episode && result.episode.title || result.title || "";
+      const doc = Object.assign({title, sourceLabel:(show ? show + (title ? " — " : "") : "") + title}, input.context || {}, {sourceUrl:input.url, speakers:[], import:{url:input.url, title, fetchedAt:result.fetchedAt || job.finishedAt, chars:result.text.length, method:result.kind === "article" ? "page text" : "transcript: " + src.kind, source:src, show, episode:title, matchedBy:result.matchedBy || "", speakers:result.speakers || []}});
+      if (!doc.title) delete doc.title;
+      const prepared = await readInput(result.text, doc, importer);
+      const rid = input.targetRunId || "r_" + id;
+      if (input.targetRunId) {
+        await store.withLock(rid, async () => {
+          const current = await store.getRun(rid);
+          if (!current) throw Object.assign(new Error("The destination run no longer exists."), {status:410});
+          if (current.transcriptJobId === id) return;
+          if (sha256(await store.getTranscript(rid)) !== input.expectedInputHash) throw Object.assign(new Error("The text changed while this link was fetched. Your edit was kept. Start the link again."), {status:409, code:"input_changed"});
+          await store._saveRun(rid, prepared.doc, prepared.text, {transcriptJobId:id});
+        });
+      } else if (!await store.getRun(rid)) await store.createRun(prepared.doc, prepared.text, rid);
+      const existing = await store.getRun(rid);
+      if (!existing.intake || existing.intake.transcriptJobId !== id) await store.saveIntake(rid, prepared.original, Object.assign(prepared.intake, {transcriptJobId:id}));
+      await jobs.acknowledge(id, rid);
+      return rid;
+    });
+    res.status(202).json(await reader.start(runId));
+  }));
   /* The one-time choices for the audio step. Installing the local engine is itself a job (npm install, a few minutes). */
   app.post("/api/transcript/local/install", wrap(async (req, res) => {
     if (engines.local.installed()) return res.json({ installed: true });

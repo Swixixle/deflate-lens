@@ -132,7 +132,9 @@ var API = {
   attachOrphan(id, oid, pid, cid){ return API.req("POST","/api/runs/" + id + "/orphans/" + oid + "/attach", {pid:pid, idx:cid}); },
   importUrl(url){ return API.req("POST","/api/import", {url:url}); },
   /* The transcript chain for a podcast or video link runs as a job: start it, poll it, stop it. */
-  resolveTranscript(url, guid, choice){ return API.req("POST","/api/transcript/resolve", {url:url, guid:guid||"", choice:choice||""}); },
+  resolveTranscript(url, guid, choice, context, targetRunId){ return API.req("POST","/api/transcript/resolve", {url:url, guid:guid||"", choice:choice||"", context:context||{}, targetRunId:targetRunId||""}); },
+  consumeJob(id){ return API.req("POST","/api/transcript/jobs/" + id + "/consume"); },
+  dismissJob(id){ return API.req("POST","/api/transcript/jobs/" + id + "/dismiss"); },
   job(id){ return API.req("GET","/api/transcript/jobs/" + id); },
   cancelJob(id){ return API.req("POST","/api/transcript/jobs/" + id + "/cancel"); },
   engines(){ return API.req("GET","/api/transcript/engines"); },
@@ -182,6 +184,8 @@ async function boot(){
   S.ai = S.health.ai; S.research = S.health.research || null;
   setStore("ready", "Ready · " + S.health.version + (S.ai && S.ai.mock ? " · MOCK output" : "") + (S.research && S.research.mock ? " · MOCK sources" : ""));
   await refreshList();
+  try { var eng = await API.engines(); S.resumeFetch = (eng.pending||eng.running||[])[0] || null; } catch(e){}
+  if (S.resumeFetch) { $("newRun").click(); return; }
   var want = hashRun() || rememberedRun();
   if (want && S.runs.some(function(r){ return r.id === want; })) selectRun(want);
   else $("newRun").click();
@@ -218,6 +222,7 @@ function blockWhileBusy(){
 }
 $("newRun").addEventListener("click", function(){
   if (blockWhileBusy()) return;
+  if (S.activeTranscriptJobId) { API.dismissJob(S.activeTranscriptJobId).catch(function(){}); S.activeTranscriptJobId = null; S.resumeFetch = null; S.resumedJobs = false; }
   S.runId = null; UI.detailsOpen = {};
   S.b = {run:{id:null, title:"", sourceUrl:"", sourceLabel:"", sourceDate:"", speakers:[], status:"draft", kind:"transcript", provenance:{overrides:{}, flags:[], notes:""}, createdAt:nowISO(), updatedAt:nowISO()}, transcript:"", passages:[], summary:null, attachments:[], attrSig:attrSig({})};
   S.pendingImport = null;
@@ -421,21 +426,22 @@ function renderIntake(){
   ta.addEventListener("input", updateStats);
   // a transcript fetch started before this page was opened (a reload during a long transcription) is picked up here,
   // once, and finishes the same way: the words land and the reading starts
-  if (isNew && !ro && !S.resumedJobs) { (async function(){
-    var eng = null; try { eng = await API.engines(); } catch(e){ return; }
+  if (isNew && !ro && S.resumeFetch && !S.resumedJobs) { (async function(){
+    await Promise.resolve(); // let renderRun attach this intake before checking whether it is current
     // the view may have been drawn again while the request was out; the newer drawing takes over
     if (S.resumedJobs || (document.body && typeof document.body.contains === "function" && !document.body.contains(ta))) return;
-    var job = eng && (eng.running||[])[0]; if (!job) return;
+    var job = S.resumeFetch; if (!job) return;
     var link = job.url || ""; if (!link) return;
     S.resumedJobs = true;
     ta.value = link; updateStats();
-    var onWords = async function(t, imp){
-      var d2 = {sourceUrl:url.value.trim() || link, sourceLabel:label.value.trim(), sourceDate:"", speakers:[], import:imp}; if (title.value.trim()) d2.title = title.value.trim();
-      var nb2 = await API.intake(t,d2); S.runId = nb2.run.id; UI.detailsOpen = {}; S.pendingImport = null; try {location.hash="run-"+S.runId;localStorage.setItem("deflate-run",S.runId);}catch(e){}
+    var onWords = async function(t, imp, jobId){
+      var nb2 = await API.consumeJob(jobId); S.runId = nb2.run.id; UI.detailsOpen = {}; S.pendingImport = null; S.resumeFetch = null;
+      try {location.hash="run-"+S.runId;localStorage.setItem("deflate-run",S.runId);}catch(e){}
       await refreshList(); await reload(nb2);
     };
     if (S.busy) return; S.busy = true; if (go) go.disabled = true;
-    try { await fetchTranscriptInner(link, job.guid || "", job.choice || "", {msg:msg, ta:ta, url:url, label:label, title:title, updateStats:updateStats, go:go, fromGo:true, onWords:onWords}, job.id); }
+    try { await fetchTranscriptInner(link, job.guid || "", job.choice || "", {msg:msg, ta:ta, url:url, label:label, title:title, updateStats:updateStats, go:go, fromGo:true, onWords:onWords, context:job.context||{}, targetRunId:job.targetRunId||""}, job.id); }
+    catch(e) { msg.replaceChildren(h("div",{class:"note err",text:errCopy(e)})); }
     finally { S.busy = false; if (go) go.disabled = false; }
   })(); }
   if (!isNew && r.import) b.append(h("p",{class:"hint",text:"Fetched from " + r.import.url + " on " + fmtDate(r.import.fetchedAt) + " (" + r.import.chars.toLocaleString() + " characters, " + r.import.method + ")." + (r.import.source && r.import.source.note ? " " + r.import.source.note.charAt(0).toUpperCase() + r.import.source.note.slice(1) + (r.import.source.url ? " (" + r.import.source.url + ")" : "") + "." : "") + " The text above is what was read; the link itself was not graded."}));
@@ -454,15 +460,12 @@ function renderIntake(){
         // itself the moment they arrive. The chain may pause for a pick (which episode; which engine) and resume from a
         // button long after this call returns, so the intake lives in onWords, not after the await.
         clear(msg);
-        var onWords = async function(t, imp){
-          var d2 = {title:title.value.trim(), sourceUrl:url.value.trim(), sourceLabel:label.value.trim(), sourceDate:date.value||"", speakers:[], import:imp};
-          if (!d2.title) delete d2.title;
-          var nb2;
-          if (isNew) { nb2 = await API.intake(t,d2); S.runId = nb2.run.id; UI.detailsOpen = {}; S.pendingImport = null; try {location.hash="run-"+S.runId;localStorage.setItem("deflate-run",S.runId);}catch(e){} }
-          else { delete d2.title; d2.sourceDate=""; await API.saveRun(r.id,d2,t); nb2 = await API.readRun(r.id); }
+        var onWords = async function(t, imp, jobId){
+          var nb2 = await API.consumeJob(jobId); S.runId = nb2.run.id; UI.detailsOpen = {}; S.pendingImport = null;
+          try {location.hash="run-"+S.runId;localStorage.setItem("deflate-run",S.runId);}catch(e){}
           await refreshList(); await reload(nb2);
         };
-        await fetchTranscript(k.url, "", "", {msg:msg, ta:ta, url:url, label:label, title:title, updateStats:updateStats, go:go, fromGo:true, onWords:onWords});
+        await fetchTranscript(k.url, "", "", {msg:msg, ta:ta, url:url, label:label, title:title, updateStats:updateStats, go:go, fromGo:true, onWords:onWords, context:doc, targetRunId:r.id||""});
         return; // either the reading has started (onWords ran), or the chain explained why not / is waiting for a pick
       } else if (isNew) {
         nb = await API.intake(text,doc);
@@ -508,14 +511,15 @@ async function fetchTranscript(link, guid, choice, ui){
   // the page is busy for as long as the chain runs, whether started from Go or from a pick in the results
   if (S.busy && !ui.fromGo){ blockWhileBusy(); return; }
   var own = !ui.fromGo; if (own) S.busy = true;
-  try { await fetchTranscriptInner(link, guid, choice, ui); } finally { if (own) S.busy = false; }
+  try { await fetchTranscriptInner(link, guid, choice, ui); } catch(e) { ui.msg.replaceChildren(h("div",{class:"note err",text:errCopy(e)})); } finally { if (own) S.busy = false; }
 }
 async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
   clear(ui.msg);
   var box = h("div",{class:"note info"}), steps = h("ul",{class:"steps"}), prog = h("p",{class:"hint"}), stop = h("button",{class:"btn quiet",type:"button",text:"Stop"});
   box.append(h("p",{text:(existingJobId ? "Still finding the transcript for " : "Finding the transcript for ") + link + "…"}), steps, prog, stop); ui.msg.append(box);
   var jobId = existingJobId;
-  if (!jobId) { var started; try { started = await API.resolveTranscript(link, guid, choice); } catch(e){ ui.msg.replaceChildren(h("div",{class:"note",text:errCopy(e)}), fallbackHint(link, ui)); return; } jobId = started.jobId; }
+  if (!jobId) { var started; try { if (ui.jobId) await API.dismissJob(ui.jobId); started = await API.resolveTranscript(link, guid, choice, ui.context, ui.targetRunId); } catch(e){ ui.msg.replaceChildren(h("div",{class:"note",text:errCopy(e)}), fallbackHint(link, ui)); return; } jobId = started.jobId; }
+  ui.jobId = jobId; S.activeTranscriptJobId = jobId;
   var cancelled = false, shown = 0, misses = 0;
   stop.onclick = async function(){ cancelled = true; stop.disabled = true; try { await API.cancelJob(jobId); } catch(e){} };
   var j = null;
@@ -527,8 +531,8 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
     await new Promise(function(r){ setTimeout(r, 1200); });
   }
   clear(ui.msg);
-  if (j.state === "cancelled" || cancelled){ ui.msg.append(h("div",{class:"note",text:"Stopped. Nothing was saved."}), fallbackHint(link, ui)); return; }
-  if (j.state === "error"){ ui.msg.append(h("div",{class:"note",text:(j.error && j.error.message) || "The transcript could not be fetched."}), fallbackHint(link, ui)); return; }
+  if (j.state === "cancelled" || cancelled){ await API.dismissJob(jobId); ui.msg.append(h("div",{class:"note",text:"Stopped. Nothing was saved."}), fallbackHint(link, ui)); return; }
+  if (j.state === "error" || j.state === "interrupted"){ await API.dismissJob(jobId); ui.msg.append(h("div",{class:"note",text:(j.error && j.error.message) || "The transcript could not be fetched."}), fallbackHint(link, ui)); return; }
   var res = j.result || {};
   if (res.kind === "choose"){
     var list = h("div",{class:"episodes"});
@@ -552,7 +556,8 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
     if (res.ambiguous) ok.append(h("p",{class:"hint",text:"More than one show has an episode with this title (" + res.ambiguous.join("; ") + "); the first was used. If it is the wrong show, paste the show's Apple Podcasts link or RSS feed instead."}));
     if ((res.tried||[]).length) ok.append(h("details",{}, h("summary",{class:"hint",text:"What was tried first"}), h("ul",{class:"steps"}, res.tried.map(function(t){ return h("li",{text:t.step + ": " + t.error}); }))));
     ui.msg.append(ok);
-    if (ui.onWords) await ui.onWords(res.text, imp);
+    if (ui.onWords) await ui.onWords(res.text, imp, jobId);
+    S.activeTranscriptJobId = null;
     return;
   }
   // nothing published; maybe the audio can be transcribed
@@ -563,7 +568,7 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
   if (nt && nt.audioUrl){
     var eng = null; try { eng = await API.engines(); } catch(e){}
     ui.msg.append(engineChoice(link, guid, nt, eng, ui));
-  } else ui.msg.append(fallbackHint(link, ui));
+  } else { await API.dismissJob(jobId); ui.msg.append(fallbackHint(link, ui)); }
 }
 function fallbackHint(link, ui){ if (ui.url && !ui.url.value) ui.url.value = link; return h("p",{class:"hint",text:"The link is kept as the source under Add context. You can paste the transcript, or upload a .txt, .srt or .vtt file."}); }
 /* The one-time choice for the audio step. Once an engine is installed or a key is set, the chain runs through it on
@@ -985,7 +990,7 @@ function passageCard(p){
   var allOk = qc.matched === qc.quotes && !qc.mismatched;
   if (qc.quotes || !personOnlyA(a)) chips.addChip("Quotes · " + qc.matched + "/" + qc.quotes + " matched" + (qc.tolerated ? " · " + qc.tolerated + " with numbers written differently" : ""), allOk ? "good" : "warn", function(){
     var w = h("div",{});
-    w.append(L("Every quote on this card was checked word for word against the saved transcript, in order, at word boundaries. “Matched” means those words are there in that turn. The check does not judge whether the card reads them fairly; the quotes are below so you can.",
+    w.append(L("Every quote on this card was checked against the saved transcript, in order, at word boundaries. Number-format differences are marked separately. “Matched” means those words are there in that turn. The check does not judge whether the card reads them fairly; the quotes are below so you can.",
       "We checked every quote against the transcript, word by word. “Matched” means the words are really there. It does not say whether the card understood them right. Read them and see."));
     if (qc.quotes - qc.matched) w.append(L(plural(qc.quotes - qc.matched, "quote was", "quotes were") + " not found word for word. Treat the rewrite of those parts with caution.", plural(qc.quotes - qc.matched, "quote was", "quotes were") + " not found. Be careful with those parts."));
     if (qc.tolerated) w.append(L("For " + plural(qc.tolerated, "quote") + " the words match once numbers are read the same way on both sides: “fifteen percent” and “15%”, “nineteen ninety-eight” and “1998”, “one point five” and “1.5”, “five hundred dollars” and “$500”. Transcripts made from audio write numbers as they were heard. Nothing else is folded; “half a million” and “500,000” stay different.", "For " + plural(qc.tolerated, "quote") + " the numbers are written a different way, like “fifteen percent” and “15%”. The words are the same."));
@@ -1266,7 +1271,7 @@ function renderExportBlock(){
   var claimsAll = []; S.b.passages.forEach(function(p){ if (p.status==="done"&&p.analysis) (p.analysis.claims||[]).forEach(function(c){ claimsAll.push(c); }); });
   var emp = claimsAll.filter(function(c){ return EMPIRICAL.indexOf(c.type) !== -1; }), withR = emp.filter(function(c){ return claimStatus(c) === "receipt"; }).length, searched = emp.filter(function(c){ return claimStatus(c) === "searched"; }).length;
   kv.append(h("span",{class:"k",text:"Analysis"}), h("span",{text: doneN + " of " + S.b.passages.length + " readings prepared" + (staleN ? ", " + staleN + " stale" : "") + (S.b.summary ? (S.b.summary.readingGate && S.b.summary.readingGate.status === "ready" ? "; patterns prepared" : "; patterns held") : "") + ". The stored research record has " + plural(emp.length, "checkable claim") + ": " + withR + " with a source a person attached, " + searched + " searched with nothing attached, " + (emp.length - withR - searched) + " not checked. A source records a person's judgment of relevance; nothing here marks a claim verified."}));
-  var qcs = S.b.passages.filter(function(p){ return p.quoteCheck; }); if (qcs.length){ var tq = 0, mq = 0, mm = 0; qcs.forEach(function(p){ tq += p.quoteCheck.quotes; mq += p.quoteCheck.matched; mm += p.quoteCheck.mismatched; }); kv.append(h("span",{class:"k",text:"Quotes"}), h("span",{text: mq + " of " + tq + " quotes match the transcript word for word" + (mm ? "; " + mm + " credited by the model to a different speaker than the transcript shows" : "") + ". Checked on every load against the transcript as saved."})); }
+  var qcs = S.b.passages.filter(function(p){ return p.quoteCheck; }); if (qcs.length){ var tq = 0, mq = 0, mm = 0, tolerated = 0; qcs.forEach(function(p){ tq += p.quoteCheck.quotes; mq += p.quoteCheck.matched; tolerated += p.quoteCheck.tolerated || 0; mm += p.quoteCheck.mismatched; }); kv.append(h("span",{class:"k",text:"Quotes"}), h("span",{text: mq + " of " + tq + " quotes match the transcript" + (tolerated ? "; " + tolerated + " with numbers written differently" : " word for word") + (mm ? "; " + mm + " credited by the model to a different speaker than the transcript shows" : "") + ". Checked on every load against the transcript as saved."})); }
   if ((r.orphans||[]).length) kv.append(h("span",{class:"k",text:"Parked records"}), h("span",{text:plural(r.orphans.length, "set") + " from an earlier segmentation, waiting in stage 3."}));
   if (r.pilotNote) kv.append(h("span",{class:"k",text:"Note"}), h("span",{text:r.pilotNote}));
   exportBody.append(kv);

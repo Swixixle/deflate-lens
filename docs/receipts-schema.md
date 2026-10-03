@@ -327,8 +327,7 @@ file named them), `youtube-captions` (`reader` yt-dlp or built-in; `automatic` t
 no speakers), `episode-page` (a transcript linked from or carried on the episode's page; check it is not show notes),
 or `audio-transcription` (`engine` local or deepgram, `model`, Deepgram's `requestId`, the audio length; local has no
 speakers, Deepgram numbers them by voice). `matchedBy` says how the episode was found ("Apple's listing, then the feed
-by guid"; "Spotify episode title → Apple search → feed by title"; "a YouTube search by title … confirm it is the same
-episode"). This is provenance of the text, not a judgment about it: a transcript is someone's rendering of the audio,
+by guid"; "Spotify episode title → Apple search → feed by title"). This is provenance of the text, not a judgment about it: a transcript is someone's rendering of the audio,
 and the quote check later proves a card's words appear in that rendering. The export carries the whole record.
 
 
@@ -377,3 +376,13 @@ list; `GET /api/runs/:id?history=full` or `GET /api/runs/:id/passages/:pid/histo
 | rejection | a person set the document aside for a named reason | that the judgment was right |
 | quote check | these words appear in this turn in this order, under the current attribution | that the card reads them fairly |
 | provisional flag | the card was stale, or attribution unconfirmed, when this was recorded or exported | that the record is wrong |
+
+## Recovery and conservative matching (0.11.1)
+
+Transcript jobs are durable under `data/jobs`. The engines route reports pending jobs, including completed results not yet imported. `POST /api/transcript/jobs/:id/consume` reads the server's stored result and maps it to one run. Concurrent calls and retries return that run; a completed job's `runId` records the mapping. A new run is first written under `data/incoming` and renamed into `data/runs` only after its files exist. Existing-run replacement is bound to the transcript hash captured when the fetch starts; an intervening edit is preserved with a 409 response. An unfinished fetch after server restart has state `interrupted`, not `running` or `done`. Audio chunks are not checkpointed for process-crash resume.
+
+Missing speaker boundaries leave their containing spans UNKNOWN even if the review model agrees with a proposed name. An uncovered prefix is UNKNOWN. Each speaker-assignment chunk is at most 14,000 characters; all source words, including short headings and numeric lines, are retained.
+
+Number folding refuses unsupported repeated or ascending scales and does not substitute one for zero. These are matching tolerances, not a general natural-language number parser. Markdown pivot quotes and the page's aggregate quote count disclose tolerated number-format differences.
+
+Untimed repetition is kept. Caption deduplication requires overlapping time intervals. Ambiguous episode titles are not automatically selected; title-only YouTube searches are not treated as an episode's source. Public HTTP fetches resolve DNS once and pin the checked public address to the connection, including redirect hops.
