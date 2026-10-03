@@ -270,3 +270,11 @@ details.ctx > *:not(summary){margin-top:10px}
 @keyframes reading-pulse{50%{opacity:.25}}
 @media(prefers-reduced-motion:reduce){.read-status.running .reading-message::before{animation:none}}
 @media(max-width:480px){.reading-heading h2{font-size:23px}.read-status{padding:12px}.keybox input[type=password]{min-width:0!important;width:100%}.card-level{justify-content:flex-start}}
+/* the transcript chain: steps as they happen, an episode list to pick from, the one-time engine choice */
+.note ul.steps{margin:6px 0 0 18px;padding:0;font-size:13px;color:var(--muted)} .note ul.steps li{margin:2px 0}
+.episodes{display:flex;flex-direction:column;gap:4px;margin-top:8px;max-height:360px;overflow:auto}
+.episodes .btn.ep{text-align:left;white-space:normal;font-weight:400}
+.enginebox .row{flex-wrap:wrap;gap:8px}
+
+.namebox{margin-top:8px}
+.namebox .row{align-items:center}

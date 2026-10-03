@@ -174,7 +174,7 @@ test("M4/M5/M6: an empty claim is refused before anything is written; a stale ta
     const stale = clone(tab1); delete stale.id; delete stale.stale; delete stale.quoteCheck; stale.status = "running"; stale.expectedReadingRev = 1;
     const rr = await s.api("PUT", "/api/runs/" + id + "/passages/p001", stale); assert.equal(rr.status, 409); assert.equal(rr.data.code, "stale_reading");
     delete stale.expectedReadingRev; // a client that sends no reading number: a running save still carries no reading
-    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", stale)).data; assert.equal(b.passages[0].analysis.claims[0].text, "New claim."); assert.equal(b.passages[0].readingRev, 2); assert.equal(b.passages[0].status, "running"); assert.equal(b.passages[0].history.length, 1);
+    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001?history=full", stale)).data; assert.equal(b.passages[0].analysis.claims[0].text, "New claim."); assert.equal(b.passages[0].readingRev, 2); assert.equal(b.passages[0].status, "running"); assert.equal(b.passages[0].history.length, 1);
     // M6: edit the text (stale), then re-save the same reading naming the current version
     await s.api("PUT", "/api/runs/" + id + "/passages/p001", reading(["New claim."], "t2"));
     b = (await s.api("PUT", "/api/runs/" + id, { run: {}, transcript: T1 + "\nA: More." })).data; assert.ok(b.passages[0].stale.includes("transcript changed since this analysis"));
@@ -192,9 +192,9 @@ test("M8/L5/L2/L6: attachment bytes are scanned; picture types are checked; hist
     assert.equal(att.status, 400); assert.equal(att.data.code, "key_in_document"); assert.ok(!fs.existsSync(path.join(dataDir, "runs", id, "attachments")));
     const bad = await s.api("POST", "/api/sample", { prompt: "x y", images: [{ mediaType: "x".repeat(1000), data: "aGk=" }] }); assert.equal(bad.status, 400);
     let b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", reading(["Growth is 1.5%."], "t1"))).data;
-    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", reading(["Growth is 2.5%."], "t2"))).data; assert.equal(b.passages[0].history.length, 1);
+    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001?history=full", reading(["Growth is 2.5%."], "t2"))).data; assert.equal(b.passages[0].history.length, 1);
     const forged = clone(b.passages[0]); delete forged.id; delete forged.stale; delete forged.quoteCheck; forged.history = [{ analyzedAt: "forged", analysis: { claims: [{ text: "FORGED" }] }, provenance: { recorded: true, requestId: "forged" } }];
-    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", forged)).data; assert.equal(b.passages[0].history.length, 1); assert.equal(b.passages[0].history[0].analyzedAt, "t1");
+    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001?history=full", forged)).data; assert.equal(b.passages[0].history.length, 1); assert.equal(b.passages[0].history[0].analyzedAt, "t1");
     // L6: the patterns name the version they were read from
     const before = b.run.transcriptUpdatedAt;
     b = (await s.api("PUT", "/api/runs/" + id, { run: {}, transcript: T1 + "\nA: More." })).data;

@@ -317,6 +317,49 @@ per run.
 (`sk-ant-` followed by 20 or more key characters): the write is refused with 400 `key_in_document` and nothing is
 stored. A prompt containing one is not stored anyway (only its hash), so the call itself goes through.
 
+## Transcript origin (`run.import.source`; 0.11.0)
+
+A run made from a podcast or video link records where its words came from, as the chain reported it and as the page
+saved it: `run.import = {url, title, fetchedAt, chars, method, source}` with `source = {kind, url, note, format,
+engine, model, requestId, reader, automatic, durationSeconds, show, episode, matchedBy, speakers[]}`. `kind` is one
+of `feed-transcript` (the file the show publishes in its RSS; `format` vtt/srt/json/html/text; `speakers` as the
+file named them), `youtube-captions` (`reader` yt-dlp or built-in; `automatic` true for YouTube's machine captions;
+no speakers), `episode-page` (a transcript linked from or carried on the episode's page; check it is not show notes),
+or `audio-transcription` (`engine` local or deepgram, `model`, Deepgram's `requestId`, the audio length; local has no
+speakers, Deepgram numbers them by voice). `matchedBy` says how the episode was found ("Apple's listing, then the feed
+by guid"; "Spotify episode title → Apple search → feed by title"; "a YouTube search by title … confirm it is the same
+episode"). This is provenance of the text, not a judgment about it: a transcript is someone's rendering of the audio,
+and the quote check later proves a card's words appear in that rendering. The export carries the whole record.
+
+
+## Speaker names assigned by a model (`run.provenance.labelsOrigin`, `run.provenance.assignment`; 0.11.0)
+
+A transcript with no speaker labels reads as Speaker unknown. When a person names the speakers, the model splits the
+text into turns and names each from the words; the original text is cut at those points, never rewritten, and the
+result is saved as "NAME: words" lines, which look like any transcript's labels. So the run says where they came from:
+`labelsOrigin` is `"model"` (absent or `"source"` otherwise) and `assignment = {by:"model", at, names[], context,
+calls[], turns, named, unknown, dropped, demoted, method}`: how many turns were cut, how many got a name, how many
+stayed UNKNOWN, how many of the model's starts could not be found in the text (their words stayed with the previous
+turn), how many names the review pass refused. The usual two-pass speaker preparation then runs on these labels, told
+that they are the model's; its record is `run.preparation`, and `attributionGate.labelsOrigin` carries the origin to
+the page. The export carries both fields. A person's correction (an override) wins over the model's name, and the
+earlier unlabeled text's hash stays in `inputHistory`. None of this is evidence of who spoke: it is a model's reading
+of the words, written down as such.
+
+## Quote matches with numbers written differently (`tolerated`; 0.11.0)
+
+The quote check is strict about numbers ("1.5%" is not "1–5%"). When a quote fails only because numbers are written
+differently, which is what a transcript made from audio does ("fifteen percent" for "15%"), the check folds number
+words, decimals, years, "percent" and "dollars" on both sides and tries once more; a match found that way carries
+`tolerated: ["numbers written differently"]` on the quote (and `pivotTolerated` on the jump) and is counted in
+`quoteCheck.tolerated`, on the card and in the export. A plain `tolerated: []` means the strict check matched.
+
+## History on the wire (`historySummary`, `historyCount`; 0.11.0)
+
+A bundle leaves the server with each passage's `history` (every earlier reading, whole) replaced by `historyCount`
+and `historySummary = [{readingRev, analyzedAt, analyzedBy, model, replacedAt}]`. The file on disk keeps the whole
+list; `GET /api/runs/:id?history=full` or `GET /api/runs/:id/passages/:pid/history` returns it.
+
 ## What each record proves
 
 | record | proves | does not prove |
@@ -325,6 +368,7 @@ stored. A prompt containing one is not stored anyway (only its hash), so the cal
 | model-call record | the server sent a prompt with this hash to this provider at this time, and this model answered with this request id, these tokens, this output hash | that the answer is right |
 | relation | a person stated, at this time, that the document supports / contradicts / mentions the claim | what the document establishes; that the person read it correctly |
 | news candidate (GDELT) | an outlet at this address published an article whose text matched the query, seen by GDELT at this time | relevance, stance, or that the outlet is reliable |
+| transcript origin | this text was fetched from this address (or made by this engine from this audio) at this time, for an episode matched this way | that the text is a faithful record of what was said; who spoke, unless the file named them |
 | search attempt | this query was sent to this service at this time and this came back | that the query was the right one |
 | candidate | the service returned a document with these identifiers | relevance |
 | status check | Crossref listed these notices (or none) for the DOI at that time | that an unlisted work is sound |

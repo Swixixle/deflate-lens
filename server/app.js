@@ -6,11 +6,16 @@ const crypto = require("crypto");
 const { Store, newId, sha256 } = require("./store");
 const { buildExport, buildMarkdown, buildObligations } = require("./exportClaims");
 const { REJECTION_REASONS } = require("./research/types");
-const { createImporter } = require("./importer");
+const { createImporter, htmlToText } = require("./importer");
 const { createSettings } = require("./settings");
 const { createAI } = require("./ai");
+const { createJobs } = require("./jobs");
+const { createResolver } = require("./podcast/resolve");
+const { localEngine, deepgramEngine } = require("./podcast/engines");
+const YT = require("./podcast/youtube");
 const V = require("./validate");
 const Q = require("./quality");
+const { assignSpeakers } = require("./assign");
 const { prepareSpeakers, reviewedReading, reviewedOverview } = require("./preparation");
 const { createClaimSearch } = require("./claim-search");
 const { createReader } = require("./reading");
@@ -19,6 +24,18 @@ const { readInput } = require("./intake");
 /* createApp({ dataDir, ai, research, examplesDir, envPath }) -> { app, store, state, ready }
    state.ai is null when no key is configured; the page then shows the example and asks for a key once when real
    analysis is first requested (POST /api/settings/anthropic-key writes it to .env and swaps the model in). */
+/* A bundle for the wire: each card's `history` (every earlier reading, whole) becomes `historySummary` + `historyCount`. */
+function trimHistory(body) {
+  if (!body || typeof body !== "object" || !Array.isArray(body.passages) || !body.run || !("transcript" in body)) return body;
+  const passages = body.passages.map(p => {
+    if (!p || !Array.isArray(p.history)) return p;
+    const q = Object.assign({}, p); delete q.history;
+    q.historyCount = p.history.length;
+    q.historySummary = p.history.map(x => ({ readingRev: x.readingRev || 0, analyzedAt: x.analyzedAt || "", analyzedBy: x.analyzedBy || "", model: x.model || "", replacedAt: x.replacedAt || "" }));
+    return q;
+  });
+  return Object.assign({}, body, { passages });
+}
 function createApp(opts) {
   const store = new Store(opts.dataDir);
   const state = { ai: opts.ai || null };
@@ -28,6 +45,12 @@ function createApp(opts) {
   const reader = createReader({ store, getAI: () => state.ai, searchClaim, research });
   const envPath = opts.envPath || path.join(__dirname, "..", ".env");
   const settings = createSettings({ envPath, examplePath: path.join(__dirname, "..", ".env.example") });
+  /* The transcript chain (podcast and video links): engines read their keys from the environment the server was
+     started with, and from a key the page sets later; the resolver and jobs are the same for every run. */
+  const env = opts.env || process.env;
+  const engines = { local: opts.localEngine || localEngine({ dataDir: opts.dataDir, env }), cloud: opts.cloudEngine || deepgramEngine({ apiKey: env.DEEPGRAM_API_KEY || "", fetch: opts.fetch || globalThis.fetch, env }) };
+  const resolver = opts.resolver || createResolver({ fetch: opts.fetch || globalThis.fetch, env, engines, run: opts.run });
+  const jobs = createJobs({ dataDir: opts.dataDir });
   const app = express();
   app.disable("x-powered-by");
   app.use(express.json({ limit: "40mb" }));
@@ -44,8 +67,16 @@ function createApp(opts) {
   app.use(async (req, res, next) => { try { await ready; next(); } catch (e) { next(e); } });
 
   const wrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+  /* Every earlier reading of a card stays in its file, but the page does not need them on every load: a run re-read a
+     few times would otherwise send every old reading with each poll. A bundle leaves with each card's history replaced
+     by a summary (when, by what, replaced when) and a count; ?history=full, or the passage's history route, has it all. */
+  app.use("/api", (req, res, next) => {
+    const json = res.json.bind(res);
+    res.json = body => json(req.query.history === "full" ? body : trimHistory(body));
+    next();
+  });
 
-  app.get("/api/health", (req, res) => { const ai = state.ai; res.json({ ok: true, app: "deflate-lens", ai: ai ? { kind: ai.kind, model: ai.model, mock: !!ai.mock } : null, keyConfigurable: true, research: research ? research.config : null, dataDir: store.dataDir, version: require("../package.json").version }); });
+  app.get("/api/health", (req, res) => { const ai = state.ai; res.json({ ok: true, app: "deflate-lens", ai: ai ? { kind: ai.kind, model: ai.model, mock: !!ai.mock } : null, keyConfigurable: true, research: research ? research.config : null, transcript: { local: engines.local.installed(), cloud: engines.cloud.configured(), prefer: env.TRANSCRIBE_PREFER || "" }, dataDir: store.dataDir, version: require("../package.json").version }); });
 
   /* One-time local configuration of the model key. Body: {key}. The key is written to .env and used at once; the
      response carries only the model name. Mock mode is never switched on here. */
@@ -59,6 +90,48 @@ function createApp(opts) {
 
   /* Link importer: readable text or a plain reason it could not be read. Stores nothing. */
   app.post("/api/import", wrap(async (req, res) => { const out = await importer(req.body && req.body.url); res.json(out); }));
+
+  /* ---- the transcript chain (podcasts and videos) ----
+     POST /api/transcript/resolve {url, guid?, choice?} starts a job that finds the episode and then its words, trying
+     the feed's transcript, YouTube captions, the episode's page, and finally the audio (local or cloud, by the person's
+     choice). The page polls GET /api/transcript/jobs/:id, may stop it, and then hands the words to /api/intake so the
+     reading is prepared in the same action. A job's result is also written under data/jobs so a refresh does not lose it. */
+  app.get("/api/transcript/engines", wrap(async (req, res) => {
+    const ytdlp = await YT.ytdlpAvailable(env, opts.run).catch(() => "");
+    res.json({ local: { installed: engines.local.installed(), modelCached: engines.local.modelCached(), model: engines.local.model, packages: engines.local.packages }, cloud: { configured: engines.cloud.configured(), model: engines.cloud.model, provider: "deepgram" }, prefer: env.TRANSCRIBE_PREFER || "", ytdlp: ytdlp || "", installing: jobs.running("install-local").length > 0, running: jobs.running("resolve").map(j => ({ id: j.id, url: j.input && j.input.url || "", guid: j.input && j.input.guid || "", choice: j.input && j.input.choice || "", startedAt: j.startedAt, progress: j.progress })) });
+  }));
+  app.post("/api/transcript/resolve", wrap(async (req, res) => {
+    const { url, guid, choice } = req.body || {};
+    if (!url || typeof url !== "string") return res.status(400).json({ error: "a link is required", code: "invalid_request" });
+    const input = { url: url.trim().slice(0, 2000), guid: typeof guid === "string" ? guid.slice(0, 500) : "", choice: choice === "local" || choice === "cloud" ? choice : "" };
+    const job = jobs.start("resolve", input, async ctx => {
+      const located = await resolver.locate(input, ctx.step);
+      if (located.kind === "choose") return { kind: "choose", show: located.show, episodes: located.episodes, note: located.note || "" };
+      if (located.kind === "article") { const r = htmlToText(located.html); if (r.text.replace(/\s+/g, " ").length < 200) return { kind: "none", reason: "the page has little readable text and no feed, video or transcript" }; return { kind: "article", text: r.text, title: r.title, url: located.url, chars: r.text.length, note: "an article page, read as text; not a podcast" }; }
+      if (ctx.signal.aborted) { const e = new Error("stopped"); e.code = "cancelled"; throw e; }
+      const w = await resolver.words(located, { step: ctx.step, signal: ctx.signal, choice: input.choice, onProgress: ctx.progress });
+      return Object.assign({ kind: w.ok ? "transcript" : "none" }, w, w.ok ? { chars: w.text.length, fetchedAt: new Date().toISOString() } : {});
+    });
+    res.json({ jobId: job.id });
+  }));
+  app.get("/api/transcript/jobs/:id", wrap(async (req, res) => { const j = await jobs.get(req.params.id); if (!j) return res.status(404).json({ error: "no such job" }); res.json(j); }));
+  app.post("/api/transcript/jobs/:id/cancel", wrap(async (req, res) => { res.json({ ok: jobs.cancel(req.params.id) }); }));
+  /* The one-time choices for the audio step. Installing the local engine is itself a job (npm install, a few minutes). */
+  app.post("/api/transcript/local/install", wrap(async (req, res) => {
+    if (engines.local.installed()) return res.json({ installed: true });
+    const running = jobs.running("install-local")[0]; if (running) return res.json({ jobId: running.id });
+    const job = jobs.start("install-local", {}, async ctx => { ctx.step("npm", "installing " + Object.keys(engines.local.packages).join(", ") + " into data/local-transcription (about 480 MB; a few minutes)"); let log = ""; const r = await engines.local.install({ onLog: s => { log = (log + s).slice(-4000); ctx.progress({ log }); }, signal: ctx.signal }); ctx.step("npm", "installed"); return { installed: true, dir: r.dir, packages: r.packages }; });
+    res.json({ jobId: job.id });
+  }));
+  app.put("/api/transcript/prefer", wrap(async (req, res) => { const r = settings.set("TRANSCRIBE_PREFER", req.body && req.body.engine); env.TRANSCRIBE_PREFER = r.value; res.json({ ok: true, prefer: r.value }); }));
+  /* A named key, set once from the page. Only the names in settings.SETTABLE are accepted; nothing is echoed back. */
+  app.post("/api/settings/key", wrap(async (req, res) => {
+    const name = String(req.body && req.body.name || ""); const key = String(req.body && req.body.key || "");
+    const r = settings.set(name, key);
+    if (name === "ANTHROPIC_API_KEY") { process.env.ANTHROPIC_API_KEY = key.trim(); if (!(process.env.DEFLATE_MOCK_AI === "1" || process.env.DEFLATE_MOCK_AI === "true")) state.ai = createAI(process.env); }
+    if (name === "DEEPGRAM_API_KEY") { env.DEEPGRAM_API_KEY = key.trim(); engines.cloud = opts.cloudEngine || deepgramEngine({ apiKey: key.trim(), fetch: opts.fetch || globalThis.fetch, env }); }
+    res.json({ ok: true, name: r.name, ai: state.ai ? { kind: state.ai.kind, model: state.ai.model, mock: !!state.ai.mock } : null, cloud: { configured: engines.cloud.configured() } });
+  }));
 
   /* The normal page uses one action: save what was uploaded/pasted, then prepare the entire
      reading in the background. No optional context or manual stage is required. */
@@ -78,6 +151,7 @@ function createApp(opts) {
 
   app.get("/api/runs", wrap(async (req, res) => res.json(await store.listRuns())));
   app.post("/api/runs", wrap(async (req, res) => { const id = await store.createRun(req.body.run || {}, req.body.transcript || ""); res.json(await store.bundle(id)); }));
+  app.get("/api/runs/:id/passages/:pid/history", wrap(async (req, res) => { const b = await store.bundle(req.params.id); const p = b && b.passages.find(x => x.id === req.params.pid); if (!p) return res.status(404).json({ error: "passage not found" }); req.query.history = "full"; res.json({ id: p.id, history: p.history || [] }); }));
   app.get("/api/runs/:id", wrap(async (req, res) => { const b = await store.bundle(req.params.id); if (!b) return res.status(404).json({ error: "run not found" }); res.json(b); }));
   app.put("/api/runs/:id", wrap(async (req, res) => { await store.saveRun(req.params.id, req.body.run || {}, typeof req.body.transcript === "string" ? req.body.transcript : undefined); res.json(await store.bundle(req.params.id)); }));
   app.delete("/api/runs/:id", wrap(async (req, res) => { const name = await store.deleteRun(req.params.id); res.json({ ok: true, trash: name }); }));
@@ -86,6 +160,16 @@ function createApp(opts) {
   /* Records parked by a re-segment, reattached by hand to a claim of the current reading. */
   app.post("/api/runs/:id/orphans/:oid/attach", wrap(async (req, res) => { await store.attachOrphan(req.params.id, req.params.oid, req.body && req.body.pid, req.body && req.body.idx); res.json(await store.bundle(req.params.id)); }));
   app.post("/api/runs/:id/duplicate", wrap(async (req, res) => { const nid = await store.duplicateRun(req.params.id); res.json(await store.bundle(nid)); }));
+  /* Optional: names for a transcript that has none. The model assigns them from the words (two passes), the text is
+     cut, never rewritten, and the reading starts again on the labelled text in the same action. */
+  app.post("/api/runs/:id/assign-speakers", wrap(async (req, res) => {
+    const ctl = new AbortController(); res.on("close", () => { if (!res.writableEnded) ctl.abort(); });
+    const out = await assignSpeakers({ ai: state.ai, store, id: req.params.id, names: req.body && req.body.names, context: req.body && req.body.context, signal: ctl.signal });
+    // a reading still running on the unlabeled text is stopped first, so the labelled text gets a fresh reading
+    if (reader.jobs.has(req.params.id)) await reader.stop(req.params.id);
+    await store.commitAssignment(req.params.id, out.basis, out);
+    res.status(202).json(await reader.start(req.params.id));
+  }));
   app.post("/api/runs/:id/prepare-speakers", wrap(async (req, res) => {
     const ctl = new AbortController(); res.on("close", () => { if (!res.writableEnded) ctl.abort(); });
     res.json(await prepareSpeakers({ ai: state.ai, store, id: req.params.id, signal: ctl.signal }));
@@ -282,7 +366,7 @@ function createApp(opts) {
     res.status(status).json(Object.assign({ error: err.message || "server error" }, err.code ? { code: err.code } : {}));
   });
 
-  return { app, store, state, reader, get ai() { return state.ai; }, ready };
+  return { app, store, state, reader, get ai() { return state.ai; }, ready, jobs, engines, resolver };
 }
 
 function safeName(s) { return String(s || "run").replace(/[^A-Za-z0-9._-]+/g, "-").slice(0, 60) || "run"; }

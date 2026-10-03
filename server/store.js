@@ -172,7 +172,7 @@ function mergeRecords(curA, nextA) {
   return restored;
 }
 /* Fields the server computes on every read (verifyPassage); never stored, never part of "did the reading change". */
-const COMPUTED_QUOTE = ["verbatim", "turnOk", "speakerNow", "speakerMismatch", "foundIn"], COMPUTED_JUMP = ["pivotVerbatim", "pivotTurns"];
+const COMPUTED_QUOTE = ["verbatim", "turnOk", "speakerNow", "speakerMismatch", "foundIn", "matchedTurn", "relocated", "tolerated"], COMPUTED_JUMP = ["pivotVerbatim", "pivotTurns", "pivotTolerated"];
 function cleanComputed(a) { if (!a) return a; (a.asSaid || []).forEach(q => COMPUTED_QUOTE.forEach(k => delete q[k])); if (a.jump) COMPUTED_JUMP.forEach(k => delete a.jump[k]); return a; }
 /* Key-order-independent JSON, so two documents with the same content compare equal whatever produced them. */
 function canonical(x) { if (Array.isArray(x)) return "[" + x.map(canonical).join(",") + "]"; if (x && typeof x === "object") return "{" + Object.keys(x).sort().map(k => JSON.stringify(k) + ":" + canonical(x[k])).join(",") + "}"; return JSON.stringify(x === undefined ? null : x); }
@@ -334,6 +334,21 @@ class Store {
     return this._saveRun(id, doc, text);
   }); }
 
+  /* Writes the transcript the model's speaker assignment produced, with the names as the run's speakers, and records
+     on the provenance that the labels came from a model, not the source. The old text's hash stays in inputHistory
+     and the old provenance (unlabeled) in provenanceHistory as for any edit. Refused when the text moved meanwhile. */
+  async commitAssignment(id, basis, { text, speakers, assignment }) { return this.withLock(id, async () => {
+    const run = await this.getRun(id), transcript = await this.getTranscript(id);
+    if (!run || run.example) throw Object.assign(new Error("This run cannot be changed."), { status: run ? 403 : 404 });
+    if (sha256(transcript) !== basis.inputHash) throw Object.assign(new Error("The input changed during the assignment; try again on the current text."), { status: 409, code: "input_changed" });
+    await this._saveRun(id, { speakers }, text);
+    const after = await this.getRun(id);
+    after.provenance = Object.assign({}, after.provenance, { assignment, labelsOrigin: "model", method: assignment.method });
+    delete after.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(after, null, 2));
+    return Object.assign({ id }, after);
+  }); }
+
   async saveProcessing(id, value, expectedJobId) { return this.withLock(id, async () => {
     const run = await this.getRun(id);
     if (!run || run.example) throw Object.assign(new Error("This reading cannot be started."), { status: run ? 403 : 404 });
@@ -391,6 +406,8 @@ class Store {
     // server-owned fields: a client cannot overwrite the records the server keeps on the run
     ["orphans", "provenanceHistory", "transcriptUpdatedAt", "createdAt", "example", "copiedFrom", "copiedAt", "kind", "parseMode", "input", "inputHistory"].forEach(k => delete incoming[k]);
     const next = Object.assign({}, cur, incoming);
+    // a model assignment of speaker names is a server record on the provenance; a client save never drops it
+    if (incoming.provenance && cur.provenance && cur.provenance.assignment) { next.provenance = Object.assign({}, incoming.provenance, { assignment: cur.provenance.assignment, labelsOrigin: cur.provenance.labelsOrigin }); }
     delete next.id; next.example = false; next.createdAt = cur.createdAt; next.updatedAt = nowISO();
     next.transcriptUpdatedAt = cur.transcriptUpdatedAt || cur.createdAt;
     if (!next.input) next.input = inputRecord(curText, cur.parseMode, next.transcriptUpdatedAt);
@@ -410,7 +427,7 @@ class Store {
         const was = cur.provenance || {};
         const oldTurns = this.parseFor(cur, old), newTurns = this.parseFor(cur, transcript);
         const sameStructure = oldTurns.length === newTurns.length && oldTurns.every((t, i) => t.label === newTurns[i].label && t.heading === newTurns[i].heading);
-        const hadDecisions = Object.keys(was.overrides || {}).length || (was.flags || []).length || was.confirmedAt;
+        const hadDecisions = Object.keys(was.overrides || {}).length || (was.flags || []).length || was.confirmedAt || was.assignment;
         // A person's attribution decisions are never silently discarded. If the edit left every turn in place with the same
         // label, the decisions still apply and only the confirmation is cleared. Otherwise they go to provenanceHistory.
         next.provenanceHistory = (cur.provenanceHistory || []).concat(hadDecisions ? [{ provenance: was, transcriptUpdatedAt: cur.transcriptUpdatedAt || cur.createdAt, replacedAt: next.updatedAt, turns: oldTurns.length, keptInPlace: sameStructure }] : []);

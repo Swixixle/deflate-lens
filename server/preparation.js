@@ -24,6 +24,7 @@ function speakerPrompt(b, turns, previous, first) {
   return (first ? "Prepare transcript speaker labels." : "Review transcript speaker labels independently. Do not assume the previous decisions are right.") +
     " You can use only this text and the supplied speaker information. Do not assign by writing style, opinions, confidence percentages, or assumed alternation. A short reply such as Yeah or Right with a disputed label must stay uncertain unless the text identifies its speaker. Preserve source labels when no conflict exists. Every speaking turn listed must have exactly one decision.\n" +
     "For a changed or previously disputed label, a keep/correct decision needs an exact evidenceQuote from that turn and evidenceKind self_identification, self_reference, or explicit_address. Explain how the actual words identify this speaker; a general topic is not evidence of identity. Use uncertain when the words cannot settle it. No scores.\n" +
+    (b.run.provenance.labelsOrigin === "model" ? "These labels were assigned by a model from the words of the conversation, not by the source. Keep a label when nothing in the words conflicts with it; mark uncertain where the words contradict it.\n" : "") +
     "Allowed speakers: " + JSON.stringify(keys) + "\nSpeaker information: " + JSON.stringify(b.run.speakers || []) +
     "\nPreviously disputed turns: " + JSON.stringify((b.run.provenance.flags || []).filter(f => turns.some(t => t.i === f.turn))) +
     (previous ? "\nFirst decisions (to challenge): " + JSON.stringify(previous) : "") +
@@ -81,7 +82,7 @@ async function prepareSpeakers({ ai, store, id, signal }) {
     }
   }
   await store.commitPreparation(id, basis, { overrides, corrections, unresolved, record, calls,
-    status: unresolved.length ? "held" : "ready", at: new Date().toISOString(), method: "Two text-only attribution passes; identity corrections require matching quotations. No audio or factual-source verification is claimed." });
+    status: unresolved.length ? "held" : "ready", at: new Date().toISOString(), method: (b.run.provenance.labelsOrigin === "model" ? "Speaker names were assigned by a model from the words alone (not from the source), then checked by " : "") + "Two text-only attribution passes; identity corrections require matching quotations. No audio or factual-source verification is claimed." });
   return store.bundle(id);
 }
 

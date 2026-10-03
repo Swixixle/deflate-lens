@@ -27,9 +27,9 @@ function analysisHash(analysis) {
 function attributionGate(b) {
   const pr = b.run.provenance || {}, prep = b.run.preparation;
   if (pr.notApplicable) return { status: "ready", method: "No speaker correction is needed for this input." };
-  if (pr.confirmedAt) return { status: "ready", method: "Speaker labels confirmed by a person." };
+  if (pr.confirmedAt) return { status: "ready", method: "Speaker labels confirmed by a person." + (pr.labelsOrigin === "model" ? " The names were first assigned by a model from the words, not taken from the source." : "") };
   if (prep && prep.inputHash === b.run.input.sha256 && prep.attrSig === b.attrSig) {
-    return { status: prep.status, corrected: prep.corrections.length, unresolved: prep.unresolved.length, method: prep.method };
+    return { status: prep.status, corrected: prep.corrections.length, unresolved: prep.unresolved.length, method: prep.method, labelsOrigin: pr.labelsOrigin || "source" };
   }
   return { status: "held", method: "Speaker labels have not finished preparation." };
 }
@@ -69,7 +69,7 @@ function repairQuotes(a, p, turns, overrides) {
   for (const q of a.asSaid) {
     const named = turns[q.turn];
     const inRange = named && !named.heading && q.turn >= p.turnStart && q.turn <= p.turnEnd;
-    let at = inRange && shared.verifyQuote(q.quote, named.text) ? q.turn : null;
+    let at = inRange && shared.matchQuote(q.quote, named.text) ? q.turn : null;
     if (at === null) {
       const found = shared.findQuoteTurns(q.quote, turns, p.turnStart, p.turnEnd);
       if (found.length === 1) at = found[0];

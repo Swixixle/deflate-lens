@@ -27,7 +27,12 @@ function validateRunDoc(doc, ctx) {
   if ("kind" in doc) { if (!KINDS.includes(doc.kind)) throw bad("kind must be transcript or claim"); out.kind = doc.kind; }
   if ("parseMode" in doc) { if (!PARSE_MODES.includes(doc.parseMode)) throw bad("parseMode must be transcript or text"); out.parseMode = doc.parseMode; }
   if ("pilotNote" in doc) out.pilotNote = str(doc.pilotNote, 2000);
-  if ("import" in doc) { const i = doc.import && typeof doc.import === "object" ? doc.import : null; out.import = i ? { url: str(i.url, 2000), title: str(i.title, 300), fetchedAt: str(i.fetchedAt, 40), chars: Number(i.chars) || 0, method: str(i.method, 40) } : null; }
+  if ("import" in doc) {
+    const i = doc.import && typeof doc.import === "object" ? doc.import : null;
+    out.import = i ? { url: str(i.url, 2000), title: str(i.title, 300), fetchedAt: str(i.fetchedAt, 40), chars: Number(i.chars) || 0, method: str(i.method, 40) } : null;
+    // where a fetched transcript came from (the chain's record), kept as the page received it, within bounds
+    if (i && i.source && typeof i.source === "object") { const s = i.source; out.import.source = { kind: str(s.kind, 40), url: str(s.url, 2000), note: str(s.note, 500), format: str(s.format, 40), engine: str(s.engine, 40), model: str(s.model, 120), requestId: str(s.requestId, 120), reader: str(s.reader, 40), automatic: !!s.automatic, durationSeconds: Number(s.durationSeconds) || 0, show: str(i.show, 300), episode: str(i.episode, 300), matchedBy: str(i.matchedBy, 300), speakers: Array.isArray(i.speakers) ? i.speakers.map(x => str(x, 40)).slice(0, 40) : [] }; }
+  }
   if ("provenance" in doc) out.provenance = validateProvenance(doc.provenance, ctx);
   return out;
 }

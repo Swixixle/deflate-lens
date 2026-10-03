@@ -55,7 +55,7 @@ test("F1: a search that finishes after a newer reading was saved never reactivat
     research.release();
     const r = await pending;
     assert.equal(r.status, 200); assert.ok(r.data.parked, "the late result is parked, not written over the new reading"); assert.equal(r.data.late, false); assert.equal(r.data.candidates.length, 0);
-    b = (await s.api("GET", "/api/runs/" + id)).data;
+    b = (await s.api("GET", "/api/runs/" + id + "?history=full")).data;
     const p = b.passages[0];
     assert.equal(p.analysis.deflated.hs, "d t2", "the active reading is still the newer one"); assert.equal(p.analysis.claims[0].text, "Growth is 2.5%."); assert.equal((p.analysis.claims[0].searches || []).length, 0);
     assert.equal(p.history.length, 1); assert.equal(p.history[0].analysis.deflated.hs, "d t1");
@@ -91,7 +91,7 @@ test("F2: evidence never follows a changed meaning or a different speaker, and m
     b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", reading([{ text: "Growth was 1–5%.", speaker: "A" }], "t3"))).data;
     assert.notEqual(b.passages[0].analysis.claims[0].id, b1.id);
     // same words, same speaker, different punctuation only: the same claim
-    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", reading([{ text: "growth was 1–5%", speaker: "A" }], "t4"))).data;
+    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001?history=full", reading([{ text: "growth was 1–5%", speaker: "A" }], "t4"))).data;
     assert.equal(b.passages[0].analysis.claims[0].id, b.passages[0].history[2].analysis.claims[0].id);
     // B: tab one holds claim X at position 0; tab two reorders so Y is at position 0; tab one attaches to X by id
     b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", reading([{ text: "X is so.", speaker: "A" }, { text: "Y is so.", speaker: "A" }], "t5"))).data;
@@ -211,7 +211,7 @@ test("N1: editing a typed claim makes the new wording the claim; the old reading
     const oldClaim = b.passages[0].analysis.claims[0]; const t0 = b.run.transcriptUpdatedAt;
     await s.api("POST", "/api/runs/" + id + "/passages/p001/claims/" + oldClaim.id + "/receipts", { url: "https://example.org/green", note: "about greener" });
     // the person edits the input
-    b = (await s.api("PUT", "/api/runs/" + id, { run: {}, transcript: "The Earth is getting browner" })).data;
+    b = (await s.api("PUT", "/api/runs/" + id + "?history=full", { run: {}, transcript: "The Earth is getting browner" })).data;
     const p = b.passages[0], nc = p.analysis.claims[0];
     assert.equal(nc.text, "The Earth is getting browner", "the card shows the current claim"); assert.notEqual(nc.id, oldClaim.id); assert.equal(nc.userSupplied, true); assert.equal(p.analysis.by, "person");
     assert.deepEqual(p.stale, [], "a reading of the current input is current"); assert.equal(p.readingRev, 2); assert.equal(b.run.title, "The Earth is getting browner");

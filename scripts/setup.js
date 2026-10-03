@@ -3,8 +3,10 @@
    Checks the prerequisites, installs the locked dependencies (only when needed), prepares .env without touching values
    that are already there, makes sure the data folder exists, and says exactly what to do next. Safe to run again:
    a second run changes nothing that was already in place (saved runs, evidence, attribution decisions, .env values).
-   Options:  --no-install   skip npm ci even if dependencies are missing (for hosts that install themselves)
-             --test         run the test suite at the end
+   Options:  --no-install            skip npm ci even if dependencies are missing (for hosts that install themselves)
+             --test                  run the test suite at the end
+             --local-transcription   also install the optional speech-to-text packages into data/local-transcription
+                                     (about 480 MB; the page offers the same install when it first needs it)
    Exit code 0 means ready to launch; 1 means something is missing and the message says what. */
 const fs = require("fs"), path = require("path"), { spawnSync } = require("child_process");
 const root = path.join(__dirname, "..");
@@ -54,7 +56,16 @@ fs.mkdirSync(path.join(dataDir, "runs"), { recursive: true });
 let runs = 0; try { runs = fs.readdirSync(path.join(dataDir, "runs")).filter(n => fs.existsSync(path.join(dataDir, "runs", n, "run.json"))).length; } catch (e) {}
 log("Data folder: " + dataDir + (runs ? " (" + runs + " saved run" + (runs === 1 ? "" : "s") + ", untouched)" : " (empty; the example is installed on first start)"));
 
-// 6. optional tests
+// 6. optional local transcription (the same install the page offers when a podcast has no published transcript)
+{
+  const { localEngine } = require("../server/podcast/engines");
+  const eng = localEngine({ dataDir, env });
+  if (args.has("--local-transcription") && !eng.installed()) {
+    log("Installing local transcription into " + eng.dir + " (about 480 MB)…");
+    eng.install({ onLog: s => process.stdout.write(s) }).then(() => { log("Local transcription installed  ok (model downloads on first use, 76 MB)"); finish(); }, e => { fail("local transcription did not install: " + e.message); });
+  } else { log("Local transcription: " + (eng.installed() ? "installed (" + eng.model + ")" : "not installed (optional; the page offers it, or run  npm run setup -- --local-transcription)")); finish(); }
+}
+function finish() {
 if (args.has("--test")) {
   log("Running the test suite…");
   const t = spawnSync(process.execPath, ["--test", ...fs.readdirSync(path.join(root, "test")).filter(f => f.endsWith(".test.js")).map(f => path.join(root, "test", f))], { cwd: root, stdio: "inherit" });
@@ -66,3 +77,4 @@ console.log("\n  Ready. Start it with:  npm run launch     (starts the server, w
 console.log("  Or without a browser:  npm start          Stop with Ctrl+C.");
 if (!hasKey && !mock) console.log("  Source search works without a key. Real analysis and preparation ask for your Anthropic API key once, in the page.");
 console.log("");
+}

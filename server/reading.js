@@ -43,11 +43,12 @@ function createReader({ store, getAI, searchClaim, research }) {
       const imp = b.run.import;
       if (imp && imp.url) {
         doc.sourceUrl = imp.url;
-        if (imp.title) doc.sourceLabel = imp.title;
+        // the page importer knows only the page title; the transcript chain already composed "show — episode" and keeps it
+        if (imp.title && (!b.run.sourceLabel || !imp.source)) doc.sourceLabel = imp.title;
         if (imp.title && (/^(?:Listen LIVE|Untitled run)$/i.test(b.run.title) || b.run.title === autoTitle(b.transcript, b.run.kind))) doc.title = imp.title;
       }
       if (c.text !== b.transcript || Object.keys(doc).some(k => doc[k] !== b.run[k])) {
-        await store.repairIntake(id, c.text, doc, c.original, Object.assign(c.record, { source: "saved-input", at: nowISO() }), b.run.input.sha256);
+        await store.repairIntake(id, c.text, doc, c.original, Object.assign(c.record, { source: (b.run.intake && b.run.intake.source) || "saved-input", at: nowISO() }), b.run.input.sha256);
         b = await store.bundle(id);
       }
       job.inputHash = b.run.input.sha256; job.attrSig = b.attrSig;

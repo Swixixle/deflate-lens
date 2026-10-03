@@ -1,0 +1,38 @@
+Engines: local installed (onnx-community/whisper-base.en, model cached); Deepgram no key; yt-dlp not installed
+
+=== A feed that publishes transcripts: Podnews Daily (https://podnews.net/rss)
+    Feed: reading the feed
+    latest: Apple Podcasts algorithm drops country-specific curation (2026-10-02, 274 s, transcript published: true)
+    Feed: reading the feed
+    Feed transcript: fetching https://podnews.net/audio/podnews261002.mp3.vtt
+    transcript: 4230 chars from https://podnews.net/audio/podnews261002.mp3.vtt in 798 ms; speakers: none
+    first words: From Ealing in West London, the latest from podnews.net with Soundstack. Apple Podcasts has always had an impressive set of region-specific editorial teams, ens
+
+=== An Apple Podcasts episode link: The Joe Rogan Experience, latest episode
+    Apple Podcasts: looking up the show
+    Apple Podcasts: show: The Joe Rogan Experience; feed found
+    latest: JRE MMA Show #186 with Sean Sharaf (2026-10-01, 141 min, transcript published: false)
+    Apple Podcasts: looking up the show
+    Apple Podcasts: show: The Joe Rogan Experience; feed found
+    matched by: Apple's listing, then the feed by guid in 796 ms
+    stopped honestly: no transcript was published anywhere the app can look; the audio can be transcribed, but no Deepgram key is set
+      - feed transcript: the feed has no transcript for this episode
+      - youtube search: needs yt-dlp (brew install yt-dlp); not installed
+      - episode page: the feed gives no page for this episode
+    audio on offer: https://traffic.megaphone.fm/GLT1692440444.mp3 (141 min)
+
+=== YouTube captions: the first video ever uploaded (jNQXAC9IVRw)
+    not read: no captions could be read: yt-dlp: not installed (brew install yt-dlp makes YouTube reliable); built-in: YouTube refused the caption list: Sign in to confirm you’re not a bot (this happens from some network addresses; yt-dlp usually gets through)
+    (expected from datacenter addresses without yt-dlp; a home address usually passes, and yt-dlp always helps)
+
+Done. Nothing was written.
+
+=== Local engine on a full episode (run separately the same day, same build environment: Linux x64, two cores, no GPU)
+    The Joe Rogan Experience #2560 (David Grusch), audio https://traffic.megaphone.fm/GLT2730878908.mp3, 135,864,919 bytes
+    download: 4 s · model: onnx-community/whisper-base.en, q8, cached · audio decoded: 9,700 s (the feed says 9,385)
+    transcribed end to end in 2,686 s (44 min 46 s): 3.6× faster than real time · 160,462 characters, 29,040 words
+    memory while running: about 800 MB · progress reported every five-minute segment · no speaker labels
+    first words: "Go Rogan one pass, check it out. The Joe Rogan, experience. Train by day, Joe Rogan podcast by night, all day.
+    All right, bro, David, what's up? Thanks for having me back on. My pleasure. Well, you're the one that's closest to the
+    flames. Tell me what's going on. I know, right? So living the nightmare is what I tell my friends."
+    (the transcript itself is not kept in this repository)

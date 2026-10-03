@@ -101,6 +101,7 @@ var API = {
   saveRun(id, run, transcript){ return API.req("PUT","/api/runs/" + id, {run:run, transcript:transcript}); },
   deleteRun(id){ return API.req("DELETE","/api/runs/" + id); },
   prepareSpeakers(id, signal){ return API.req("POST","/api/runs/" + id + "/prepare-speakers", {}, signal); },
+  assignSpeakers(id, names, context, signal){ return API.req("POST","/api/runs/" + id + "/assign-speakers", {names:names, context:context||""}, signal); },
   duplicateRun(id){ return API.req("POST","/api/runs/" + id + "/duplicate"); },
   savePassage(id, pid, doc){ return API.req("PUT","/api/runs/" + id + "/passages/" + pid, doc); },
   replacePassages(id, list){ return API.req("POST","/api/runs/" + id + "/passages", {passages:list}); },
@@ -130,6 +131,14 @@ var API = {
   withdrawReceipt(id, pid, cid, rid, reason, rev){ return API.req("POST","/api/runs/" + id + "/passages/" + pid + "/claims/" + cid + "/receipts/" + rid + "/withdraw", {reason:reason||"", expectedReadingRev:rev}); },
   attachOrphan(id, oid, pid, cid){ return API.req("POST","/api/runs/" + id + "/orphans/" + oid + "/attach", {pid:pid, idx:cid}); },
   importUrl(url){ return API.req("POST","/api/import", {url:url}); },
+  /* The transcript chain for a podcast or video link runs as a job: start it, poll it, stop it. */
+  resolveTranscript(url, guid, choice){ return API.req("POST","/api/transcript/resolve", {url:url, guid:guid||"", choice:choice||""}); },
+  job(id){ return API.req("GET","/api/transcript/jobs/" + id); },
+  cancelJob(id){ return API.req("POST","/api/transcript/jobs/" + id + "/cancel"); },
+  engines(){ return API.req("GET","/api/transcript/engines"); },
+  installLocal(){ return API.req("POST","/api/transcript/local/install"); },
+  setSetting(name, key){ return API.req("POST","/api/settings/key", {name:name, key:key}); },
+  preferEngine(engine){ return API.req("PUT","/api/transcript/prefer", {engine:engine}); },
   setKey(key){ return API.req("POST","/api/settings/anthropic-key", {key:key}); },
   saveRouting(id, pid, cid, routing, rev){ return API.req("PUT","/api/runs/" + id + "/passages/" + pid + "/claims/" + cid + "/routing", Object.assign({expectedReadingRev:rev}, routing)); },
   listTrash(){ return API.req("GET","/api/trash"); },
@@ -323,7 +332,8 @@ function body(p){ return p.querySelector(".body"); }
    context under a fold. A link is fetched through the importer, which either returns readable text or says why not. */
 function describeKind(text){
   var d = SH.detectKind(text);
-  return {d:d, go:"Read this", text:d.kind === "empty" ? "Upload a transcript, or paste text or a link. Everything else is optional." : d.kind === "link" ? "I’ll open the link and prepare its readable text." : "Ready to read. I’ll handle the preparation and checks."};
+  var podcast = false; if (d.kind === "link") { var host = ""; try { host = new URL(d.url).hostname.replace(/^www\./, ""); } catch(e){} podcast = /(^|\.)(podcasts\.apple\.com|spotify\.com|youtube\.com|youtu\.be)$/.test(host) || /feeds?\.|rss|\.xml$|\/rss\b|\/feed\b/i.test(d.url); }
+  return {d:d, go:"Read this", podcast:podcast, text:d.kind === "empty" ? "Upload a transcript, or paste text or a link. Everything else is optional." : d.kind === "link" ? (podcast ? "A podcast or video link. I’ll find its transcript (the show’s own, the video’s captions, the episode page, or the audio transcribed), then prepare the reading." : "I’ll open the link, read its text or find its transcript, then prepare the reading.") : "Ready to read. I’ll handle the preparation and checks."};
 }
 function renderIntake(){
   var r = run(), ro = readOnly(), isNew = !r.id;
@@ -395,7 +405,12 @@ function renderIntake(){
     labels.forEach(function(k){ if (!speakers.some(function(s){ return s.key === k; })) speakers.push({key:k, name:k === "UNLABELED" ? "Speaker unknown" : k.split(" ").map(function(w){ return w[0] + w.slice(1).toLowerCase(); }).join(" "), bio:""}); });
     if (labels.length) speakers = speakers.filter(function(s){ return labels.indexOf(s.key) !== -1; });
     clear(spWrap);
-    if (!speakers.length){ spWrap.append(h("p",{class:"hint",text:"No speaker labels in the text yet. Lines that start with NAME: become turns for that speaker."})); spBlock.hidden = isNew && !speakers.length ? false : false; return; }
+    var unlabeled = speakers.every(function(s){ return s.key === "UNLABELED"; });
+    if (unlabeled){
+      spWrap.append(h("p",{class:"hint",text:"No speaker labels in the text yet. Lines that start with NAME: become turns for that speaker."}));
+      if (r.id && !ro && r.kind !== "claim" && S.turns.some(function(t){ return !t.heading; })) spWrap.append(nameSpeakersBox(r));
+      return;
+    }
     speakers.forEach(function(s){
       var name = h("input",{type:"text",value:s.name||"",placeholder:"Display name (optional)",disabled:ro?"":null}); name.addEventListener("input",function(){ s.name = name.value; });
       var bio = h("input",{type:"text",value:s.bio||"",placeholder:"Bio (optional): job, books, family, role",disabled:ro?"":null}); bio.addEventListener("input",function(){ s.bio = bio.value; });
@@ -404,7 +419,26 @@ function renderIntake(){
   }
   updateStats();
   ta.addEventListener("input", updateStats);
-  if (!isNew && r.import) b.append(h("p",{class:"hint",text:"Fetched from " + r.import.url + " on " + fmtDate(r.import.fetchedAt) + " (" + r.import.chars.toLocaleString() + " characters, " + r.import.method + "). The text above is what was read; the link itself was not graded."}));
+  // a transcript fetch started before this page was opened (a reload during a long transcription) is picked up here,
+  // once, and finishes the same way: the words land and the reading starts
+  if (isNew && !ro && !S.resumedJobs) { (async function(){
+    var eng = null; try { eng = await API.engines(); } catch(e){ return; }
+    // the view may have been drawn again while the request was out; the newer drawing takes over
+    if (S.resumedJobs || (document.body && typeof document.body.contains === "function" && !document.body.contains(ta))) return;
+    var job = eng && (eng.running||[])[0]; if (!job) return;
+    var link = job.url || ""; if (!link) return;
+    S.resumedJobs = true;
+    ta.value = link; updateStats();
+    var onWords = async function(t, imp){
+      var d2 = {sourceUrl:url.value.trim() || link, sourceLabel:label.value.trim(), sourceDate:"", speakers:[], import:imp}; if (title.value.trim()) d2.title = title.value.trim();
+      var nb2 = await API.intake(t,d2); S.runId = nb2.run.id; UI.detailsOpen = {}; S.pendingImport = null; try {location.hash="run-"+S.runId;localStorage.setItem("deflate-run",S.runId);}catch(e){}
+      await refreshList(); await reload(nb2);
+    };
+    if (S.busy) return; S.busy = true; if (go) go.disabled = true;
+    try { await fetchTranscriptInner(link, job.guid || "", job.choice || "", {msg:msg, ta:ta, url:url, label:label, title:title, updateStats:updateStats, go:go, fromGo:true, onWords:onWords}, job.id); }
+    finally { S.busy = false; if (go) go.disabled = false; }
+  })(); }
+  if (!isNew && r.import) b.append(h("p",{class:"hint",text:"Fetched from " + r.import.url + " on " + fmtDate(r.import.fetchedAt) + " (" + r.import.chars.toLocaleString() + " characters, " + r.import.method + ")." + (r.import.source && r.import.source.note ? " " + r.import.source.note.charAt(0).toUpperCase() + r.import.source.note.slice(1) + (r.import.source.url ? " (" + r.import.source.url + ")" : "") + "." : "") + " The text above is what was read; the link itself was not graded."}));
 
   async function onGo(){
     if (!go || blockWhileBusy()) return; S.busy = true; go.disabled = true; clear(msg);
@@ -415,8 +449,22 @@ function renderIntake(){
       var doc = {title:title.value.trim(), sourceUrl:url.value.trim(), sourceLabel:label.value.trim(), sourceDate:date.value||"", speakers:speakers.filter(function(s){return s.key;})};
       if (!doc.title) delete doc.title;
       var nb;
-      if (isNew || k.kind === "link") {
-        if (!isNew) { delete doc.title; doc.sourceDate=""; doc.speakers=[]; }
+      if (k.kind === "link") {
+        // the transcript chain finds the words (feed transcript, captions, page, or audio) and the reading starts by
+        // itself the moment they arrive. The chain may pause for a pick (which episode; which engine) and resume from a
+        // button long after this call returns, so the intake lives in onWords, not after the await.
+        clear(msg);
+        var onWords = async function(t, imp){
+          var d2 = {title:title.value.trim(), sourceUrl:url.value.trim(), sourceLabel:label.value.trim(), sourceDate:date.value||"", speakers:[], import:imp};
+          if (!d2.title) delete d2.title;
+          var nb2;
+          if (isNew) { nb2 = await API.intake(t,d2); S.runId = nb2.run.id; UI.detailsOpen = {}; S.pendingImport = null; try {location.hash="run-"+S.runId;localStorage.setItem("deflate-run",S.runId);}catch(e){} }
+          else { delete d2.title; d2.sourceDate=""; await API.saveRun(r.id,d2,t); nb2 = await API.readRun(r.id); }
+          await refreshList(); await reload(nb2);
+        };
+        await fetchTranscript(k.url, "", "", {msg:msg, ta:ta, url:url, label:label, title:title, updateStats:updateStats, go:go, fromGo:true, onWords:onWords});
+        return; // either the reading has started (onWords ran), or the chain explained why not / is waiting for a pick
+      } else if (isNew) {
         nb = await API.intake(text,doc);
         S.runId = nb.run.id; UI.detailsOpen = {}; S.pendingImport = null;
         try {location.hash="run-"+S.runId;localStorage.setItem("deflate-run",S.runId);}catch(e){}
@@ -429,6 +477,133 @@ function renderIntake(){
     finally { S.busy = false; go.disabled = false; }
   }
   return p;
+}
+
+/* ---- the transcript chain on the page ----
+   Starts the server job for a link, shows each step as it happens, and puts what was found into the box with a line
+   saying where it came from. When the chain reaches the audio and no engine has been chosen yet, it asks once
+   (install the local one, or add a Deepgram key) and then carries on by itself. */
+/* Optional, for a transcript with no speaker labels (audio transcribed on this computer, a pasted page): the person
+   names the speakers and the model assigns the turns from the words; the reading then starts again by itself. */
+function nameSpeakersBox(r){
+  var box = h("div",{class:"namebox"});
+  var names = h("input",{type:"text",placeholder:"Who is speaking? e.g. Joe Rogan, Jordan Peterson",style:"min-width:260px"});
+  var note = h("p",{class:"hint",text:"Optional. The model splits the text into turns and names each one from the words (who asks, who answers, self-references); a second pass checks every name and disagreements stay Speaker unknown. The words are never rewritten. The names are the model's reading, not the source's, and the run says so; you can correct any turn afterwards."});
+  var btn = h("button",{class:"btn",type:"button",text:"Name the speakers",onclick:function(){
+    var list = names.value.split(/[,;\n]/).map(function(x){ return x.trim(); }).filter(Boolean);
+    if (!list.length){ note.textContent = "Type at least one name."; return; }
+    if (!ensureAI(box, run)) return; run();
+    async function run(){
+      if (blockWhileBusy()) return; S.busy = true; btn.disabled = true; S.abort = new AbortController(); note.textContent = "Assigning the turns… this is one model pass over the whole text, then a review pass.";
+      try { var ctx = (r.sourceLabel || "") + (r.title && r.title !== r.sourceLabel ? " — " + r.title : ""); await reload(await API.assignSpeakers(r.id, list, ctx, S.abort.signal)); }
+      catch(e){ note.textContent = errCopy(e); btn.disabled = false; }
+      finally { S.busy = false; S.abort = null; }
+    }
+  }});
+  box.append(h("div",{class:"row"}, names, btn), note);
+  return box;
+}
+function fmtDur(s){ s = Number(s)||0; var m = Math.round(s/60); return m >= 90 ? (Math.floor(m/60) + " h " + (m%60) + " min") : m + " min"; }
+async function fetchTranscript(link, guid, choice, ui){
+  // the page is busy for as long as the chain runs, whether started from Go or from a pick in the results
+  if (S.busy && !ui.fromGo){ blockWhileBusy(); return; }
+  var own = !ui.fromGo; if (own) S.busy = true;
+  try { await fetchTranscriptInner(link, guid, choice, ui); } finally { if (own) S.busy = false; }
+}
+async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
+  clear(ui.msg);
+  var box = h("div",{class:"note info"}), steps = h("ul",{class:"steps"}), prog = h("p",{class:"hint"}), stop = h("button",{class:"btn quiet",type:"button",text:"Stop"});
+  box.append(h("p",{text:(existingJobId ? "Still finding the transcript for " : "Finding the transcript for ") + link + "…"}), steps, prog, stop); ui.msg.append(box);
+  var jobId = existingJobId;
+  if (!jobId) { var started; try { started = await API.resolveTranscript(link, guid, choice); } catch(e){ ui.msg.replaceChildren(h("div",{class:"note",text:errCopy(e)}), fallbackHint(link, ui)); return; } jobId = started.jobId; }
+  var cancelled = false, shown = 0, misses = 0;
+  stop.onclick = async function(){ cancelled = true; stop.disabled = true; try { await API.cancelJob(jobId); } catch(e){} };
+  var j = null;
+  for (;;){
+    try { j = await API.job(jobId); misses = 0; } catch(e){ if (++misses > 20 || (e && e.status === 404)){ ui.msg.replaceChildren(h("div",{class:"note err",text:"Lost track of the fetch (the server may have restarted). Nothing was saved; try again."}), fallbackHint(link, ui)); return; } await new Promise(function(r){ setTimeout(r, 1500); }); continue; }
+    for (; shown < (j.steps||[]).length; shown++) steps.append(h("li",{text: j.steps[shown].name + ": " + j.steps[shown].note}));
+    if (j.progress){ var p = j.progress; prog.textContent = p.stage === "transcribing" ? "Transcribing: " + fmtDur(p.secondsDone) + " of " + fmtDur(p.secondsTotal) + (p.percent != null ? " (" + p.percent + "%)" : "") + ". This runs on this computer; you can close this page and come back. Stop takes effect at the end of the current five-minute piece." : p.stage === "downloading" ? "Downloading the audio" + (p.percent != null ? ": " + p.percent + "%" : "") + "…" : p.stage === "downloading model" ? "Downloading the speech model (once): " + (p.file||"") + " " + (p.percent||0) + "%" : p.stage === "loading model" ? "Loading the speech model…" : p.stage === "decoding" ? "Reading the audio: " + fmtDur(p.secondsDecoded) + " decoded…" : p.log ? String(p.log).split("\n").filter(Boolean).slice(-1)[0] || "" : ""; }
+    if (j.state !== "running") break;
+    await new Promise(function(r){ setTimeout(r, 1200); });
+  }
+  clear(ui.msg);
+  if (j.state === "cancelled" || cancelled){ ui.msg.append(h("div",{class:"note",text:"Stopped. Nothing was saved."}), fallbackHint(link, ui)); return; }
+  if (j.state === "error"){ ui.msg.append(h("div",{class:"note",text:(j.error && j.error.message) || "The transcript could not be fetched."}), fallbackHint(link, ui)); return; }
+  var res = j.result || {};
+  if (res.kind === "choose"){
+    var list = h("div",{class:"episodes"});
+    ui.msg.append(h("div",{class:"note"}, h("p",{text:"“" + (res.show && res.show.name || "This show") + "”: pick the episode." + (res.note ? " " + res.note : "")}), list));
+    (res.episodes||[]).forEach(function(e){
+      var b = h("button",{class:"btn quiet ep",type:"button",text:(e.pubDate ? e.pubDate.slice(0,10) + " · " : "") + e.title + (e.duration ? " · " + fmtDur(e.duration) : "") + (e.hasTranscript ? " · transcript published" : "")});
+      b.onclick = function(){ fetchTranscript(link, e.guid, choice, ui); }; list.append(b);
+    });
+    return;
+  }
+  if (res.kind === "transcript" || res.kind === "article"){
+    // the words are in hand: the reading starts now, in the same action, with the origin on the run
+    ui.ta.value = res.text; ui.updateStats();
+    var src = res.source || {}, where = res.kind === "article" ? res.url : (src.url || link);
+    var showName = res.show && res.show.name || "", epTitle = res.episode && res.episode.title || res.title || "";
+    if (!ui.url.value) ui.url.value = link; if (!ui.label.value) ui.label.value = (showName ? showName + (epTitle ? " — " : "") : "") + epTitle; if (!ui.title.value && epTitle) ui.title.value = epTitle;
+    var imp = {url: link, title: epTitle, fetchedAt: res.fetchedAt || nowISO(), chars: res.chars || res.text.length, method: res.kind === "article" ? "page text" : "transcript: " + src.kind, source: src, show: showName, episode: epTitle, matchedBy: res.matchedBy || "", speakers: res.speakers || []};
+    var ok = h("div",{class:"note ok"});
+    ok.append(h("p",{text:(res.kind === "article" ? "Read " + ui.ta.value.length.toLocaleString() + " characters from the page." : "Transcript found: " + ui.ta.value.length.toLocaleString() + " characters" + (showName ? " · " + showName : "") + (epTitle ? " · " + epTitle : "") + ".") + " Preparing your reading…"}));
+    if (src.note) ok.append(h("p",{class:"hint",text:"Where it came from: " + src.note + (where ? " (" + where + ")" : "") + (res.matchedBy ? ". Episode matched by " + res.matchedBy + "." : "") + ((res.speakers||[]).length ? " Speakers in the file: " + res.speakers.join(", ") + "." : " No speaker labels in the file.")}));
+    if (res.ambiguous) ok.append(h("p",{class:"hint",text:"More than one show has an episode with this title (" + res.ambiguous.join("; ") + "); the first was used. If it is the wrong show, paste the show's Apple Podcasts link or RSS feed instead."}));
+    if ((res.tried||[]).length) ok.append(h("details",{}, h("summary",{class:"hint",text:"What was tried first"}), h("ul",{class:"steps"}, res.tried.map(function(t){ return h("li",{text:t.step + ": " + t.error}); }))));
+    ui.msg.append(ok);
+    if (ui.onWords) await ui.onWords(res.text, imp);
+    return;
+  }
+  // nothing published; maybe the audio can be transcribed
+  var nt = res.needsTranscription;
+  var none = h("div",{class:"note"}); none.append(h("p",{text:res.reason || "No transcript was found."}));
+  if ((res.tried||[]).length) none.append(h("ul",{class:"steps"}, res.tried.map(function(t){ return h("li",{text:t.step + ": " + t.error}); })));
+  ui.msg.append(none);
+  if (nt && nt.audioUrl){
+    var eng = null; try { eng = await API.engines(); } catch(e){}
+    ui.msg.append(engineChoice(link, guid, nt, eng, ui));
+  } else ui.msg.append(fallbackHint(link, ui));
+}
+function fallbackHint(link, ui){ if (ui.url && !ui.url.value) ui.url.value = link; return h("p",{class:"hint",text:"The link is kept as the source under Add context. You can paste the transcript, or upload a .txt, .srt or .vtt file."}); }
+/* The one-time choice for the audio step. Once an engine is installed or a key is set, the chain runs through it on
+   its own from then on; the choice can be changed in .env (TRANSCRIBE_PREFER) or by adding the other engine later. */
+function engineChoice(link, guid, nt, eng, ui){
+  var box = h("div",{class:"note info enginebox"});
+  var dur = nt.duration ? fmtDur(nt.duration) : "unknown length";
+  var localReady = eng && eng.local && eng.local.installed, cloudReady = eng && eng.cloud && eng.cloud.configured;
+  box.append(h("p",{text:"The audio (" + dur + ") can be transcribed. Choose once; after that it happens by itself."}));
+  var row = h("div",{class:"row"});
+  if (localReady) row.append(h("button",{class:"btn primary",type:"button",text:"Transcribe on this computer (" + (nt.duration ? "about " + fmtDur(Math.max(60, nt.duration / 5)) : "slow") + ", free)",onclick:function(){ fetchTranscript(link, guid, "local", ui); }}));
+  else {
+    var inst = h("button",{class:"btn primary",type:"button",text:"Install local transcription (free, private; about 480 MB, once)"});
+    inst.onclick = async function(){
+      if (S.busy){ blockWhileBusy(); return; }
+      inst.disabled = true; var note = h("p",{class:"hint",text:"Installing… a few minutes."}), stopInst = h("button",{class:"btn quiet",type:"button",text:"Stop"}); box.append(note, stopInst);
+      S.busy = true;
+      try {
+        var st = await API.installLocal(); if (st.installed){ S.busy = false; fetchTranscript(link, guid, "local", ui); return; }
+        stopInst.onclick = async function(){ stopInst.disabled = true; try { await API.cancelJob(st.jobId); } catch(e){} };
+        var misses = 0;
+        for (;;){ var j; try { j = await API.job(st.jobId); misses = 0; } catch(e){ if (++misses > 20){ note.textContent = "Lost track of the install; run  npm run setup -- --local-transcription  in the app folder."; inst.disabled = false; break; } await new Promise(function(r){ setTimeout(r, 1500); }); continue; }
+          if (j.progress && j.progress.log) note.textContent = "Installing… " + (String(j.progress.log).split("\n").filter(Boolean).slice(-1)[0] || "");
+          if (j.state !== "running") { stopInst.remove(); if (j.state === "done"){ note.textContent = "Installed."; try { await API.preferEngine("local"); } catch(e){} S.busy = false; fetchTranscript(link, guid, "local", ui); } else { note.textContent = (j.state === "cancelled" ? "Install stopped." : "Install failed: " + (j.error && j.error.message || "unknown") + ". Fix the cause and try again, or run  npm run setup -- --local-transcription  in the app folder."); inst.disabled = false; } break; }
+          await new Promise(function(r){ setTimeout(r, 1500); }); }
+      } catch(e){ note.textContent = errCopy(e); inst.disabled = false; }
+      finally { S.busy = false; }
+    };
+    row.append(inst);
+  }
+  if (cloudReady) row.append(h("button",{class:"btn",type:"button",text:"Transcribe with Deepgram (fast, paid)",onclick:function(){ fetchTranscript(link, guid, "cloud", ui); }}));
+  else {
+    var key = h("input",{type:"password",placeholder:"Deepgram API key",autocomplete:"off",style:"min-width:220px"});
+    var useCloud = h("button",{class:"btn",type:"button",text:"Save key and transcribe with Deepgram (fast, paid)",onclick:async function(){ useCloud.disabled = true; try { await API.setSetting("DEEPGRAM_API_KEY", key.value); key.value = ""; try { await API.preferEngine("cloud"); } catch(e){} fetchTranscript(link, guid, "cloud", ui); } catch(e){ useCloud.disabled = false; box.append(h("p",{class:"hint",text:errCopy(e)})); } }});
+    row.append(key, useCloud);
+  }
+  box.append(row);
+  box.append(h("p",{class:"hint",text:"Local: Whisper runs here in pure JavaScript, about five times faster than real time, no speaker labels, nothing leaves this computer; the speech model (76 MB) downloads on first use. Deepgram: minutes per episode with speakers numbered by voice, billed to your Deepgram key, and the audio goes to Deepgram. Either result says on the run which engine made it."}));
+  if (!localReady && !cloudReady) box.append(fallbackHint(link, ui));
+  return box;
 }
 
 /* The one-time key prompt: shown when real analysis is asked for and no model is configured. The key goes to the
@@ -465,8 +640,9 @@ function renderProvenance(){
   var p = panel("stage-prov","2","Who said what", state, !!r.id && !confirmed && !pr.notApplicable && S.turns.length > 0 && !ro);
   var b = body(p);
   if (!r.id || !S.turns.length){ b.append(h("p",{class:"hint",text:"Save some text first."})); return p; }
-  if (pr.notApplicable){ b.append(h("div",{class:"note ok",text:pr.method || "Nothing to attribute."})); b.append(h("p",{class:"hint",text:"Turns with no label are shown as Speaker unknown. Conclusions that depend on who said something stay provisional."})); return p; }
+  if (pr.notApplicable){ b.append(h("div",{class:"note ok",text:pr.method || "Nothing to attribute."})); b.append(h("p",{class:"hint",text:"Turns with no label are shown as Speaker unknown. Conclusions that depend on who said something stay provisional." + (r.kind !== "claim" && (pr.labelsFound||[]).every(function(l){ return l === "UNLABELED"; }) ? " To name the speakers, open Add context in the input box." : "")})); return p; }
   var top = b, prep = r.preparation;
+  if (pr.labelsOrigin === "model" && pr.assignment) top.append(h("div",{class:"note info",text:"The speaker names were assigned by the model from the words alone (" + pr.assignment.named + " of " + pr.assignment.turns + " turns named; " + pr.assignment.unknown + " left as Speaker unknown" + (pr.assignment.demoted ? "; " + pr.assignment.demoted + " set to unknown because the review pass disagreed" : "") + "). They are not labels from the source. Correct any turn below; a person's correction wins."}));
   top.append(h("div",{class:"note " + (confirmed ? "ok" : "info"),text: confirmed ? "Speaker preparation passed. The correction record is available below." : "The reading is held while speaker labels are unresolved. Preparation applies supported corrections and checks them again before any reading is shown."}));
   if (!ro) top.append(h("button",{class:"btn primary",type:"button",text: confirmed ? "Speakers prepared" : "Prepare speakers automatically",disabled:confirmed?"":null,onclick:function(){ if (!ensureAI(top, runSpeakerPreparation)) return; runSpeakerPreparation(); }}));
   else top.append(h("button",{class:"btn primary",type:"button",text:"Copy and prepare this example",onclick:async function(){
@@ -784,7 +960,7 @@ function quoteLine(q){
   var who = speakerName(q.speakerNow || q.speaker);
   var shownTurn = q.verbatim && q.matchedTurn != null ? q.matchedTurn : q.turn;
   var line = h("p",{class:"q"}, h("span",{class:"sp",text: who + " [" + shownTurn + "]"}), document.createTextNode("“" + q.quote + "”"),
-    h("span",{class:"vq" + (q.verbatim ? "" : " no"),text: q.verbatim ? "matched" : "not found word for word"}));
+    h("span",{class:"vq" + (q.verbatim ? "" : " no"),text: q.verbatim ? ((q.tolerated||[]).length ? "matched, numbers written differently" : "matched") : "not found word for word"}));
   if (q.relocated) line.append(h("span",{class:"vq no",text:"the card named turn " + q.turn + "; the words are in turn " + q.matchedTurn}));
   if (q.speakerMismatch) line.append(h("span",{class:"vq no",text:"model said " + speakerName(q.speaker)}));
   return line;
@@ -800,16 +976,19 @@ function passageCard(p){
   var chips = chipRow(hdr);
   if (p.provenance && p.provenance.review) chips.addChip("Preparation · passed", "good", function(){
     var review = p.provenance.review;
-    return h("div",{}, L("Quotes and reading levels were checked before display, followed by a separate model review. Supported corrections were applied before you saw the card. This checks the reading, not the truth of an empirical claim.", "The app checked the words and asked the model to check the reading again before showing it. This does not prove the claim is true."), h("p",{class:"hint",text:review.corrections.length + " automatic quote corrections; " + review.attempts + " draft attempt(s). Review call: " + review.callId}));
+    var w0 = h("div",{}, L("Quotes and reading levels were checked before display, followed by a separate model review. Supported corrections were applied before you saw the card. This checks the reading, not the truth of an empirical claim.", "The app checked the words and asked the model to check the reading again before showing it. This does not prove the claim is true."), h("p",{class:"hint",text:review.corrections.length + " automatic quote corrections; " + review.attempts + " draft attempt(s). Review call: " + review.callId}));
+    if (r.provenance && r.provenance.labelsOrigin === "model") w0.append(L("The speaker names on this card were assigned by the model from the words alone, after a person supplied the names; they are not labels from the source. Correct any turn under Who said what.", "The names of who is talking were guessed by the computer from the words. They did not come with the transcript. You can fix them under Who said what."));
+    return w0;
   });
 
   // chip: quotes
   var allOk = qc.matched === qc.quotes && !qc.mismatched;
-  if (qc.quotes || !personOnlyA(a)) chips.addChip("Quotes · " + qc.matched + "/" + qc.quotes + " matched", allOk ? "good" : "warn", function(){
+  if (qc.quotes || !personOnlyA(a)) chips.addChip("Quotes · " + qc.matched + "/" + qc.quotes + " matched" + (qc.tolerated ? " · " + qc.tolerated + " with numbers written differently" : ""), allOk ? "good" : "warn", function(){
     var w = h("div",{});
     w.append(L("Every quote on this card was checked word for word against the saved transcript, in order, at word boundaries. “Matched” means those words are there in that turn. The check does not judge whether the card reads them fairly; the quotes are below so you can.",
       "We checked every quote against the transcript, word by word. “Matched” means the words are really there. It does not say whether the card understood them right. Read them and see."));
     if (qc.quotes - qc.matched) w.append(L(plural(qc.quotes - qc.matched, "quote was", "quotes were") + " not found word for word. Treat the rewrite of those parts with caution.", plural(qc.quotes - qc.matched, "quote was", "quotes were") + " not found. Be careful with those parts."));
+    if (qc.tolerated) w.append(L("For " + plural(qc.tolerated, "quote") + " the words match once numbers are read the same way on both sides: “fifteen percent” and “15%”, “nineteen ninety-eight” and “1998”, “one point five” and “1.5”, “five hundred dollars” and “$500”. Transcripts made from audio write numbers as they were heard. Nothing else is folded; “half a million” and “500,000” stay different.", "For " + plural(qc.tolerated, "quote") + " the numbers are written a different way, like “fifteen percent” and “15%”. The words are the same."));
     if (qc.mismatched) w.append(L("For " + plural(qc.mismatched, "quote") + " the model named a different speaker than the transcript shows. The card goes with the transcript, as corrected in stage 2.", "For " + plural(qc.mismatched, "quote") + " the computer and the transcript disagree about who said it. We go with the transcript."));
     if (qc.relocated) w.append(L(plural(qc.relocated, "quote was", "quotes were") + " found in a different turn than the model named; the turn shown is where the words actually are.", plural(qc.relocated, "quote was", "quotes were") + " in a different place than the computer said. We show the real place."));
     if (qc.pivotOk === false) w.append(L("The pivot quote was not found word for word inside this passage.", "The turning-point quote was not found in this part."));
@@ -851,7 +1030,7 @@ function passageCard(p){
   if (personOnly) read.append(h("section",{}, h("p",{class:"hint",text:"Nothing has been graded. Search for sources from Details, or ask the model to explain and grade the claim (needs a key, once)."})));
   if (a.jump.hs || a.jump.present){
     var jumpSec = h("section",{class:"jump" + (a.jump.present ? "" : " none")}, h("p",{class:"eyebrow",text: a.jump.present ? "Where it jumps" : "No jump"}), lvl({hs:a.jump.hs, g5:a.jump.g5}));
-    if (a.jump.pivot) jumpSec.append(h("p",{class:"pivot"}, h("span",{class:"sp",text:"The turn"}), document.createTextNode("“" + a.jump.pivot + "”"), h("span",{class:"vq" + (a.jump.pivotVerbatim === false ? " no" : ""),text: a.jump.pivotVerbatim === false ? "not found word for word" : "matched"})));
+    if (a.jump.pivot) jumpSec.append(h("p",{class:"pivot"}, h("span",{class:"sp",text:"The turn"}), document.createTextNode("“" + a.jump.pivot + "”"), h("span",{class:"vq" + (a.jump.pivotVerbatim === false ? " no" : ""),text: a.jump.pivotVerbatim === false ? "not found word for word" : ((a.jump.pivotTolerated||[]).length ? "matched, numbers written differently" : "matched")})));
     read.append(jumpSec);
   }
   if (a.defense.hs) read.append(h("section",{class:"defense"}, h("p",{class:"eyebrow",text:"In fairness to the speaker"}), lvl(a.defense)));
@@ -919,9 +1098,10 @@ function passageCard(p){
   var cl = h("div",{class:"block"}, h("p",{class:"eyebrow",text:"Sources, claim by claim"}));
   (a.claims||[]).forEach(function(c, idx){ cl.append(claimDetail(card, p, c, idx, ro)); });
   more.append(cl);
-  if ((p.history||[]).length || p.rerun || (p.adopted||[]).length){
+  if (p.historyCount || (p.history||[]).length || p.rerun || (p.adopted||[]).length){
     var hist = h("div",{class:"block"}, h("p",{class:"eyebrow",text:"History"}));
-    if ((p.history||[]).length) hist.append(h("p",{class:"hint",text:"Re-run " + plural(p.history.length, "time") + "; every earlier reading is kept in this passage's file (data folder, passages/" + p.id + ".json): " + p.history.map(function(x){ return fmtDate(x.replacedAt) + " replaced the reading of " + fmtDate(x.analyzedAt) + (x.analyzedBy ? " by " + x.analyzedBy : ""); }).join("; ") + "."}));
+    var hs = p.historySummary || p.history || [];
+    if (hs.length) hist.append(h("p",{class:"hint",text:"Re-run " + plural(hs.length, "time") + "; every earlier reading is kept in this passage's file (data folder, passages/" + p.id + ".json): " + hs.map(function(x){ return fmtDate(x.replacedAt) + " replaced the reading of " + fmtDate(x.analyzedAt) + (x.analyzedBy ? " by " + x.analyzedBy : ""); }).join("; ") + "."}));
     if (p.rerun) hist.append(h("p",{class:"hint",text:"Last re-run: " + plural(p.rerun.carried, "claim") + " kept " + (p.rerun.carried===1?"its":"their") + " sources and searches" + (p.rerun.orphaned ? "; " + plural(p.rerun.orphaned, "earlier claim") + " with records no longer appear in the new reading (still in history)" : "") + "."}));
     if ((p.adopted||[]).length) hist.append(h("p",{class:"hint",text:plural(p.adopted.length, "set") + " of records from an earlier segmentation " + (p.adopted.length===1?"was":"were") + " reattached here: " + p.adopted.map(function(x){ return "“" + x.claimText + "” from " + (x.from && x.from.title || x.from && x.from.passage || "?"); }).join("; ") + "."}));
     more.append(hist);

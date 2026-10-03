@@ -141,9 +141,72 @@
     return -1;
   }
 
+  /* Spoken numbers. A transcript made from audio writes what the transcriber heard: "fifteen percent", "nineteen
+     ninety-eight", "one point five", "five hundred dollars", "1,000". A card quoting it may write "15%", "1998", "1.5",
+     "$500", "1000". The strict check (above) treats those as different words, and it should: the strict result is the
+     one reported. This pass is tried only when the strict check fails, applied to BOTH sides the same way, and a match
+     found through it is reported as "matched, with numbers written differently", never as plain "matched".
+     Exactly these forms are folded: number words (zero to trillion, with "and", "a hundred", hyphenated tens) to
+     digits; "X point Y Z" to a decimal; two tens-or-teens in a row with no scale word ("nineteen ninety eight",
+     "twenty twenty") to a four-digit year; "percent"/"per cent" after a number to "%"; "dollars" after a number to a
+     "$" before it; a comma between digits dropped. Nothing else: "half", "a couple", "dozen", ordinals and fractions
+     stay words, so "half a million" never matches "500,000". */
+  var NUM_SMALL = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19 };
+  var NUM_TENS = { twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+  var NUM_SCALE = { hundred: 100, thousand: 1000, million: 1000000, billion: 1000000000, trillion: 1000000000000 };
+  function readNumber(toks, i) {
+    var j = i, total = 0, cur = 0, high = null, any = false, scaled = false, lastKind = "";
+    if ((toks[j] === "a" || toks[j] === "an") && NUM_SCALE[toks[j + 1]]) { cur = 1; j++; any = true; lastKind = "small"; }
+    for (; j < toks.length; j++) {
+      var w = toks[j];
+      if (w === "and" && any && lastKind === "scale" && (NUM_SMALL[toks[j + 1]] != null || NUM_TENS[toks[j + 1]])) continue;
+      if (NUM_SMALL[w] != null) {
+        // "nineteen eighteen", "twenty fifteen": a teen after a tens-or-teen with no scale word is the low half of a year
+        if (lastKind === "small" && NUM_SMALL[w] >= 10) { if (cur >= 10 && cur <= 99 && !scaled && high === null) { high = cur; cur = 0; } else break; }
+        else if (lastKind === "small" && !(cur % 10 === 0 && cur >= 20)) break; // "one two" stays two numbers; "twenty one" is one
+        cur += NUM_SMALL[w]; any = true; lastKind = "small";
+      } else if (NUM_TENS[w]) {
+        if (lastKind === "small") { if (cur >= 10 && cur <= 99 && !scaled && high === null) { high = cur; cur = 0; } else break; }
+        cur += NUM_TENS[w]; any = true; lastKind = "small";
+      } else if (NUM_SCALE[w]) {
+        if (!any) break;
+        if (w === "hundred") { if (high !== null) break; cur = (cur || 1) * 100; }
+        else { total += (cur || 1) * NUM_SCALE[w]; cur = 0; scaled = true; }
+        any = true; lastKind = "scale";
+      } else break;
+    }
+    if (!any) return null;
+    var value = high !== null ? high * 100 + cur : total + cur;
+    var text = String(value);
+    if (toks[j] === "point" && NUM_SMALL[toks[j + 1]] != null && NUM_SMALL[toks[j + 1]] < 10) { j++; var dec = ""; while (NUM_SMALL[toks[j]] != null && NUM_SMALL[toks[j]] < 10) { dec += NUM_SMALL[toks[j]]; j++; } text += "." + dec; }
+    return { text: text, end: j };
+  }
+  function spokenNumbers(ws) {
+    var toks = String(ws || "").split(" "), out = [], i = 0;
+    while (i < toks.length) {
+      var r = readNumber(toks, i);
+      if (r) { out.push(r.text); i = r.end; } else { out.push(toks[i].replace(/^(\d+),(?=\d{3}(\D|$))/g, "$1").replace(/(\d),(?=\d{3}(\D|$))/g, "$1")); i++; }
+    }
+    return out.join(" ")
+      .replace(/(\d) per ?cent\b/g, "$1%")
+      .replace(/(\d[\d.]*) dollars?\b/g, "$$$1")
+      .replace(/\s+/g, " ").trim();
+  }
+  /* The strict check first; the spoken-number fold only when it fails. Returns null, or {tolerated: []} with the
+     names of the folds that were needed. */
+  function matchQuote(quote, hay) {
+    if (verifyQuote(quote, hay)) return { tolerated: [] };
+    var parts = fragmentsOf(quote).map(spokenNumbers), hs = spokenNumbers(wordsOf(hay));
+    if (!parts.length || !hs) return null;
+    var pos = 0;
+    for (var k = 0; k < parts.length; k++) { var i = findWords(hs, parts[k], pos); if (i === -1) return null; pos = i + parts[k].length; }
+    return { tolerated: ["numbers written differently"] };
+  }
+
   /* True when the quote's fragments (split on … or ...) appear in `hay` IN ORDER, each starting after the previous
      one ends, each at a word boundary. Proves the words are there in that order; it does not prove they mean in
-     context what a card says. An unordered or overlapping splice ("B … A" taken from "A B") fails. */
+     context what a card says. An unordered or overlapping splice ("B … A" taken from "A B") fails. Strict: numbers
+     must be written the same way; see matchQuote for the one tolerated fold. */
   function verifyQuote(quote, hay) {
     var parts = fragmentsOf(quote), hs = wordsOf(hay);
     if (!parts.length || !hs) return false;
@@ -159,7 +222,7 @@
   /* Which turns in [from, to] contain the quote. */
   function findQuoteTurns(quote, turns, from, to) {
     var out = [];
-    for (var i = from; i <= to && i < turns.length; i++) { var t = turns[i]; if (!t || t.heading) continue; if (verifyQuote(quote, t.text)) out.push(i); }
+    for (var i = from; i <= to && i < turns.length; i++) { var t = turns[i]; if (!t || t.heading) continue; if (matchQuote(quote, t.text)) out.push(i); }
     return out;
   }
 
@@ -176,20 +239,22 @@
   function verifyPassage(turns, overrides, passage) {
     var a = passage && passage.analysis; if (!a) return null;
     var from = Number(passage.turnStart), to = Number(passage.turnEnd);
-    var summary = { quotes: 0, matched: 0, mismatched: 0, outOfRange: 0, relocated: 0, pivotOk: null };
+    var summary = { quotes: 0, matched: 0, tolerated: 0, mismatched: 0, outOfRange: 0, relocated: 0, pivotOk: null };
     (a.asSaid || []).forEach(function (q) {
       var ti = Number(q.turn), t = (isFinite(ti) && turns[ti] && !turns[ti].heading) ? turns[ti] : null;
       summary.quotes++;
       q.turnOk = !!t && ti >= from && ti <= to;
-      var inNamed = !!t && verifyQuote(q.quote, t.text);
+      var inNamed = t ? matchQuote(q.quote, t.text) : null;
       q.foundIn = [];
-      if (q.turnOk && inNamed) { q.verbatim = true; q.matchedTurn = ti; }
+      if (q.turnOk && inNamed) { q.verbatim = true; q.matchedTurn = ti; q.tolerated = inNamed.tolerated; }
       else {
         q.foundIn = findQuoteTurns(q.quote, turns, from, to);
         q.verbatim = q.foundIn.length === 1;
         q.matchedTurn = q.verbatim ? q.foundIn[0] : null;
+        q.tolerated = q.verbatim ? (matchQuote(q.quote, turns[q.foundIn[0]].text) || { tolerated: [] }).tolerated : [];
         if (!q.turnOk) summary.outOfRange++;
       }
+      if (q.verbatim && q.tolerated.length) summary.tolerated = (summary.tolerated || 0) + 1;
       // relocated: the words were found, but not in the turn the card names; the card must show the real turn
       q.relocated = q.verbatim && q.matchedTurn !== ti;
       if (q.relocated) summary.relocated = (summary.relocated || 0) + 1;
@@ -202,8 +267,9 @@
     if (a.jump && a.jump.pivot) {
       a.jump.pivotTurns = findQuoteTurns(a.jump.pivot, turns, from, to);
       a.jump.pivotVerbatim = a.jump.pivotTurns.length > 0;
+      a.jump.pivotTolerated = a.jump.pivotVerbatim ? (matchQuote(a.jump.pivot, turns[a.jump.pivotTurns[0]].text) || { tolerated: [] }).tolerated : [];
       summary.pivotOk = a.jump.pivotVerbatim;
-    } else if (a.jump) { a.jump.pivotVerbatim = null; a.jump.pivotTurns = []; }
+    } else if (a.jump) { a.jump.pivotVerbatim = null; a.jump.pivotTurns = []; a.jump.pivotTolerated = []; }
     return summary;
   }
 
@@ -308,5 +374,5 @@
     return out;
   }
 
-  return { parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, chunkRanges: chunkRanges, carryOver: carryOver };
+  return { parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, chunkRanges: chunkRanges, carryOver: carryOver };
 });

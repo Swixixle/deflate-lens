@@ -62,6 +62,14 @@ function createMockAI() {
       if (/^(Prepare transcript speaker labels|Review transcript speaker labels independently)/.test(p)) {
         const t = turnsFrom(p);
         data = { decisions: t.map(x => ({ turn: x.i, status: "keep", speaker: x.label, evidenceKind: "source_label", evidenceQuote: "", reason: "MOCK: keeps undisputed fixture labels; no real check." })) };
+      } else if (p.startsWith("Assign speakers to an unlabeled transcript")) {
+        // fixture: each paragraph is a turn, names rotate; the real model reads the words
+        const names = JSON.parse((p.match(/The speakers are: (\[[^\]]*\])/) || [0, "[]"])[1]);
+        const text = p.split("\nText:\n")[1] || "";
+        data = { turns: text.split(/\n\s*\n/).filter(x => x.trim()).map((para, i) => ({ speaker: names.length ? names[i % names.length] : "UNKNOWN", start: para.trim().split(/\s+/).slice(0, 6).join(" "), evidenceKind: "conversational_role", reason: "MOCK: paragraphs rotate through the names; no real reading." })) };
+      } else if (p.startsWith("Review these speaker assignments independently")) {
+        const n = (p.split("\nTurns:\n")[1] || "").split("\n").filter(l => /^\[\d+\]/.test(l));
+        data = { verdicts: n.map((l, i) => ({ index: i, agree: !/MOCK-DISAGREE/.test(l), speaker: (l.match(/^\[\d+\] ([^:]+):/) || [0, "UNKNOWN"])[1], reason: "MOCK: agrees unless the turn says MOCK-DISAGREE." })) };
       } else if (p.startsWith("Review this reading before it is shown")) {
         data = { approved: true, issues: [] }; // fixture-only; the UI still labels every output as MOCK
       } else

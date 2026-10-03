@@ -208,7 +208,7 @@ test("evidence: a client save can never drop a person's records; a new reading k
     // a new reading (different analyzedAt, rephrased second claim, same first claim) carries the receipt and keeps the old reading
     const second = Object.assign({}, first, { analysis: reading("two", ["A bad plan beats no plan.", "Trying tells you things."]), analyzedAt: "2026-10-02T11:00:00.000Z" });
     second.analysis.claims[1].receipts = [{ kind: "link", url: "https://example.org/new", note: "added in the same save", addedBy: "person", at: "2026-10-02T11:00:01.000Z" }];
-    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", second)).data;
+    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001?history=full", second)).data;
     const p = b.passages[0];
     assert.equal(p.history.length, 1); assert.equal(p.history[0].analysis.deflated.hs, "one"); assert.equal(p.history[0].analyzedAt, "2026-10-02T10:00:00.000Z");
     assert.equal(p.analysis.claims[0].receipts.length, 1, "receipt carried to the claim with the same text");
@@ -227,7 +227,7 @@ test("evidence: a client save can never drop a person's records; a new reading k
     const disk = JSON.parse(fs.readFileSync(path.join(dataDir, "runs", id, "passages", "p001.json"), "utf8"));
     assert.equal(disk.analysis.asSaid[0].verbatim, undefined); assert.equal(disk.history.length, 1);
     // a client cannot shrink the history or the adoption notes, and cannot overwrite server-owned run fields
-    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", Object.assign({}, second, { history: [], adopted: [] }))).data;
+    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001?history=full", Object.assign({}, second, { history: [], adopted: [] }))).data;
     assert.equal(b.passages[0].history.length, 1);
     b = (await s.api("PUT", "/api/runs/" + id, { run: { orphans: [{ id: "fake" }], provenanceHistory: [], transcriptUpdatedAt: "1999", example: true, title: "renamed" } })).data;
     assert.equal(b.run.title, "renamed"); assert.equal(b.run.example, false); assert.equal((b.run.orphans || []).length, 0); assert.notEqual(b.run.transcriptUpdatedAt, "1999");
@@ -283,7 +283,7 @@ test("quotes: the server checks every quote on every read against the transcript
     let q = b.passages[0].analysis.asSaid[0];
     assert.equal(q.verbatim, true); assert.equal(q.speakerNow, "GUEST"); assert.equal(q.speakerMismatch, false); assert.equal(q.turnOk, true);
     assert.equal(b.passages[0].analysis.jump.pivotVerbatim, true); assert.deepEqual(b.passages[0].analysis.jump.pivotTurns, [3]);
-    assert.deepEqual(b.passages[0].quoteCheck, { quotes: 1, matched: 1, mismatched: 0, outOfRange: 0, relocated: 0, pivotOk: true });
+    assert.deepEqual(b.passages[0].quoteCheck, { quotes: 1, matched: 1, tolerated: 0, mismatched: 0, outOfRange: 0, relocated: 0, pivotOk: true });
     // the model labels the quote HOST and points at the wrong turn: the words are found in exactly one turn of the passage
     const wrong = JSON.parse(JSON.stringify(first)); wrong.analysis.asSaid = [{ turn: 2, speaker: "HOST", quote: "a bad plan beats no plan", verbatim: true }, { turn: 1, speaker: "GUEST", quote: "a bad plan beats no plan … information", verbatim: true }];
     b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", wrong)).data;

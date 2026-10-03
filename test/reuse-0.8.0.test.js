@@ -237,7 +237,7 @@ test("provenance: every model call is recorded by the server; a reading names it
     const again = JSON.parse(JSON.stringify(p)); delete again.id; delete again.stale; delete again.quoteCheck; delete again.callId; delete again.provenance;
     b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", again)).data; assert.equal(b.passages[0].provenance.requestId, r.provenance.requestId); assert.equal(b.passages[0].readingRev, 1);
     // a bogus callId is recorded as unrecorded, not invented
-    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001", reading(["Growth is 1.5%."], "t2", { callId: "call_nope" }))).data;
+    b = (await s.api("PUT", "/api/runs/" + id + "/passages/p001?history=full", reading(["Growth is 1.5%."], "t2", { callId: "call_nope" }))).data;
     assert.equal(b.passages[0].provenance.recorded, false); assert.match(b.passages[0].provenance.note, /no call with this id/); assert.equal(b.passages[0].history[0].provenance.requestId, r.provenance.requestId, "the earlier reading's record went to history with it");
     // The summary too: the new gate first requires actual prepared cards and a bound input.
     const blocked = await s.api("POST", "/api/sample", {prompt:"Below are the results of deflating",json:true,runId:id,purpose:"patterns"});

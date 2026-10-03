@@ -40,7 +40,7 @@ APIs (Crossref, PubMed, GDELT for news; OpenAlex with an optional key) and needs
      `npm run launch -- --port 4000` to choose a port, `npm start` to run without the launcher.
 5. **Check health yourself** if you want to confirm: `curl -s http://127.0.0.1:3123/api/health` returns `{"ok":true,…}`
    with `ai` null (no key yet) or the model name, and `version`.
-6. **Use the app.** Upload or paste into the initial box and press **Read this**. Do not ask the person to confirm labels, split passages, select cards, or generate patterns; those steps run automatically. The one-time key prompt continues the whole job. Processing runs on the server across browser refreshes; Stop preserves prepared work and Read this resumes. Detailed controls are optional and closed.
+6. **Use the app.** Upload or paste into the initial box and press **Read this**. A podcast or video link (Apple Podcasts, Spotify, YouTube, an RSS feed, an episode page) is handled the same way: the page fetches the transcript itself and the reading starts when the words arrive. Do not ask the person to confirm labels, split passages, select cards, or generate patterns; those steps run automatically. The one-time key prompt continues the whole job. Processing runs on the server across browser refreshes; Stop preserves prepared work and Read this resumes. Detailed controls are optional and closed.
 7. **Present the address** to the person. The supplied example opens without a key, but its old readings are held until preparation passes. A pasted claim can be searched without a key; **Copy and read this example** starts model preparation and asks for the key when needed.
 
 ## The API key
@@ -50,6 +50,10 @@ time real analysis is requested, and writes it to `.env` on this computer. If th
 put it in `.env` as `ANTHROPIC_API_KEY=sk-ant-…` (the file is created by setup; edit it in place, keep the other
 lines) and restart the server. Never paste the key into a chat, a log, a commit, or a file other than `.env`. Never
 set `DEFLATE_MOCK_AI=1` for the person; that produces placeholder output and is for tests.
+
+## Podcast and video links
+
+The page fetches transcripts itself (feed transcript → YouTube captions → episode page → audio). Two optional things make it better, and the person may ask you to set them up: `yt-dlp` on the PATH (`brew install yt-dlp`; makes YouTube captions reliable), and local speech-to-text (`npm run setup -- --local-transcription`, about 480 MB into `data/local-transcription/`; the page offers the same install when it first needs it). Do not add a Deepgram key or any other paid service unless the person asks for it; the page asks them once when the audio step is reached.
 
 ## Repeat runs and updates
 
@@ -67,8 +71,9 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 
 ## Checks you can run
 
-- `npm test` — 120 regression tests, no external network or key; uses local HTTP servers.
+- `npm test` — 127 regression tests, no external network or key; uses local HTTP servers.
 - `npm run doctor` — prints what is configured without printing secrets.
+- `npm run transcript-smoke` — hits Apple's catalogue, two podcast feeds and YouTube for the transcript chain (needs network; `-- --local` also transcribes a five-minute episode with the local engine).
 - `npm run research-smoke` — hits the live Crossref and PubMed services for two example claims (needs network).
 - `node scripts/ui-check.js` — optional headless-browser check; needs `npm install --no-save playwright && npx playwright install chromium` first.
 

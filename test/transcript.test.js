@@ -105,9 +105,9 @@ test("verifyPassage derives the speaker from the turn, relocates a quote named w
   assert.equal(q[2].verbatim, true); assert.equal(q[2].turnOk, false); assert.deepEqual(q[2].foundIn, [3]); assert.equal(q[2].speakerNow, "HOST", "override on turn 3 applies"); assert.equal(q[2].speakerMismatch, true);
   assert.equal(q[3].verbatim, true); assert.deepEqual(q[3].foundIn, [3]); assert.equal(q[3].speakerNow, "HOST");
   assert.equal(q[4].verbatim, false); assert.deepEqual(q[4].foundIn, []);
-  assert.deepEqual(sum, { quotes: 5, matched: 4, mismatched: 3, outOfRange: 1, relocated: 3, pivotOk: true });
+  assert.deepEqual(sum, { quotes: 5, matched: 4, tolerated: 0, mismatched: 3, outOfRange: 1, relocated: 3, pivotOk: true });
   assert.equal(q[0].relocated, false); assert.equal(q[0].matchedTurn, 1); assert.equal(q[1].matchedTurn, 1); assert.equal(q[1].relocated, true); assert.equal(q[3].matchedTurn, 3); assert.equal(q[4].matchedTurn, null);
   assert.deepEqual(p.analysis.jump.pivotTurns, [2]);
   const none = SH.verifyPassage(turns, {}, { turnStart: 0, turnEnd: 3, analysis: { asSaid: [], jump: { pivot: "" } } });
-  assert.deepEqual(none, { quotes: 0, matched: 0, mismatched: 0, outOfRange: 0, relocated: 0, pivotOk: null });
+  assert.deepEqual(none, { quotes: 0, matched: 0, tolerated: 0, mismatched: 0, outOfRange: 0, relocated: 0, pivotOk: null });
 });

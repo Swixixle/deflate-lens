@@ -50,7 +50,7 @@ async function readInput(input, context, importer) {
     doc.import = { url: doc.sourceUrl, title: imported.title || "", fetchedAt: imported.fetchedAt, chars: cleaned.text.length, method: imported.method };
     if (!doc.title || /^(?:Listen LIVE|Untitled run)$/i.test(doc.title) || doc.title === autoTitle(raw, doc.kind)) doc.title = imported.title || autoTitle(cleaned.text, doc.kind);
   }
-  return { doc, text: cleaned.text, original: cleaned.original, intake: Object.assign(cleaned.record, { source: imported ? "link" : "upload-or-paste", url: imported ? doc.sourceUrl : "", at: new Date().toISOString() }) };
+  return { doc, text: cleaned.text, original: cleaned.original, intake: Object.assign(cleaned.record, { source: imported ? "link" : (doc.import && doc.import.source ? "transcript-chain" : "upload-or-paste"), url: imported ? doc.sourceUrl : (doc.import && doc.import.url) || "", at: new Date().toISOString() }) };
 }
 
 module.exports = { cleanText, readInput };
