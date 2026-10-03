@@ -15,7 +15,7 @@ const F = require("../server/podcast/feed");
 const T = require("../server/podcast/transcripts");
 const YT = require("../server/podcast/youtube");
 const { createResolver, classify } = require("../server/podcast/resolve");
-const { deepgramEngine, collapseStitchRepeats, toMono16k, quietestCut } = require("../server/podcast/engines");
+const { deepgramEngine, toMono16k, quietestCut } = require("../server/podcast/engines");
 const { SETTABLE } = require("../server/settings");
 
 const FEED = `<?xml version="1.0"?><rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:podcast="https://podcastindex.org/namespace/1.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel>
@@ -143,7 +143,7 @@ test("the four steps: the feed's transcript first (a failed file is skipped), th
   // ep1: no transcript, no video, a page without one, audio but no engine chosen or installed → an honest stop with the audio
   loc = await R.locate({ url: "https://show.test/feed.xml", guid: "g-1" }, step); w = await R.words(loc, { step });
   assert.equal(w.ok, false); assert.match(w.reason, /no transcript was published anywhere/); assert.deepEqual(w.needsTranscription, { audioUrl: "https://cdn.test/ep1.mp3", duration: 3600, available: { local: false, cloud: false }, wanted: null });
-  assert.deepEqual(w.tried.map(t => t.step), ["feed transcript", "youtube search", "episode page"]); assert.match(w.tried[1].error, /title-only search cannot establish/); assert.match(w.tried[2].error, /no transcript on the page/);
+  assert.deepEqual(w.tried.map(t => t.step), ["feed transcript", "youtube search", "episode page"]); assert.match(w.tried[1].error, /needs yt-dlp/); assert.match(w.tried[2].error, /no transcript on the page/);
   // a chosen engine that is not available says so rather than guessing
   w = await R.words(loc, { step, choice: "cloud" }); assert.equal(w.ok, false); assert.match(w.reason, /no Deepgram key is set/); assert.equal(w.needsTranscription.wanted, "cloud");
   // with the local engine installed and chosen, the audio is transcribed and the origin says which engine
@@ -176,12 +176,10 @@ test("youtube: yt-dlp is preferred when present (a fake writes the VTT), the bui
   // A title-only search result must not silently become this episode’s transcript.
   const R = createResolver({ fetch: f, env: {}, engines: {}, run: fakeYtdlp });
   const loc = await R.locate({ url: "https://show.test/feed.xml", guid: "g-1" }, () => {}); const w = await R.words(loc, { step: () => {} });
-  assert.equal(w.ok, false); assert.ok(w.needsTranscription); assert.ok(w.tried.some(t=>/title-only search cannot establish/.test(t.error)));
+  assert.equal(w.ok, false); assert.ok(w.needsTranscription); assert.ok(w.tried.some(t=>/no result had both the episode's full title and its length/.test(t.error)));
 });
 
-test("engines: seam repeats collapse, audio downmixes and resamples, cuts land in quiet; the local engine says plainly when it is not installed", async () => {
-  assert.equal(collapseStitchRepeats("one two three four five six seven one two three four five six seven eight"), "one two three four five six seven eight");
-  assert.equal(collapseStitchRepeats("a b c a b c"), "a b c a b c", "runs under six words are left alone (they can be real)");
+test("engines: audio downmixes and resamples, cuts land in quiet; the local engine says plainly when it is not installed", async () => {
   const stereo = [new Float32Array([1, 1, 1, 1]), new Float32Array([0, 0, 0, 0])]; const m = toMono16k(stereo, 32000); assert.equal(m.length, 2); assert.ok(Math.abs(m[0] - 0.5) < 1e-6);
   const pcm = new Float32Array(16000 * 30).fill(0.5); for (let i = 16000 * 22; i < 16000 * 23; i++) pcm[i] = 0; const cut = quietestCut(pcm); assert.ok(cut > 16000 * 21.5 && cut < 16000 * 23.5, "cut at " + cut / 16000 + " s");
   const { localEngine } = require("../server/podcast/engines"); const eng = localEngine({ dataDir: tmp(), env: {} });
@@ -225,4 +223,85 @@ test("over HTTP: a resolve job runs, is polled, persists its result, can be stop
     assert.equal(b.run.import.source.kind, "feed-transcript"); assert.equal(b.run.import.source.show, "The Test Show"); assert.deepEqual(b.run.import.source.speakers, ["HOST", "GUEST"]);
     assert.equal((await api("GET", "/api/runs/" + b.run.id + "/export.json")).data.run.import.source.url, "https://show.test/ep2.vtt");
   } finally { await new Promise(r => server.close(r)); }
+});
+
+
+/* YouTube's automatic captions as yt-dlp writes them (structure copied from a real file fetched on 3 Oct 2026; the
+   words here are invented): each cue shows the previous line (or a single space) and the line being typed with
+   per-word timing tags, then a 10 ms cue repeats the finished line. */
+const ROLLING = ["WEBVTT", "Kind: captions", "Language: en", "",
+  "00:00:00.320 --> 00:00:03.790 align:start position:0%", " ", "[Music]", "",
+  "00:00:03.790 --> 00:00:03.800 align:start position:0%", " ", " ", "",
+  "00:00:03.800 --> 00:00:06.790 align:start position:0%", " ", "so<00:00:04.039><c> the</c><00:00:04.359><c> study</c><00:00:04.840><c> said</c>", "",
+  "00:00:06.790 --> 00:00:06.800 align:start position:0%", "so the study said", " ", "",
+  "00:00:06.800 --> 00:00:10.950 align:start position:0%", "so the study said", "fifteen<00:00:07.800><c> percent</c><00:00:08.039><c> fewer</c><00:00:08.279><c> sick</c><00:00:08.600><c> days</c>", "",
+  "00:00:10.950 --> 00:00:10.960 align:start position:0%", "fifteen percent fewer sick days", " ", "",
+  "00:00:10.960 --> 00:00:14.109 align:start position:0%", "fifteen percent fewer sick days", "no<00:00:11.300><c> no</c><00:00:11.600><c> no</c>", "",
+  "00:00:14.109 --> 00:00:14.119 align:start position:0%", "no no no", " ", "",
+  "00:00:14.119 --> 00:00:15.269 align:start position:0%", "no no no", "really", ""].join("\n");
+const ROLLING_JSON3 = { events: [{ tStartMs: 0, dDurationMs: 15269, id: 1, wpWinPosId: 1 }, { tStartMs: 320, dDurationMs: 3470, wWinId: 1, segs: [{ utf8: "[Music]" }] }, { tStartMs: 3790, wWinId: 1, aAppend: 1, segs: [{ utf8: "\n" }] },
+  { tStartMs: 3800, dDurationMs: 3000, wWinId: 1, segs: [{ utf8: "so" }, { utf8: " the" }, { utf8: " study" }, { utf8: " said" }] }, { tStartMs: 6790, wWinId: 1, aAppend: 1, segs: [{ utf8: "\n" }] },
+  { tStartMs: 6800, dDurationMs: 4150, wWinId: 1, segs: [{ utf8: "fifteen" }, { utf8: " percent" }, { utf8: " fewer" }, { utf8: " sick" }, { utf8: " days" }] }, { tStartMs: 10950, wWinId: 1, aAppend: 1, segs: [{ utf8: "\n" }] },
+  { tStartMs: 10960, dDurationMs: 3150, wWinId: 1, segs: [{ utf8: "no" }, { utf8: " no" }, { utf8: " no" }] }, { tStartMs: 14109, wWinId: 1, aAppend: 1, segs: [{ utf8: "\n" }] },
+  { tStartMs: 14119, dDurationMs: 1150, wWinId: 1, segs: [{ utf8: "really" }] }] };
+
+test("captions: YouTube's rolling VTT keeps every line once and reads the same as its json3; genuine repeats in ordinary captions stay", () => {
+  const v = T.transcriptToText(ROLLING, "text/vtt", "x.en.vtt"), j = T.transcriptToText(JSON.stringify(ROLLING_JSON3), "application/json", "x.en.json3");
+  assert.equal(v.text, "[Music] so the study said fifteen percent fewer sick days no no no really");
+  assert.equal(v.rolling, true);
+  assert.equal(j.text.replace(/\s+/g, " "), v.text, "the two formats YouTube offers give the same words");
+  // ordinary captions: a speaker who repeats himself across cues keeps every word; a space-only line does not end a cue
+  const manual = "WEBVTT\n\n00:00:05.318 --> 00:00:07.974\nthe thing about these is that they have really...\n\n00:00:07.974 --> 00:00:12.616\nreally really long trunks\n\n00:00:12.616 --> 00:00:14.000\n \nand that's it\n";
+  assert.equal(T.transcriptToText(manual, "text/vtt", "m.vtt").text, "the thing about these is that they have really... really really long trunks and that's it");
+});
+
+test("yt-dlp: published captions are asked for first and automatic ones second, so the result says which it is; json3 is preferred", async () => {
+  const asked = [];
+  const runner = written => async (cmd, args) => {
+    if (args[0] === "--version") return { code: 0, out: "2026.09.01\n", err: "" };
+    asked.push(args.find(a => /^--write-(auto-)?subs$/.test(a)) + " " + args[args.indexOf("--sub-format") + 1]);
+    const kind = args.includes("--write-subs") ? "manual" : "auto", file = written[kind];
+    if (file) fs.writeFileSync(args[args.indexOf("-o") + 1].replace("%(id)s", "AbCdEfGhIjK.en." + file.ext), file.body);
+    return { code: 0, out: "", err: "" };
+  };
+  let r = await YT.captionsYtdlp("AbCdEfGhIjK", "en", {}, runner({ auto: { ext: "json3", body: JSON.stringify(ROLLING_JSON3) } }));
+  assert.equal(r.track.automatic, true); assert.equal(r.format, "json"); assert.match(r.text, /^\[Music\] so the study said/);
+  assert.deepEqual(asked, ["--write-subs json3/vtt", "--write-auto-subs json3/vtt"]);
+  asked.length = 0;
+  r = await YT.captionsYtdlp("AbCdEfGhIjK", "en", {}, runner({ manual: { ext: "vtt", body: "WEBVTT\n\n00:00:00.000 --> 00:00:02.000\nwords a person typed\n" } }));
+  assert.equal(r.track.automatic, false); assert.equal(r.text, "words a person typed"); assert.equal(asked.length, 1);
+  await assert.rejects(YT.captionsYtdlp("AbCdEfGhIjK", "en", {}, runner({})), /wrote no caption file/);
+});
+
+test("youtube search: a result is used only with the episode's full title and a matching length; clips and other episodes are refused", async () => {
+  const f = fakeFetch();
+  const searcher = rows => async (cmd, args) => {
+    if (args[0] === "--version") return { code: 0, out: "2026.09.01\n", err: "" };
+    if (String(args[args.length - 1]).startsWith("ytsearch")) return { code: 0, out: rows.map(r => r.join("\t")).join("\n") + "\n", err: "" };
+    if (args.includes("--skip-download")) { if (args.includes("--write-auto-subs")) fs.writeFileSync(args[args.indexOf("-o") + 1].replace("%(id)s", args[args.length - 1].slice(-11) + ".en.json3"), JSON.stringify({ events: [{ segs: [{ utf8: "captions of the found video " + "w ".repeat(150) }] }] })); return { code: 0, out: "", err: "" }; }
+    return { code: 1, out: "", err: "?" };
+  };
+  const words = async rows => { const R = createResolver({ fetch: f, env: {}, engines: {}, run: searcher(rows) }); return R.words(await R.locate({ url: "https://show.test/feed.xml", guid: "g-1" }, () => {}), { step: () => {} }); };
+  // Ep 1 is 3600 s long. A clip with the title, another episode, and the full upload 2 minutes shorter (ads).
+  let w = await words([["ClipClipClp", "Ep 1: No transcript (best moment) | The Test Show", "Test Clips", "640"], ["OtherEpisod", "Ep 11: No transcript — The Test Show", "The Test Show", "3590"], ["FullEpisode", "The Test Show — Ep 1: No transcript", "The Test Show", "3480"]]);
+  assert.equal(w.ok, true, JSON.stringify(w.tried)); assert.equal(w.source.kind, "youtube-captions"); assert.equal(w.source.url, "https://www.youtube.com/watch?v=FullEpisode");
+  assert.match(w.source.note, /full title and a length within 2 min of it; confirm it is the same episode/);
+  // only the clip and the other episode: nothing is used, and the chain moves on
+  w = await words([["ClipClipClp", "Ep 1: No transcript (best moment)", "Test Clips", "640"], ["OtherEpisod", "Ep 11: No transcript", "The Test Show", "3600"]]);
+  assert.equal(w.ok, false); assert.ok(w.tried.some(t => t.step === "youtube search" && /full title and its length/.test(t.error)));
+  // no length in the feed: no search at all
+  const R = createResolver({ fetch: f, env: {}, engines: {}, run: searcher([["FullEpisode", "Ep 0: audio only, no page", "x", "100"]]) });
+  w = await R.words(await R.locate({ url: "https://show.test/feed.xml", guid: "g-0" }, () => {}), { step: () => {} });
+  assert.ok(w.tried.some(t => t.step === "youtube search" && /length is not given/.test(t.error)));
+});
+
+test("intake: an uploaded caption file (VTT, SRT, Podcasting 2.0 JSON) is read as text; the upload is kept as it was", async () => {
+  const { cleanText } = require("../server/intake");
+  let r = cleanText(ROLLING);
+  assert.equal(r.text, "[Music] so the study said fifteen percent fewer sick days no no no really"); assert.match(r.record.method, /^Converted from WebVTT captions \(rolling captions, each line kept once\)/); assert.equal(r.original, ROLLING);
+  r = cleanText("1\n00:00:01,000 --> 00:00:02,000\nHOST: Hello there.\n\n2\n00:00:02,000 --> 00:00:04,000\nGUEST: Hi, thanks.\n\n3\n00:00:04,000 --> 00:00:06,000\nHOST: Shall we?\n");
+  assert.equal(r.text, "HOST: Hello there.\nGUEST: Hi, thanks.\nHOST: Shall we?"); assert.equal(r.record.converted, "SRT captions");
+  r = cleanText(JSON.stringify({ version: "1.0", segments: [{ speaker: "Ann", body: "Welcome." }, { speaker: "Bo", body: "Thanks." }, { speaker: "Ann", body: "Go on." }] }));
+  assert.equal(r.text, "ANN: Welcome.\nBO: Thanks.\nANN: Go on.");
+  assert.throws(() => cleanText(JSON.stringify({ schema: "something else" })), /no transcript text/);
 });

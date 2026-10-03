@@ -65,17 +65,25 @@ function run(cmd, args, opts) {
 }
 async function ytdlpAvailable(env, runFn) { const r = await (runFn || run)(ytdlpPath(env), ["--version"]); return r.code === 0 ? r.out.trim() : ""; }
 async function captionsYtdlp(id, language, env, runFn) {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "deflate-yt-"));
-  try {
-    const lang = (language || "en").slice(0, 5);
-    const r = await (runFn || run)(ytdlpPath(env), ["--skip-download", "--write-subs", "--write-auto-subs", "--sub-langs", lang + ".*," + lang, "--sub-format", "vtt", "--no-playlist", "--no-warnings", "-o", path.join(dir, "%(id)s"), "https://www.youtube.com/watch?v=" + id], { cwd: dir });
-    const files = (await fs.readdir(dir)).filter(f => /\.vtt$/i.test(f));
-    if (!files.length) throw new Error("yt-dlp wrote no caption file" + (r.code !== 0 ? " (exit " + r.code + ": " + String(r.err).trim().split("\n").pop() + ")" : "; this video may have no captions"));
-    const manual = files.find(f => !/\.(en|[a-z]{2})(-[A-Za-z]+)?\.vtt$/i.test(f) || !/orig|auto/i.test(f));
-    const file = manual || files[0];
-    const out = transcriptToText(await fs.readFile(path.join(dir, file), "utf8"), "text/vtt", file);
-    return Object.assign(out, { reader: "yt-dlp", track: { language: lang, automatic: /orig|auto/i.test(file) || files.length === 1, name: file } });
-  } finally { await fs.rm(dir, { recursive: true, force: true }).catch(() => {}); }
+  const lang = (language || "en").slice(0, 5);
+  // Published captions first, YouTube's automatic ones only if there are none; two runs, so the result says truthfully
+  // which kind it is (yt-dlp names both kinds the same way). json3 first: YouTube's own format has each word once.
+  // Its VTT rolls (every line two or three times); that is handled too, as the fallback when json3 is not offered.
+  let last = null;
+  for (const kind of ["--write-subs", "--write-auto-subs"]) {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), "deflate-yt-"));
+    try {
+      const r = await (runFn || run)(ytdlpPath(env), ["--skip-download", kind, "--sub-langs", lang + ".*," + lang, "--sub-format", "json3/vtt", "--no-playlist", "--no-warnings", "-o", path.join(dir, "%(id)s"), "https://www.youtube.com/watch?v=" + id], { cwd: dir });
+      last = r;
+      const files = (await fs.readdir(dir)).filter(f => /\.(json3|vtt)$/i.test(f)).sort((a, b) => a.length - b.length);
+      if (!files.length) continue;
+      const file = files.find(f => /\.json3$/i.test(f)) || files[0];
+      const json = /\.json3$/i.test(file);
+      const out = transcriptToText(await fs.readFile(path.join(dir, file), "utf8"), json ? "application/json" : "text/vtt", file);
+      return Object.assign(out, { reader: "yt-dlp", track: { language: lang, automatic: kind === "--write-auto-subs", name: file } });
+    } finally { await fs.rm(dir, { recursive: true, force: true }).catch(() => {}); }
+  }
+  throw new Error("yt-dlp wrote no caption file" + (last && last.code !== 0 ? " (exit " + last.code + ": " + String(last.err).trim().split("\n").pop() + ")" : "; this video may have no captions"));
 }
 
 /* The captions for a video, by whichever reader works, with what each one said when it did not. */
@@ -89,13 +97,13 @@ async function captions({ url, id, language, fetch: fetchFn, env, run: runFn }) 
   const err = new Error("no captions could be read: " + tried.map(t => t.reader + ": " + t.error).join("; ")); err.tried = tried; err.title = meta && meta.title || ""; throw err;
 }
 
-/* Find the video for an episode by title. yt-dlp's search is the only reader that works reliably; the built-in search
-   page is not attempted because YouTube's results page is rendered by scripts. Returns {id, title} or null. */
+/* Candidate videos for an episode, by a YouTube search through yt-dlp (the built-in search page is not attempted:
+   YouTube renders its results with scripts). Returns [{id, title, channel, duration}] or null when yt-dlp is absent.
+   The caller decides whether a result is the episode; a title alone is not enough (see resolve.js). */
 async function searchVideo(query, env, runFn) {
   if (!(await ytdlpAvailable(env, runFn))) return null;
-  const r = await (runFn || run)(ytdlpPath(env), ["--no-playlist", "--no-warnings", "--print", "%(id)s\t%(title)s\t%(channel)s", "ytsearch3:" + query]);
-  const rows = String(r.out || "").trim().split("\n").filter(Boolean).map(l => { const [id, title, channel] = l.split("\t"); return { id, title: title || "", channel: channel || "" }; }).filter(x => /^[A-Za-z0-9_-]{11}$/.test(x.id));
-  return rows;
+  const r = await (runFn || run)(ytdlpPath(env), ["--flat-playlist", "--no-warnings", "--print", "%(id)s\t%(title)s\t%(channel)s\t%(duration)s", "ytsearch5:" + query]);
+  return String(r.out || "").trim().split("\n").filter(Boolean).map(l => { const [id, title, channel, duration] = l.split("\t"); return { id, title: title || "", channel: channel || "", duration: Number(duration) }; }).filter(x => /^[A-Za-z0-9_-]{11}$/.test(x.id));
 }
 
 module.exports = { captions, searchVideo, videoId, oembed, captionsBuiltin, captionsYtdlp, ytdlpAvailable, run };

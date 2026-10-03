@@ -99,7 +99,7 @@ function createApp(opts) {
      reading is prepared in the same action. A job's result is also written under data/jobs so a refresh does not lose it. */
   app.get("/api/transcript/engines", wrap(async (req, res) => {
     const ytdlp = await YT.ytdlpAvailable(env, opts.run).catch(() => "");
-    const describe = j => ({ id:j.id, state:j.state, url:j.input && j.input.url || "", guid:j.input && j.input.guid || "", choice:j.input && j.input.choice || "", context:j.input && j.input.context || {}, targetRunId:j.input && j.input.targetRunId || "", startedAt:j.startedAt, progress:j.progress });
+    const describe = j => ({ id:j.id, state:j.state, resultKind:j.resultKind || "", url:j.input && j.input.url || "", guid:j.input && j.input.guid || "", choice:j.input && j.input.choice || "", context:j.input && j.input.context || {}, targetRunId:j.input && j.input.targetRunId || "", startedAt:j.startedAt, progress:j.progress });
     res.json({ local: { installed: engines.local.installed(), modelCached: engines.local.modelCached(), model: engines.local.model, packages: engines.local.packages }, cloud: { configured: engines.cloud.configured(), model: engines.cloud.model, provider: "deepgram" }, prefer: env.TRANSCRIBE_PREFER || "", ytdlp: ytdlp || "", installing: jobs.running("install-local").length > 0, running: jobs.running("resolve").map(describe), pending:(await jobs.pending("resolve")).map(describe) });
   }));
   app.post("/api/transcript/resolve", wrap(async (req, res) => {

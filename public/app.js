@@ -184,7 +184,9 @@ async function boot(){
   S.ai = S.health.ai; S.research = S.health.research || null;
   setStore("ready", "Ready · " + S.health.version + (S.ai && S.ai.mock ? " · MOCK output" : "") + (S.research && S.research.mock ? " · MOCK sources" : ""));
   await refreshList();
-  try { var eng = await API.engines(); S.resumeFetch = (eng.pending||eng.running||[])[0] || null; } catch(e){}
+  // reopen New reading only for a fetch still running or a finished transcript waiting to be read; an episode list or
+  // an engine choice left behind does not take over the page (it stays available until a new fetch replaces it)
+  try { var eng = await API.engines(); S.resumeFetch = (eng.pending||eng.running||[]).filter(function(j){ return j.state === "running" || j.state === "interrupted" || (j.state === "done" && (j.resultKind === "transcript" || j.resultKind === "article")); })[0] || null; } catch(e){}
   if (S.resumeFetch) { $("newRun").click(); return; }
   var want = hashRun() || rememberedRun();
   if (want && S.runs.some(function(r){ return r.id === want; })) selectRun(want);

@@ -71,7 +71,7 @@ const T = Array.from({length:18},(_,i)=>(i%2?"GUEST":"HOST")+": This is an argum
     await page.waitForSelector("#stage-intake .episodes .btn.ep",{timeout:20000});await page.locator("#stage-intake .episodes .btn.ep").nth(1).click();
     await page.waitForSelector("#stage-intake .enginebox",{timeout:20000});
     const body0=await page.textContent("#stage-intake .body");
-    report.noTranscriptSteps=/feed transcript: the feed has no transcript/.test(body0)&&/youtube search:.*title-only search cannot establish/.test(body0);
+    report.noTranscriptSteps=/feed transcript: the feed has no transcript/.test(body0)&&/youtube search: needs yt-dlp/.test(body0);
     report.engineChoiceOffered=/can be transcribed\. Choose once/.test(body0)&&(await page.locator("#stage-intake .enginebox button:has-text('Install local transcription')").count())===1&&(await page.locator("#stage-intake .enginebox input[type=password]").count())===1;
     await page.locator("#stage-intake .enginebox").screenshot({path:path.join(shots,"engine-choice.png")});
     await page.fill("#stage-intake .enginebox input[type=password]","short");await page.locator("#stage-intake .enginebox button:has-text('Save key and transcribe')").click();
@@ -114,6 +114,11 @@ const T = Array.from({length:18},(_,i)=>(i%2?"GUEST":"HOST")+": This is an argum
     await context.unroute("**/api/transcript/engines");
     const racedId=(await system.jobs.get(raced.jobId)).runId;
     report.twoTabsOneImport=(await system.store.listRuns()).length===beforeRace+1 && await page.evaluate(()=>location.hash.slice(5))===racedId && await other.evaluate(()=>location.hash.slice(5))===racedId;
+    // An episode list left behind (a show link, no episode picked) does not take over the page on the next visit.
+    const leftover=await fetch(rootURL+"/api/transcript/resolve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:"https://show.test/feed.xml"})}).then(r=>r.json());
+    for(let n=0;n<100;n++){if((await system.jobs.get(leftover.jobId)).state!=="running")break;await new Promise(r=>setTimeout(r,20));}
+    await page.goto("about:blank");await page.goto(rootURL+"/#run-"+racedId);await page.waitForFunction(()=>!!document.querySelector(".card")||/pick the episode/.test(document.body.textContent),null,{timeout:20000});
+    report.leftoverListStaysPut=(await system.jobs.get(leftover.jobId)).resultKind==="choose" && !/Still finding the transcript|pick the episode/.test(await page.locator("#runView").textContent());
     await other.close();
     // A transcript with no speaker labels reads as Speaker unknown; naming the speakers (under Add context) labels
     // the turns with the model, says so, and reads again by itself.
@@ -144,7 +149,7 @@ const T = Array.from({length:18},(_,i)=>(i%2?"GUEST":"HOST")+": This is an argum
     await page.setViewportSize({width:390,height:844});await page.locator("#lvl5").click();
     report.phoneFits=await page.evaluate(()=>document.body.scrollWidth<=innerWidth+1);
     await page.screenshot({path:path.join(shots,"automatic-reading-phone.png"),fullPage:true});
-    for(const name of ["contextClosed","processingClosed","cardDetailsClosed","sourceAccepted","exampleHeld","linkWording","episodeListMarksTranscript","chainOrigin","chainIntakeRecord","noTranscriptSteps","engineChoiceOffered","badDeepgramKeyRefused","linkNotSavedAsRun","youtubeHonest","resumedJob","resumedCards","resumedOnce","unlabeledReads","nameBoxBuried","namedSpeakers","namedOnCard","namedSaidSo","keyContinued","phoneFits","completedWhileClosed","twoTabsOneImport"])assert.equal(report[name],true,name);
+    for(const name of ["contextClosed","processingClosed","cardDetailsClosed","sourceAccepted","exampleHeld","linkWording","episodeListMarksTranscript","chainOrigin","chainIntakeRecord","noTranscriptSteps","engineChoiceOffered","badDeepgramKeyRefused","linkNotSavedAsRun","youtubeHonest","resumedJob","resumedCards","resumedOnce","unlabeledReads","nameBoxBuried","namedSpeakers","namedOnCard","namedSaidSo","keyContinued","phoneFits","completedWhileClosed","twoTabsOneImport","leftoverListStaysPut"])assert.equal(report[name],true,name);
     assert.deepEqual(errors,[]);report.errors=errors;console.log(JSON.stringify(report,null,2));
   }finally{
     for(const job of system.reader.jobs.values())job.controller.abort();await Promise.all([...system.reader.jobs.values()].map(j=>j.done));

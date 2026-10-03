@@ -18,7 +18,11 @@ async function resolveTarget(url, lookup=dns.lookup) {
   const u=new URL(url), host=u.hostname.replace(/^\[|\]$/g,"");
   if(!/^https?:$/.test(u.protocol)||u.username||u.password)throw new Error("Only public http(s) links without credentials can be fetched.");
   const answers=net.isIP(host)?[{address:host,family:net.isIP(host)}]:await lookup(host,{all:true,verbatim:true});
-  if(!answers.length || answers.some(a=>!publicAddress(a.address)))throw Object.assign(new Error("The address resolves to this computer or a private network."),{code:"private_address"});
+  const bad=answers.find(a=>!publicAddress(a.address));
+  if(!answers.length)throw Object.assign(new Error(host+" did not resolve to any address."),{code:"no_address"});
+  // Named in the message: a VPN or proxy app that answers DNS with stand-in private addresses (198.18.x.x is common)
+  // makes every link fail this way, and the address is what tells that apart from a link that really points inward.
+  if(bad)throw Object.assign(new Error(host+" resolves to "+bad.address+", which is this computer or a private network, so it was not fetched. (If every link fails this way, a VPN or proxy app may be answering DNS with private addresses.)"),{code:"private_address"});
   const selected=answers.find(a=>a.family===4)||answers[0];
   return {url:u, lookup:(_host,options,callback)=>{if(typeof options==="function"){callback=options;options={};}callback(null,options&&options.all?[selected]:selected.address,selected.family);}};
 }

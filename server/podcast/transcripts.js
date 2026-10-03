@@ -10,7 +10,11 @@ const { htmlToText } = require("../importer");
 const TIME = /^(\d{1,2}:)?\d{1,2}:\d{2}[.,]\d{1,3}\s+-->\s+(\d{1,2}:)?\d{1,2}:\d{2}[.,]\d{1,3}/;
 const clip = s => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
 
-/* Cues as {speaker, text}. */
+/* Cues as {speaker, text, start, end, lines}. A cue ends at an empty line or the next timing line. A line holding
+   only spaces does not end it: YouTube's automatic captions put a single space where the previous caption line
+   would be, and the new words follow on the next line. */
+const INLINE_TIME = /<\d{2}:\d{2}:\d{2}[.,]\d{3}>/;
+function cleanCueLine(s) { return clip(String(s).replace(/<v[^>]*>/g, "").replace(/<\/v>/g, "").replace(/<\d{2}:\d{2}:\d{2}[.,]\d{3}>/g, "").replace(/<\/?c[^>]*>/g, "").replace(/&nbsp;/g, " ")); }
 function cuesFromVtt(body) {
   const lines = String(body || "").replace(/\r/g, "").split("\n");
   const cues = []; let i = 0;
@@ -23,17 +27,27 @@ function cuesFromVtt(body) {
       const seconds = value => value.split(/\s/)[0].replace(",", ".").split(":").reduce((n, part) => n * 60 + Number(part), 0);
       const start = seconds(timing[0]), end = seconds(timing[1]);
       i++;
-      const textLines = []; while (i < lines.length && lines[i].trim()) textLines.push(lines[i]), i++;
+      const textLines = [];
+      while (i < lines.length && lines[i] !== "" && !TIME.test(lines[i].trim())) { if (lines[i].trim()) textLines.push(lines[i]); i++; }
       const raw = textLines.join(" ");
       const v = /^\s*<v(?:\.[^\s>]*)?\s+([^>]+)>/.exec(raw);
       const speaker = v ? clip(v[1]) : "";
-      const text = clip(raw.replace(/<v[^>]*>/g, "").replace(/<\/v>/g, "").replace(/<\d{2}:\d{2}:\d{2}[.,]\d{3}>/g, "").replace(/<\/?c[^>]*>/g, "").replace(/&nbsp;/g, " "));
-      if (text) cues.push({ speaker, text, start, end });
+      const text = cleanCueLine(raw);
+      if (text) cues.push({ speaker, text, start, end, lines: textLines.map(cleanCueLine).filter(Boolean) });
       continue;
     }
     i++;
   }
   return cues;
+}
+/* YouTube's automatic captions (recognisable by the per-word timing tags inside cues) roll: each cue shows the line
+   before and the line being typed, and a 10-millisecond cue repeats the finished line. Read line by line, every
+   caption line appears two or three times in a row; each is kept once. Measured on a real yt-dlp file: 769 words
+   down to the 250 actually spoken. Files without word timing tags are not treated this way. */
+function rollingToCues(cues) {
+  const out = []; let last = null;
+  for (const c of cues) for (const line of c.lines || []) { if (line === last) continue; out.push({ speaker: c.speaker, text: line }); last = line; }
+  return out;
 }
 function cuesFromSrt(body) {
   const blocks = String(body || "").replace(/\r/g, "").split(/\n\s*\n/);
@@ -113,7 +127,7 @@ function transcriptToText(body, type, url) {
   else format = "text";
   let cues;
   if (format === "json") { const d = JSON.parse(str.replace(/^﻿/, "")); cues = d && Array.isArray(d.events) ? cuesFromJson3(d) : cuesFromJson(d); }
-  else if (format === "vtt") cues = cuesFromVtt(str);
+  else if (format === "vtt") { cues = cuesFromVtt(str); if (INLINE_TIME.test(str)) return Object.assign({ format, rolling: true }, cuesToText(rollingToCues(cues))); }
   else if (format === "srt") cues = cuesFromSrt(str);
   else if (format === "html") { const r = htmlToText(str); return Object.assign({ format, title: r.title }, plainToText(r.text)); }
   else return Object.assign({ format }, plainToText(str));
@@ -126,4 +140,4 @@ function plainToText(s) {
   return { text, speakers, cues: 0 };
 }
 
-module.exports = { transcriptToText, cuesFromVtt, cuesFromSrt, cuesFromJson, cuesFromJson3, cuesToText, dedupeRolling };
+module.exports = { transcriptToText, rollingToCues, cuesFromVtt, cuesFromSrt, cuesFromJson, cuesFromJson3, cuesToText, dedupeRolling };

@@ -1,6 +1,7 @@
 "use strict";
 const shared = require("../shared/transcript");
 const { autoTitle, sha256 } = require("./store");
+const { transcriptToText } = require("./podcast/transcripts");
 
 // Trim only material outside a clearly labelled dialogue. Keep every word between the first
 // speaker and an explicit end marker; the original upload is saved separately by the store.
@@ -9,10 +10,17 @@ function cleanText(raw) {
   let text = original.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").trim();
   if (!text) throw Object.assign(new Error("Upload a transcript or paste something to read."), { status: 400 });
   if (text.length > 5 * 1024 * 1024) throw Object.assign(new Error("This file is over 5 MB. Upload a shorter transcript."), { status: 400 });
+  let converted = "";
   if (/^[\[{]/.test(text)) {
     let data; try { data = JSON.parse(text); } catch (_) {}
     if (data && typeof data.transcript === "string") text = data.transcript.trim();
+    else if (data && (Array.isArray(data) || Array.isArray(data.segments) || Array.isArray(data.events) || Array.isArray(data.utterances))) { text = transcriptToText(text, "application/json", "upload.json").text.trim(); converted = "JSON transcript"; }
     else if (data && typeof data === "object") throw Object.assign(new Error("This JSON file has no transcript text to read. Upload the transcript file instead."), { status: 400, code: "no_transcript" });
+  } else if (/^WEBVTT/.test(text) || /^\d+\s*\n\s*\d{1,2}:\d{2}:\d{2},\d{3}\s+-->/.test(text)) {
+    // A caption file (.vtt, .srt): timings, cue numbers and tags are dropped, voice tags become "NAME:" lines, and
+    // YouTube's rolling captions keep each line once. The upload itself is kept unchanged with the run.
+    const out = transcriptToText(text, /^WEBVTT/.test(text) ? "text/vtt" : "application/x-subrip", "upload");
+    text = out.text.trim(); converted = (out.format === "vtt" ? "WebVTT" : "SRT") + " captions" + (out.rolling ? " (rolling captions, each line kept once)" : "");
   }
   const lines = text.split("\n"), counts = new Map();
   const label = line => (line.match(/^\s*([A-Z][A-Za-z0-9 .'\-]{0,40}?)\s*:\s+\S/) || [])[1];
@@ -28,7 +36,7 @@ function cleanText(raw) {
   }
   if (!text) throw Object.assign(new Error("There is no transcript text in this file."), { status: 400 });
   return { text, original, record: { originalHash: sha256(original), cleanedHash: sha256(text), originalChars: original.length,
-    cleanedChars: text.length, removedBefore, removedAfter, changed: text !== original, method: "Only outside-dialogue material and an explicit end marker are removed; spoken words are kept." } };
+    cleanedChars: text.length, removedBefore, removedAfter, changed: text !== original, converted, method: (converted ? "Converted from " + converted + " to text. " : "") + "Only outside-dialogue material and an explicit end marker are removed; spoken words are kept." } };
 }
 
 async function readInput(input, context, importer) {

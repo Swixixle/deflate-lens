@@ -84,6 +84,8 @@ function localEngine({ dataDir, env }) {
         if (!final) { const cut = quietestCut(pcm); if (cut > 0 && cut < pcm.length) { carry = pcm.subarray(cut); pcm = pcm.subarray(0, cut); } }
         if (signal && signal.aborted) throw abortError();
         const out = await asr(pcm, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true }); // timestamps are what lets the library stitch the 30-second windows; without them text is dropped (measured)
+        // Whisper stitches 30-second windows and sometimes repeats a run of words at a seam (measured once in 14 minutes).
+        // Text alone cannot tell that from someone repeating themselves, so nothing is removed; the reader sees it as heard.
         const text = String(out && out.text || "").trim(); if (text) pieces.push(text);
         done += pcm.length / RATE;
         report("transcribing", { secondsDone: Math.round(done), secondsTotal: Math.max(durationSeconds || 0, Math.round(done)), percent: durationSeconds ? Math.min(99, Math.round(100 * done / durationSeconds)) : null });
@@ -110,23 +112,6 @@ function localEngine({ dataDir, env }) {
     } finally { await fsp.rm(tmpDir, { recursive: true, force: true }).catch(() => {}); }
   }
   return { name: "local", dir, model, installed, modelCached, install, transcribe, packages: LOCAL_PACKAGES };
-}
-/* Whisper's 30-second windows are stitched by the library and the seam sometimes repeats a run of words (measured:
-   a 26-word phrase twice in a row). A run of six or more words that immediately repeats itself is kept once. */
-function collapseStitchRepeats(text) {
-  const toks = String(text || "").split(/\s+/).filter(Boolean);
-  const norm = toks.map(t => t.toLowerCase().replace(/[^a-z0-9']+/g, ""));
-  const out = []; let i = 0;
-  while (i < toks.length) {
-    let cut = 0;
-    for (let n = 40; n >= 6; n--) {
-      if (i + 2 * n > toks.length) continue;
-      let same = true; for (let k = 0; k < n; k++) if (norm[i + k] !== norm[i + n + k] || !norm[i + k]) { same = false; break; }
-      if (same) { cut = n; break; }
-    }
-    if (cut) { for (let k = 0; k < cut; k++) out.push(toks[i + k]); i += 2 * cut; } else { out.push(toks[i]); i++; }
-  }
-  return out.join(" ");
 }
 function abortError() { const e = new Error("stopped"); e.code = "cancelled"; return e; }
 function concat(parts, len) { const out = new Float32Array(len); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out; }
@@ -191,4 +176,4 @@ function deepgramEngine({ apiKey, fetch: fetchFn, env }) {
   };
 }
 
-module.exports = { localEngine, deepgramEngine, toMono16k, quietestCut, collapseStitchRepeats, LOCAL_PACKAGES, DEFAULT_MODEL };
+module.exports = { localEngine, deepgramEngine, toMono16k, quietestCut, LOCAL_PACKAGES, DEFAULT_MODEL };

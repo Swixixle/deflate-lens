@@ -225,7 +225,22 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
     // 2. YouTube: a video link in the episode's notes, or a search by title when yt-dlp is installed
     let video = item.youtube ? { id: YT.videoId(item.youtube), via: "a link in the episode notes" } : null;
     if (!video) {
-      tried.push({step:"youtube search",error:"No video is linked from this episode. A title-only search cannot establish which video belongs to it; trying the episode’s own page and audio."});
+      // A title alone does not identify a video (clips, compilations and other episodes share words). A search result
+      // is taken only when it carries the episode's whole title AND its length matches the episode's within five
+      // percent (at least two minutes: podcast audio carries ads the video does not; measured on JRE #2308 and #2180,
+      // both 299 s longer than the video). Several such results are re-uploads of the same recording; the first is used.
+      const want = norm(item.title);
+      if (!item.duration || want.length < 12) tried.push({ step: "youtube search", error: "no video is linked from this episode, and its " + (!item.duration ? "length is not given" : "title is too short") + " to identify one by search" });
+      else {
+        const rows = await YT.searchVideo(item.title + " " + (located.show && located.show.name || ""), env, runFn).catch(e => { tried.push({ step: "youtube search", error: e.message }); return []; });
+        if (rows === null) tried.push({ step: "youtube search", error: "needs yt-dlp (brew install yt-dlp); not installed" });
+        else {
+          const tol = Math.max(120, item.duration * 0.05);
+          const fits = rows.filter(v => Number.isFinite(v.duration) && Math.abs(v.duration - item.duration) <= tol && (" " + norm(v.title) + " ").includes(" " + want + " "));
+          if (fits.length) { const v = fits[0], off = Math.round(Math.abs(v.duration - item.duration) / 60); video = { id: v.id, via: "a YouTube search: “" + v.title + "” (" + (v.channel || "unknown channel") + "), with the episode's full title and a length within " + (off < 1 ? "a minute" : off + " min") + " of it; confirm it is the same episode" }; }
+          else tried.push({ step: "youtube search", error: rows.length ? "no result had both the episode's full title and its length" : "no results" });
+        }
+      }
     }
     if (video && video.id) {
       step("YouTube", "reading captions (" + video.via + ")");

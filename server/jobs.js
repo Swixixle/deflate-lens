@@ -6,7 +6,7 @@ const path = require("path");
 const crypto = require("crypto");
 function createJobs({ dataDir }) {
   const dir = path.join(dataDir, "jobs"), jobs = new Map();
-  const view = (j, state = j.state) => ({ id:j.id, kind:j.kind, state, startedAt:j.startedAt, finishedAt:j.finishedAt || "", input:j.input, steps:j.steps, progress:j.progress || null, result:state === "done" ? j.result : null, error:j.error || null, runId:j.runId || "", acknowledgedAt:j.acknowledgedAt || "" });
+  const view = (j, state = j.state) => ({ id:j.id, kind:j.kind, state, startedAt:j.startedAt, finishedAt:j.finishedAt || "", input:j.input, steps:j.steps, progress:j.progress || null, result:state === "done" ? j.result : null, resultKind:j.resultKind || "", error:j.error || null, runId:j.runId || "", acknowledgedAt:j.acknowledgedAt || "" });
   async function persist(v) { await fs.mkdir(dir,{recursive:true}); const tmp=path.join(dir,v.id+"."+crypto.randomBytes(6).toString("hex")+".tmp"); await fs.writeFile(tmp,JSON.stringify(v,null,2)); await fs.rename(tmp,path.join(dir,v.id+".json")); }
   const ready = (async () => {
     await fs.mkdir(dir,{recursive:true});
@@ -22,6 +22,7 @@ function createJobs({ dataDir }) {
         await persist(j);
       }
       if (j.state === "running") { j.state="interrupted"; j.error={code:"interrupted",message:"The server stopped before the fetch finished. Start the link again."}; await persist(j); }
+      if (!j.resultKind) j.resultKind = j.result && j.result.kind || "";
       delete j.result; j.diskOnly=true; jobs.set(j.id,j);
     }
   })();
@@ -34,7 +35,7 @@ function createJobs({ dataDir }) {
     j.saved=ready.then(()=>persist(view(j)));
     const finish=async(state,result,error)=>{
       if(ctl.signal.aborted){state="cancelled";result=null;}
-      j.result=result; j.error=error; j.finishedAt=new Date().toISOString();
+      j.result=result; j.resultKind=result && result.kind || ""; j.error=error; j.finishedAt=new Date().toISOString();
       try { await persist(view(j,state)); j.state=state; j.result=null; j.diskOnly=true; }
       catch(e){j.state="error";j.error={code:"save_failed",message:"Could not save this fetch: "+e.message};}
     };
