@@ -139,6 +139,9 @@ const fakeYtdlp = async (cmd, a) => {
     await page.locator(".notice.source button:has-text('Check source')").click();
     const head = await page.locator("#run-head").boundingBox(), notices = await page.locator("#notices").boundingBox();
     await page.screenshot({ path: path.join(out, "5-source-check.png"), clip: { x: head.x - 24, y: head.y - 16, width: head.width + 48, height: notices.y + notices.height - head.y + 32 } });
+    await page.setViewportSize({ width: 390, height: 844 }); await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: path.join(out, "9-phone-source-check.png"), fullPage: false });
+    await page.setViewportSize({ width: 1280, height: 860 });
     // a phone: the same reading at the fifth-grade level, and Controls
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator("#readingsBtn").click(); await page.locator("#runList button").filter({ hasText: "Cold showers" }).first().click();
