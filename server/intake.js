@@ -5,7 +5,9 @@ const { transcriptToText } = require("./podcast/transcripts");
 
 // Trim only material outside a clearly labelled dialogue. Keep every word between the first
 // speaker and an explicit end marker; the original upload is saved separately by the store.
-function cleanText(raw) {
+/* `opts.captions === false` (used when an already-saved run is read again) leaves caption syntax alone, so a run saved
+   before caption conversion existed is never re-parsed, renumbered or made stale by a newer parser. */
+function cleanText(raw, opts) {
   const original = String(raw || "");
   let text = original.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").trim();
   if (!text) throw Object.assign(new Error("Upload a transcript or paste something to read."), { status: 400 });
@@ -14,9 +16,9 @@ function cleanText(raw) {
   if (/^[\[{]/.test(text)) {
     let data; try { data = JSON.parse(text); } catch (_) {}
     if (data && typeof data.transcript === "string") text = data.transcript.trim();
-    else if (data && (Array.isArray(data) || Array.isArray(data.segments) || Array.isArray(data.events) || Array.isArray(data.utterances))) { text = transcriptToText(text, "application/json", "upload.json").text.trim(); converted = "JSON transcript"; }
+    else if (!(opts && opts.captions === false) && data && (Array.isArray(data) || Array.isArray(data.segments) || Array.isArray(data.events) || Array.isArray(data.utterances))) { text = transcriptToText(text, "application/json", "upload.json").text.trim(); converted = "JSON transcript"; }
     else if (data && typeof data === "object") throw Object.assign(new Error("This JSON file has no transcript text to read. Upload the transcript file instead."), { status: 400, code: "no_transcript" });
-  } else if (/^WEBVTT/.test(text) || /^\d+\s*\n\s*\d{1,2}:\d{2}:\d{2},\d{3}\s+-->/.test(text)) {
+  } else if (!(opts && opts.captions === false) && (/^WEBVTT/.test(text) || /^\d+\s*\n\s*\d{1,2}:\d{2}:\d{2},\d{3}\s+-->/.test(text))) {
     // A caption file (.vtt, .srt): timings, cue numbers and tags are dropped, voice tags become "NAME:" lines, and
     // YouTube's rolling captions keep each line once. The upload itself is kept unchanged with the run.
     const out = transcriptToText(text, /^WEBVTT/.test(text) ? "text/vtt" : "application/x-subrip", "upload");

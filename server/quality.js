@@ -34,10 +34,28 @@ function attributionGate(b) {
   return { status: "held", method: "Speaker labels have not finished preparation." };
 }
 
-function contentIssues(a, p, turns, overrides, kind) {
+const CONTRACT = require("../shared/prompts").CONTRACT;
+const OLD_EMPIRICAL = ["fact", "contested", "unsupported"];
+/* `contract` is the reading contract the analysis was written under (recorded on its model call). Records written
+   before 0.12 have none and keep the rules they were accepted under; the consistency rules below apply to reading-2. */
+function contentIssues(a, p, turns, overrides, kind, contract) {
   const oversized = a.truncated && (a.truncated.asSaid || a.truncated.claims);
   a = shared.sanitizeAnalysis(a);
   const issues = [];
+  if (contract === CONTRACT) {
+    if (a.claims.some(c => OLD_EMPIRICAL.includes(c.type))) issues.push("an empirical claim was labelled true or false from memory; it must be a checkable claim");
+    if (kind === "claim") {
+      if (a.judgments.inference !== "n/a") issues.push("a single typed claim has no reasoning to judge");
+    } else {
+      if (!a.jump.present && a.jump.pivot) issues.push("no concern was raised, so there can be no pivot");
+      if (!a.jump.present && a.judgments.inference === "gap") issues.push("a reasoning gap is recorded although no concern was raised");
+      if (!a.jump.present && ["yes", "partly"].includes(a.revision.jumpSurvives)) issues.push("a concern that was never raised cannot stand in the final assessment");
+      if (a.jump.present && (!a.jump.hs || !a.jump.g5)) issues.push("the concern needs both reading levels");
+      if (a.jump.present && !["yes", "partly", "no"].includes(a.revision.jumpSurvives)) issues.push("the final assessment does not say whether the concern stands");
+      if (a.jump.present && a.revision.jumpSurvives === "no" && a.judgments.inference === "gap") issues.push("a concern withdrawn after the fair reading cannot remain the final judgment");
+      if (!a.revision.hs || !a.revision.g5) issues.push("the final assessment needs both reading levels");
+    }
+  }
   const levels = (x, name) => { if (!x || !x.hs || !x.g5) issues.push(name + " needs both reading levels"); };
   levels(a.deflated, "plain reading");
   if (a.jump.present || a.jump.hs || a.jump.g5) levels(a.jump, "challenge");
@@ -83,6 +101,7 @@ function repairQuotes(a, p, turns, overrides) {
 }
 
 function readingGate(b, p) {
+  if (p.status === "error" && p.held) return { status: "held", reasons: p.held.issues.length ? p.held.issues.slice() : ["The reading did not pass its checks."] };
   if (!p.analysis || p.status !== "done") return { status: "pending", reasons: ["The reading is still being prepared."] };
   const reasons = (p.stale || []).slice();
   if (attributionGate(b).status !== "ready") reasons.push("Speaker labels are still unresolved.");
@@ -94,7 +113,7 @@ function readingGate(b, p) {
     p.analysis.judgments.evidence === "n/a" && p.analysis.judgments.inference === "n/a";
   if (personOnly) return { status: reasons.length ? "held" : "ready", reasons, method: "Your typed claim, ready to search; not an AI explanation." };
   const turns = shared.parseTranscript(b.transcript, { mode: b.run.parseMode || "transcript" });
-  reasons.push(...contentIssues(p.analysis, p, turns, b.run.provenance && b.run.provenance.overrides || {}, b.run.kind));
+  reasons.push(...contentIssues(p.analysis, p, turns, b.run.provenance && b.run.provenance.overrides || {}, b.run.kind, p.provenance && p.provenance.contract));
   const review = p.provenance && p.provenance.review;
   if (!review || !review.approved || review.analysisHash !== analysisHash(p.analysis)) reasons.push("This reading has not passed the preparation review.");
   return { status: reasons.length ? "held" : "ready", reasons: [...new Set(reasons)], method: "Quotes, reading levels and a separate model review checked before display; empirical sources remain separate." };

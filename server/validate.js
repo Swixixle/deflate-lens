@@ -31,9 +31,27 @@ function validateRunDoc(doc, ctx) {
     const i = doc.import && typeof doc.import === "object" ? doc.import : null;
     out.import = i ? { url: str(i.url, 2000), title: str(i.title, 300), fetchedAt: str(i.fetchedAt, 40), chars: Number(i.chars) || 0, method: str(i.method, 40) } : null;
     // where a fetched transcript came from (the chain's record), kept as the page received it, within bounds
-    if (i && i.source && typeof i.source === "object") { const s = i.source; out.import.source = { kind: str(s.kind, 40), url: str(s.url, 2000), note: str(s.note, 500), format: str(s.format, 40), engine: str(s.engine, 40), model: str(s.model, 120), requestId: str(s.requestId, 120), reader: str(s.reader, 40), automatic: !!s.automatic, durationSeconds: Number(s.durationSeconds) || 0, show: str(i.show, 300), episode: str(i.episode, 300), matchedBy: str(i.matchedBy, 300), speakers: Array.isArray(i.speakers) ? i.speakers.map(x => str(x, 40)).slice(0, 40) : [] }; }
+    if (i && i.source && typeof i.source === "object") { const s = i.source; out.import.source = { kind: str(s.kind, 40), url: str(s.url, 2000), note: str(s.note, 500), format: str(s.format, 40), engine: str(s.engine, 40), model: str(s.model, 120), requestId: str(s.requestId, 120), reader: str(s.reader, 40), automatic: !!s.automatic, durationSeconds: Number(s.durationSeconds) || 0, videoTitle: str(s.videoTitle, 300), language: str(s.language, 20), show: str(i.show, 300), episode: str(i.episode, 300), matchedBy: str(i.matchedBy, 300), speakers: Array.isArray(i.speakers) ? i.speakers.map(x => str(x, 40)).slice(0, 40) : [] }; }
+    // how the source was identified: "direct" (the link, the feed or the show named it) or "needs_confirmation" (found by
+    // a title/length search or a title lookup), with the comparison a person needs to check it. Absent on older records,
+    // which the page calls "not recorded" (never confirmed after the fact).
+    if (i && ["direct", "needs_confirmation"].includes(i.identity)) out.import.identity = i.identity;
+    if (i && i.match && typeof i.match === "object") out.import.match = validateMatch(i.match);
+    if (i && Array.isArray(i.ambiguous) && i.ambiguous.length) out.import.ambiguous = i.ambiguous.map(x => str(x, 300)).slice(0, 10);
+    if (i && i.episodeInfo && typeof i.episodeInfo === "object") out.import.episodeInfo = { title: str(i.episodeInfo.title, 300), durationSeconds: Number(i.episodeInfo.durationSeconds) || 0, pubDate: str(i.episodeInfo.pubDate, 60), link: isUrl(i.episodeInfo.link) ? str(i.episodeInfo.link, 2000) : "" };
   }
   if ("provenance" in doc) out.provenance = validateProvenance(doc.provenance, ctx);
+  return out;
+}
+
+function validateMatch(m) {
+  const vid = v => v && typeof v === "object" ? { id: /^[A-Za-z0-9_-]{11}$/.test(String(v.id)) ? String(v.id) : "", url: isUrl(v.url) ? str(v.url, 2000) : "", title: str(v.title, 300), channel: str(v.channel, 200), durationSeconds: Number(v.durationSeconds) || 0 } : null;
+  const out = { method: ["youtube-search", "episode-notes-link", "title-lookup"].includes(m.method) ? m.method : "other", basis: str(m.basis, 200) };
+  if (m.episode && typeof m.episode === "object") out.episode = { title: str(m.episode.title, 300), durationSeconds: Number(m.episode.durationSeconds) || 0 };
+  if (m.video) out.video = vid(m.video);
+  if (m.found && typeof m.found === "object") out.found = { show: str(m.found.show, 300), title: str(m.found.title, 300) };
+  for (const k of ["toleranceSeconds", "differenceSeconds", "passing"]) if (m[k] != null) out[k] = Number(m[k]) || 0;
+  if (Array.isArray(m.alternatives)) out.alternatives = m.alternatives.slice(0, 3).map(vid).filter(Boolean);
   return out;
 }
 
@@ -75,6 +93,8 @@ function validatePassageDoc(doc, turnsCount, ctx) {
   if (Array.isArray(doc.history)) out.history = doc.history;
   if (Array.isArray(doc.adopted)) out.adopted = doc.adopted;
   if (doc.rerun && typeof doc.rerun === "object") out.rerun = doc.rerun;
+  // why the last attempt at this reading was held (server-written; a page save carries back what it loaded)
+  if (doc.held && typeof doc.held === "object" && Array.isArray(doc.held.issues)) out.held = { issues: doc.held.issues.map(x => str(x, 300)).slice(0, 6), at: str(doc.held.at, 40), callId: str(doc.held.callId, 80), kept: !!doc.held.kept };
   if (out.status === "done") {
     if (!out.analysis) throw bad("a passage marked done needs an analysis");
     const a = out.analysis, missing = [];

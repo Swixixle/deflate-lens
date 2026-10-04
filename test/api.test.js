@@ -83,10 +83,10 @@ test("full workflow with mock model, persistence across restart, staleness, expo
 
     // exports
     const ej = await s.api("GET", "/api/runs/" + id + "/export.json");
-    assert.equal(ej.status, 200); assert.equal(ej.data.schema, "deflate-lens/claims@0.5"); assert.ok(ej.data.statusMeaning.receipt.includes("not verification")); assert.equal(ej.data.claims.length, 2, "mock emits one unscorable and one empirical claim per passage"); assert.equal(ej.data.run.source.url, "https://example.org/ep1");
+    assert.equal(ej.status, 200); assert.equal(ej.data.schema, "deflate-lens/claims@0.6"); assert.ok(ej.data.statusMeaning.receipt.includes("not verification")); assert.equal(ej.data.claims.length, 2, "mock emits one unscorable and one empirical claim per passage"); assert.equal(ej.data.run.source.url, "https://example.org/ep1");
     assert.match(ej.headers.get("content-disposition"), /attachment/);
     const em = await s.api("GET", "/api/runs/" + id + "/export.md");
-    assert.equal(em.status, 200); assert.match(String(em.data), /# Test run — deflated/);
+    assert.equal(em.status, 200); assert.match(String(em.data), /^# Test run\n/);
     const exj = (await s.api("GET", "/api/runs/pilot-jre2308/export.json")).data;
     assert.equal(exj.claims.length, 60); assert.equal(exj.run.example, true); assert.equal(exj.claims.filter(c => c.status === "receipt").length, 6);
 

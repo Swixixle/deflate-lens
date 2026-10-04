@@ -3,7 +3,7 @@ const shared = require("../shared/transcript");
 const P = require("../shared/prompts");
 const Q = require("./quality");
 const V = require("./validate");
-const { newId, nowISO, autoTitle } = require("./store");
+const { newId, nowISO, autoTitle, sha256 } = require("./store");
 const { cleanText } = require("./intake");
 const { obligationFor } = require("./research");
 const { prepareSpeakers, callModel, reviewedReading, reviewedOverview, claimAnalysis } = require("./preparation");
@@ -15,6 +15,24 @@ function requestedBasis(b, patterns) {
     basis.passagesSig = b.passages.filter(p => p.readingGate.status === "ready" && !p.stale.length).map(p => p.id + "@" + (p.analyzedAt || "")).join(",");
   }
   return basis;
+}
+/* What one reading is made from: the passage turns, plus up to two neighbouring turns on each side for interpretation
+   (shared.readingContext), the same text for the generation and its review. The context record (turn ids, speakers,
+   omissions, size, version, and a hash of the exact text sent) goes on the model call and from there onto the passage.
+   The automatic reading and a reread from a card both use this one function. */
+function readingMaterial(b, p) {
+  if (b.run.kind === "claim") {
+    const text = b.transcript;
+    return { purpose: "claim", prompt: P.claim(b.run, text), source: "CLAIM (typed by a person):\n" + text, context: null };
+  }
+  const turns = shared.parseTranscript(b.transcript, { mode: b.run.parseMode }), ov = b.run.provenance.overrides;
+  const target = shared.fmtTurns(turns, ov, p.turnStart, p.turnEnd);
+  const ctx = shared.readingContext(turns, ov, p.turnStart, p.turnEnd, { turns: 2, chars: 4000 });
+  const source = (ctx.beforeText ? "CONTEXT BEFORE (for interpretation only):\n" + ctx.beforeText + "\n\n" : "") + "PASSAGE (turns " + p.turnStart + "–" + p.turnEnd + "):\n" + target +
+    (ctx.afterText ? "\n\nCONTEXT AFTER (for interpretation only):\n" + ctx.afterText : "") +
+    (ctx.record.omitted.length ? "\n\nNot shown (too long): " + ctx.record.omitted.map(o => "turn " + o.turn).join(", ") : "");
+  return { purpose: "deflate", prompt: P.deflate(b.run, p, target, { beforeText: ctx.beforeText, afterText: ctx.afterText, omitted: ctx.record.omitted }), source,
+    context: Object.assign({}, ctx.record, { hash: sha256(source) }) };
 }
 function stopped() { return Object.assign(new Error("Reading stopped. Prepared readings have been kept."), { code: "cancelled" }); }
 function plainError(e) {
@@ -31,15 +49,23 @@ function plainError(e) {
 // write checks the input and job under the store lock, so a stopped job cannot publish late.
 function createReader({ store, getAI, searchClaim, research }) {
   const jobs = new Map();
-  async function start(id) {
+  /* opts (all optional, from a person's request in Controls or a card's Evidence): reread = a passage id to read again
+     even though it is prepared; overview = write the closing overview again; resegment = organize the passages again.
+     A plain start (Read this) reads whatever is not prepared yet. */
+  async function start(id, opts) {
+    opts = opts || {};
+    const asked = !!(opts.reread || opts.overview || opts.resegment);
     const previous = jobs.get(id);
-    if (previous && !previous.controller.signal.aborted) { await previous.init; return store.bundle(id); }
-    const job = { id: newId("read"), controller: new AbortController(), inputHash: "", attrSig: "" };
+    if (previous && !previous.controller.signal.aborted) {
+      if (asked) throw Object.assign(new Error("A reading is already running. Wait for it to finish, or press Stop first."), { status: 409, code: "reading_running" });
+      await previous.init; return store.bundle(id);
+    }
+    const job = { id: newId("read"), controller: new AbortController(), inputHash: "", attrSig: "", opts };
     jobs.set(id, job);
     job.init = (async () => {
       let b = await store.bundle(id);
       if (!b || b.run.example) throw Object.assign(new Error(b ? "Copy this example to prepare it." : "Reading not found."), { status: b ? 403 : 404 });
-      const c = cleanText(b.transcript), doc = {};
+      const c = cleanText(b.transcript, { captions: false }), doc = {};
       const imp = b.run.import;
       if (imp && imp.url) {
         doc.sourceUrl = imp.url;
@@ -51,9 +77,10 @@ function createReader({ store, getAI, searchClaim, research }) {
         await store.repairIntake(id, c.text, doc, c.original, Object.assign(c.record, { source: (b.run.intake && b.run.intake.source) || "saved-input", at: nowISO() }), b.run.input.sha256);
         b = await store.bundle(id);
       }
+      if (opts.reread && !b.passages.some(p => p.id === opts.reread)) throw Object.assign(new Error("That passage is no longer part of this reading."), { status: 404, code: "stale_reading" });
       job.inputHash = b.run.input.sha256; job.attrSig = b.attrSig;
-      await store.saveProcessing(id, { id: job.id, status: "running", phase: "starting", message: "Preparing your reading…", startedAt: nowISO(), finishedAt: null, inputHash: job.inputHash,
-        done: 0, total: b.passages.length, issues: [], error: null });
+      await store.saveProcessing(id, { id: job.id, status: "running", phase: "starting", message: opts.reread ? "Reading this passage again…" : opts.overview ? "Writing the overview again…" : opts.resegment ? "Organizing the passages again…" : "Preparing your reading…", startedAt: nowISO(), finishedAt: null, inputHash: job.inputHash,
+        done: 0, total: b.passages.length, issues: [], error: null, request: asked ? { reread: opts.reread || "", overview: !!opts.overview, resegment: !!opts.resegment } : null });
       return b;
     })();
     job.done = job.init.then(() => execute(id, job)).catch(async e => {
@@ -129,14 +156,14 @@ function createReader({ store, getAI, searchClaim, research }) {
 
   async function patterns(id, job, ai, b) {
     if (b.passages.length < 2) return;
-    if (b.summary && b.summary.readingGate.status === "ready") return;
+    if (b.summary && b.summary.readingGate.status === "ready" && !job.opts.overview) return;
     const ready = b.passages.filter(p => p.readingGate.status === "ready");
     if (ready.length !== b.passages.length) return; // Never call a partial interview a whole-run pattern.
-    await update(id, job, { phase: "overview", message: "Checking what repeats across the interview…" });
+    await update(id, job, { phase: "overview", message: "Writing the overview…" });
     const basis = await store.captureCallBasis(id, requestedBasis(b, true), "patterns"), prompt = P.patterns(b.run, ready);
-    const res = await reviewedOverview({ai,store,b,prompt,basis,signal:job.controller.signal});
+    const res = await reviewedOverview({ai,store,b,prompt,basis,signal:job.controller.signal,contract:P.CONTRACT});
     await check(id,job);
-    await store.saveSummary(id,Object.assign(res.data,{callId:res.provenance.callId,createdAt:nowISO(),passagesCounted:ready.length,leftOut:[],model:res.model||ai.model,by:ai.mock?"MOCK":ai.model}),options(job));
+    await store.saveSummary(id,Object.assign(res.data,{callId:res.provenance.callId,createdAt:nowISO(),passagesCounted:ready.length,leftOut:[],model:res.model||ai.model,by:ai.mock?"MOCK":ai.model,contract:P.CONTRACT}),options(job));
   }
 
   async function execute(id, job) {
@@ -159,30 +186,33 @@ function createReader({ store, getAI, searchClaim, research }) {
     }
     b = await check(id, job);
     const process = b.run.processing;
-    if (b.run.kind !== "claim" && !(process.segmentationHash === job.inputHash && process.segmentationAttr === job.attrSig && b.passages.length) &&
-        !(b.passages.length && b.passages.every(p => p.readingGate.status === "ready"))) {
+    if (b.run.kind !== "claim" && (job.opts.resegment || !(process.segmentationHash === job.inputHash && process.segmentationAttr === job.attrSig && b.passages.length) &&
+        !(b.passages.length && b.passages.every(p => p.readingGate.status === "ready")))) {
       await segment(id, job, ai, b); b = await check(id, job);
     }
     const issues = [];
-    const needs = p => p.readingGate.status !== "ready" || b.run.kind === "claim" && p.analysis.by === "person";
+    const needs = p => p.readingGate.status !== "ready" || b.run.kind === "claim" && p.analysis.by === "person" || p.id === job.opts.reread;
     for (const item of b.passages.filter(needs)) {
       const current = await check(id, job), p = current.passages.find(x => x.id === item.id);
       if (!p) throw Object.assign(new Error("The cards changed."), { code: "stale_reading" });
       const done = current.passages.filter(x => x.readingGate.status === "ready" && !(current.run.kind === "claim" && x.analysis.by === "person")).length;
-      await update(id, job, { phase: "reading", done, total: current.passages.length, message: "Reading and checking " + (done + 1) + " of " + current.passages.length + "…" });
-      const purpose = current.run.kind === "claim" ? "claim" : "deflate";
+      const position = current.passages.findIndex(x => x.id === p.id) + 1;
+      await update(id, job, { phase: "reading", done, total: current.passages.length, current: p.id, message: current.run.kind === "claim" ? "Reading the claim…" : p.id === job.opts.reread ? "Reading passage " + position + " of " + current.passages.length + " again…" : "Reading passage " + position + " of " + current.passages.length + "…" });
+      const m = readingMaterial(current, p), purpose = m.purpose;
       const basis = await store.captureCallBasis(id, requestedBasis(current), purpose);
-      const turns = shared.parseTranscript(current.transcript, { mode: current.run.parseMode });
-      const prompt = purpose === "claim" ? P.claim(current.run, current.transcript) : P.deflate(current.run, p, shared.fmtTurns(turns, current.run.provenance.overrides, p.turnStart, p.turnEnd));
       try {
-        const res = await reviewedReading({ ai, store, b: current, p, purpose, prompt, basis, signal: job.controller.signal });
+        const res = await reviewedReading({ ai, store, b: current, p, purpose, prompt: m.prompt, basis, signal: job.controller.signal, source: m.source, contract: P.CONTRACT, context: m.context });
         await check(id, job);
-        await store.savePassage(id, p.id, Object.assign({}, p, { analysis: purpose === "claim" ? claimAnalysis(res.data, current) : res.data, status: "done", analyzedAt: nowISO(), analyzedBy: ai.mock ? "MOCK" : ai.model,
-          model: res.model || ai.model, usage: res.usage, callId: res.provenance.callId, error: "" }), Object.assign(options(job), { expectedReadingRev: p.readingRev || 0 }));
+        await store.savePassage(id, p.id, Object.assign({}, p, { analysis: purpose === "claim" ? claimAnalysis(res.data, current, P.CONTRACT) : res.data, status: "done", analyzedAt: nowISO(), analyzedBy: ai.mock ? "MOCK" : ai.model,
+          model: res.model || ai.model, usage: res.usage, callId: res.provenance.callId, error: "", held: null }), Object.assign(options(job), { expectedReadingRev: p.readingRev || 0 }));
       } catch (e) {
         if (e.code !== "reading_held") throw e;
-        issues.push({ passage: p.id, code: e.code, message: e.message });
-        await store.savePassage(id, p.id, Object.assign({}, p, { status: "error", error: e.code }), Object.assign(options(job), { expectedReadingRev: p.readingRev || 0 }));
+        const held = { issues: e.issues && e.issues.length ? e.issues : ["The separate review did not approve the draft."], at: nowISO(), callId: e.callId || "" };
+        // A reread a person asked for that fails keeps the ready reading it was meant to replace, with the failed attempt
+        // noted; it is not counted as held material. Anything else that fails is held and says why.
+        const keep = p.id === job.opts.reread && p.readingGate.status === "ready";
+        if (!keep) issues.push({ passage: p.id, code: e.code, message: e.message, reasons: held.issues });
+        await store.savePassage(id, p.id, Object.assign({}, p, keep ? { held: Object.assign(held, { kept: true }) } : { status: "error", error: e.code, held }), Object.assign(options(job), { expectedReadingRev: p.readingRev || 0 }));
       }
     }
     b = await check(id, job);
@@ -206,4 +236,4 @@ function createReader({ store, getAI, searchClaim, research }) {
   }
   return { start, stop, recover, jobs };
 }
-module.exports = { createReader, requestedBasis };
+module.exports = { createReader, requestedBasis, readingMaterial };

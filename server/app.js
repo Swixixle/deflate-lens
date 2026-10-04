@@ -18,7 +18,8 @@ const Q = require("./quality");
 const { assignSpeakers } = require("./assign");
 const { prepareSpeakers, reviewedReading, reviewedOverview } = require("./preparation");
 const { createClaimSearch } = require("./claim-search");
-const { createReader } = require("./reading");
+const { createReader, readingMaterial } = require("./reading");
+const P = require("../shared/prompts");
 const { readInput } = require("./intake");
 
 /* createApp({ dataDir, ai, research, examplesDir, envPath }) -> { app, store, state, ready }
@@ -149,7 +150,9 @@ function createApp(opts) {
       if (job.state !== "done" || !["transcript", "article"].includes(result.kind)) throw Object.assign(new Error("This fetch has no transcript ready to read."), {status:409});
       const input = job.input || {}, src = result.source || {};
       const show = result.show && result.show.name || "", title = result.episode && result.episode.title || result.title || "";
-      const doc = Object.assign({title, sourceLabel:(show ? show + (title ? " — " : "") : "") + title}, input.context || {}, {sourceUrl:input.url, speakers:[], import:{url:input.url, title, fetchedAt:result.fetchedAt || job.finishedAt, chars:result.text.length, method:result.kind === "article" ? "page text" : "transcript: " + src.kind, source:src, show, episode:title, matchedBy:result.matchedBy || "", speakers:result.speakers || []}});
+      const doc = Object.assign({title, sourceLabel:(show ? show + (title ? " — " : "") : "") + title}, input.context || {}, {sourceUrl:input.url, speakers:[], import:{url:input.url, title, fetchedAt:result.fetchedAt || job.finishedAt, chars:result.text.length, method:result.kind === "article" ? "page text" : "transcript: " + src.kind, source:src, show, episode:title, matchedBy:result.matchedBy || "", speakers:result.speakers || [],
+        identity:result.kind === "article" ? "direct" : (result.identity || "direct"), match:result.match || null, ambiguous:result.ambiguous || null,
+        episodeInfo:result.episode ? {title:result.episode.title || "", durationSeconds:result.episode.duration || 0, pubDate:result.episode.pubDate || "", link:result.episode.link || ""} : null}});
       if (!doc.title) delete doc.title;
       const prepared = await readInput(result.text, doc, importer);
       const rid = input.targetRunId || "r_" + id;
@@ -196,6 +199,14 @@ function createApp(opts) {
   }));
   app.post("/api/runs/:id/read", wrap(async (req, res) => { res.status(202).json(await reader.start(req.params.id)); }));
   app.post("/api/runs/:id/stop", wrap(async (req, res) => { res.json(await reader.stop(req.params.id)); }));
+  /* Optional requests from Controls or a card's Evidence. Each runs the same server job as Read this, with the same prompt,
+     context, review and checks; the page never builds a reading prompt of its own. */
+  app.post("/api/runs/:id/passages/:pid/reread", wrap(async (req, res) => { if (!/^p\d{3}$/.test(req.params.pid)) return res.status(400).json({ error: "invalid passage id" }); res.status(202).json(await reader.start(req.params.id, { reread: req.params.pid })); }));
+  app.post("/api/runs/:id/overview", wrap(async (req, res) => { res.status(202).json(await reader.start(req.params.id, { overview: true })); }));
+  app.post("/api/runs/:id/reorganize", wrap(async (req, res) => { res.status(202).json(await reader.start(req.params.id, { resegment: true })); }));
+  app.post("/api/runs/:id/source/confirm", wrap(async (req, res) => { await store.confirmSource(req.params.id, req.body && req.body.sourceUrl); res.json(await store.bundle(req.params.id)); }));
+  /* The User Guide: one Markdown file, shown in the app and readable on GitHub. */
+  app.get("/guide.md", (req, res) => { res.type("text/markdown; charset=utf-8"); res.sendFile(path.join(__dirname, "..", "docs", "guide.md")); });
   app.get("/api/runs/:id/original-input.txt", wrap(async (req, res) => {
     const run = await store.getRun(req.params.id);
     if (!run || !run.intake || !/^input[A-Za-z0-9_-]+\.txt$/.test(run.intake.file || "")) return res.status(404).json({error:"No original upload is stored for this reading."});
@@ -379,7 +390,10 @@ function createApp(opts) {
       if (Q.attributionGate(b).status !== "ready") throw Object.assign(new Error("Speaker preparation must finish before a reading is made."), { status: 409, code: "attribution_held" });
       const basis = await store.captureCallBasis(runId, basedOn, purpose);
       if (!basis || basis.origin === "unknown" || basis.inputHash !== b.run.input.sha256 || basis.attrSig !== b.attrSig) throw Object.assign(new Error("Reload the current input before preparing the reading."), { status: 409, code: "input_changed" });
-      return res.json(await reviewedReading({ ai, store, b, p, purpose, prompt, signal: ctl.signal, basis }));
+      // the reading is built here from the saved input, exactly as the automatic reading builds it; a prompt sent by the
+      // page is not used, so no client can read a passage under older or different instructions
+      const m = readingMaterial(b, p);
+      return res.json(await reviewedReading({ ai, store, b, p, purpose, prompt: m.prompt, signal: ctl.signal, basis, source: m.source, contract: P.CONTRACT, context: m.context }));
     }
     if (runId && purpose === "patterns") {
       const b = await store.bundle(runId);
@@ -388,7 +402,7 @@ function createApp(opts) {
       const basis = await store.captureCallBasis(runId,basedOn,purpose);
       const ready = b.passages.filter(p=>p.readingGate.status==="ready");
       if (!basis || basis.origin==="unknown" || Q.attributionGate(b).status!=="ready") throw Object.assign(new Error("Prepare the current reading first."),{status:409,code:"input_changed"});
-      return res.json(await reviewedOverview({ai,store,b,prompt:require("../shared/prompts").patterns(b.run,ready),basis,signal:ctl.signal}));
+      return res.json(await reviewedOverview({ai,store,b,prompt:P.patterns(b.run,ready),basis,signal:ctl.signal,contract:P.CONTRACT}));
     }
     const call = { callId: newId("call"), at: new Date().toISOString(), purpose: String(purpose || "").replace(/[^a-z0-9_]/gi, "").slice(0, 40), runId: typeof runId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(runId) ? runId : "", provider: ai.kind, modelRequested: ai.model, mock: !!ai.mock,
       promptHash: sha256(prompt), promptChars: prompt.length, images: imgs.map(im => ({ mediaType: String(im && im.mediaType || ""), sha256: crypto.createHash("sha256").update(String(im && im.data || ""), "base64").digest("hex") })), json: !!json };

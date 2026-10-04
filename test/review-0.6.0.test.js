@@ -197,11 +197,14 @@ test("F6: an empty analysis cannot become a finished card, in either mode", asyn
   } finally { await s.close(); fs.rmSync(dataDir, { recursive: true, force: true }); }
 });
 
-test("F7: the patterns prompt carries the defense and tells the model to respect the revised judgment", () => {
-  const app = fs.readFileSync(path.join(__dirname, "..", "shared", "prompts.js"), "utf8");
-  const src = app.slice(app.indexOf("P.patterns = function"), app.indexOf("P.transcribe"));
-  assert.match(src, /In fairness to the speaker \(the strongest defense, from the quoted words\): " \+ \(a\.defense && a\.defense\.hs/);
-  assert.match(src, /respect the revised judgment/); assert.match(src, /Where it jumps \(the critique\)/); assert.match(src, /the revised judgment; jump survives/);
+test("F7: the overview prompt is built from each card's fair reading and final assessment, marks a withdrawn concern, and allows no recurring concern", () => {
+  const P = require("../shared/prompts");
+  const card = (id, survives) => ({ id, title: "T" + id, turnStart: 0, turnEnd: 1, analysis: { deflated: { hs: "plain " + id }, defense: { hs: "fair reading " + id }, jump: { present: !!survives, hs: "concern " + id }, revision: { jumpSurvives: survives, hs: "final " + id }, claims: [] } });
+  const prompt = P.patterns({}, [card("p001", "no"), card("p002", "")]);
+  assert.match(prompt, /A fair reading: fair reading p001/); assert.match(prompt, /final p001/);
+  assert.match(prompt, /the initial concern was withdrawn/); assert.match(prompt, /no concern was raised/);
+  assert.doesNotMatch(prompt, /concern p001/, "an initial concern is not handed to the overview as a finding");
+  assert.match(prompt, /Reporting no recurring concern is a correct and common answer/);
 });
 
 test("N1: editing a typed claim makes the new wording the claim; the old reading and its evidence are kept apart; an explanation of the old wording is refused", async () => {

@@ -286,6 +286,9 @@ test("youtube search: a result is used only with the episode's full title and a 
   let w = await words([["ClipClipClp", "Ep 1: No transcript (best moment) | The Test Show", "Test Clips", "640"], ["OtherEpisod", "Ep 11: No transcript — The Test Show", "The Test Show", "3590"], ["FullEpisode", "The Test Show — Ep 1: No transcript", "The Test Show", "3480"]]);
   assert.equal(w.ok, true, JSON.stringify(w.tried)); assert.equal(w.source.kind, "youtube-captions"); assert.equal(w.source.url, "https://www.youtube.com/watch?v=FullEpisode");
   assert.match(w.source.note, /full title and a length within 2 min of it; confirm it is the same episode/);
+  // the comparison a person needs is kept with the result, and the match is marked as needing their confirmation
+  assert.equal(w.identity, "needs_confirmation"); assert.equal(w.match.method, "youtube-search"); assert.equal(w.match.toleranceSeconds, 180);
+  assert.deepEqual(w.match.episode, { title: "Ep 1: No transcript", durationSeconds: 3600 }); assert.equal(w.match.video.id, "FullEpisode"); assert.equal(w.match.video.durationSeconds, 3480); assert.equal(w.match.differenceSeconds, 120);
   // only the clip and the other episode: nothing is used, and the chain moves on
   w = await words([["ClipClipClp", "Ep 1: No transcript (best moment)", "Test Clips", "640"], ["OtherEpisod", "Ep 11: No transcript", "The Test Show", "3600"]]);
   assert.equal(w.ok, false); assert.ok(w.tried.some(t => t.step === "youtube search" && /full title and its length/.test(t.error)));

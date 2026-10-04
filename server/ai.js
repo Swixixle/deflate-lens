@@ -74,7 +74,35 @@ function createMockAI() {
         data = { approved: true, issues: [] }; // fixture-only; the UI still labels every output as MOCK
       } else
       if (p.startsWith("Transcribe all text")) return { text: "[MOCK transcription] no image reader in mock mode", usage: null, model: "mock" };
-      else if (p.startsWith("You are a deflation reader grading ONE claim")) {
+      else if (p.startsWith("Help a reader understand this passage accurately.") && p.includes("This is ONE claim exactly as a person typed it")) {
+        // reading-2, one typed claim: a checkable claim, never graded true or false; no reasoning to judge
+        const claim = (p.split("The claim:\n")[1] || "").trim();
+        data = { deflated: { hs: "MOCK plain version of: " + claim, g5: "MOCK simple version of: " + claim }, type: "claim", basis: { hs: "MOCK: a checkable claim; mock mode checks nothing.", g5: "MOCK: something you could check." }, wouldSettle: "MOCK: a real model run.", settle: { hs: "MOCK: what would check it (high school).", g5: "MOCK: what would check it (fifth grade)." }, expectedSources: ["academic_paper"], searchQuery: "MOCK query " + claim.split(" ").slice(0, 3).join(" "), judgments: { evidence: "n/a", inference: "n/a" } };
+      } else if (p.startsWith("Help a reader understand this passage accurately.")) {
+        // reading-2, one passage. Only the PASSAGE turns are read (context turns are for interpretation, never quoted).
+        // A turn containing "That shows" or "so everyone" gets a concern whose pivot is quoted verbatim and which partly
+        // stands after the fair reading; anything else stands as said. This exercises both card shapes; it is not a reading.
+        const body = (p.split(/\nPASSAGE \(turns [^\n]*\n/)[1] || "").split(/\n\nCONTEXT AFTER|\nNot shown: /)[0];
+        const t = turnsFrom(body); const first = t[0] || { i: 0, label: "SPEAKER", text: "" };
+        const quote = first.text.split(" ").slice(0, 12).join(" ");
+        const hit = t.find(x => /\b(That shows|so everyone)\b/.test(x.text));
+        const pivot = hit ? (hit.text.match(/\b(?:That shows|so everyone)\b[^.?!]*/) || [""])[0].split(" ").slice(0, 10).join(" ") : "";
+        data = {
+          asSaid: [{ turn: first.i, speaker: first.label, quote }].concat(hit && hit.i !== first.i ? [{ turn: hit.i, speaker: hit.label, quote: hit.text.split(" ").slice(0, 14).join(" ") }] : []),
+          deflated: { hs: "MOCK plain words (high school): " + quote, g5: "MOCK plain words (fifth grade): " + quote },
+          fidelity: { grade: "faithful", notes: { hs: "MOCK: no fidelity check was performed.", g5: "MOCK: not checked." } },
+          jump: hit ? { present: true, pivot, hs: "MOCK concern (high school): the conclusion after \u201c" + pivot + "\u201d reaches past the reasons given.", g5: "MOCK concern (fifth grade): the ending says more than the reasons show." } : { present: false, pivot: "", hs: "MOCK: no concern raised in mock mode.", g5: "MOCK: no concern." },
+          defense: { hs: "MOCK fair reading (high school): the strongest reasonable sense of these words.", g5: "MOCK fair reading (fifth grade): the best way to understand what was meant." },
+          revision: hit ? { jumpSurvives: "partly", hs: "MOCK what follows (high school): part of the concern stands; the narrower point holds.", g5: "MOCK what follows (fifth grade): the small point holds; the big one needs more." } : { jumpSurvives: "", hs: "MOCK what follows (high school): the point stands as stated.", g5: "MOCK what follows (fifth grade): the point stands." },
+          claims: [
+            { text: "MOCK claim from turn " + first.i, speaker: first.label, type: "unscorable", plain: { hs: "MOCK plain (high school).", g5: "MOCK plain (fifth grade)." }, basis: { hs: "MOCK basis.", g5: "MOCK basis." }, status: "unchecked", wouldSettle: "A real model run.", settle: { hs: "MOCK: a real model run would say.", g5: "MOCK: a real run." } },
+            { text: "MOCK checkable claim from turn " + first.i + " (exists so the source search can be exercised without a model)", speaker: first.label, type: "claim", plain: { hs: "MOCK plain claim (high school).", g5: "MOCK plain claim (fifth grade)." }, basis: { hs: "MOCK: no support is given in this passage.", g5: "MOCK: the passage does not show support." }, status: "unchecked", wouldSettle: "MOCK: a study.", settle: { hs: "MOCK: a study (high school).", g5: "MOCK: a study (fifth grade)." }, expectedSources: ["academic_paper"], searchQuery: "mock query " + first.i },
+          ],
+          judgments: { evidence: "n/a", inference: hit ? "gap" : "n/a" }
+        };
+      } else if (p.startsWith("Below are the final readings of")) {
+        data = { patterns: [], survived: { hs: "MOCK: the closing overview is not computed in mock mode.", g5: "MOCK: not computed." } };
+      } else if (p.startsWith("You are a deflation reader grading ONE claim")) {
         const claim = (p.split("The claim:\n")[1] || "").trim();
         data = { deflated: { hs: "MOCK plain version of: " + claim, g5: "MOCK simple version of: " + claim }, type: "unsupported", basis: { hs: "MOCK: typed as unsupported because mock mode knows nothing.", g5: "MOCK basis." }, wouldSettle: "MOCK: a real model run.", settle: { hs: "MOCK: what would settle it (senior high).", g5: "MOCK: what would settle it (fifth grade)." }, expectedSources: ["academic_paper"], searchQuery: "MOCK query " + claim.split(" ").slice(0, 3).join(" "), hidden: [], judgments: { evidence: "n/a", inference: "n/a" } };
       } else if (p.startsWith("You are checking speaker attribution")) {

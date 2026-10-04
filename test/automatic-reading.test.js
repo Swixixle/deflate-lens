@@ -42,7 +42,7 @@ test("one upload request prepares all readings, an independently reviewed overvi
   for (const p of b.passages) {
     assert.equal(p.readingGate.status, "ready"); assert.equal(p.quoteCheck.matched, p.quoteCheck.quotes);
     assert.ok(p.provenance.review.approved); assert.ok(p.analysis.deflated.hs); assert.ok(p.analysis.deflated.g5);
-    const c = p.analysis.claims.find(c => c.type === "fact");
+    const c = p.analysis.claims.find(c => c.type === "claim");
     assert.equal(c.candidates.length, 2); assert.ok(c.searches.length); assert.equal(c.receipts.length, 0, "search results are not automatically accepted as proof");
   }
   assert.equal(b.summary.readingGate.status, "ready"); assert.equal(b.summary.provenance.review.approved, true);
@@ -101,7 +101,7 @@ test("a bare claim searches without a model key, then gains a reviewed explanati
 
 test("repeated start requests share one job and retrying a finished reading does not generate or search it again", async t => {
   const entered = deferred(), release = deferred(), mock = createMockAI(); let generations = 0;
-  const ai = { ...mock, async sample(args) { if (args.prompt.startsWith("You are a deflation reader")) { generations++; entered.resolve(); await release.promise; } return mock.sample(args); } };
+  const ai = { ...mock, async sample(args) { if (args.prompt.startsWith("Help a reader understand this passage")) { generations++; entered.resolve(); await release.promise; } return mock.sample(args); } };
   const s = await fixture(t, { ai });
   const r = await s.api("POST", "/api/intake", { input: transcript }); const id = r.data.run.id;
   await entered.promise;
@@ -114,7 +114,7 @@ test("repeated start requests share one job and retrying a finished reading does
 
 test("refreshing the page does not cancel work, while Stop prevents a late provider answer from becoming a reading", async t => {
   const entered = deferred(), release = deferred(), mock = createMockAI();
-  const s = await fixture(t, { ai: { ...mock, async sample(args) { if (args.prompt.startsWith("You are a deflation reader")) { entered.resolve(); await release.promise; } return mock.sample(args); } } });
+  const s = await fixture(t, { ai: { ...mock, async sample(args) { if (args.prompt.startsWith("Help a reader understand this passage")) { entered.resolve(); await release.promise; } return mock.sample(args); } } });
   const r = await s.api("POST", "/api/intake", { input: transcript }), id = r.data.run.id;
   await entered.promise;
   assert.equal((await s.api("GET", "/api/runs/" + id)).data.run.processing.status, "running");
@@ -125,7 +125,7 @@ test("refreshing the page does not cancel work, while Stop prevents a late provi
 
 test("an input edit during reading is detected before commit, and one retry uses the edited input", async t => {
   const entered = deferred(), release = deferred(), mock = createMockAI(); let first = true;
-  const s = await fixture(t, { ai: { ...mock, async sample(args) { if (first && args.prompt.startsWith("You are a deflation reader")) { first = false; entered.resolve(); await release.promise; } return mock.sample(args); } } });
+  const s = await fixture(t, { ai: { ...mock, async sample(args) { if (first && args.prompt.startsWith("Help a reader understand this passage")) { first = false; entered.resolve(); await release.promise; } return mock.sample(args); } } });
   const r = await s.api("POST", "/api/intake", { input: transcript }), id = r.data.run.id;
   await entered.promise;
   const edited = transcript.replace(/discussing/g, "examining");
@@ -142,7 +142,7 @@ test("an unresolved attribution stops the automatic flow before segmentation and
   const s = await fixture(t, { ai: { ...mock, async sample(args) { prompts.push(args.prompt); const out = await mock.sample(args); if (/^(Prepare transcript|Review transcript speaker)/.test(args.prompt)) { out.data.decisions[0].status = "uncertain"; out.data.decisions[0].speaker = ""; } return out; } } });
   const r = await s.api("POST", "/api/intake", { input: transcript }), b = await s.finish(r.data.run.id);
   assert.equal(b.run.processing.status, "held"); assert.equal(b.passages.length, 0);
-  assert.ok(!prompts.some(p => p.startsWith("You are a deflation reader") || p.startsWith("Split this transcript")));
+  assert.ok(!prompts.some(p => p.startsWith("Help a reader understand this passage") || p.startsWith("Split this transcript")));
   assert.match(b.run.processing.message, /reliable speaker labels/);
 });
 
@@ -168,7 +168,7 @@ test("existing imports with menu titles and a leftover source are repaired and t
 
 test("a failed overview is held before display and retry fixes only the overview, preserving the prepared cards", async t => {
   const mock = createMockAI(); let wrong = true, readings = 0;
-  const s = await fixture(t, { ai: { ...mock, async sample(args) { const out = await mock.sample(args); if (args.prompt.startsWith("You are a deflation reader")) readings++; if (wrong && args.prompt.startsWith("Below are the full results")) out.data.patterns[0].passages = ["p999"]; return out; } } });
+  const s = await fixture(t, { ai: { ...mock, async sample(args) { const out = await mock.sample(args); if (args.prompt.startsWith("Help a reader understand this passage")) readings++; if (wrong && args.prompt.startsWith("Below are the final readings of")) out.data.patterns = [{ title: { hs: "x", g5: "x" }, body: { hs: "x", g5: "x" }, passages: ["p999"] }]; return out; } } });
   const r = await s.api("POST", "/api/intake", { input: transcript }), id = r.data.run.id;
   let b = await s.finish(id); assert.equal(b.run.processing.status, "partial"); assert.equal(b.summary, null);
   assert.ok(b.passages.every(p => p.readingGate.status === "ready")); const revisions = b.passages.map(p => p.readingRev);
@@ -178,7 +178,7 @@ test("a failed overview is held before display and retry fixes only the overview
 
 test("a stopped provider call cannot overwrite a newer resumed job or its completed readings", async t => {
   const mock = createMockAI(), entered = deferred(), release = deferred();
-  const s = await fixture(t, { ai: { ...mock, async sample(args) { if (args.prompt.startsWith("You are a deflation reader")) { entered.resolve(); await release.promise; } return mock.sample(args); } } });
+  const s = await fixture(t, { ai: { ...mock, async sample(args) { if (args.prompt.startsWith("Help a reader understand this passage")) { entered.resolve(); await release.promise; } return mock.sample(args); } } });
   const r = await s.api("POST", "/api/intake", { input: transcript }), id = r.data.run.id;
   await entered.promise; const old = s.reader.jobs.get(id);
   await s.api("POST", "/api/runs/" + id + "/stop", {}); s.state.ai = mock;

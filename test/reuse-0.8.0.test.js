@@ -80,7 +80,7 @@ test("input record: the server hashes the text, binds every reading to the hash 
     b = (await s.api("PUT", "/api/runs/" + id, { run: {}, transcript: T1 })).data; assert.ok(!b.summary.stale.includes("transcript changed since the patterns were found"));
     // the export carries the hashes and the verifier checks them against a file
     const exp = (await s.api("GET", "/api/runs/" + id + "/export.json")).data;
-    assert.equal(exp.schema, "deflate-lens/claims@0.5"); assert.equal(exp.run.transcript.sha256, sha(T1)); assert.equal(exp.run.transcript.earlierVersions.length, 4); assert.equal(exp.passages[0].basedOn.inputHash, sha(T1));
+    assert.equal(exp.schema, "deflate-lens/claims@0.6"); assert.equal(exp.run.transcript.sha256, sha(T1)); assert.equal(exp.run.transcript.earlierVersions.length, 4); assert.equal(exp.passages[0].basedOn.inputHash, sha(T1));
     const ok = verify(exp, T1); assert.equal(ok.transcriptMatches, true); assert.equal(ok.passages[0].where, "read from exactly this text");
     const no = verify(exp, T2); assert.equal(no.transcriptMatches, false); assert.match(no.passages[0].where, /not name|earlier version/);
     const crlf = verify(exp, T1.replace(/\n/g, "\r\n")); assert.equal(crlf.transcriptMatches, false, "a changed line ending is a changed text");

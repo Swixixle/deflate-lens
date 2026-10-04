@@ -124,7 +124,7 @@ test("a checked reading passes only after server review; a later forged or modif
 test("a quote's uniquely identifiable turn and speaker are corrected before the first response", async t => {
   const mock = createMockAI();
   const ai = Object.assign({}, mock, { sample: async o => {
-    const r = await mock.sample(o); if (o.prompt.startsWith("You are a deflation reader")) r.data.asSaid = [{ turn: 99, speaker: "B", quote: "Plants are greener this year." }]; return r;
+    const r = await mock.sample(o); if (o.prompt.startsWith("Help a reader understand this passage")) r.data.asSaid = [{ turn: 99, speaker: "B", quote: "Plants are greener this year." }]; return r;
   } });
   const f = await fixture(t, ai); let b = await run(f);
   b = (await f.api("POST", "/api/runs/" + b.run.id + "/prepare-speakers", {})).data; b = await passage(f, b);
@@ -138,7 +138,7 @@ test("a quote's uniquely identifiable turn and speaker are corrected before the 
 test("a missing quote triggers one automatic repair and still cannot be approved by a model vote", async t => {
   const mock = createMockAI(); let generations = 0;
   const ai = Object.assign({}, mock, { sample: async o => {
-    const r = await mock.sample(o); if (o.prompt.startsWith("You are a deflation reader")) { generations++; if (generations === 1) r.data.asSaid[0].quote = "Words that nobody said."; } return r;
+    const r = await mock.sample(o); if (o.prompt.startsWith("Help a reader understand this passage")) { generations++; if (generations === 1) r.data.asSaid[0].quote = "Words that nobody said."; } return r;
   } });
   const f = await fixture(t, ai); let b = await run(f);
   b = (await f.api("POST", "/api/runs/" + b.run.id + "/prepare-speakers", {})).data; b = await passage(f, b);
@@ -174,7 +174,7 @@ test("model output cannot attach invented evidence as a person's source decision
   const mock = createMockAI();
   const ai = Object.assign({}, mock, { sample: async o => {
     const r = await mock.sample(o);
-    if (o.prompt.startsWith("You are a deflation reader")) { r.data.claims[0].receipts = [{ url: "https://example.org/invented", note: "Model attached this", relation: "supports" }]; r.data.claims[0].status = "receipt"; }
+    if (o.prompt.startsWith("Help a reader understand this passage")) { r.data.claims[0].receipts = [{ url: "https://example.org/invented", note: "Model attached this", relation: "supports" }]; r.data.claims[0].status = "receipt"; }
     return r;
   } });
   const f = await fixture(t, ai); let b = await run(f);

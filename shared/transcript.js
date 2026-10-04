@@ -302,6 +302,32 @@
     return out.join("\n");
   }
 
+  /* Neighbouring turns for interpreting a passage: up to `turns` speaking turns on each side (nearest first, before and
+     after in turn), whole turns only, within `chars` extra characters in total. A turn that does not fit is listed as
+     omitted rather than cut mid-sentence. Context is for interpretation only: quotes and claims come from the target.
+     Returns the text blocks and a record (turn ids, speakers, omissions, size, version) for the passage's provenance;
+     the text itself is bound to the transcript hash the reading records, so it is not stored twice. */
+  var CONTEXT_VERSION = "context-1";
+  function readingContext(turns, overrides, from, to, opts) {
+    var limit = (opts && opts.chars) || 4000, per = (opts && opts.turns) || 2;
+    var line = function (t) { return "[" + t.i + "] " + effSpeaker(t, overrides) + ": " + t.text; };
+    var before = [], after = [], omitted = [], used = 0;
+    var b = from - 1, a = to + 1, nb = 0, na = 0;
+    var nextB = function () { while (b >= 0 && turns[b] && turns[b].heading) b--; return b >= 0 && turns[b] ? turns[b] : null; };
+    var nextA = function () { while (a < turns.length && turns[a] && turns[a].heading) a++; return a < turns.length && turns[a] ? turns[a] : null; };
+    while (nb < per || na < per) {
+      var progressed = false;
+      if (nb < per) { var tb = nextB(); if (tb) { var lb = line(tb); if (used + lb.length + 1 <= limit) { before.unshift(tb); used += lb.length + 1; } else omitted.push({ turn: tb.i, side: "before", chars: lb.length }); b--; nb++; progressed = true; } else nb = per; }
+      if (na < per) { var ta = nextA(); if (ta) { var la = line(ta); if (used + la.length + 1 <= limit) { after.push(ta); used += la.length + 1; } else omitted.push({ turn: ta.i, side: "after", chars: la.length }); a++; na++; progressed = true; } else na = per; }
+      if (!progressed) break;
+    }
+    var beforeText = before.map(line).join("\n"), afterText = after.map(line).join("\n");
+    return {
+      beforeText: beforeText, afterText: afterText,
+      record: { version: CONTEXT_VERSION, before: before.map(function (t) { return { turn: t.i, speaker: effSpeaker(t, overrides) }; }), after: after.map(function (t) { return { turn: t.i, speaker: effSpeaker(t, overrides) }; }), omitted: omitted, chars: used, limit: limit }
+    };
+  }
+
   function chunkRanges(turns, maxChars) {
     var ranges = [], start = 0, size = 0;
     for (var i = 0; i < turns.length; i++) {
@@ -378,5 +404,13 @@
     return out;
   }
 
-  return { parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, chunkRanges: chunkRanges, carryOver: carryOver };
+  /* What a reader sees for a claim type. Every empirical type is shown as "Checkable claim": a model's memory does not
+     decide whether an assertion is true. Records from before 0.12 keep their saved type ("fact", "contested",
+     "unsupported"); `historicalType` names it so a details view can attribute it to the earlier model. */
+  var EMPIRICAL = ["claim", "fact", "contested", "unsupported"];
+  var TYPE_LABELS = { claim: "Checkable claim", interpretation: "Interpretation", value: "Value judgment", image: "Image or comparison", unscorable: "Too vague to check as stated" };
+  function claimTypeLabel(type) { return EMPIRICAL.indexOf(type) !== -1 ? TYPE_LABELS.claim : (TYPE_LABELS[type] || "Claim"); }
+  function historicalType(type) { return ["fact", "contested", "unsupported"].indexOf(type) !== -1 ? type : ""; }
+
+  return { claimTypeLabel: claimTypeLabel, historicalType: historicalType, EMPIRICAL_TYPES: EMPIRICAL, parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, readingContext: readingContext, CONTEXT_VERSION: CONTEXT_VERSION, chunkRanges: chunkRanges, carryOver: carryOver };
 });

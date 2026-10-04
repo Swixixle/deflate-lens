@@ -42,7 +42,21 @@ function sha256(s) { return crypto.createHash("sha256").update(String(s == null 
    record was made. Readings are bound to this hash; the export carries it; scripts/verify-export.js recomputes it. */
 function inputRecord(text, parseMode, at) { const t = String(text == null ? "" : text); return { sha256: sha256(t), chars: t.length, bytes: Buffer.byteLength(t, "utf8"), parseMode: parseMode === "text" ? "text" : "transcript", recordedAt: at || nowISO() }; }
 /* The fields of a call record a reading keeps. */
-function provenanceOf(call) { const keep = {}; ["callId", "at", "purpose", "runId", "provider", "modelRequested", "modelReturned", "requestId", "stopReason", "usage", "latencyMs", "promptHash", "promptChars", "outputHash", "images", "mock", "error", "basedOn", "review"].forEach(k => { if (call[k] !== undefined) keep[k] = call[k]; }); keep.recorded = true; return keep; }
+function provenanceOf(call) { const keep = {}; ["callId", "at", "purpose", "runId", "provider", "modelRequested", "modelReturned", "requestId", "stopReason", "usage", "latencyMs", "promptHash", "promptChars", "outputHash", "images", "mock", "error", "basedOn", "review", "contract", "context"].forEach(k => { if (call[k] !== undefined) keep[k] = call[k]; }); keep.recorded = true; return keep; }
+
+/* The source a run's text came from, and whether its identity is direct, needs a person's check, or was confirmed by one.
+   Computed here so every tab, the export and a reopened run agree. A confirmation counts only for the source it named. */
+function sourceUrlOf(imp) { return imp ? (imp.source && imp.source.url) || imp.url || "" : ""; }
+function sourceIdentity(run) {
+  const imp = run.import;
+  if (!imp) return { state: "none" };
+  const url = sourceUrlOf(imp);
+  const conf = run.sourceConfirmation && run.sourceConfirmation.sourceUrl === url ? run.sourceConfirmation : null;
+  const legacySearch = !imp.identity && imp.source && /YouTube search/i.test(imp.source.note || "");
+  const state = imp.identity === "needs_confirmation" || legacySearch ? (conf ? "confirmed" : "needs_confirmation") : imp.identity === "direct" ? "direct" : "not_recorded";
+  return { state, sourceUrl: url, sourceKind: imp.source && imp.source.kind || "", match: imp.match || null, confirmation: conf, ambiguous: imp.ambiguous || null, legacy: !imp.identity,
+    label: state === "needs_confirmation" ? (imp.match && imp.match.method === "title-lookup" ? "Episode matched by title" : "Video matched by title and length") + " — check source" : state === "confirmed" ? "Source match confirmed by you on " + String(conf.at).slice(0, 10) : "" };
+}
 
 function unknownBasis() { return { transcriptUpdatedAt: "", inputHash: "", attrSig: "", origin: "unknown" }; }
 function passagesSignature(passages) { return passages.filter(p => p.status === "done").map(p => p.id + "@" + (p.analyzedAt || "")).join(","); }
@@ -287,6 +301,7 @@ class Store {
       if (passages.some(p => used.has(p.id) && p.stale.length)) summary.stale.push("a card it was based on is stale");
     }
     const b = { run, transcript, passages, summary, attachments, attrSig: sig };
+    b.sourceIdentity = sourceIdentity(run);
     b.attributionGate = Q.attributionGate(b);
     for (const p of passages) p.readingGate = Q.readingGate(b, p);
     if (summary) {
@@ -298,6 +313,23 @@ class Store {
     }
     return b;
   }
+
+  /* A person's statement that the selected source is the episode they meant. Refused when the source shown to them is not
+     the current one (another tab replaced it), and only for a source that was matched rather than named directly. It is
+     their assertion about the match; it says nothing about the transcript's accuracy or the claims in it. */
+  async confirmSource(id, shownUrl) { return this.withLock(id, async () => {
+    const run = await this.getRun(id);
+    if (!run || run.example) throw Object.assign(new Error("This reading cannot be changed."), { status: run ? 403 : 404 });
+    const idn = sourceIdentity(run);
+    if (!["needs_confirmation", "confirmed"].includes(idn.state)) throw Object.assign(new Error("This source was named directly; there is no match to confirm."), { status: 409, code: "nothing_to_confirm" });
+    if (String(shownUrl || "") !== idn.sourceUrl) throw Object.assign(new Error("The source changed since this page was loaded. Look at the current source before confirming."), { status: 409, code: "source_changed" });
+    if (idn.state === "confirmed") return;
+    const m = run.import.match || {};
+    run.sourceConfirmation = { by: "person at this computer", at: nowISO(), sourceUrl: idn.sourceUrl, videoId: m.video && m.video.id || "", episodeTitle: m.episode && m.episode.title || run.import.episode || "",
+      statement: "The person said this source is the intended episode. This is not a check of the transcript or its claims." };
+    delete run.id; run.updatedAt = nowISO();
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
+  }); }
 
   async commitPreparation(id, basis, preparation) { return this.withLock(id, async () => {
     const run = await this.getRun(id), transcript = await this.getTranscript(id);
@@ -408,7 +440,18 @@ class Store {
     const incoming = V.validateRunDoc(doc, { turns: this.parseFor(cur, futureText), speakerKeys: ((doc && doc.speakers) || cur.speakers || []).map(s => String(s.key || "").toUpperCase()) });
     // server-owned fields: a client cannot overwrite the records the server keeps on the run
     ["orphans", "provenanceHistory", "transcriptUpdatedAt", "createdAt", "example", "copiedFrom", "copiedAt", "kind", "parseMode", "input", "inputHistory"].forEach(k => delete incoming[k]);
+    // how the text was acquired is written by the server's import, never by a page save
+    if (!serverRecord) delete incoming.import;
     const next = Object.assign({}, cur, incoming);
+    if (serverRecord && incoming.import && cur.import) {
+      // a new acquisition replaces the old one; the old record is kept, and a person's confirmation of the old source
+      // does not carry over to a different source
+      next.importHistory = (cur.importHistory || []).concat([{ import: cur.import, replacedAt: nowISO() }]).slice(-50);
+      if (cur.sourceConfirmation && sourceUrlOf(incoming.import) !== cur.sourceConfirmation.sourceUrl) {
+        next.sourceConfirmationHistory = (cur.sourceConfirmationHistory || []).concat([Object.assign({}, cur.sourceConfirmation, { invalidatedAt: nowISO(), why: "the source was replaced" })]);
+        delete next.sourceConfirmation;
+      }
+    }
     if (serverRecord && serverRecord.transcriptJobId) next.transcriptJobId = serverRecord.transcriptJobId;
     // a model assignment of speaker names is a server record on the provenance; a client save never drops it
     if (incoming.provenance && cur.provenance && cur.provenance.assignment) { next.provenance = Object.assign({}, incoming.provenance, { assignment: cur.provenance.assignment, labelsOrigin: cur.provenance.labelsOrigin }); }
@@ -826,4 +869,4 @@ class Store {
   }
 }
 
-module.exports = { Store, nowISO, newId, ID_RE, hasRecords, mergeRecords, unionRecords, autoTitle, claimPassage, canonicalClaimText, inputRecord, sha256, leakScan, provenanceOf };
+module.exports = { sourceIdentity, Store, nowISO, newId, ID_RE, hasRecords, mergeRecords, unionRecords, autoTitle, claimPassage, canonicalClaimText, inputRecord, sha256, leakScan, provenanceOf };
