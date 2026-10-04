@@ -40,8 +40,8 @@ APIs (Crossref, PubMed, GDELT for news; OpenAlex with an optional key) and needs
      `npm run launch -- --port 4000` to choose a port, `npm start` to run without the launcher.
 5. **Check health yourself** if you want to confirm: `curl -s http://127.0.0.1:3123/api/health` returns `{"ok":true,…}`
    with `ai` null (no key yet) or the model name, and `version`.
-6. **Use the app.** Upload or paste into the initial box and press **Read this**. A podcast or video link (Apple Podcasts, Spotify, YouTube, an RSS feed, an episode page) is handled the same way: the page fetches the transcript itself and the reading starts when the words arrive. Do not ask the person to confirm labels, split passages, select cards, or generate patterns; those steps run automatically. The one-time key prompt continues the whole job. Completed transcript fetches survive a closed page and are imported once. An unfinished transcript fetch after a server restart is reported as interrupted and must be started again. Reading processing runs on the server across browser refreshes; Stop preserves prepared work and Read this resumes. Detailed controls are optional and closed.
-7. **Present the address** to the person. The supplied example opens without a key, but its old readings are held until preparation passes. A pasted claim can be searched without a key; **Copy and read this example** starts model preparation and asks for the key when needed.
+6. **Use the app.** Upload or paste into the box and press **Read this**. A podcast or video link (Apple Podcasts, Spotify, YouTube, an RSS feed, an episode page) is handled the same way: the page fetches the transcript itself and the reading starts when the words arrive. Do not ask the person to confirm labels, split passages, select cards, or generate patterns; those steps run automatically. The one-time key prompt continues the whole job. Completed transcript fetches survive a closed page and are imported once. An unfinished transcript fetch after a server restart is reported as interrupted and must be started again. Reading processing runs on the server across browser refreshes; Stop preserves prepared work and Read this resumes. Optional controls are in the closed **Controls** panel; saved readings are under **Readings**; the User Guide is linked from Controls (`docs/guide.md`).
+7. **Present the address** to the person. The supplied example opens without a key (under Readings), but its old readings are held until preparation passes. A pasted claim can be searched without a key; **Copy and read this example** starts model preparation and asks for the key when needed.
 
 ## The API key
 
@@ -71,11 +71,12 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 
 ## Checks you can run
 
-- `npm test` — 153 regression tests, no external network or key; uses local HTTP servers.
+- `npm test` — the regression tests, no external network or key; uses local HTTP servers.
 - `npm run doctor` — prints what is configured without printing secrets.
 - `npm run transcript-smoke` — hits Apple's catalogue, two podcast feeds and YouTube for the transcript chain (needs network; `-- --local` also transcribes a five-minute episode with the local engine).
 - `npm run research-smoke` — hits the live Crossref and PubMed services for two example claims (needs network).
-- `node scripts/ui-check.js` — optional headless-browser check; `npm run screenshots` regenerates the README pictures. Both need `npm install --no-save playwright && npx playwright install chromium` first.
+- `npm run ui-check` — headless-browser acceptance check; `npm run screenshots` regenerates the README pictures. Both need `npm install --no-save playwright && npx playwright install chromium` first.
+- `npm run eval` — reads the evaluation cases in `eval/cases.json` with the person's key and writes a scoring sheet under `data/eval/`. It costs money on their key (roughly $2–3 at current list prices); run it only when they ask.
 
 `docs/technical.md` has the details behind all of this: how readings are checked, every record kept, and what was and was not verified.
 
@@ -84,4 +85,4 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 - Do not run `npm install` to "upgrade"; `npm ci` from the lockfile is what setup does, deliberately.
 - Do not delete or rewrite `data/` or `.env` to fix a problem; ask first. Both hold the person's work.
 - Do not expose the server beyond localhost (`HOST=0.0.0.0`) unless the person asks and understands there is no login.
-- Do not describe a link as "read" or a claim as "verified": the app itself does not, and its exports say what each status means.
+- Do not describe a link as "read" or a claim as "verified": the app itself does not, and its exports say what each status means. Do not confirm a matched source on the person's behalf; that confirmation is their statement.

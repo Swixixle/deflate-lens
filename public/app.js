@@ -1061,7 +1061,7 @@ function ctlReading(){
   if (!r) { s.append(h("p",{class:"hint",text:"Start a reading to see its options."})); return s; }
   if (readOnly()) { s.append(h("p",{class:"hint",text:"The supplied example is read-only. Copy it to read it with your key."})); return s; }
   var busy = running();
-  if (!allReadyAndCurrent()) s.append(action("Read this", "Reads what is not ready yet. Ready readings stay as they are.", function(){ closeDrawer("controls", true); startReading(); }, busy));
+  if (!allReadyAndCurrent()) s.append(action("Read this", "Reads what is not ready yet, billed to your model key. Ready readings stay as they are.", function(){ closeDrawer("controls", true); startReading(); }, busy));
   if (!isClaimRun() && S.b.passages.length >= 2) s.append(action("Write the closing overview again", "One overview and one review, billed to your model key. The current overview is replaced; the old one is kept in the run's archive folder.", function(){ request(API.overview, "Writing the overview again…"); }, busy || !S.b.passages.every(isReady)));
   if (!isClaimRun()) {
     var adv = disclosure("ctl-adv-" + r.id, "Passage preparation", "ctl-adv");
