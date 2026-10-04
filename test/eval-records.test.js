@@ -76,12 +76,15 @@ test("eval: a draft the review rejected is kept with its complete reasons and th
   assert.deepEqual(p.attempts.map(x => x.shown), [false, true]);
   assert.ok(p.attempts[0].reasons.includes(LONG), "the whole reason, not cut");
   assert.equal(p.attempts[0].review.answer.approved, false); assert.ok(p.attempts[0].draft && p.attempts[0].draft.deflated, "the rejected draft itself is kept");
+  // the stand-in writes the same draft twice, so both reviews had the same prompt: each attempt must carry its own answer
+  assert.equal(p.attempts[0].review.callId === p.attempts[1].review.callId, false);
+  assert.deepEqual(p.attempts[1].review.answer, { approved: true, issues: [] }, "the second attempt's review approved it");
   assert.ok(Array.isArray(p.attempts[0].checks), "and the pointers are run on it too");
   let sheet = fs.readFileSync(path.join(out, "first", "scoring-sheet.md"), "utf8");
   assert.match(sheet, /\*\*Rejected before display\*\* \(1 of 2 attempts; full prompts and answers in exchanges\/sound-library\.jsonl\)/);
   const section = sheet.slice(sheet.indexOf("Rejected before display"));
   assert.ok(section.includes("- " + LONG), "the sheet prints the complete reason");
-  assert.match(section, /The separate review answered approved: false, with the issues above\./);
+  assert.match(section, /The separate review \(exchange \d+\) answered approved: false, with the issues above\./);
   assert.match(section, /\*\*High school\*\*\n\n- In plain words: MOCK/);
   assert.match(section, /Mechanical pointers for this draft: /);
   const ex = lines(path.join(out, "first", "exchanges", "sound-library.jsonl"));
@@ -98,6 +101,78 @@ test("eval: a draft the review rejected is kept with its complete reasons and th
   assert.match(sheet, /\*\*Rejected before display\*\* \(2 of 2 attempts;/);
   assert.equal(sheet.split("- " + LONG).length - 1, 2, "each rejected draft with its reason");
   assert.match(sheet, /_Attempt 2_ \(claim \(correction\), call /);
+});
+
+/* ---- pairing a call with its exchange (0.12.3): by prompt AND answer, each exchange used once ---- */
+const crypto = require("node:crypto");
+const { attemptsFor, pairer } = require("../scripts/eval-readings");
+const H = s => crypto.createHash("sha256").update(String(s)).digest("hex");
+function world() {
+  const calls = [], exchanges = []; let clock = 0;
+  const at = () => new Date(Date.UTC(2026, 9, 4, 6, 0, clock++)).toISOString();
+  // a model exchange as the eval logs it, and the call record the app writes for it
+  const send = (purpose, prompt, text, extra = {}) => {
+    const t = at(), n = exchanges.length + 1, data = (() => { try { return JSON.parse(text); } catch (e) { return null; } })();
+    exchanges.push({ n, at: t, kind: purpose, promptSha256: H(prompt), outputSha256: H(text), text, data, prompt, ...(extra.error ? { error: extra.error } : {}) });
+    const c = { callId: "call" + n, at: t, purpose, promptHash: H(prompt), outputHash: H(text), ...(extra.error ? { error: extra.error } : {}) };
+    calls.push(c); return c;
+  };
+  return { calls, exchanges, send };
+}
+const answer = (approved, issues) => JSON.stringify({ approved, issues });
+const draft = JSON.stringify({ deflated: { hs: "The claim says most people own a bicycle.", g5: "It says most people have a bike." }, type: "claim" });
+const claimRun = { run: { kind: "claim" } };
+
+test("eval pairing: identical review prompts with different decisions each keep their own answer", () => {
+  const w = world();
+  // the same draft twice, so both reviews get the same prompt; the first rejects, the second approves
+  const g1 = w.send("claim", "READ the claim", draft); const r1 = w.send("claim_review", "REVIEW " + draft, answer(false, ["too broad"]));
+  const g2 = w.send("claim", "READ the claim + fix: too broad", draft); const r2 = w.send("claim_review", "REVIEW " + draft, answer(true, []));
+  g1.review = { approved: false, callId: r1.callId, issues: ["too broad"] }; g2.review = { approved: true, callId: r2.callId, issues: [] };
+  // call records are written when a draft is decided, so the file's order is not the order of the calls
+  const shuffled = [r1, g1, r2, g2];
+  const a = attemptsFor({}, claimRun, shuffled, w.exchanges);
+  assert.deepEqual(a.map(x => x.shown), [false, true]);
+  assert.deepEqual(a.map(x => x.review.answer.approved), [false, true]);
+  assert.deepEqual(a.map(x => x.review.exchange), [2, 4]);
+  assert.deepEqual(a.map(x => x.exchange), [1, 3]);
+});
+
+test("eval pairing: identical review prompts rejected for different reasons keep each reason with its attempt", () => {
+  const w = world();
+  const g1 = w.send("claim", "READ", draft); const r1 = w.send("claim_review", "REVIEW " + draft, answer(false, ["reason A"]));
+  const g2 = w.send("claim", "READ + fix A", draft); const r2 = w.send("claim_review", "REVIEW " + draft, answer(false, ["reason B"]));
+  g1.review = { approved: false, callId: r1.callId, issues: ["reason A"] }; g2.review = { approved: false, callId: r2.callId, issues: ["reason B"] };
+  const a = attemptsFor({}, claimRun, w.calls, w.exchanges);
+  assert.deepEqual(a.map(x => x.review.answer.issues), [["reason A"], ["reason B"]]);
+  assert.deepEqual(a.map(x => x.reasons), [["reason A"], ["reason B"]]);
+  // the same prompt and the same answer twice: still one exchange each, in order
+  const v = world();
+  const h1 = v.send("claim", "READ", draft); const s1 = v.send("claim_review", "REVIEW " + draft, answer(false, ["same"]));
+  const h2 = v.send("claim", "READ + fix", draft); const s2 = v.send("claim_review", "REVIEW " + draft, answer(false, ["same"]));
+  h1.review = { approved: false, callId: s1.callId, issues: ["same"] }; h2.review = { approved: false, callId: s2.callId, issues: ["same"] };
+  assert.deepEqual(attemptsFor({}, claimRun, v.calls, v.exchanges).map(x => x.review.exchange), [2, 4]);
+});
+
+test("eval pairing: an unreadable review followed by a retry keeps both, and the retry's answer is the one that decided", () => {
+  const w = world();
+  const g1 = w.send("claim", "READ", draft);
+  const bad = w.send("claim_review", "REVIEW " + draft, "{\"approved\": tr", { error: "truncated" });
+  const retry = w.send("claim_review", "REVIEW " + draft + " Your previous answer could not be used", answer(false, ["first draft too broad"]));
+  g1.review = { approved: false, callId: retry.callId, issues: ["first draft too broad"] };
+  // the second draft's first review is unreadable too, with the identical prompt and a different broken answer
+  const g2 = w.send("claim", "READ + fix", draft);
+  const bad2 = w.send("claim_review", "REVIEW " + draft, "not json at all", { error: "invalid_json" });
+  const retry2 = w.send("claim_review", "REVIEW " + draft + " Your previous answer could not be used", answer(true, []));
+  g2.review = { approved: true, callId: retry2.callId, issues: [] };
+  const a = attemptsFor({}, claimRun, w.calls, w.exchanges);
+  assert.deepEqual(a.map(x => x.review.answer.approved), [false, true]);
+  assert.deepEqual(a.map(x => x.review.callId), [retry.callId, retry2.callId]);
+  assert.deepEqual(a[0].reviewCalls.map(z => [z.callId, z.error, z.decided, z.text]), [[bad.callId, "truncated", false, "{\"approved\": tr"], [retry.callId, "", true, undefined]]);
+  assert.deepEqual(a[1].reviewCalls.map(z => [z.callId, z.error, z.decided, z.text]), [[bad2.callId, "invalid_json", false, "not json at all"], [retry2.callId, "", true, undefined]]);
+  // a pairer shared across a case never hands the same exchange to two calls
+  const pair = pairer(w.exchanges), seen = w.calls.map(pair).map(x => x && x.n);
+  assert.deepEqual(seen, [1, 2, 3, 4, 5, 6]);
 });
 
 test("eval: with no model key nothing runs and nothing is substituted", async t => {

@@ -1,7 +1,8 @@
 "use strict";
 /* 0.12.2: the corrections from the first live evaluation. The reading and review prompts (contract reading-3) spell
    out the distinctions a simpler word must keep, keep claims and reported findings attributed, and keep the process off
-   the card; the consistency rules apply to reading-2 and reading-3 alike; a held reading keeps its complete reasons; the
+   the card; the consistency rules apply to reading-2 and reading-3 alike; a held reading keeps its reasons up to 2,000
+   characters each (the call record keeps them in full); the
    evaluation's pointers catch the failures the live run showed. The prompts are checked for wording, never for what a
    model will do with them: that is what npm run eval is for. */
 const test = require("node:test");
@@ -66,11 +67,12 @@ test("the consistency rules apply to reading-2 and reading-3 records alike, and 
   assert.equal(P.isNeutral("reading-1"), false);
 });
 
-test("a held reading keeps the review's complete reasons on the passage, the card, the run record and the export", async t => {
+test("a held reading keeps the review's reasons up to 2,000 characters on the passage, the card, the run record and the export; the call record keeps them in full", async t => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "deflate-0122-")); t.after(() => fs.rm(dir, { recursive: true, force: true }));
   const LONG = "jump.hs and jump.g5 (also revision): the draft's concern does not match the speaker's claim. " + "The speaker said something broader than the draft reports, and the draft sets up a different premise. ".repeat(6) + "END-OF-REASON";
   const mock = createMockAI();
-  const ai = { ...mock, async sample(args) { const pr = String(args.prompt || ""); if (pr.startsWith("Review this reading before it is shown") && !pr.includes("closing overview")) { const data = { approved: false, issues: [LONG] }; return { data, text: JSON.stringify(data), usage: null, model: "mock", stopReason: "end_turn" }; } return mock.sample(args); } };
+  const HUGE = "claims[0].plain.g5: " + "the simpler wording names a different group than the speaker did. ".repeat(40) + "TAIL";
+  const ai = { ...mock, async sample(args) { const pr = String(args.prompt || ""); if (pr.startsWith("Review this reading before it is shown") && !pr.includes("closing overview")) { const data = { approved: false, issues: [LONG, HUGE] }; return { data, text: JSON.stringify(data), usage: null, model: "mock", stopReason: "end_turn" }; } return mock.sample(args); } };
   const app = createApp({ dataDir: dir, examplesDir: dir, env: {}, envPath: path.join(dir, ".env"), ai, research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), run: async () => ({ code: 1, out: "" }) });
   await app.ready;
   const id = await app.store.createRun({ kind: "claim", title: "c" }, "Most people in the town own a bicycle.");
@@ -79,7 +81,10 @@ test("a held reading keeps the review's complete reasons on the passage, the car
   const b = await app.store.bundle(id), p = b.passages[0];
   const all = [].concat(p.held ? p.held.issues : [], p.readingGate.reasons || []);
   assert.ok(LONG.length > 600);
-  assert.ok(all.includes(LONG), "the reason is kept whole, not cut at 300 characters: " + JSON.stringify(all).slice(0, 200));
+  assert.ok(all.includes(LONG), "a 700-character reason is kept whole, not cut at 300 characters: " + JSON.stringify(all).slice(0, 200));
+  assert.ok(HUGE.length > 2000 && all.includes(HUGE.slice(0, 2000)) && !all.includes(HUGE), "the app keeps at most 2,000 characters of a reason");
+  const calls = (await fs.readFile(path.join(dir, "runs", id, "calls.jsonl"), "utf8")).trim().split("\n").map(JSON.parse);
+  assert.ok(calls.some(c => c.review && c.review.issues.includes(HUGE)), "the call record (which the evaluation reads) keeps the reason in full");
   const raw = JSON.parse(await fs.readFile(path.join(dir, "runs", id, "passages", "p001.json"), "utf8"));
   assert.ok(raw.held.issues.includes(LONG), "and so is the saved record");
   // the typed claim was ready from the person, so the failed reread keeps it and records the hold beside it

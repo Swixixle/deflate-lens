@@ -96,22 +96,46 @@ function kindOf(prompt) {
 function logged(ai, sink) {
   return Object.assign({}, ai, { async sample(args) {
     const prompt = String(args && args.prompt || ""), x = { n: sink.list.length + 1, at: new Date().toISOString(), kind: kindOf(prompt), promptSha256: sha(prompt), promptChars: prompt.length };
-    try { const out = await ai.sample(args); Object.assign(x, { text: out.text != null ? String(out.text) : JSON.stringify(out.data), data: out.data === undefined ? null : out.data, stopReason: out.stopReason || "", usage: out.usage || null, model: out.model || "" }); return out; }
-    catch (e) { Object.assign(x, { error: e.code || String(e && e.message || e), text: e && e.text != null ? String(e.text) : "", data: null, stopReason: e && e.meta && e.meta.stopReason || "" }); throw e; }
+    // outputSha256 is computed exactly as the app computes a call's outputHash, so a call and its exchange can be paired
+    // by what was sent and what came back (pairer)
+    try { const out = await ai.sample(args); Object.assign(x, { text: out.text != null ? String(out.text) : JSON.stringify(out.data), outputSha256: sha(out.text || JSON.stringify(out.data)), data: out.data === undefined ? null : out.data, stopReason: out.stopReason || "", usage: out.usage || null, model: out.model || "" }); return out; }
+    catch (e) { Object.assign(x, { error: e.code || String(e && e.message || e), text: e && e.text != null ? String(e.text) : "", data: null, stopReason: e && e.meta && e.meta.stopReason || "" }); if (e && e.meta) x.outputSha256 = sha(e.text || ""); throw e; }
     finally { x.prompt = prompt; sink.add(x); }
   } });
 }
-/* Every attempt at one passage, in order: the draft, whether it was shown, and every reason it was not (the app's
-   checks and the review's issues together, complete), with the review's own answer. */
-function attemptsFor(full, b, calls, exchanges) {
-  const byHash = new Map(); for (const x of exchanges) { if (!byHash.has(x.promptSha256)) byHash.set(x.promptSha256, []); byHash.get(x.promptSha256).push(x); }
-  const take = h => { const l = byHash.get(h); return l && l.length ? l.shift() : null; };
-  const isClaim = b.run.kind === "claim", hash = isClaim ? null : readingMaterial(b, full).context.hash;
-  const gens = calls.filter(k => isClaim ? k.purpose === "claim" : k.purpose === "deflate" && k.context && k.context.hash === hash).sort((x, y) => x.at < y.at ? -1 : x.at > y.at ? 1 : 0);
+/* Pairs a call record with the exchange that produced it by what was sent AND what came back: the call keeps the
+   prompt's SHA-256 (promptHash) and the answer's (outputHash), and the exchange keeps both too. The prompt alone is not
+   enough: two attempts that write the same draft send an identical review prompt and can get different answers. Each
+   exchange is used once, in order, so identical pairs (same prompt, same answer) also pair in sequence. */
+function pairer(exchanges) {
+  const used = new Set();
+  return call => {
+    if (!call) return null;
+    const x = exchanges.find(e => !used.has(e.n) && e.promptSha256 === call.promptHash && (e.outputSha256 || "") === (call.outputHash || ""));
+    if (x) used.add(x.n);
+    return x || null;
+  };
+}
+const byTime = (x, y) => x.at < y.at ? -1 : x.at > y.at ? 1 : 0;
+/* Every attempt at one passage, in order: the draft, whether it was shown, every reason it was not (the app's checks
+   and the review's issues together, as recorded on the call), the answer of the review that decided, and every review
+   call made for that draft (an unreadable review and its retry included). Pass one pairer per case. */
+function attemptsFor(full, b, calls, exchanges, pair) {
+  pair = pair || pairer(exchanges);
+  const isClaim = b.run.kind === "claim", hash = isClaim ? null : readingMaterial(b, full).context.hash, purpose = isClaim ? "claim" : "deflate";
+  const allGens = calls.filter(k => k.purpose === "claim" || k.purpose === "deflate").sort(byTime);
+  const gens = allGens.filter(k => isClaim ? k.purpose === "claim" : k.purpose === "deflate" && k.context && k.context.hash === hash);
   return gens.map((k, i) => {
-    const x = take(k.promptHash), rc = k.review && k.review.callId ? calls.find(z => z.callId === k.review.callId) : null, rx = rc ? (byHash.get(rc.promptHash) || [])[0] || null : null;
-    return { attempt: i + 1, callId: k.callId, at: k.at, kind: x ? x.kind : "", shown: !!(k.review && k.review.approved === true), error: k.error || "", stopReason: k.stopReason || "",
-      reasons: k.review ? (k.review.issues || []) : k.error ? [k.errorMessage || k.error] : [], review: rx ? { callId: rc.callId, answer: rx.data, text: rx.data == null ? rx.text : undefined } : null,
+    const x = pair(k), next = allGens.find(z => z.at > k.at);
+    // passages are read one at a time, so the review calls for this draft are those between it and the next draft
+    const reviews = calls.filter(z => z.purpose === purpose + "_review" && z.at >= k.at && (!next || z.at < next.at)).sort(byTime).map(z => {
+      const e = pair(z);
+      return { callId: z.callId, at: z.at, decided: !!(k.review && k.review.callId === z.callId), error: z.error || "", stopReason: z.stopReason || "", exchange: e ? e.n : null, answer: e ? e.data : null, text: e && e.data == null ? e.text : undefined };
+    });
+    const decided = reviews.find(z => z.decided) || null;
+    return { attempt: i + 1, callId: k.callId, at: k.at, exchange: x ? x.n : null, kind: x ? x.kind : "", shown: !!(k.review && k.review.approved === true), error: k.error || "", stopReason: k.stopReason || "",
+      reasons: k.review ? (k.review.issues || []) : k.error ? [k.errorMessage || k.error] : [],
+      review: decided ? { callId: decided.callId, exchange: decided.exchange, answer: decided.answer, text: decided.text } : null, reviewCalls: reviews,
       draft: x ? x.data : null, draftText: x && x.data == null ? x.text : undefined };
   });
 }
@@ -169,7 +193,8 @@ async function main() {
       // with no reading, the material that was sent for it
       for (const p of record.passages) { const full = b.passages.find(x => x.id === p.id); p.material = !full ? null : full.analysis ? await materialAsRead(store, b, full) : c.kind === "claim" ? null : Object.assign({ available: true, matches: null, sentFor: "no reading kept" }, { source: readingMaterial(b, full).source }); }
       // every attempt at each passage, with the rejected drafts and the complete reasons
-      for (const p of record.passages) { const full = b.passages.find(x => x.id === p.id); p.attempts = full ? attemptsFor(full, b, calls, sink.list) : []; p.held = full && full.held || null;
+      const pair = pairer(sink.list);
+      for (const p of record.passages) { const full = b.passages.find(x => x.id === p.id); p.attempts = full ? attemptsFor(full, b, calls, sink.list, pair) : []; p.held = full && full.held || null;
         for (const t of p.attempts) if (!t.shown && t.draft) t.checks = mechanical(c, c.kind === "claim" ? claimAnalysis(t.draft, b, P.CONTRACT) : shared.sanitizeAnalysis(t.draft)); }
       if (opt("old") && c.kind !== "claim") {
         const turns = shared.parseTranscript(b.transcript), ov = b.run.provenance.overrides;
@@ -192,7 +217,7 @@ async function main() {
   console.log("Written: " + path.join(shown, "results.json") + ", results.jsonl, scoring-sheet.md and exchanges/. Score every case by hand; the mechanical checks only point at places to look.");
 }
 if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });
-module.exports = { mechanical, attributed, NARRATION, kindOf, attemptsFor, sheet };
+module.exports = { mechanical, attributed, NARRATION, kindOf, attemptsFor, pairer, sheet };
 
 /* The sheet a person fills in: the expected meaning (written before the run), the outputs at both levels, the
    mechanical pointers, and the six scores per level from the brief. */
@@ -234,7 +259,8 @@ function sheet(results, ai, done) {
         for (const t of rejected) {
           out.push("_Attempt " + t.attempt + "_ (" + (t.kind || "reading") + ", call " + t.callId + (t.stopReason && t.stopReason !== "end_turn" ? ", stopped: " + t.stopReason : "") + "). Not shown because:", "");
           (t.reasons.length ? t.reasons : ["no reason recorded"]).forEach(x => out.push("- " + x));
-          if (t.review && t.review.answer) out.push("", "The separate review answered approved: " + String(t.review.answer.approved) + (Array.isArray(t.review.answer.issues) && t.review.answer.issues.length ? ", with the issues above." : "; the reasons above came from the app's own checks."));
+          if (t.review && t.review.answer) out.push("", "The separate review (exchange " + t.review.exchange + ") answered approved: " + String(t.review.answer.approved) + (Array.isArray(t.review.answer.issues) && t.review.answer.issues.length ? ", with the issues above." : "; the reasons above came from the app's own checks."));
+          for (const z of (t.reviewCalls || []).filter(z => z.error)) out.push("", "A review answer could not be used (" + z.error + (z.stopReason ? ", " + z.stopReason : "") + ", exchange " + z.exchange + ")" + (z.decided ? "." : "; the review was asked again."));
           out.push("");
           if (t.draft) reading(out, r.kind === "claim" ? claimAnalysis(t.draft, { transcript: "" }, P.CONTRACT) : shared.sanitizeAnalysis(t.draft), r.kind);
           else if (t.draftText) out.push("The answer could not be read as JSON:", "", "````text", t.draftText, "````", "");
