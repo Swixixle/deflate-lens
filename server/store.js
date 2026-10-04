@@ -781,7 +781,10 @@ class Store {
     d.basedOn = call && call.basedOn ? Object.assign({}, call.basedOn) : Object.assign(this._readingBasis(run, transcript, d.basedOn), { passagesSig: d.basedOn && d.basedOn.passagesSig || "" });
     delete d.provenance;
     if (d.callId) { const call = await this.findCall(id, d.callId); d.provenance = call ? provenanceOf(call) : { callId: d.callId, recorded: false, note: "no call with this id is on record for this run" }; }
-    await writeAtomic(path.join(this.runDir(id), "summary.json"), JSON.stringify(d, null, 2));
+    // a replaced overview is kept, as a replaced passage set is
+    const prior = path.join(this.runDir(id), "summary.json");
+    if (await exists(prior)) { const dir = path.join(this.runDir(id), "archive", "summaries"); await fsp.mkdir(dir, { recursive: true }); await fsp.copyFile(prior, path.join(dir, nowISO().replace(/[:.]/g, "-") + ".json")); }
+    await writeAtomic(prior, JSON.stringify(d, null, 2));
     await this.touchRun(id);
     return d;
   }

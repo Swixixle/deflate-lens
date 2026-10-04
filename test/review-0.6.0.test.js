@@ -176,10 +176,7 @@ test("F5: quote matching keeps negation and numeric punctuation; a relocated quo
   const p = { turnStart: 0, turnEnd: 1, analysis: { asSaid: [{ turn: 0, speaker: "B", quote: "The treatment helps." }], jump: {} } };
   const sum = SH.verifyPassage(turns, {}, p); const q = p.analysis.asSaid[0];
   assert.equal(q.verbatim, true); assert.equal(q.turnOk, true, "turn 0 is inside the passage"); assert.equal(q.matchedTurn, 1); assert.equal(q.relocated, true); assert.deepEqual(q.foundIn, [1]); assert.equal(sum.relocated, 1);
-  // the renderer and the export show the matched turn, never the wrong supplied one
-  const app = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-  assert.match(app, /var shownTurn = q\.verbatim && q\.matchedTurn != null \? q\.matchedTurn : q\.turn;/);
-  assert.match(app, /the card named turn " \+ q\.turn \+ "; the words are in turn " \+ q\.matchedTurn/);
+  // the page's Evidence shows the relocation (test/reading-interface.test.js renders it)
 });
 
 test("F6: an empty analysis cannot become a finished card, in either mode", async () => {

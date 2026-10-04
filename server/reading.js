@@ -6,7 +6,7 @@ const V = require("./validate");
 const { newId, nowISO, autoTitle, sha256 } = require("./store");
 const { cleanText } = require("./intake");
 const { obligationFor } = require("./research");
-const { prepareSpeakers, callModel, reviewedReading, reviewedOverview, claimAnalysis } = require("./preparation");
+const { prepareSpeakers, callModel, unreadable, reviewedReading, reviewedOverview, claimAnalysis } = require("./preparation");
 
 function requestedBasis(b, patterns) {
   const basis = { inputHash: b.run.input.sha256, transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig };
@@ -34,6 +34,12 @@ function readingMaterial(b, p) {
   return { purpose: "deflate", prompt: P.deflate(b.run, p, target, { beforeText: ctx.beforeText, afterText: ctx.afterText, omitted: ctx.record.omitted }), source,
     context: Object.assign({}, ctx.record, { hash: sha256(source) }) };
 }
+/* What is ready, what is held, and the first held reason in plain words: enough to decide whether to retry. */
+function partialMessage(done, total, issues) {
+  const held = issues.filter(x => x.passage), first = (issues.find(x => (x.reasons || []).length) || {}).reasons;
+  return done + " of " + total + " readings are ready. " + (held.length ? (held.length === 1 ? "One passage" : held.length + " passages") + " could not pass " + (held.length === 1 ? "its" : "their") + " checks and " + (held.length === 1 ? "is" : "are") + " held" : "The closing overview is held") +
+    (first && first.length ? " (" + String(first[0]).replace(/\.$/, "") + ")" : "") + ". Press Read this to try " + (held.length === 1 ? "it" : "them") + " again; finished readings are kept.";
+}
 function stopped() { return Object.assign(new Error("Reading stopped. Prepared readings have been kept."), { code: "cancelled" }); }
 function plainError(e) {
   const code = e && e.code;
@@ -42,6 +48,8 @@ function plainError(e) {
   if (code === "no_ai") return "Add your model key once to continue.";
   if (code === "input_changed" || code === "stale_reading" || code === "claim_edited") return "The input changed while it was being read. Press Read this to use the current text.";
   if (code === "reading_held") return "A reading could not pass its checks. It has been held back; prepared readings are saved.";
+  if (code === "invalid_json" || code === "truncated") return "The model's answer could not be read" + (code === "truncated" ? " (it was cut off at its length limit)" : "") + ", even after one correction. Your text and finished readings are saved. Press Read this to try again.";
+  if (code === "segmentation_held") return "The conversation could not be divided into passages after one correction. Your text is saved. Press Read this to try again.";
   return "The reading could not finish. Your input and prepared readings are saved. Press Read this to continue.";
 }
 
@@ -133,7 +141,13 @@ function createReader({ store, getAI, searchClaim, research }) {
       const basis = await store.captureCallBasis(id, requestedBasis(b), "segment");
       let items = [], problem = "";
       for (let attempt = 0; attempt < 2; attempt++) {
-        const call = await callModel(ai, store, id, "segment", basis, prompt + (problem ? "\nYour previous response could not be used: " + problem + ". Use only the numbered turns in this section." : ""), job.controller.signal);
+        let call;
+        try { call = await callModel(ai, store, id, "segment", basis, prompt + (problem ? "\nYour previous response could not be used: " + problem + ". Use only the numbered turns in this section." : ""), job.controller.signal); }
+        catch (e) {
+          if (!unreadable(e)) throw e;
+          problem = e.code === "truncated" ? "it was cut off at the length limit; reply with ONLY the complete JSON, with short titles and stakes" : "it was not well-formed JSON; reply with ONLY the JSON object";
+          calls.push(e.callId || ""); continue;
+        }
         await call.save(); calls.push(call.call.callId); await check(id, job);
         const out = call.out.data;
         if (!out || !Array.isArray(out.passages) || !out.passages.length) { problem = "No passages were returned"; continue; }
@@ -146,7 +160,7 @@ function createReader({ store, getAI, searchClaim, research }) {
           problem = ""; break;
         } catch (e) { items = []; problem = e.message; }
       }
-      if (!items.length) throw Object.assign(new Error("The interview could not be organized after an automatic retry."), { code: "segmentation_held" });
+      if (!items.length) throw Object.assign(new Error("The interview could not be organized after an automatic retry (" + problem + ")."), { code: "segmentation_held" });
       found.push(...items);
     }
     if (!found.length) throw Object.assign(new Error("No transcript passages were found."), { code: "segmentation_held" });
@@ -220,13 +234,13 @@ function createReader({ store, getAI, searchClaim, research }) {
     await update(id, job, { done, total: b.passages.length, issues });
     if (!issues.length) {
       try { await patterns(id, job, ai, b); }
-      catch (e) { if (e.code !== "overview_held") throw e; issues.push({ code: e.code, message: e.message }); }
+      catch (e) { if (e.code !== "overview_held") throw e; issues.push({ code: e.code, message: e.message, reasons: e.issues || [] }); }
     }
     await searchSources(id, job);
     await check(id, job);
     await store.saveRun(id, { status: issues.length ? "analyzed" : "complete" });
     await update(id, job, { status: issues.length ? "partial" : "complete", phase: "finished", done, total: b.passages.length, issues,
-      message: issues.length ? done + " prepared readings are ready. Some material could not pass its checks and is held back. Press Read this to retry it." : "Your reading is ready.", finishedAt: nowISO() });
+      message: issues.length ? partialMessage(done, b.passages.length, issues) : "Your reading is ready.", finishedAt: nowISO() });
   }
   async function recover() {
     for (const run of await store.listRuns()) if (!run.example) {

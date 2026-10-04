@@ -5,6 +5,9 @@
    without a key or a bill. Mock output is labelled MOCK everywhere it appears. */
 
 const DEFAULT_MODEL = "claude-sonnet-5-5";
+/* A ceiling, not a target: a reading of a long passage at two levels can exceed 8,000 output tokens, and an answer cut
+   off at the limit is billed and unusable. Override with ANTHROPIC_MAX_TOKENS. */
+const DEFAULT_MAX_TOKENS = 16000;
 
 function parseJSONLoose(text) {
   const s = String(text || "").trim();
@@ -14,6 +17,19 @@ function parseJSONLoose(text) {
   const a = s.search(/[\[{]/), b = Math.max(s.lastIndexOf("}"), s.lastIndexOf("]"));
   if (a !== -1 && b > a) { try { return JSON.parse(s.slice(a, b + 1)); } catch (e) {} }
   const err = new Error("The model's reply was not well-formed JSON."); err.code = "invalid_json"; err.text = s; throw err;
+}
+
+/* The provider's answer as the app uses it. A JSON answer that cannot be read keeps the provider's identifiers, stop
+   reason and usage on the error, so the failed call is still on record; an answer stopped by the length limit is named
+   "truncated" rather than "not well-formed", because the remedy differs (a shorter answer, not a retry as is). */
+function parseReply(text, meta, json) {
+  if (!json) return Object.assign({ text }, meta);
+  try { return Object.assign({ data: parseJSONLoose(text), text }, meta); }
+  catch (e) {
+    e.meta = meta;
+    if (meta && meta.stopReason === "max_tokens") { e.code = "truncated"; e.message = "The model's answer was cut off at its length limit before the JSON was complete."; }
+    throw e;
+  }
 }
 
 function createAnthropicAI({ apiKey, model, maxTokens }) {
@@ -28,7 +44,7 @@ function createAnthropicAI({ apiKey, model, maxTokens }) {
       content.push({ type: "text", text: String(prompt || "") });
       let res;
       try {
-        res = await client.messages.create({ model: mdl, max_tokens: maxTokens || 8000, messages: [{ role: "user", content }] }, { signal });
+        res = await client.messages.create({ model: mdl, max_tokens: maxTokens || DEFAULT_MAX_TOKENS, messages: [{ role: "user", content }] }, { signal });
       } catch (e) {
         const err = new Error(e && e.message ? e.message : "model request failed");
         err.code = e && e.status === 401 ? "bad_key" : e && e.status === 429 ? "rate_limited" : e && e.name === "AbortError" ? "cancelled" : "upstream_error";
@@ -39,9 +55,7 @@ function createAnthropicAI({ apiKey, model, maxTokens }) {
       const usage = res.usage ? { input: res.usage.input_tokens, output: res.usage.output_tokens } : null;
       // the provider's own identifiers travel with the answer so the server can record which call produced which reading
       const meta = { usage, model: res.model || mdl, requestId: res.id || "", stopReason: res.stop_reason || "" };
-      if (!json) return Object.assign({ text }, meta);
-      try { return Object.assign({ data: parseJSONLoose(text), text }, meta); }
-      catch (e) { e.meta = meta; throw e; } // the provider did answer: the record keeps its id, model and usage
+      return parseReply(text, meta, json); // a failed parse still carries the provider's id, model, usage and stop reason
     }
   };
 }
@@ -146,4 +160,4 @@ function createAI(env) {
   return createAnthropicAI({ apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL, maxTokens: env.ANTHROPIC_MAX_TOKENS ? Number(env.ANTHROPIC_MAX_TOKENS) : undefined });
 }
 
-module.exports = { createAI, createMockAI, createAnthropicAI, parseJSONLoose, DEFAULT_MODEL };
+module.exports = { createAI, createMockAI, createAnthropicAI, parseJSONLoose, parseReply, DEFAULT_MODEL, DEFAULT_MAX_TOKENS };
