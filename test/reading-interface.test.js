@@ -126,6 +126,9 @@ test("a held passage keeps its place and names its own reason; an out-of-date on
   const f = await page(t); await f.type(transcript);
   const b = JSON.parse(JSON.stringify(f.ctx.page.S.b));
   b.passages[1].status = "error"; b.passages[1].readingGate = { status: "held", reasons: ["The model's answer was cut off at its length limit before it finished."] };
+  b.run.processing.status = "partial"; b.run.processing.message = "2 of 3 readings are ready.";
+  await f.ctx.page.reload(JSON.parse(JSON.stringify(b)));
+  assert.match(visible(f.$("reading-status")), /2 of 3 readings are ready\.Try the held readings again/);
   b.passages[2].readingGate = { status: "held", reasons: ["transcript changed since this analysis"] }; b.passages[2].stale = ["transcript changed since this analysis"];
   b.run.processing.status = "partial"; b.run.processing.message = "1 of 3 readings are ready.";
   await f.ctx.page.reload(b);
@@ -134,7 +137,7 @@ test("a held passage keeps its place and names its own reason; an out-of-date on
   assert.match(visible(cards[1]), /2 of 3[\s\S]*Held, not shown: The model's answer was cut off at its length limit before it finished\./);
   assert.match(visible(cards[2]), /Out of date: the text changed after this reading was made\./);
   assert.doesNotMatch(visible(cards[2]), /In plain words/);
-  assert.match(visible(f.$("reading-status")), /1 of 3 readings are ready\.Try the held readings again/);
+  assert.match(visible(f.$("reading-status")), /Some readings are out of date because the text or speakers changed\. Read again to update them\.Read again/);
   assert.match(f.$("contents-host").textContent, /2 of 3[^·]*· held[\s\S]*3 of 3[^·]*· out of date/);
 });
 
