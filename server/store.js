@@ -2,6 +2,7 @@
 /* File-backed storage. Everything lives under DATA_DIR (default ./data):
      runs/<id>/run.json              the run: title, source, speakers, provenance, timestamps
      runs/<id>/transcript.txt        the transcript exactly as saved
+     runs/<id>/versions/<sha256>.txt earlier texts of the transcript, named by their hash (0.12.1)
      runs/<id>/passages/<pid>.json   one passage with its analysis
      runs/<id>/summary.json          cross-passage patterns
      runs/<id>/attachments.json      index of uploaded pictures
@@ -47,14 +48,25 @@ function provenanceOf(call) { const keep = {}; ["callId", "at", "purpose", "runI
 /* The source a run's text came from, and whether its identity is direct, needs a person's check, or was confirmed by one.
    Computed here so every tab, the export and a reopened run agree. A confirmation counts only for the source it named. */
 function sourceUrlOf(imp) { return imp ? (imp.source && imp.source.url) || imp.url || "" : ""; }
+/* What a confirmation is a confirmation of: the selected source (its address and video id) together with the episode it
+   was meant to be (guid, title, length). A change to either makes an earlier confirmation not apply. */
+function sourceKey(imp) {
+  if (!imp) return "";
+  const m = imp.match || {}, ep = imp.episodeInfo || {}, me = m.episode || {};
+  return sha256(JSON.stringify({ url: sourceUrlOf(imp), video: m.video && m.video.id || "", episode: { guid: ep.guid || "", title: me.title || ep.title || imp.episode || "", seconds: me.durationSeconds || ep.durationSeconds || 0 }, found: m.found || null })).slice(0, 32);
+}
 function sourceIdentity(run) {
   const imp = run.import;
   if (!imp) return { state: "none" };
-  const url = sourceUrlOf(imp);
-  const conf = run.sourceConfirmation && run.sourceConfirmation.sourceUrl === url ? run.sourceConfirmation : null;
+  const url = sourceUrlOf(imp), key = sourceKey(imp);
+  const conf = run.sourceConfirmation && run.sourceConfirmation.key === key ? run.sourceConfirmation : null;
   const legacySearch = !imp.identity && imp.source && /YouTube search/i.test(imp.source.note || "");
   const state = imp.identity === "needs_confirmation" || legacySearch ? (conf ? "confirmed" : "needs_confirmation") : imp.identity === "direct" ? "direct" : "not_recorded";
-  return { state, sourceUrl: url, sourceKind: imp.source && imp.source.kind || "", match: imp.match || null, confirmation: conf, ambiguous: imp.ambiguous || null, legacy: !imp.identity,
+  // an earlier confirmation that does not apply to the current source and episode is shown as such, never counted
+  const stale = run.sourceConfirmation && !conf ? run.sourceConfirmation : null, last = (run.sourceConfirmationHistory || []).slice(-1)[0];
+  const earlier = stale ? { at: stale.at, episodeTitle: stale.episodeTitle || "", why: stale.key ? "the source or the episode changed" : "it was recorded before a confirmation also named the episode" }
+    : state === "needs_confirmation" && last ? { at: last.at, episodeTitle: last.episodeTitle || "", why: last.why || "" } : null;
+  return { state, sourceUrl: url, key, sourceKind: imp.source && imp.source.kind || "", match: imp.match || null, confirmation: conf, earlier, ambiguous: imp.ambiguous || null, legacy: !imp.identity,
     label: state === "needs_confirmation" ? (imp.match && imp.match.method === "title-lookup" ? "Episode matched by title" : "Video matched by title and length") + " — check source" : state === "confirmed" ? "Source match confirmed by you on " + String(conf.at).slice(0, 10) : "" };
 }
 
@@ -253,6 +265,20 @@ class Store {
 
   async getRun(id) { const r = await readJSON(path.join(this.runDir(id), "run.json"), null); if (r) r.id = id; return r; }
   async getTranscript(id) { try { return await fsp.readFile(path.join(this.runDir(id), "transcript.txt"), "utf8"); } catch (e) { if (e.code === "ENOENT") return ""; throw e; } }
+  /* Earlier texts of a run, one file per version named by its SHA-256 (0.12.1). The current text is transcript.txt. */
+  async _keepVersion(id, text) {
+    const t = String(text == null ? "" : text); if (!t) return;
+    const file = path.join(this.runDir(id), "versions", sha256(t) + ".txt");
+    if (!(await exists(file))) await writeAtomic(file, t);
+  }
+  /* The run's text whose SHA-256 is `hash`: the current text, a kept earlier version, or null when it was not kept
+     (runs edited before 0.12.1 kept only the hashes of earlier texts). */
+  async textForHash(id, hash) {
+    if (!/^[0-9a-f]{64}$/.test(String(hash || ""))) return null;
+    const current = await this.getTranscript(id);
+    if (sha256(current) === hash) return current;
+    try { const t = await fsp.readFile(path.join(this.runDir(id), "versions", hash + ".txt"), "utf8"); return sha256(t) === hash ? t : null; } catch (e) { if (e.code === "ENOENT") return null; throw e; }
+  }
   async getSummary(id) { return readJSON(path.join(this.runDir(id), "summary.json"), null); }
   async listPassages(id) {
     const dir = path.join(this.runDir(id), "passages");
@@ -317,15 +343,16 @@ class Store {
   /* A person's statement that the selected source is the episode they meant. Refused when the source shown to them is not
      the current one (another tab replaced it), and only for a source that was matched rather than named directly. It is
      their assertion about the match; it says nothing about the transcript's accuracy or the claims in it. */
-  async confirmSource(id, shownUrl) { return this.withLock(id, async () => {
+  async confirmSource(id, shownUrl, shownKey) { return this.withLock(id, async () => {
     const run = await this.getRun(id);
     if (!run || run.example) throw Object.assign(new Error("This reading cannot be changed."), { status: run ? 403 : 404 });
     const idn = sourceIdentity(run);
     if (!["needs_confirmation", "confirmed"].includes(idn.state)) throw Object.assign(new Error("This source was named directly; there is no match to confirm."), { status: 409, code: "nothing_to_confirm" });
-    if (String(shownUrl || "") !== idn.sourceUrl) throw Object.assign(new Error("The source changed since this page was loaded. Look at the current source before confirming."), { status: 409, code: "source_changed" });
+    if (String(shownUrl || "") !== idn.sourceUrl || String(shownKey || "") !== idn.key) throw Object.assign(new Error("The source or the episode changed since this page was loaded. Look at the current comparison before confirming."), { status: 409, code: "source_changed" });
     if (idn.state === "confirmed") return;
     const m = run.import.match || {};
-    run.sourceConfirmation = { by: "person at this computer", at: nowISO(), sourceUrl: idn.sourceUrl, videoId: m.video && m.video.id || "", episodeTitle: m.episode && m.episode.title || run.import.episode || "",
+    if (run.sourceConfirmation) run.sourceConfirmationHistory = (run.sourceConfirmationHistory || []).concat([Object.assign({}, run.sourceConfirmation, { invalidatedAt: nowISO(), why: idn.earlier && idn.earlier.why || "the source or the episode changed" })]);
+    run.sourceConfirmation = { by: "person at this computer", at: nowISO(), key: idn.key, sourceUrl: idn.sourceUrl, videoId: m.video && m.video.id || "", episodeTitle: m.episode && m.episode.title || run.import.episode || "", episodeGuid: run.import.episodeInfo && run.import.episodeInfo.guid || "",
       statement: "The person said this source is the intended episode. This is not a check of the transcript or its claims." };
     delete run.id; run.updatedAt = nowISO();
     await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
@@ -447,7 +474,7 @@ class Store {
       // a new acquisition replaces the old one; the old record is kept, and a person's confirmation of the old source
       // does not carry over to a different source
       next.importHistory = (cur.importHistory || []).concat([{ import: cur.import, replacedAt: nowISO() }]).slice(-50);
-      if (cur.sourceConfirmation && sourceUrlOf(incoming.import) !== cur.sourceConfirmation.sourceUrl) {
+      if (cur.sourceConfirmation && sourceKey(incoming.import) !== cur.sourceConfirmation.key) {
         next.sourceConfirmationHistory = (cur.sourceConfirmationHistory || []).concat([Object.assign({}, cur.sourceConfirmation, { invalidatedAt: nowISO(), why: "the source was replaced" })]);
         delete next.sourceConfirmation;
       }
@@ -466,8 +493,10 @@ class Store {
         if (cur.kind === "claim" && !canonicalClaimText(transcript)) throw V.bad("a claim needs some words; nothing was changed");
         // a version is named by its timestamp; two edits in one millisecond must not share one
         if (next.updatedAt <= next.transcriptUpdatedAt) next.updatedAt = new Date(Date.parse(next.transcriptUpdatedAt) + 1).toISOString();
+        // the replaced text is kept, named by its hash, so the exact material of a reading made from it can be rebuilt
+        await this._keepVersion(id, old);
         await writeAtomic(path.join(this.runDir(id), "transcript.txt"), transcript);
-        // the hash of every earlier text is kept (not the text), so a reading made from an earlier version can still be bound to it
+        // the hash of every earlier text is also listed on the run, so a reading made from an earlier version stays bound to it
         next.inputHistory = next.inputHistory.concat([{ sha256: next.input.sha256, chars: next.input.chars, transcriptUpdatedAt: next.transcriptUpdatedAt, replacedAt: next.updatedAt }]).slice(-200);
         next.transcriptUpdatedAt = next.updatedAt;
         next.input = inputRecord(transcript, cur.parseMode, next.updatedAt);
@@ -850,6 +879,7 @@ class Store {
     for (const p of b.passages) { const d = Object.assign({}, p, { copiedFrom: id + "/" + p.id }); delete d.id; delete d.stale; delete d.quoteCheck; cleanComputed(d.analysis); await writeAtomic(path.join(this.runDir(nid), "passages", p.id + ".json"), JSON.stringify(d, null, 2)); }
     if (b.summary) { const s = Object.assign({}, b.summary, { copiedFrom: id }); delete s.stale; await writeAtomic(path.join(this.runDir(nid), "summary.json"), JSON.stringify(s, null, 2)); }
     try { await fsp.copyFile(path.join(this.runDir(id), "calls.jsonl"), path.join(this.runDir(nid), "calls.jsonl")); } catch (e) { if (e.code !== "ENOENT") throw e; } // the copy's readings keep their call records
+    try { for (const f of await fsp.readdir(path.join(this.runDir(id), "versions"))) { await fsp.mkdir(path.join(this.runDir(nid), "versions"), { recursive: true }); await fsp.copyFile(path.join(this.runDir(id), "versions", f), path.join(this.runDir(nid), "versions", f)); } } catch (e) { if (e.code !== "ENOENT") throw e; } // and the texts their history was read from
     for (const a of b.attachments) { try { await fsp.mkdir(path.join(this.runDir(nid), "attachments"), { recursive: true }); await fsp.copyFile(path.join(this.runDir(id), "attachments", a.file), path.join(this.runDir(nid), "attachments", a.file)); } catch (e) {} }
     if (b.attachments.length) await writeAtomic(path.join(this.runDir(nid), "attachments.json"), JSON.stringify(b.attachments, null, 2));
     return nid;
@@ -872,4 +902,4 @@ class Store {
   }
 }
 
-module.exports = { sourceIdentity, Store, nowISO, newId, ID_RE, hasRecords, mergeRecords, unionRecords, autoTitle, claimPassage, canonicalClaimText, inputRecord, sha256, leakScan, provenanceOf };
+module.exports = { sourceIdentity, sourceKey, Store, nowISO, newId, ID_RE, hasRecords, mergeRecords, unionRecords, autoTitle, claimPassage, canonicalClaimText, inputRecord, sha256, leakScan, provenanceOf };

@@ -11,7 +11,8 @@ const { createResearch } = require("../server/research");
 const shared = require("../shared/transcript");
 const P = require("../shared/prompts");
 const Q = require("../server/quality");
-const { readingMaterial } = require("../server/reading");
+const { readingMaterial, materialAsRead } = require("../server/reading");
+const { sha256 } = require("../server/store");
 const { claimAnalysis } = require("../server/preparation");
 const { buildMarkdown, buildExport } = require("../server/exportClaims");
 
@@ -211,7 +212,8 @@ test("a searched video stays 'matched by title and length' through reading, relo
   assert.match(md, /a length within 180 s \(the larger of 120 s and 5% of the episode\)/);
   // confirming a source other than the one now on the run (a stale tab) is refused; confirming this one is recorded
   assert.equal((await again.api("POST", "/api/runs/" + b.run.id + "/source/confirm", { sourceUrl: "https://www.youtube.com/watch?v=OtherVideoX" })).status, 409);
-  b = (await again.api("POST", "/api/runs/" + b.run.id + "/source/confirm", { sourceUrl: matched.video.url })).data;
+  assert.equal((await again.api("POST", "/api/runs/" + b.run.id + "/source/confirm", { sourceUrl: matched.video.url })).status, 409, "a confirmation names the comparison that was shown (its key)");
+  b = (await again.api("POST", "/api/runs/" + b.run.id + "/source/confirm", { sourceUrl: matched.video.url, key: b.sourceIdentity.key })).data;
   assert.equal(b.sourceIdentity.state, "confirmed"); assert.equal(b.sourceIdentity.confirmation.videoId, "FullEpisode"); assert.match(b.sourceIdentity.confirmation.statement, /not a check of the transcript/);
   assert.match(buildMarkdown(b), /a person at this computer said on \d{4}-\d{2}-\d{2} that it is the intended episode/);
 });
@@ -220,7 +222,7 @@ test("replacing the source invalidates a confirmation and keeps the earlier acqu
   let current = { source: { kind: "youtube-captions", url: matched.video.url, note: "via a YouTube search" }, match: matched, identity: "needs_confirmation" };
   const s = await fixture(t, { resolver: { locate: async () => ({ kind: "episode" }), words: async () => Object.assign({ ok: true, text: transcript, title: "Ep 1", episode: { title: "Ep 1", duration: 3600 } }, current) } });
   let b = await fetched(s);
-  b = (await s.api("POST", "/api/runs/" + b.run.id + "/source/confirm", { sourceUrl: matched.video.url })).data;
+  b = (await s.api("POST", "/api/runs/" + b.run.id + "/source/confirm", { sourceUrl: matched.video.url, key: b.sourceIdentity.key })).data;
   assert.equal(b.sourceIdentity.state, "confirmed");
   const other = Object.assign({}, matched, { video: Object.assign({}, matched.video, { id: "SecondVideo", url: "https://www.youtube.com/watch?v=SecondVideo" }) });
   current = { source: { kind: "youtube-captions", url: other.video.url, note: "via a YouTube search" }, match: other, identity: "needs_confirmation" };
@@ -238,4 +240,78 @@ test("replacing the source invalidates a confirmation and keeps the earlier acqu
   assert.equal(b.sourceIdentity.state, "needs_confirmation"); assert.equal(b.sourceIdentity.legacy, true); assert.equal(b.sourceIdentity.match, null);
   const legacyFeed = await s.store.createRun({ import: { url: "https://show.test/feed.xml", title: "Old", method: "transcript: feed-transcript", source: { kind: "feed-transcript", url: "https://show.test/ep.vtt", note: "the transcript the show publishes in its feed" } } }, transcript);
   assert.equal((await s.store.bundle(legacyFeed)).sourceIdentity.state, "not_recorded");
+});
+
+/* ---- 0.12.1: what a reading was made from, and what a confirmation confirms ---- */
+test("the exact passage and context of a reading can be rebuilt after the text is edited twice and speakers are corrected", async t => {
+  const s = await fixture(t);
+  const id = (await s.api("POST", "/api/intake", { input: transcript })).data.run.id; let b = await s.finish(id);
+  const p = b.passages.find(x => x.turnStart === 8), orig = b.run.input.sha256, url = "/api/runs/" + id + "/passages/" + p.id + "/material";
+  assert.deepEqual(p.provenance.context.target.map(x => x.turn), [8, 9, 10, 11, 12, 13, 14, 15], "the passage's speakers are recorded with the context's");
+  let m = (await s.api("GET", url)).data;
+  assert.deepEqual([m.available, m.matches, m.current, m.readFrom], [true, true, true, orig]);
+  // two edits: a context turn (16), then a passage turn (9)
+  const e1 = transcript.replace(words(16), words(16).replace("plain", "different")), e2 = e1.replace(words(9), words(9).replace("plain", "other"));
+  await s.api("PUT", "/api/runs/" + id, { run: {}, transcript: e1 });
+  await s.api("PUT", "/api/runs/" + id, { run: {}, transcript: e2 });
+  assert.deepEqual((await fs.readdir(path.join(s.dir, "runs", id, "versions"))).sort(), [sha256(transcript), sha256(e1)].map(h => h + ".txt").sort(), "each replaced text is kept, named by its SHA-256");
+  m = (await s.api("GET", url)).data;
+  assert.deepEqual([m.available, m.matches, m.current, m.readFrom], [true, true, false, orig]);
+  assert.ok(m.source.includes("[16] HOST: " + words(16)) && m.source.includes("[9] GUEST: " + words(9)) && !/different|other words/.test(m.source), "the material is the text that was read, not today's");
+  // speaker corrections on a context turn and a passage turn
+  b = await s.store.bundle(id);
+  await s.api("PUT", "/api/runs/" + id, { run: { provenance: Object.assign({}, b.run.provenance, { overrides: { 7: "HOST", 9: "HOST" } }) } });
+  m = (await s.api("GET", url)).data;
+  assert.equal(m.matches, true); assert.ok(m.source.includes("[7] GUEST: ") && m.source.includes("[9] GUEST: "), "the speakers named when it was read");
+  // a duplicate keeps the earlier texts with the readings made from them
+  const copy = (await s.api("POST", "/api/runs/" + id + "/duplicate")).data;
+  const cm = (await s.api("GET", "/api/runs/" + copy.run.id + "/passages/" + p.id + "/material")).data;
+  assert.equal(cm.matches, true);
+  // what is not available is said plainly: the old text was not kept (edited before 0.12.1), or no context was recorded (before 0.12)
+  await fs.rm(path.join(s.dir, "runs", id, "versions"), { recursive: true });
+  m = (await s.api("GET", url)).data;
+  assert.equal(m.available, false); assert.match(m.why, /only its fingerprint remains/);
+  b = await s.store.bundle(id);
+  assert.match((await materialAsRead(s.store, b, Object.assign({}, b.passages[1], { provenance: { recorded: true } }))).why, /before 0\.12/);
+  // a typed claim
+  const cid = (await s.api("POST", "/api/runs", { run: { kind: "claim" }, transcript: "Most office workers in the city now commute by bicycle." })).data.run.id;
+  const c = (await s.api("GET", "/api/runs/" + cid + "/passages/p001/material")).data;
+  assert.equal(c.available, true); assert.match(c.source, /^CLAIM \(typed by a person\):\nMost office workers/);
+  assert.equal((await s.api("GET", "/api/runs/" + id + "/passages/p099/material")).status, 404);
+});
+
+test("a confirmation names the video and the episode: another episode on the same video needs its own confirmation", async t => {
+  const video = matched.video;
+  let ep = { title: "Episode A", duration: 3600, guid: "guid-a" };
+  const s = await fixture(t, { resolver: { locate: async () => ({ kind: "episode" }), words: async () => ({ ok: true, text: transcript, title: ep.title, episode: ep, source: { kind: "youtube-captions", url: video.url, note: "via a YouTube search" }, match: Object.assign({}, matched, { episode: { title: ep.title, durationSeconds: ep.duration } }), identity: "needs_confirmation" }) } });
+  let b = await fetched(s); const id = b.run.id, keyA = b.sourceIdentity.key, confirm = key => s.api("POST", "/api/runs/" + id + "/source/confirm", { sourceUrl: video.url, key });
+  b = (await confirm(keyA)).data;
+  assert.equal(b.sourceIdentity.state, "confirmed"); assert.equal(b.run.sourceConfirmation.episodeGuid, "guid-a"); assert.equal(b.run.sourceConfirmation.key, keyA);
+  // the same episode and video fetched again: the confirmation still applies
+  b = await fetched(s, { targetRunId: id });
+  assert.equal(b.sourceIdentity.state, "confirmed");
+  // episode B, same video address
+  ep = { title: "Episode B", duration: 3550, guid: "guid-b" };
+  b = await fetched(s, { targetRunId: id });
+  assert.equal(b.sourceIdentity.state, "needs_confirmation", "a confirmation of episode A does not carry to episode B on the same video");
+  assert.notEqual(b.sourceIdentity.key, keyA);
+  const last = b.run.sourceConfirmationHistory.at(-1);
+  assert.equal(last.episodeTitle, "Episode A"); assert.equal(last.why, "the source was replaced");
+  assert.deepEqual([b.sourceIdentity.earlier.episodeTitle, b.sourceIdentity.earlier.why], ["Episode A", "the source was replaced"]);
+  assert.equal(buildExport(b).run.sourceIdentity.state, "needs_confirmation");
+  assert.equal((await confirm(keyA)).status, 409, "a page still showing episode A cannot confirm episode B");
+  b = (await confirm(b.sourceIdentity.key)).data;
+  assert.equal(b.sourceIdentity.state, "confirmed"); assert.equal(b.sourceIdentity.confirmation.episodeTitle, "Episode B"); assert.equal(b.sourceIdentity.earlier, null);
+  // a different episode with the same title and length (another guid) is still another episode
+  ep = { title: "Episode B", duration: 3550, guid: "guid-b-rerun" };
+  b = await fetched(s, { targetRunId: id });
+  assert.equal(b.sourceIdentity.state, "needs_confirmation");
+  // a confirmation saved by 0.12 named only the video: it does not count now, is shown as earlier, and is kept when replaced
+  const file = path.join(s.dir, "runs", id, "run.json"), run = JSON.parse(await fs.readFile(file, "utf8"));
+  run.sourceConfirmation = { by: "person at this computer", at: "2026-09-30T12:00:00.000Z", sourceUrl: video.url, videoId: video.id, episodeTitle: "Episode B", statement: "The person said this source is the intended episode." };
+  await fs.writeFile(file, JSON.stringify(run, null, 2));
+  b = (await s.api("GET", "/api/runs/" + id)).data;
+  assert.equal(b.sourceIdentity.state, "needs_confirmation"); assert.match(b.sourceIdentity.earlier.why, /before a confirmation also named the episode/);
+  b = (await confirm(b.sourceIdentity.key)).data;
+  assert.equal(b.sourceIdentity.state, "confirmed"); assert.equal(b.run.sourceConfirmationHistory.at(-1).at, "2026-09-30T12:00:00.000Z");
 });

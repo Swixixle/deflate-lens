@@ -93,7 +93,7 @@ var API = {
   reread(id, pid){ return API.req("POST", "/api/runs/" + id + "/passages/" + pid + "/reread", {}); },
   overview(id){ return API.req("POST", "/api/runs/" + id + "/overview", {}); },
   reorganize(id){ return API.req("POST", "/api/runs/" + id + "/reorganize", {}); },
-  confirmSource(id, sourceUrl){ return API.req("POST", "/api/runs/" + id + "/source/confirm", {sourceUrl:sourceUrl}); },
+  confirmSource(id, sourceUrl, key){ return API.req("POST", "/api/runs/" + id + "/source/confirm", {sourceUrl:sourceUrl, key:key}); },
   saveRun(id, run, transcript){ return API.req("PUT","/api/runs/" + id, {run:run, transcript:transcript}); },
   deleteRun(id){ return API.req("DELETE","/api/runs/" + id); },
   assignSpeakers(id, names, context, signal){ return API.req("POST","/api/runs/" + id + "/assign-speakers", {names:names, context:context||""}, signal); },
@@ -632,7 +632,7 @@ function buildHead(el){
 
 /* ---- run-level notices: only what changes how the reading should be taken ---- */
 function anyMock(){ return (S.ai && S.ai.mock) || S.b.passages.some(function(p){ return /MOCK/.test(p.analyzedBy || ""); }); }
-function noticesSig(){ var r = run(), pr = r.provenance || {}, idn = S.b.sourceIdentity || {}; return JSON.stringify([r.id, r.example, anyMock(), idn.state, idn.sourceUrl, UI.open["srccheck-" + r.id], pr.labelsOrigin, speakerLabels(S.turns).indexOf("UNLABELED") !== -1, S.b.attributionGate && S.b.attributionGate.status, r.processing && r.processing.sourceError, S.busy]); }
+function noticesSig(){ var r = run(), pr = r.provenance || {}, idn = S.b.sourceIdentity || {}; return JSON.stringify([r.id, r.example, anyMock(), idn.state, idn.sourceUrl, idn.key, UI.open["srccheck-" + r.id], pr.labelsOrigin, speakerLabels(S.turns).indexOf("UNLABELED") !== -1, S.b.attributionGate && S.b.attributionGate.status, r.processing && r.processing.sourceError, S.busy]); }
 function buildNotices(el){
   var r = run(), pr = r.provenance || {}; clear(el);
   var add = function(text, action, cls){ var n = h("div",{class:"notice" + (cls ? " " + cls : "")}, h("p",{text:text})); if (action) n.append(h("button",{type:"button", class:"btn quiet", text:action[0], onclick:action[1]})); el.append(n); };
@@ -670,11 +670,12 @@ function compareBody(idn, withActions){
   if (m.found) row("Found at Apple", document.createTextNode((m.found.show ? m.found.show + " — " : "") + (m.found.title || "")));
   if (m.toleranceSeconds) row("How it was matched", document.createTextNode("The video's title contains the episode's whole title, and the lengths differ by " + fmtSecs(m.differenceSeconds) + ". Up to " + fmtSecs(m.toleranceSeconds) + " is allowed (the larger of 2 minutes and 5% of the episode). This does not establish the channel or the recording."));
   else if (m.method === "title-lookup") row("How it was matched", document.createTextNode("By the episode title Spotify shows, found once in Apple's catalogue."));
+  if (idn.earlier) row("Earlier confirmation", document.createTextNode("You confirmed " + (idn.earlier.episodeTitle ? "“" + idn.earlier.episodeTitle + "”" : "a source") + " on " + String(idn.earlier.at || "").slice(0, 10) + ". It does not count now: " + idn.earlier.why + "."));
   if (idn.legacy) { var src = r.import && r.import.source || {}; row("Recorded", h("span",{}, document.createTextNode("This reading was saved before the comparison was recorded. The note saved with it: “" + (src.note || "") + "” "), src.url ? h("a",{href:src.url, target:"_blank", rel:"noopener", text:src.url}) : null)); }
   w.append(dl, h("p",{class:"hint",text:"Confirming records your statement that these are the same episode. It does not check the transcript or anything said in it."}));
   if (withActions && !readOnly()) {
     var ok = h("button",{type:"button", class:"btn", text:"They match — record my confirmation", onclick:async function(){
-      ok.disabled = true; try { await reload(await API.confirmSource(r.id, idn.sourceUrl)); say("Your confirmation is recorded."); } catch(e){ ok.disabled = false; say(errCopy(e)); if (e && e.status === 409) await reload(); }
+      ok.disabled = true; try { await reload(await API.confirmSource(r.id, idn.sourceUrl, idn.key)); say("Your confirmation is recorded."); } catch(e){ ok.disabled = false; say(errCopy(e)); if (e && e.status === 409) await reload(); }
     }});
     w.append(h("div",{class:"row"}, ok, h("button",{type:"button", class:"btn quiet", text:"Use a different source", onclick:function(){ openDrawer("controls", "#ctl-source"); }})));
   }
@@ -1037,7 +1038,7 @@ function buildAcross(el){
 function controlsSig(){
   var r = run(); if (!r) return JSON.stringify(["new", S.draft, !!S.ai, S.engines && [S.engines.local.installed, S.engines.cloud.configured, S.engines.prefer]]);
   var pr = r.provenance || {}, proc = r.processing || {}, idn = S.b.sourceIdentity || {};
-  return JSON.stringify([r.id, r.title, r.sourceUrl, r.sourceLabel, r.sourceDate, r.speakers, pr.overrides, pr.flags && pr.flags.length, pr.labelsOrigin, pr.confirmedAt, r.preparation && r.preparation.status, proc.status, S.b.summary && S.b.summary.readingGate, S.b.passages.length, S.b.passages.every(isReady), (r.orphans||[]).length, idn.state, idn.sourceUrl, r.input && r.input.sha256, !!S.ai, S.ai && S.ai.model, S.engines && [S.engines.local.installed, S.engines.cloud.configured, S.engines.prefer], S.busy, attributionOk()]);
+  return JSON.stringify([r.id, r.title, r.sourceUrl, r.sourceLabel, r.sourceDate, r.speakers, pr.overrides, pr.flags && pr.flags.length, pr.labelsOrigin, pr.confirmedAt, r.preparation && r.preparation.status, proc.status, S.b.summary && S.b.summary.readingGate, S.b.passages.length, S.b.passages.every(isReady), (r.orphans||[]).length, idn.state, idn.sourceUrl, idn.key, r.input && r.input.sha256, !!S.ai, S.ai && S.ai.model, S.engines && [S.engines.local.installed, S.engines.cloud.configured, S.engines.prefer], S.busy, attributionOk()]);
 }
 function renderControls(force){
   var body = $("controlsBody"); if (!body) return;

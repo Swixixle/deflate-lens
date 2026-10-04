@@ -63,7 +63,7 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 
 ## Where things are
 
-- `data/runs/<id>/` — one folder per run: `run.json`, `transcript.txt`, `passages/*.json`, `summary.json`, `calls.jsonl` (model-call records: hashes, never prompt text), `attachments/`.
+- `data/runs/<id>/` — one folder per run: `run.json`, `transcript.txt`, `versions/` (earlier texts, named by hash), `passages/*.json`, `summary.json`, `calls.jsonl` (model-call records: hashes, never prompt text), `attachments/`.
 - `data/runs/<id>/archive/` — passages replaced by a re-segment. `data/trash/` — runs deleted in the app. The app
   never removes files.
 - `.env` — local settings, including the key. Mode 600 when the app writes it.

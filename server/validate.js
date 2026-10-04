@@ -38,7 +38,7 @@ function validateRunDoc(doc, ctx) {
     if (i && ["direct", "needs_confirmation"].includes(i.identity)) out.import.identity = i.identity;
     if (i && i.match && typeof i.match === "object") out.import.match = validateMatch(i.match);
     if (i && Array.isArray(i.ambiguous) && i.ambiguous.length) out.import.ambiguous = i.ambiguous.map(x => str(x, 300)).slice(0, 10);
-    if (i && i.episodeInfo && typeof i.episodeInfo === "object") out.import.episodeInfo = { title: str(i.episodeInfo.title, 300), durationSeconds: Number(i.episodeInfo.durationSeconds) || 0, pubDate: str(i.episodeInfo.pubDate, 60), link: isUrl(i.episodeInfo.link) ? str(i.episodeInfo.link, 2000) : "" };
+    if (i && i.episodeInfo && typeof i.episodeInfo === "object") out.import.episodeInfo = { guid: str(i.episodeInfo.guid, 500), title: str(i.episodeInfo.title, 300), durationSeconds: Number(i.episodeInfo.durationSeconds) || 0, pubDate: str(i.episodeInfo.pubDate, 60), link: isUrl(i.episodeInfo.link) ? str(i.episodeInfo.link, 2000) : "" };
   }
   if ("provenance" in doc) out.provenance = validateProvenance(doc.provenance, ctx);
   return out;

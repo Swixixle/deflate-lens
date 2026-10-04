@@ -205,6 +205,16 @@ function testAI() {
     await page.reload(); await page.waitForSelector(".card");
     check("confirmedEverywhere", !(await page.locator(".notice.source").count()) && /Match confirmed by you on/.test(await page.locator("#run-head").innerText()));
     await second.close();
+    // the intended episode changes under the same video (here only its feed guid): the confirmation stops counting, the
+    // comparison says why, and confirming again records the new pairing
+    const rj = path.join(dir, "runs", vidId, "run.json"), rec = JSON.parse(fs.readFileSync(rj, "utf8")); rec.import.episodeInfo.guid = "g-vid-other"; fs.writeFileSync(rj, JSON.stringify(rec, null, 2));
+    await page.reload(); await page.waitForSelector(".notice.source");
+    await page.locator(".notice.source button:has-text('Check source')").click();
+    const earlier = await page.locator(".notice.source").innerText();
+    check("earlierConfirmationShown", /Earlier confirmation\s*You confirmed “An episode found on video” on \d{4}-\d{2}-\d{2}\. It does not count now: the source or the episode changed\./.test(earlier), earlier);
+    await page.locator("button:has-text('They match')").click(); await page.waitForFunction(() => !document.querySelector(".notice.source"), null, { timeout: 10000 });
+    const reb = await bundle(page, vidId);
+    check("reconfirmed", reb.sourceIdentity.state === "confirmed" && reb.run.sourceConfirmation.episodeGuid === "g-vid-other" && reb.run.sourceConfirmationHistory.length === 1);
     await read(page, "https://show.test/feed.xml"); await page.waitForSelector("#intake .episodes .btn.ep", { timeout: 20000 });
     await page.locator("#intake .episodes .btn.ep").nth(2).click(); await page.waitForSelector("#intake .enginebox", { timeout: 20000 });
     const box = await page.locator("#intake").innerText();

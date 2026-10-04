@@ -31,8 +31,29 @@ function readingMaterial(b, p) {
   const source = (ctx.beforeText ? "CONTEXT BEFORE (for interpretation only):\n" + ctx.beforeText + "\n\n" : "") + "PASSAGE (turns " + p.turnStart + "–" + p.turnEnd + "):\n" + target +
     (ctx.afterText ? "\n\nCONTEXT AFTER (for interpretation only):\n" + ctx.afterText : "") +
     (ctx.record.omitted.length ? "\n\nNot shown (too long): " + ctx.record.omitted.map(o => "turn " + o.turn).join(", ") : "");
+  // the speaker of every passage turn is recorded with the context's, so the material can be rebuilt exactly even after
+  // a label is corrected (materialAsRead)
+  const speakers = turns.slice(p.turnStart, p.turnEnd + 1).filter(t => !t.heading).map(t => ({ turn: t.i, speaker: shared.effSpeaker(t, ov) }));
   return { purpose: "deflate", prompt: P.deflate(b.run, p, target, { beforeText: ctx.beforeText, afterText: ctx.afterText, omitted: ctx.record.omitted }), source,
-    context: Object.assign({}, ctx.record, { hash: sha256(source) }) };
+    context: Object.assign({}, ctx.record, { target: speakers, hash: sha256(source) }) };
+}
+/* The exact material a saved reading was made from, rebuilt from the text version it names (store.textForHash) and the
+   speakers its context record names, with a check that it hashes to what was sent. Works after the text or a label
+   was changed; says so plainly when the record or the old text does not exist. */
+async function materialAsRead(store, b, p) {
+  const basis = p.basedOn && p.basedOn.inputHash;
+  if (b.run.kind === "claim") {
+    const text = await store.textForHash(b.run.id, basis);
+    return text == null ? { available: false, why: "The text this reading was made from was not kept." } : { available: true, source: "CLAIM (typed by a person):\n" + text, matches: null };
+  }
+  const ctx = p.provenance && p.provenance.context;
+  if (!ctx) return { available: false, why: "This reading was made before the material it was read from was recorded (before 0.12)." };
+  const text = await store.textForHash(b.run.id, basis);
+  if (text == null) return { available: false, why: "The text this reading was made from was replaced before earlier versions were kept (0.12.1); only its fingerprint remains." };
+  const ov = Object.assign({}, b.run.provenance && b.run.provenance.overrides);
+  [].concat(ctx.before || [], ctx.target || [], ctx.after || []).forEach(x => { ov[String(x.turn)] = x.speaker; });
+  const m = readingMaterial({ run: Object.assign({}, b.run, { provenance: Object.assign({}, b.run.provenance, { overrides: ov }) }), transcript: text }, p);
+  return { available: true, source: m.source, matches: m.context.hash === ctx.hash, contextVersion: ctx.version, readFrom: basis, current: basis === b.run.input.sha256 };
 }
 /* What is ready, what is held, and the first held reason in plain words: enough to decide whether to retry. */
 function partialMessage(done, total, issues) {
@@ -250,4 +271,4 @@ function createReader({ store, getAI, searchClaim, research }) {
   }
   return { start, stop, recover, jobs };
 }
-module.exports = { createReader, requestedBasis, readingMaterial };
+module.exports = { createReader, requestedBasis, readingMaterial, materialAsRead };

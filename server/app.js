@@ -18,7 +18,7 @@ const Q = require("./quality");
 const { assignSpeakers } = require("./assign");
 const { prepareSpeakers, reviewedReading, reviewedOverview } = require("./preparation");
 const { createClaimSearch } = require("./claim-search");
-const { createReader, readingMaterial } = require("./reading");
+const { createReader, readingMaterial, materialAsRead } = require("./reading");
 const P = require("../shared/prompts");
 const { readInput } = require("./intake");
 
@@ -152,7 +152,7 @@ function createApp(opts) {
       const show = result.show && result.show.name || "", title = result.episode && result.episode.title || result.title || "";
       const doc = Object.assign({title, sourceLabel:(show ? show + (title ? " — " : "") : "") + title}, input.context || {}, {sourceUrl:input.url, speakers:[], import:{url:input.url, title, fetchedAt:result.fetchedAt || job.finishedAt, chars:result.text.length, method:result.kind === "article" ? "page text" : "transcript: " + src.kind, source:src, show, episode:title, matchedBy:result.matchedBy || "", speakers:result.speakers || [],
         identity:result.kind === "article" ? "direct" : (result.identity || "direct"), match:result.match || null, ambiguous:result.ambiguous || null,
-        episodeInfo:result.episode ? {title:result.episode.title || "", durationSeconds:result.episode.duration || 0, pubDate:result.episode.pubDate || "", link:result.episode.link || ""} : null}});
+        episodeInfo:result.episode ? {guid:result.episode.guid || "", title:result.episode.title || "", durationSeconds:result.episode.duration || 0, pubDate:result.episode.pubDate || "", link:result.episode.link || ""} : null}});
       if (!doc.title) delete doc.title;
       const prepared = await readInput(result.text, doc, importer);
       const rid = input.targetRunId || "r_" + id;
@@ -204,7 +204,10 @@ function createApp(opts) {
   app.post("/api/runs/:id/passages/:pid/reread", wrap(async (req, res) => { if (!/^p\d{3}$/.test(req.params.pid)) return res.status(400).json({ error: "invalid passage id" }); res.status(202).json(await reader.start(req.params.id, { reread: req.params.pid })); }));
   app.post("/api/runs/:id/overview", wrap(async (req, res) => { res.status(202).json(await reader.start(req.params.id, { overview: true })); }));
   app.post("/api/runs/:id/reorganize", wrap(async (req, res) => { res.status(202).json(await reader.start(req.params.id, { resegment: true })); }));
-  app.post("/api/runs/:id/source/confirm", wrap(async (req, res) => { await store.confirmSource(req.params.id, req.body && req.body.sourceUrl); res.json(await store.bundle(req.params.id)); }));
+  /* The exact text a reading was made from (the passage and the context the model saw), rebuilt and checked against the
+     hash on its record; also for a reading that is now out of date. */
+  app.get("/api/runs/:id/passages/:pid/material", wrap(async (req, res) => { const b = await store.bundle(req.params.id); const p = b && b.passages.find(x => x.id === req.params.pid); if (!p || !p.analysis) return res.status(404).json({ error: "no reading for that passage" }); res.json(await materialAsRead(store, b, p)); }));
+  app.post("/api/runs/:id/source/confirm", wrap(async (req, res) => { await store.confirmSource(req.params.id, req.body && req.body.sourceUrl, req.body && req.body.key); res.json(await store.bundle(req.params.id)); }));
   /* The User Guide: one Markdown file, shown in the app and readable on GitHub. */
   app.get("/guide.md", (req, res) => { res.type("text/markdown; charset=utf-8"); res.sendFile(path.join(__dirname, "..", "docs", "guide.md")); });
   app.get("/api/runs/:id/original-input.txt", wrap(async (req, res) => {

@@ -9,14 +9,17 @@
      --repeat N          read each selected case N times (instability check; use on a few high-risk cases)
      --old               also ask the pre-0.12 passage prompt once per passage case (no review), for comparison
      --allow-mock        run with DEFLATE_MOCK_AI=1 to test this script's wiring; outputs are marked MOCK
+     --out DIR           write here instead of data/eval/<time>/
+   Each finished case is written at once (results.jsonl, results.json, scoring-sheet.md), so a stopped run keeps what it
+   finished. The readings themselves, with every model-call record, stay under <out>/store/ (the app's own format).
    Cost: every case is a real reading on your key (speaker preparation where there are labels, one reading and one
    review per passage, an overview for several passages). The default set is about 120 model calls. */
-const fs = require("fs"), os = require("os"), path = require("path"), crypto = require("crypto");
+const fs = require("fs"), path = require("path"), crypto = require("crypto");
 const ROOT = path.join(__dirname, "..");
 require("dotenv").config({ path: path.join(ROOT, ".env") });
 const { Store } = require("../server/store");
 const { createAI } = require("../server/ai");
-const { createReader } = require("../server/reading");
+const { createReader, materialAsRead, readingMaterial } = require("../server/reading");
 const shared = require("../shared/transcript");
 const P = require("../shared/prompts");
 
@@ -62,18 +65,27 @@ function mechanical(c, a) {
   const ai = createAI(process.env);
   if (!ai) { console.error("No model key is configured (ANTHROPIC_API_KEY in .env). Nothing was run, and no mock was used in its place.\nAdd the key (the app asks for it once, or put it in .env), then run  npm run eval  again."); process.exit(2); }
   if (ai.mock && !opt("allow-mock")) { console.error("DEFLATE_MOCK_AI is on: the readings would be placeholders. Nothing was run. Use --allow-mock only to test this script's wiring."); process.exit(2); }
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-"), outDir = path.join(ROOT, "data", "eval", stamp);
-  const work = fs.mkdtempSync(path.join(os.tmpdir(), "deflate-eval-"));
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-"), outDir = val("out") ? path.resolve(val("out")) : path.join(ROOT, "data", "eval", stamp);
+  const work = path.join(outDir, "store"), shown = path.relative(ROOT, outDir).startsWith("..") ? outDir : path.relative(ROOT, outDir);
+  fs.mkdirSync(work, { recursive: true });
   const store = new Store(work); await store.init();
-  const reader = createReader({ store, getAI: () => ai, searchClaim: null, research: null });
   const results = [];
+  const meta = { model: ai.mock ? "MOCK" : ai.model, contract: P.CONTRACT, contextVersion: shared.CONTEXT_VERSION, startedAt: new Date().toISOString(), repeat, cases: cases.map(c => c.id) };
+  // written after every case: a stopped or failed run keeps everything it finished
+  const save = done => {
+    fs.writeFileSync(path.join(outDir, "results.json"), JSON.stringify(Object.assign({}, meta, { finished: done, completed: results.length, results }), null, 2));
+    fs.writeFileSync(path.join(outDir, "scoring-sheet.md"), sheet(results, ai, done));
+  };
+  process.on("SIGINT", () => { save(false); console.log("\nStopped. " + results.length + " finished case(s) are in " + shown + "."); process.exit(130); });
+  const reader = createReader({ store, getAI: () => ai, searchClaim: null, research: null });
   console.log("Model: " + (ai.mock ? "MOCK" : ai.model) + " · contract " + P.CONTRACT + " · context " + shared.CONTEXT_VERSION + " · " + cases.length + " cases × " + repeat);
   for (const c of cases) for (let n = 1; n <= repeat; n++) {
     const text = sourceText(c), t0 = Date.now();
     process.stdout.write(c.id + (repeat > 1 ? " #" + n : "") + " … ");
     const record = { id: c.id, run: n, kind: c.kind || "passage", tests: c.tests, expect: c.expect, provenance: c.provenance || null, sourceSha256: sha(text), sourceChars: text.length };
+    let id = null;
     try {
-      const id = await store.createRun(c.kind === "claim" ? { kind: "claim", title: c.id } : { title: c.id }, text);
+      id = await store.createRun(c.kind === "claim" ? { kind: "claim", title: c.id } : { title: c.id }, text);
       let b = await store.bundle(id);
       if (c.passages && c.kind !== "claim") {
         if (c.from) { const orig = shared.parseTranscript(fs.readFileSync(path.join(ROOT, c.from.file), "utf8")), now = shared.parseTranscript(b.transcript); for (const p of c.passages) for (let i = p.turnStart; i <= p.turnEnd; i++) if (!orig[i] || !now[i] || orig[i].text !== now[i].text) throw new Error("turn " + i + " moved when the excerpt was cut"); }
@@ -93,38 +105,46 @@ function mechanical(c, a) {
       record.passages = b.passages.map(p => ({ id: p.id, title: p.title, turns: [p.turnStart, p.turnEnd], gate: p.readingGate.status, reasons: p.readingGate.reasons, context: p.provenance && p.provenance.context || null, review: p.provenance && p.provenance.review ? { approved: p.provenance.review.approved, attempts: p.provenance.review.attempts, issues: p.provenance.review.issues } : null, quoteCheck: p.quoteCheck || null, analysis: p.analysis || null,
         checks: p.analysis && p.readingGate.status === "ready" ? mechanical(c, p.analysis) : [["reading ready", false, (p.readingGate.reasons || []).join("; ")]] }));
       record.overview = b.summary ? { gate: b.summary.readingGate.status, patterns: b.summary.patterns, survived: b.summary.survived } : null;
+      // the exact passage and context each reading was made from, checked against the hash on its record; for a passage
+      // with no reading, the material that was sent for it
+      for (const p of record.passages) { const full = b.passages.find(x => x.id === p.id); p.material = !full ? null : full.analysis ? await materialAsRead(store, b, full) : c.kind === "claim" ? null : Object.assign({ available: true, matches: null, sentFor: "no reading kept" }, { source: readingMaterial(b, full).source }); }
       if (opt("old") && c.kind !== "claim") {
         const turns = shared.parseTranscript(b.transcript), ov = b.run.provenance.overrides;
         record.old = [];
         for (const p of b.passages) { const t1 = Date.now(); try { const out = await ai.sample({ prompt: P.deflateV1(b.run, p, shared.fmtTurns(turns, ov, p.turnStart, p.turnEnd)), json: true }); const a = shared.sanitizeAnalysis(out.data); record.old.push({ passage: p.id, model: out.model, usage: out.usage, latencyMs: Date.now() - t1, analysis: a, checks: mechanical(c, a) }); } catch (e) { record.old.push({ passage: p.id, error: e.code || e.message, stopReason: e.meta && e.meta.stopReason || "" }); } }
       }
       const failed = record.passages.flatMap(p => p.checks.filter(x => !x[1]).map(x => x[0]));
-      console.log(record.processing.status + " · " + record.calls + " calls · " + (failed.length ? failed.length + " check(s) to look at" : "mechanical checks pass"));
-    } catch (e) { record.error = String(e && e.message || e); console.log("error: " + record.error); }
+      record.summaryLine = record.processing.status + " · " + record.calls + " calls · " + (failed.length ? failed.length + " check(s) to look at" : "mechanical checks pass");
+    } catch (e) { record.error = String(e && e.message || e); }
+    // where this case's readings and every model-call record (failed calls included) are kept
+    if (id) { record.runId = id; record.callRecords = path.relative(outDir, path.join(work, "runs", id, "calls.jsonl")); }
     results.push(record);
+    fs.appendFileSync(path.join(outDir, "results.jsonl"), JSON.stringify(record) + "\n");
+    save(false);
+    console.log(record.error ? "error: " + record.error : record.summaryLine);
   }
-  fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(path.join(outDir, "results.json"), JSON.stringify({ model: ai.mock ? "MOCK" : ai.model, contract: P.CONTRACT, contextVersion: shared.CONTEXT_VERSION, at: new Date().toISOString(), repeat, results }, null, 2));
-  fs.writeFileSync(path.join(outDir, "scoring-sheet.md"), sheet(results, ai));
-  fs.rmSync(work, { recursive: true, force: true });
+  save(true);
   const usage = results.reduce((u, r) => ({ input: u.input + (r.usage ? r.usage.input : 0), output: u.output + (r.usage ? r.usage.output : 0) }), { input: 0, output: 0 });
   console.log("\nTokens: " + usage.input + " in, " + usage.output + " out." + (ai.mock ? " MOCK run: this tested the script's wiring only." : ""));
-  console.log("Written: " + path.relative(ROOT, outDir) + "/results.json and scoring-sheet.md. Score every case by hand; the mechanical checks only point at places to look.");
+  console.log("Written: " + path.join(shown, "results.json") + ", results.jsonl and scoring-sheet.md. Score every case by hand; the mechanical checks only point at places to look.");
 })().catch(e => { console.error(e); process.exit(1); });
 
 /* The sheet a person fills in: the expected meaning (written before the run), the outputs at both levels, the
    mechanical pointers, and the six scores per level from the brief. */
-function sheet(results, ai) {
-  const out = ["# Reading evaluation · " + (ai.mock ? "MOCK (wiring only)" : ai.model) + " · " + P.CONTRACT, "",
+function sheet(results, ai, done) {
+  const out = ["# Reading evaluation · " + (ai.mock ? "MOCK (wiring only)" : ai.model) + " · " + P.CONTRACT, "", done ? "" : "_Incomplete: " + results.length + " case(s) finished so far._", "",
     "Score each reading at both levels, 0 (wrong) / 1 (partly) / 2 (right): **meaning**, **qualifiers** (some/all, may/must, if/only if, numbers and denominators), **attribution** (who said it, quoted versus own view), **justified final judgment**, **fair to the source** (no invented premises; concern only where named), **uncertainty scoped correctly**. Write the reason for every score below 2. A sound case that gets a surviving concern, any material meaning change, and any invented quotation must be fixed before the semantic change is called ready. A small set shows performance on that set only.", ""];
   for (const r of results) {
     out.push("## " + r.id + (r.run > 1 ? " (run " + r.run + ")" : ""), "", "*Tests:* " + r.tests, "", "*Expected meaning (written before the run):* " + r.expect.meaning, "");
     if (r.provenance) out.push("*Source:* " + r.provenance.speaker + ", " + r.provenance.event + ", " + r.provenance.date + " — " + r.provenance.source + ". " + r.provenance.note, "");
-    if (r.error) { out.push("**Error:** " + r.error, ""); continue; }
-    out.push("*Run:* " + r.processing.status + " · model " + r.model + " · " + r.calls + " calls · " + r.usage.input + "/" + r.usage.output + " tokens · " + Math.round(r.latencyMs / 100) / 10 + " s · source sha256 " + r.sourceSha256.slice(0, 12) + "…" + (r.failedCalls.length ? " · failed calls: " + r.failedCalls.map(x => x.purpose + " " + x.error).join(", ") : ""), "");
+    if (r.error) { out.push("**Error:** " + r.error + (r.callRecords ? " · call records: " + r.callRecords : ""), ""); continue; }
+    out.push("*Run:* " + r.processing.status + " · model " + r.model + " · " + r.calls + " calls · " + r.usage.input + "/" + r.usage.output + " tokens · " + Math.round(r.latencyMs / 100) / 10 + " s · source sha256 " + r.sourceSha256.slice(0, 12) + "…" + (r.failedCalls.length ? " · failed calls: " + r.failedCalls.map(x => x.purpose + " " + x.error + (x.stopReason ? " (" + x.stopReason + ")" : "")).join(", ") : "") + " · call records: " + r.callRecords, "");
     for (const p of r.passages) {
       const a = p.analysis;
       out.push("### " + p.title + " (turns " + p.turns.join("–") + ") — " + p.gate + (p.reasons && p.reasons.length ? ": " + p.reasons.join("; ") : ""), "");
+      const fence = p.material && /```/.test(p.material.source || "") ? "````" : "```";
+      if (p.material && p.material.available) out.push("**" + (p.material.sentFor ? "Source sent (no reading was kept)" : "Source as read") + "**" + (p.material.matches === false ? " (WARNING: rebuilt text does not match the hash on the reading's record)" : p.material.matches ? " (rebuilt and checked against the reading's record)" : "") + ":", "", fence + "text", p.material.source, fence, "");
+      else if (p.material) out.push("**Source as read:** not available — " + p.material.why, "");
       if (a) for (const L of ["hs", "g5"]) {
         out.push("**" + (L === "hs" ? "High school" : "Fifth grade") + "**", "", "- In plain words: " + (a.deflated[L] || "—"));
         if (r.kind !== "claim") out.push("- A fair reading: " + (a.defense[L] || "—"), "- What follows: " + (a.revision[L] || "—"));
