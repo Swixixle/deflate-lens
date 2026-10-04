@@ -2,6 +2,23 @@ Raw output of the live checks, kept as a record. Each block is the output of the
 where a block says otherwise.
 
 ==============================================================================
+Source identity on a real episode, live, 4 October 2026 (0.12 checks)
+==============================================================================
+
+JRE #2308 from the saved copy of the real Megaphone feed (3 Oct 2026), through the app's own resolver, job and import
+routes, with real yt-dlp (2026.08.19) and the real network; Node 22; Linux.
+
+   feed item: "#2308 - Jordan Peterson", duration 11787 s, no transcript in the feed, no video in the notes
+   the gated search chose https://www.youtube.com/watch?v=QBEZhjnZTks (the PowerfulJRE upload, as on 3 Oct)
+   captions: refused from this address by both readers:
+     yt-dlp: ERROR: [youtube] QBEZhjnZTks: Sign in to confirm you're not a bot. (exit 1)
+     built-in: YouTube refused the caption list: Sign in to confirm you're not a bot
+   result: no transcript (episode page: the feed gives none); nothing was imported, so the persisted match record
+   and the "Video matched by title and length" notice were not exercised on this episode here. They are exercised
+   end to end with fixtures (test/reading-0.12.test.js, scripts/ui-check.js) and the resolver's match record with a
+   faked yt-dlp (test/transcript-chain.test.js).
+
+==============================================================================
 YouTube captions, live, 3 October 2026 (0.11.2 checks)
 ==============================================================================
 
