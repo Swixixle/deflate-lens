@@ -49,7 +49,7 @@ function buildExport(b) {
   })));
   return {
     schema: "deflate-lens/claims@0.6",
-    typeMeaning: "displayType is what the app shows. type is the saved value: \"claim\" for an empirical assertion read under the reading-2 contract (never judged true or false from the model's memory); \"fact\", \"contested\" and \"unsupported\" are kept as an earlier model labelled them (historicalType) and are shown as \"Checkable claim\".",
+    typeMeaning: "displayType is what the app shows. type is the saved value: \"claim\" for an empirical assertion read under the neutral contract (reading-2 or later; never judged true or false from the model's memory); \"fact\", \"contested\" and \"unsupported\" are kept as an earlier model labelled them (historicalType) and are shown as \"Checkable claim\".",
     exportedAt: new Date().toISOString(),
     generator: "deflate-lens local app",
     statusMeaning: STATUS_MEANING,

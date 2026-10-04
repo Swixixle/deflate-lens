@@ -1,5 +1,5 @@
 {
-  "about": "Evaluation cases for npm run eval. The expected meaning and constraints were written before any model output was seen. Invented cases use invented speakers. 'expect' fields: meaning = what a faithful reading must convey (for the person scoring); sound = no concern may survive the fair reading (no jump, or jump withdrawn; inference not 'gap'); concern = a concern should survive (jumpSurvives yes or partly); keep = groups of patterns, each group must match the plain-words restatement at BOTH reading levels; forbid = patterns that must not appear in any generated field at either level; mention = patterns that must appear somewhere in the reading; types = claim types that must be present. Patterns are case-insensitive regular expressions. The mechanical checks are an aid to the person scoring, not the score.",
+  "about": "Evaluation cases for npm run eval. The expected meaning and constraints were written before any model output was seen. Invented cases use invented speakers. 'expect' fields: meaning = what a faithful reading must convey (for the person scoring); sound = no concern may survive the fair reading (no jump, or jump withdrawn; inference not 'gap'); concern = a concern should survive (jumpSurvives yes or partly); keep = groups of patterns, each group must match the plain-words restatement at BOTH reading levels; forbid = patterns that must not appear in any generated field at either level; mention = patterns that must appear somewhere in the reading; plainForbid = patterns that must not appear in the plain-words restatement at either level; types = claim types that must be present. Patterns are case-insensitive regular expressions. Two checks apply to every passage case: the card text (In plain words, A fair reading, What follows) at both levels must not narrate how the reading was made (a concern raised, kept or withdrawn; the fair reading as a step; context rules), and every claim's plain restatement must name its speaker or report the claim as theirs. The mechanical checks are an aid to the person scoring, not the score.",
   "cases": [
     {
       "id": "sound-library",
@@ -8,8 +8,8 @@
       "expect": {
         "meaning": "Of 18 evening visitors asked, 12 wanted later hours; the speaker treats this only as interest among that group and proposes asking a broader sample and comparing closing times before any change.",
         "sound": true,
-        "keep": [["12|twelve"], ["18|eighteen"], ["broader|more people|wider|larger"]],
-        "forbid": ["most (city )?residents want", "ignor(e|es|ed|ing) (the|its) (sample|limit)"]
+        "keep": [["12|twelve"], ["18|eighteen"], ["broad|wide|wider|mix|range|variety|varied|different (kinds|groups|types)|all kinds|kinds of|representative"]],
+        "forbid": ["most (city )?residents want", "ignor(e|es|ed|ing) (the|its) (sample|limit)", "\\b(ask|asking|survey|surveying|asks) more people\\b(?! (from|of|across|in|with) (different|many|all|other|more|a wider|a broader))"]
       }
     },
     {
@@ -190,8 +190,9 @@
       "passages": [{ "title": "Remote work and productivity", "turnStart": 0, "turnEnd": 0 }],
       "expect": {
         "meaning": "The target asserts remote work makes people more productive; the speaker's own next turn limits it to a survey of software developers. A fair reading uses that context; quotes come only from the target.",
+        "keep": [["remote|away from (the|an|their) office|outside (the|an|their) office|not (in|at) (the|an|their) office|from anywhere"]],
         "mention": ["developer|survey"],
-        "forbid": ["everyone is more productive"]
+        "forbid": ["everyone is more productive", "\\b(work|works|working|worked) (from|at) home\\b", "\\bhome[- ]working\\b"]
       }
     },
     {
@@ -215,15 +216,50 @@
       }
     },
     {
-      "id": "self-selected-letters",
-      "tests": "Self-selected correspondence (the risk named in the brief): fair wording without claiming more than the letters establish.",
+      "id": "universal-testimonial",
+      "tests": "A universal testimonial claim (0.12.2; was self-selected-letters, whose expected meaning wrongly read the guest as hearing from a subset): keep 'everybody' as said, keep that the evidence is what people write, and question the support without replacing the claim.",
       "text": "HOST: Why cold showers?\nGUEST: Everybody who tries it for a month writes to tell me their focus goes through the roof. It is the single best habit anyone can build.",
       "passages": [{ "title": "Cold showers and focus", "turnStart": 0, "turnEnd": 1 }],
       "expect": {
-        "meaning": "The guest hears from people who chose to write; other people may have had different results. Letters do not show it is the best habit for anyone.",
+        "meaning": "The guest says that everybody who tries cold showers for a month writes to tell him their focus improves enormously, and calls it the single best habit anyone can build. A faithful reading keeps the claim universal and keeps that the evidence is what people write to him. It may question how he could know that everyone who tried it wrote or improved, and whether reports of better focus show it is the best habit for anyone (no comparison with other habits, reports rather than measured focus). It must not restate him as hearing from only some people.",
         "concern": true,
-        "mention": ["chose to write|who wrote|write in|wrote to|people who write|letters|messages"],
-        "forbid": ["would not write", "only hears from people who liked", "people it did not help"]
+        "keep": [["everybody|everyone|every person|all (the )?(people|who)"]],
+        "plainForbid": ["\\bsome (people|listeners|readers)\\b", "people who (chose|choose|decide|decided) to write", "\\bthose who (wrote|write)\\b", "\\bmany people\\b"],
+        "mention": ["best habit|single best|other habits|compar"]
+      }
+    },
+    {
+      "id": "self-selected-correspondence",
+      "tests": "Genuinely self-selected correspondence (0.12.2): letters from people who chose to write offered as proof about almost everyone who took the course.",
+      "text": "HOST: How do you know the course works?\nGUEST: Every week I get letters from listeners who finished it, telling me it changed their lives. Hundreds of letters by now. So it works for almost everyone who takes it.",
+      "passages": [{ "title": "Letters about the course", "turnStart": 0, "turnEnd": 1 }],
+      "expect": {
+        "meaning": "The guest's evidence is letters from listeners who finished the course and wrote to say it changed their lives; he concludes it works for almost everyone who takes it. Letters from people who chose to write cannot show what share of everyone who took the course it helped: he gives no count of takers, and people it did not help have less reason to write.",
+        "concern": true,
+        "keep": [["letter|wrote|write|writing"], ["almost every|nearly every|almost all|nearly all"]],
+        "mention": ["did not write|didn't write|do not write|don't write|chose to write|choose to write|who wrote|who write|how many|not hear|only hear|never hear|self-select"]
+      }
+    },
+    {
+      "id": "breadth-not-number",
+      "tests": "Held out from the prompt (0.12.2): a word about breadth ('students at all four campuses') must not become a word about number ('more students') at either level.",
+      "text": "ORGANIZER: So far we have only surveyed students at the downtown campus. Before we change the meal plan, we will survey students at all four campuses.",
+      "expect": {
+        "meaning": "Only students at the downtown campus have been surveyed so far; before changing the meal plan, the organizer will survey students at all four campuses. A plan stated with its own limit; nothing to object to.",
+        "sound": true,
+        "keep": [["downtown|one campus|a single campus|only one"], ["four|all (the )?campus|every campus|each campus|all of the campus"]],
+        "forbid": ["\\b(ask|asking|survey|surveying) more students\\b(?! (at|from|on|across) )"]
+      }
+    },
+    {
+      "id": "place-and-group",
+      "tests": "Held out from the prompt (0.12.2): one hospital's intensive care unit must not become hospitals in general; 'by half' and 'last year' kept; the causal 'cut' kept as the nurse's claim.",
+      "text": "NURSE: In our hospital's intensive care unit, the new checklist cut line infections by half last year.",
+      "expect": {
+        "meaning": "The nurse says that in the intensive care unit of the nurse's own hospital, line infections fell by half last year, and credits the new checklist ('cut'). One unit in one hospital, one year; no comparison group is described.",
+        "keep": [["intensive care|\\bICU\\b|sickest patients|very sick patients"], ["half|50|fifty"], ["our hospital|their hospital|her hospital|his hospital|one hospital|the nurse's hospital|this hospital|the hospital where|own hospital"]],
+        "types": ["claim"],
+        "forbid": ["\\bhospitals (have|saw|cut|can|should)\\b", "\\bin hospitals\\b"]
       }
     },
     {

@@ -9,9 +9,8 @@ const { spawn } = require("node:child_process");
 
 const ROOT = path.join(__dirname, "..");
 const SCRIPT = path.join(ROOT, "scripts", "eval-readings.js");
-const env = Object.assign({}, process.env, { DEFLATE_MOCK_AI: "1", ANTHROPIC_API_KEY: "" });
-
 function run(args, opts = {}) {
+  const env = Object.assign({}, process.env, { DEFLATE_MOCK_AI: "1", ANTHROPIC_API_KEY: "" }, opts.env || {});
   const child = spawn(process.execPath, (opts.preload ? ["-r", opts.preload] : []).concat([SCRIPT], args), { cwd: ROOT, env });
   let out = "";
   child.stdout.on("data", d => { out += d; }); child.stderr.on("data", d => { out += d; });
@@ -59,6 +58,46 @@ test("eval: a run stopped partway keeps every case it finished and says the shee
   assert.equal(res.finished, false); assert.equal(res.completed, rows.length); assert.deepEqual(res.results.map(x => x.id), rows.map(x => x.id));
   assert.match(fs.readFileSync(path.join(out, "scoring-sheet.md"), "utf8"), new RegExp("_Incomplete: " + rows.length + " case\\(s\\) finished so far\\._"));
   for (const row of rows) assert.ok(fs.existsSync(path.join(out, row.callRecords)));
+});
+
+test("eval: a draft the review rejected is kept with its complete reasons and the review's answer, beside what was shown", async t => {
+  const out = await fsp.mkdtemp(path.join(os.tmpdir(), "deflate-eval-")); t.after(() => fsp.rm(out, { recursive: true, force: true }));
+  const LONG = "jump.hs (also revision): the draft's concern does not match what the speaker said. " + "It replaces the speaker's claim with a narrower one and builds the concern on that. ".repeat(5) + "END-OF-REASON";
+  // a stand-in whose review rejects the first draft of each passage (or every draft), with a reason longer than 300 characters
+  const preload = path.join(out, "reviewer.js");
+  fs.writeFileSync(preload, "const ai = require(" + JSON.stringify(path.join(ROOT, "server", "ai.js")) + "); const make = ai.createAI; let n = 0;\n" +
+    "ai.createAI = env => { const a = make(env); if (!a || !a.mock) return a; const sample = a.sample.bind(a); a.sample = async args => { const p = String(args.prompt || '');" +
+    " if (p.startsWith('Review this reading before it is shown') && !p.includes('closing overview') && (process.env.REJECT === 'all' || n++ % 2 === 0)) { const data = { approved: false, issues: [" + JSON.stringify(LONG) + "] }; return { data, text: JSON.stringify(data), usage: null, model: 'mock', stopReason: 'end_turn' }; }" +
+    " return sample(args); }; return a; };\n");
+  const first = await run(["--allow-mock", "--out", path.join(out, "first"), "--cases", "sound-library"], { preload }).done;
+  assert.equal(first.code, 0, first.out);
+  const row = lines(path.join(out, "first", "results.jsonl"))[0], p = row.passages[0];
+  assert.equal(p.gate, "ready"); assert.equal(p.attempts.length, 2);
+  assert.deepEqual(p.attempts.map(x => x.shown), [false, true]);
+  assert.ok(p.attempts[0].reasons.includes(LONG), "the whole reason, not cut");
+  assert.equal(p.attempts[0].review.answer.approved, false); assert.ok(p.attempts[0].draft && p.attempts[0].draft.deflated, "the rejected draft itself is kept");
+  assert.ok(Array.isArray(p.attempts[0].checks), "and the pointers are run on it too");
+  let sheet = fs.readFileSync(path.join(out, "first", "scoring-sheet.md"), "utf8");
+  assert.match(sheet, /\*\*Rejected before display\*\* \(1 of 2 attempts; full prompts and answers in exchanges\/sound-library\.jsonl\)/);
+  const section = sheet.slice(sheet.indexOf("Rejected before display"));
+  assert.ok(section.includes("- " + LONG), "the sheet prints the complete reason");
+  assert.match(section, /The separate review answered approved: false, with the issues above\./);
+  assert.match(section, /\*\*High school\*\*\n\n- In plain words: MOCK/);
+  assert.match(section, /Mechanical pointers for this draft: /);
+  const ex = lines(path.join(out, "first", "exchanges", "sound-library.jsonl"));
+  const kinds = ex.map(x => x.kind).filter(k => k !== "other");
+  assert.deepEqual(kinds, ["reading", "review", "reading (correction)", "review"]);
+  assert.ok(ex.every(x => typeof x.prompt === "string" && x.prompt.length === x.promptChars && typeof x.text === "string"), "every exchange keeps its prompt and answer");
+  assert.ok(ex.find(x => x.kind === "reading (correction)").prompt.includes(LONG), "the correction was told the whole reason");
+  // every draft rejected: the passage is held, and the sheet shows both drafts and why
+  const held = await run(["--allow-mock", "--out", path.join(out, "held"), "--cases", "typed-claim"], { preload, env: { REJECT: "all" } }).done;
+  assert.equal(held.code, 0, held.out);
+  const hp = lines(path.join(out, "held", "results.jsonl"))[0].passages[0];
+  assert.equal(hp.gate, "held"); assert.deepEqual(hp.attempts.map(x => x.shown), [false, false]); assert.ok(hp.held.issues.includes(LONG));
+  sheet = fs.readFileSync(path.join(out, "held", "scoring-sheet.md"), "utf8");
+  assert.match(sheet, /\*\*Rejected before display\*\* \(2 of 2 attempts;/);
+  assert.equal(sheet.split("- " + LONG).length - 1, 2, "each rejected draft with its reason");
+  assert.match(sheet, /_Attempt 2_ \(claim \(correction\), call /);
 });
 
 test("eval: with no model key nothing runs and nothing is substituted", async t => {

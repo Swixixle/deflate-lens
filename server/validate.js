@@ -94,7 +94,7 @@ function validatePassageDoc(doc, turnsCount, ctx) {
   if (Array.isArray(doc.adopted)) out.adopted = doc.adopted;
   if (doc.rerun && typeof doc.rerun === "object") out.rerun = doc.rerun;
   // why the last attempt at this reading was held (server-written; a page save carries back what it loaded)
-  if (doc.held && typeof doc.held === "object" && Array.isArray(doc.held.issues)) out.held = { issues: doc.held.issues.map(x => str(x, 300)).slice(0, 6), at: str(doc.held.at, 40), callId: str(doc.held.callId, 80), kept: !!doc.held.kept };
+  if (doc.held && typeof doc.held === "object" && Array.isArray(doc.held.issues)) out.held = { issues: doc.held.issues.map(x => str(x, 2000)).slice(0, 10), at: str(doc.held.at, 40), callId: str(doc.held.callId, 80), kept: !!doc.held.kept };
   if (out.status === "done") {
     if (!out.analysis) throw bad("a passage marked done needs an analysis");
     const a = out.analysis, missing = [];

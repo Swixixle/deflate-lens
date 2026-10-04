@@ -34,15 +34,16 @@ function attributionGate(b) {
   return { status: "held", method: "Speaker labels have not finished preparation." };
 }
 
-const CONTRACT = require("../shared/prompts").CONTRACT;
+const { isNeutral } = require("../shared/prompts");
 const OLD_EMPIRICAL = ["fact", "contested", "unsupported"];
 /* `contract` is the reading contract the analysis was written under (recorded on its model call). Records written
-   before 0.12 have none and keep the rules they were accepted under; the consistency rules below apply to reading-2. */
+   before 0.12 have none and keep the rules they were accepted under; the consistency rules below apply to reading-2 and
+   reading-3 alike (reading-3 changed the instructions, not the structure of a reading). */
 function contentIssues(a, p, turns, overrides, kind, contract) {
   const oversized = a.truncated && (a.truncated.asSaid || a.truncated.claims);
   a = shared.sanitizeAnalysis(a);
   const issues = [];
-  if (contract === CONTRACT) {
+  if (isNeutral(contract)) {
     if (a.claims.some(c => OLD_EMPIRICAL.includes(c.type))) issues.push("an empirical claim was labelled true or false from memory; it must be a checkable claim");
     if (kind === "claim") {
       if (a.judgments.inference !== "n/a") issues.push("a single typed claim has no reasoning to judge");
