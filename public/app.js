@@ -693,6 +693,8 @@ function statusInfo(){
   if (proc.status === "running") return {text: proc.message || "Reading…"};
   if (proc.status === "awaiting_key") return {text: proc.message || "Your text is saved. Add the model key once and the reading continues by itself."};
   if (allReadyAndCurrent()) return {text: "Your reading is ready.", quiet: true};
+  var outdated = (proc.inputHash && r.input && proc.inputHash !== r.input.sha256) || S.b.passages.some(function(p){ return (p.stale || []).length; });
+  if (outdated && proc.status !== "held") return {text: "Some readings are out of date because the text or speakers changed. Read again to update them.", action: "Read again"};
   if (proc.status === "stopped") return {text: "Stopped. Your finished readings are kept.", action: "Resume reading"};
   if (proc.status === "interrupted") return {text: "The app was restarted while reading. Your finished readings are kept.", action: "Resume reading"};
   if (proc.status === "partial") return {text: proc.message || "Some readings could not pass their checks and are held.", action: "Try the held readings again"};
