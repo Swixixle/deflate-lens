@@ -2,45 +2,52 @@
 /* Who is each voice? (0.14) Part of preparing a reading, before anything is read: the voices are already separated
    (by Deepgram as it transcribed the recording, by voices lined up with a text, by the words, or by the transcript's own
    labels), and here the numbered or unnamed ones (SPEAKER 2, Speaker A, HOST, GUEST…) are connected to names, so a
-   reading says "Peter Navarro says…" rather than "Speaker 2 says…". Names a transcript supplies are kept as they are,
+   reading says "Marcus Delacroix says…" rather than "Speaker 2 says…". Names a transcript supplies are kept as they are,
    and so are names a person gave.
 
    A wrong name is worse than none: a voice keeps its number unless the words show who it is. The clues are resolved
    together. The episode's listing (the show's name, author and hosts, the episode's title and notes, the people its
    feed lists) says who may be speaking; the conversation says which voice is which:
-     self_identification  a voice naming itself: "I'm Bill O'Reilly", "My name is…", "I'm your host, …"        3
+     self_identification  a voice naming itself: "I'm Ann O'Malley", "My name is…", "I'm your host, …"         3
                           ("This is …", "It's …", "… here" at the start of a sentence: 2)
      introduced           a person introduced by name, present tense, just before that voice speaks: 3 when it
                           answers as a guest does ("Thanks for having me") or is handed the floor by name, else 2
      hosts_show           the listing names one host, and this main voice opens the show or introduces a guest  2
      role_label           the transcript labels this voice HOST (or GUEST) and the listing names one host (guest) 2
-     addressed            a voice spoken to by name at the end of a turn ("Peter, what about…?") and answering
+     addressed            a voice spoken to by name at the end of a turn ("Jane, your view?") and answering
                           right after                                                       1 each, two turns at most
      listed               the listing names this person as host or guest, and a clue from the conversation already
                           points to this voice                                                                     1
      self_reference       a voice describing itself as the listing describes a person (never on its own)          1
      addresses_other      a voice speaking to someone by name, which it therefore is not: −2 a turn (−1 for a short
                           sentence at a turn's edge, where a recording often puts one speaker's words under the
-                          other's voice; −6 at most); "I'm not X" / "I'm no X" counts the same
+                          other's voice; −6 at most); "I'm not X" / "I'm no X" (denies) counts the same, and so does
+                          a voice speaking of someone by full name in the third person (mentions)
      elimination          the one main voice left, when exactly one listed participant is not yet placed and
                           something shows that person is in the conversation
    A name needs 2 or more, 2 more than any other name for that voice and any other voice for that name, and at least
-   one clue that can stand: a decisive or strong one, being spoken to by name in two turns, being spoken to once by a
-   person the listing names (with no other voice pointing to them), or the model's own checked clue agreeing. One name
-   goes to one voice.
+   one clue that can stand: a decisive or strong one, being spoken to by name in two turns, the model's own checked clue
+   agreeing, or being spoken to once as a person a field of the listing names, the notes introduce or an introduction
+   shows to be here (with no other voice pointing to them). One name goes to one voice.
 
-   What does not count: words inside quotation marks or after "says", "writes", "reads" (reported speech); an
-   introduction in the past or the future ("last week my guest was…", "after the break…", "next week… joins us"); a
-   name spoken to an absent person ("…if you are listening"); places, companies, ranks and titles ("from Capitol Hill",
-   "a retired Army Ranger", "Brannigan Productions"); a title fragment no one in the conversation says; a host the
-   words say is away ("in for Walt tonight", "while Walt is on vacation"). The app finds the plain cases itself and asks
-   the model once for the rest. Every clue, the app's and the model's alike, is checked the same way before it counts:
-   the quotation must be in the turn it names, that turn must stand where the kind of clue requires (the voice's own
-   turn; the end of the turn just before the voice speaks), and the name must be in the quoted words. A name is
-   completed from the listing only when the words give part of it and exactly one listed person matches ("Peter" and an
-   episode titled "— Peter Navarro"); a name nothing sources is never added to ("My name is Dana" gives "Dana"). A voice
-   nothing names keeps its number, with the reason. Identity is never taken from opinions, topics, vocabulary or style.
-   Names change only what is shown and what the reading is told; the text and its labels stay as they are. */
+   What does not count: words inside quotation marks, reported ("says", "writes", "she's like"), imagined ("pretend
+   I'm") or asked ("so now I'm your host?"); an introduction in the past or the future ("last week my guest was…",
+   "joining us after the news will be…", "next week… joins us"; a teaser for later in the same episode does show the
+   person will be on); a name spoken to an absent person ("…if you are listening"); a voice answering by speaking of the
+   person in the third person ("Before he starts…") or cutting in ahead of them; places, companies, holidays, ranks,
+   titles and descriptions ("from Capitol Hill", "a retired Army Ranger", "this is Steel Country Radio", "the author of
+   Silent Orchard", "our newest sponsor, …"); a title fragment no one in the conversation says; a host the words say is
+   away ("in for Walt tonight", "Walt has the night off"). The app finds the plain cases itself and asks the model once
+   for the rest. Every clue, the app's and the model's alike, is checked the same way before it counts: the quotation
+   must be in the turn it names, that turn must stand where the kind of clue requires (the voice's own turn; the end of
+   the turn just before the voice speaks), the name must be in it, and the whole sentence it stands in must pass the
+   checks the app's own reading applies (selfFault, NOT_NOW, the cues of an introduction). A first name is completed
+   from the listing only when exactly one listed person has it ("Marcus" and an episode titled "— Marcus Delacroix") and
+   nothing says the voice is someone else who shares it (a caller, staff, a person the same turn speaks of); a name
+   nothing sources is never added to ("My name is Dana" gives "Dana"). Captions in lower case and turns in capitals are
+   read with the listing's names (and the model's proposals) given capitals for the analysis only. A voice nothing names
+   keeps its number, with the reason. Identity is never taken from opinions, topics, vocabulary or style. Names change
+   only what is shown and what the reading is told; the text and its labels stay as they are. */
 const shared = require("../shared/transcript");
 const { callJSON, unreadable } = require("./preparation");
 const { supportedName, contains } = require("./structure");
@@ -101,7 +108,7 @@ function personLike(s) {
   return rest.every(w => /^\p{Lu}/u.test(w)) && !rest.every(w => w === w.toUpperCase());
 }
 function cleanName(s) { return String(s || "").replace(/[^\p{L}\p{M}.'’\- ]+/gu, " ").replace(/\s+/g, " ").replace(/^[^\p{L}]+|[^\p{L}.]+$/gu, "").replace(/['’]s$/, "").replace(/\.$/, "").trim().slice(0, 60); }
-// a name as a pattern: either apostrophe matches either (a listing writes O’Reilly, a transcript O'Reilly)
+// a name as a pattern: either apostrophe matches either (a listing writes O’Malley, a transcript O'Malley)
 const esc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/['’]/g, "['’]");
 const hasWord = (text, w) => new RegExp("(?:^|[^\\p{L}\\p{M}'’])" + esc(w) + "(?![\\p{L}\\p{M}])", "u").test(text);
 /* An all-capitals turn ("I'M MARCUS DELACROIX") is read in lower case, with "I" as it is written: capitals would make
@@ -215,7 +222,7 @@ function voiceStats(sp) {
   return stats;
 }
 /* The ways a person may be spoken to: the whole name, or the first name when it is not an ordinary word and fits no
-   one else. A surname alone is a way of speaking to someone only after a title ("Mr. Navarro"). */
+   one else. A surname alone is a way of speaking to someone only after a title ("Mr. Delacroix"). */
 function forms(cands) {
   const out = [];
   for (const c of cands) {
@@ -233,7 +240,7 @@ const HANDOVER = /\b(?:thanks?|thank you|welcome|good to (?:see|have) you|great 
 const RHETORICAL = /\bif you(?:['’]re| are) (?:listening|watching|out there|reading)|\bwherever you are\b|\brest in peace\b|\bgod rest\b|\bmay (?:he|she|they) rest\b/i;
 const INTERJECTION = "(?:[Ss]o|[Oo]kay|OK|[Oo]k|[Ww]ell|[Nn]ow|[Aa]nd|[Bb]ut|[Aa]lright|[Aa]ll right|[Ll]ook|[Ll]isten|[Yy]es|[Yy]eah|[Rr]ight)";
 /* `form` used to speak to someone in `text`: "Peter, what about…?", "So, Peter, you said…", "What do you think, Peter?",
-   "Thanks for having me, Walt.", "Hi Walt", "Mr. Navarro, …". Not an appositive ("I'm your host, Walt Brannigan."), a
+   "Thanks for having me, Walt.", "Hi Walt", "Mr. Delacroix, …". Not an appositive ("I'm your host, Walt Brannigan."), a
    teaser ("Coming up, Marcus Delacroix."), a list ("Rich, poor, everyone pays") or an absent person ("Marcus, if
    you are listening…"). */
 function vocative(text, form, last) {
@@ -249,7 +256,7 @@ function vocative(text, form, last) {
   if (end && (end[2] === "?" || HANDOVER.test(end[1]))) return true;
   return new RegExp("\\b(?:[Tt]hank you|[Tt]hanks|[Hh]i|[Hh]ello|[Hh]ey|[Ww]elcome(?: back)?(?: to the (?:show|program|programme|podcast|broadcast))?|[Gg]ood (?:morning|evening|afternoon|to see you|to have you(?: here)?))(?: so much| very much)?,?\\s+" + f + "(?![\\p{L}\\p{M}'’])", "u").test(text);
 }
-/* Sentences with where they start; a full stop after a title or an initial ("Dr. Peter Navarro", "J. D. Vance") does
+/* Sentences with where they start; a full stop after a title or an initial ("Dr. Ruth Okonkwo", "R. J. Okafor") does
    not end one. */
 const ABBREV = /(?:^|\s)(?:Mr|Mrs|Ms|Mx|Dr|St|Sen|Rep|Gov|Gen|Prof|Jr|Sr|Lt|Col|Capt|Sgt|Rev|Hon|Det|[\p{Lu}])\.$/u;
 function sentences(text) {
@@ -1090,7 +1097,7 @@ async function identifySpeakers({ ai, store, id, signal }) {
   let talk = talkOf();
   const said2 = c => hasWord(talk, c.name) || (() => { const ws = c.name.split(/\s+/).filter(w => !/^\p{Lu}\.$/u.test(w)); return ws.length >= 2 && (hasWord(talk, ws[0]) && !COMMON.has(norm(ws[0])) || hasWord(talk, ws[ws.length - 1]) && !COMMON.has(norm(ws[ws.length - 1]))); })();
   const cands = listed.filter(c => c.structured || said2(c));
-  // a name the transcript itself gives a voice ("BILL O'REILLY:") is a person in the conversation, too
+  // a name the transcript itself gives a voice ("ANN O'MALLEY:") is a person in the conversation, too
   for (const [, name] of fixed) if (personLike(name) && !cands.some(c => norm(c.name) === norm(name))) cands.push({ name, role: "", from: ["the transcript's labels"], structured: false });
   let app = findEvidence(sp, cands, L, { lower: !!recase });
   for (const f of app.found) if (!cands.some(c => norm(c.name) === norm(f.name))) cands.push(f);
