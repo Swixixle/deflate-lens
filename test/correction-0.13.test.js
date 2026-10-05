@@ -1,10 +1,10 @@
 "use strict";
 /* 0.13: automatic correction that converges. In the first live run (35 passages, reading-3) a correction rewrote the
    whole reading; each one fixed what was named and brought new drift into text that had already passed, and the next
-   full review found it: 11 passages were held. Now the review lists its problems by field, the correction may change
-   only those fields, and only the changed parts are checked again; a reading whose only remaining problems are in the
-   fifth-grade wording is shown at the high-school level. The model is scripted; these tests prove what the app does
-   with its answers. */
+   full review found it: 11 passages were held. Now the review lists its problems by field and the correction may change
+   only those fields; since 0.13.1 the whole corrected reading is reviewed again after each correction (0.13.0 checked
+   only the changed parts). A reading whose only remaining problems are in the fifth-grade wording is shown at the
+   high-school level. The model is scripted; these tests prove what the app does with its answers. */
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises"), os = require("node:os"), path = require("node:path");
@@ -31,13 +31,22 @@ async function fixture(t, script) {
 const first = p => p.includes("PASSAGE (turns 0–7") || p.includes("[0] HOST: " + words(0));
 const isReview = p => p.startsWith("Review this reading before it is shown") && !p.includes("closing overview");
 
-test("a correction changes only the fields the review names; everything else stays exactly as drafted; only the change is checked again", async t => {
+test("a correction changes only the fields the review names; everything else stays exactly as drafted; the whole corrected reading is reviewed again", async t => {
   let drafted = null;
   const f = await fixture(t, async (p) => {
     if (p.startsWith("Help a reader understand this passage") && first(p)) return null; // the mock's draft
     if (isReview(p) && first(p)) { drafted = JSON.parse(p.split("\n\nDRAFT:\n")[1]); return { approved: false, issues: [{ field: "deflated", level: "g5", problem: "“money markets” narrows “financial markets”." }, { field: "claims[1].plain", level: "g5", problem: "“punished” is not “prosecuted”." }] }; }
     if (p.startsWith("Correct a reading.")) return { changes: [{ path: "deflated.g5", value: "The speaker says the markets for money and stocks need rules." }, { path: "claims[1].plain.g5", value: "The speaker says some soldiers were taken to court." }, { path: "defense.hs", value: "an unrequested rewrite" }] };
-    if (p.startsWith("Check a correction to a reading")) { assert.match(p, /CHANGES:\n- deflated\.g5: “[^”]*” → “The speaker says the markets for money and stocks need rules\.”/); assert.doesNotMatch(p, /defense\.hs/); return { resolved: [true, true], newIssues: [] }; }
+    if (p.startsWith("Review a corrected reading")) {
+      assert.match(p, /CHANGES:\n- deflated\.g5: “[^”]*” → “The speaker says the markets for money and stocks need rules\.”/);
+      const changes = p.split("\n\nCHANGES:\n")[1].split("\n\nCORRECTED READING:\n")[0];
+      assert.doesNotMatch(changes, /defense/, "a change no problem names is neither applied nor shown as a change");
+      // the whole corrected reading, under the same rules as the first review
+      const whole = JSON.parse(p.split("\n\nCORRECTED READING:\n")[1]);
+      assert.equal(whole.deflated.g5, "The speaker says the markets for money and stocks need rules."); assert.equal(whole.defense.hs, drafted.defense.hs);
+      assert.match(p, /credits words to the wrong person/); assert.match(p, /in a part that did not/);
+      return { resolved: [true, true], approved: true, issues: [] };
+    }
     return null;
   });
   const b = await f.read();
@@ -62,12 +71,12 @@ test("a correction changes only the fields the review names; everything else sta
   assert.equal(log[0].attempts[0].issues.length, 2);
 });
 
-test("a problem the correction brings is caught in the changed part and fixed in a second round; two rounds at most", async t => {
+test("a problem the correction brings is caught by the review of the corrected reading and fixed in a second round; two rounds at most", async t => {
   let fixes = 0;
   const f = await fixture(t, async (p) => {
     if (isReview(p) && first(p)) return { approved: false, issues: [{ field: "deflated", level: "g5", problem: "the g5 version drops “several”." }] };
     if (p.startsWith("Correct a reading.")) { fixes++; return { changes: [{ path: "deflated.g5", value: fixes === 1 ? "The speaker says a few soldiers were punished." : "The speaker says several soldiers were taken to court." }] }; }
-    if (p.startsWith("Check a correction to a reading")) return fixes === 1 ? { resolved: [true], newIssues: [{ field: "deflated", level: "g5", problem: "“punished” is not “prosecuted”; “a few” is not “several”." }] } : { resolved: [true], newIssues: [] };
+    if (p.startsWith("Review a corrected reading")) return fixes === 1 ? { resolved: [true], approved: false, issues: [{ field: "deflated", level: "g5", problem: "“punished” is not “prosecuted”; “a few” is not “several”." }] } : { resolved: [true], approved: true, issues: [] };
     return null;
   });
   const b = await f.read();
@@ -82,7 +91,7 @@ test("when only the fifth-grade wording still fails, the reading is shown at the
     if (isReview(p) && first(p)) return { approved: false, issues: [{ field: "deflated", level: "g5", problem: "“money markets” is narrower than “financial markets”." }] };
     if (isReview(p) && p.includes("PASSAGE (turns 8–15")) return { approved: false, issues: [{ field: "defense", level: "hs", problem: "adds a premise the speaker never gave." }] };
     if (p.startsWith("Correct a reading.")) return { changes: [{ path: p.split("\n\nPROBLEMS:\n")[1].includes("defense.hs") ? "defense.hs" : "deflated.g5", value: "still not right " + (++round) }] };
-    if (p.startsWith("Check a correction to a reading")) return { resolved: [false], newIssues: [] };
+    if (p.startsWith("Review a corrected reading")) return { resolved: [false], approved: false, issues: [] };
     return null;
   });
   const b = await f.read();

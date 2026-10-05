@@ -40,11 +40,13 @@ const TEXT = [T[0] + " " + T[1], T[2], T[3] + " " + T[4] + " " + T[5], T[6],
 /* Deepgram's answer for that conversation: every 13th word misheard, every 29th dropped, a filler every 31st, "four
    hundred" written as 400 once; the first word of a turn often still carries the previous voice (twice, the first two
    words), and one word mid-sentence flickers to the other voice. Punctuation is Deepgram's own (from the audio), so a
-   misheard word keeps its full stop and a missed word's full stop lands on the word before. */
+   misheard word keeps its full stop and a missed word's full stop lands on the word before. Timing: 0.05 s between
+   words, 0.3 s between sentences, 0.6 s between turns (a pause the recording hears before a new speaker). */
 function recording(truth, opts) {
-  const o = Object.assign({ substitute: 13, drop: 29, filler: 31, jitter: true, flicker: true }, opts);
+  const o = Object.assign({ substitute: 13, drop: 29, filler: 31, jitter: true, flicker: true, turnPause: 0.6, sentencePause: 0.3 }, opts);
   const out = []; let n = 0, t = 0, turnNo = 0, prevSpeaker = null;
   for (const [speaker, text] of truth) {
+    if (turnNo) t += o.turnPause;
     let ws = text.split(/\s+/).filter(w => shared.wordsOf(w));
     if (/four hundred households can/.test(text)) { const i = ws.findIndex((w, k) => w === "four" && ws[k + 1] === "hundred"); ws.splice(i, 2, "400"); }
     ws.forEach((w, k) => {
@@ -56,7 +58,7 @@ function recording(truth, opts) {
       if (o.flicker && /Nobody outside the office/.test(text) && w === "outside") who = 1 - speaker;
       const heard = o.substitute && n % o.substitute === 0 ? "misheard" + ((/[.?!,]+$/.exec(w) || [""])[0]) : w; // punctuation comes from the audio, not the word
       out.push({ word: shared.wordsOf(heard), punctuated_word: heard, speaker: who, start: t, end: t + 0.3, confidence: 0.9, speaker_confidence: 0.8 });
-      t += 0.35;
+      t += 0.35 + (/[.?!]["”')]*$/.test(w) ? o.sentencePause : 0);
     });
     prevSpeaker = speaker; turnNo++;
   }
@@ -69,6 +71,20 @@ function labelPerWord(labelled) {
   return out;
 }
 const truthPerWord = truth => truth.flatMap(([s, text]) => shared.wordsOf(text).split(" ").filter(Boolean).map(() => s === HOST ? "SPEAKER 1" : "SPEAKER 2"));
+/* What the app should give: the truth, except where the recording gave words it heard to the other voice and nothing
+   the recording itself shows says otherwise. Since 0.13.1 a voice the recording gives to a word it heard is kept there,
+   with one narrow exception (a change of speakers noticed a word or three late or early at a sentence's edge, between
+   two turns that each go on past the sentence, with the recording's own pause at the edge). So two places keep the
+   recording's voices:
+   - the one word it flickered to the other voice in the middle of a sentence: the app cannot tell that flicker from a
+     real one-word interruption, and overwriting a real one would put the other person's words in this one's mouth;
+   - "Thanks for", the first two words of the guest's four-word "Thanks for having me.", which the recording still gave
+     to the host: the part that would move is as long as the rest, not clearly the smaller part, so the app does not
+     overrule the recording there. (Every other late change of voice in this conversation is moved to its sentence's
+     start.) */
+const FLICKER = TRUTH.slice(0, 7).reduce((n, [, text]) => n + shared.wordsOf(text).split(" ").length, 0) + shared.wordsOf("The results are clear for those three neighborhoods. They are not clear for the whole city, and the report does not say how people were contacted. Nobody").split(" ").length;
+const THANKS = shared.wordsOf(TRUTH[0][1]).split(" ").length;
+const expectedPerWord = () => truthPerWord(TRUTH).map((k, i) => i === FLICKER ? (k === "SPEAKER 1" ? "SPEAKER 2" : "SPEAKER 1") : i === THANKS || i === THANKS + 1 ? "SPEAKER 1" : k);
 const spokenOnly = text => shared.wordsOf(text.replace(/^(?:SPEAKER \d+|CLIP \d+|QUOTE \d+|UNLABELED): /gm, ""));
 const pieceWith = (labelled, phrase) => labelled.split("\n").find(l => shared.wordsOf(l).includes(shared.wordsOf(phrase)));
 
@@ -79,7 +95,9 @@ test("voices from the recording line up with the text: every word kept, every wo
   assert.ok(r.coverage > 0.8 && r.coverage < 0.95, "most but not all words line up: " + r.coverage);
   assert.equal(spokenOnly(r.text), shared.wordsOf(TEXT), "no word lost, added or reordered");
   assert.deepEqual(r.keys.sort(), ["SPEAKER 1", "SPEAKER 2"]);
-  assert.deepEqual(labelPerWord(r.text), truthPerWord(TRUTH), "each word carries its speaker, despite the timing slop and the flicker");
+  assert.deepEqual(labelPerWord(r.text), expectedPerWord(), "each word carries its speaker despite the timing slop, except where the recording's voice is kept (see expectedPerWord)");
+  assert.ok(r.text.includes("Dana, thanks for joining me. Thanks for\nSPEAKER 2: having me."), r.text);
+  assert.ok(r.text.includes("Nobody\nSPEAKER 1: outside\nSPEAKER 2: the office"), r.text);
   // the claims, specifically
   assert.match(pieceWith(r.text, "It covered four hundred households in three neighborhoods"), /^SPEAKER 2: /);
   assert.match(pieceWith(r.text, "it is stretching what four hundred households can tell you"), /^SPEAKER 2: /);
@@ -99,8 +117,13 @@ test("an advertisement in the recording is skipped, and captions without sentenc
   ws.splice(120, 0, ...ad);
   const r = V.separate(TEXT, d);
   assert.equal(r.ok, true, r.why);
-  assert.deepEqual(labelPerWord(r.text), truthPerWord(TRUTH), "the advertisement's voice appears nowhere in the text");
-  assert.equal(r.voices, 2);
+  assert.equal(r.voices, 2); assert.deepEqual(r.keys.sort(), ["SPEAKER 1", "SPEAKER 2"], "the advertisement's voice appears nowhere in the text");
+  // Every word as without the advertisement but one. The advertisement sits inside the host's one-sentence turn ("But
+  // the mayor's office says the results are clear.", between "results" and "are") and leaves its last two words and the
+  // next turn's first word unmatched, so nothing heard shows the host going on past the sentence; "But", which the
+  // recording still gave to the guest, keeps that voice rather than being moved on a guess.
+  const BUT = TRUTH.slice(0, 6).reduce((n, [, text]) => n + shared.wordsOf(text).split(" ").length, 0), expected = expectedPerWord();
+  assert.deepEqual(labelPerWord(r.text).map((k, i) => k !== expected[i] ? i + ":" + k : null).filter(Boolean), [BUT + ":SPEAKER 2"]);
   // automatic captions: no capitals, no sentence marks, paragraphs by length
   const captions = shared.wordsOf(TRUTH.map(x => x[1]).join(" ")).split(" "), paras = [];
   for (let i = 0; i < captions.length; i += 70) paras.push(captions.slice(i, i + 70).join(" "));
@@ -108,11 +131,14 @@ test("an advertisement in the recording is skipped, and captions without sentenc
   assert.equal(c.ok, true, c.why);
   const cw = shared.wordsOf(paras.join(" ")).split(" "), want = truthPerWord(TRUTH);
   const off = labelPerWord(c.text).map((k, i) => k !== want[i] ? cw[i] + "=" + k : null).filter(Boolean);
-  // Every turn change is settled by the recording's sentence ends, with two known limits of a text without marks:
-  // "summary", the last word of a sentence the recording missed (its full stop landed on the word before), joins the
-  // next sentence and its speaker; and inside the interruption, where captions carry no dash and the recording no full
-  // stop, the late-noticed voice keeps two words and one missed word stays not established rather than guessed.
-  assert.deepEqual(off, ["summary=SPEAKER 1", "sorry=SPEAKER 1", "the=SPEAKER 1", "for=UNLABELED"], c.text);
+  // Turn changes are settled by the recording's sentence ends and its pauses, with known limits of a text without marks:
+  // "thanks for" keeps the recording's voice as in punctuated text; "summary", the last word of a sentence the recording
+  // missed (its full stop landed on the word before), joins the next sentence and its speaker; the flickered "outside"
+  // keeps the recording's voice, as in punctuated text; and the interruption, where captions carry no dash and the
+  // recording no full stop, sits inside one long stretch heard in more than two voices, so the voices the recording
+  // gave its first words stand: "i" (the host's first word, still in the guest's voice) and "sorry the" (the guest's
+  // first two words, still in the host's).
+  assert.deepEqual(off, ["thanks=SPEAKER 1", "for=SPEAKER 1", "summary=SPEAKER 1", "outside=SPEAKER 1", "i=SPEAKER 2", "sorry=SPEAKER 1", "the=SPEAKER 1"], c.text);
   assert.equal(spokenOnly(c.text), shared.wordsOf(paras.join(" ")));
 });
 
@@ -169,9 +195,10 @@ test("the route: an unlabeled transcript gets numbered speakers from the recordi
   const pr = b.run.provenance;
   assert.equal(pr.labelsOrigin, "voices");
   assert.equal(spokenOnly(b.transcript), shared.wordsOf(before), "every word of the text kept");
-  assert.deepEqual(labelPerWord(b.transcript), truthPerWord(TRUTH));
+  assert.deepEqual(labelPerWord(b.transcript), expectedPerWord());
   assert.equal(pr.voices.engine, "deepgram"); assert.equal(pr.voices.requestId, "req-test-1"); assert.equal(pr.voices.audioUrl, "https://cdn.example.org/shows/ep12.mp3");
   assert.equal(pr.voices.voices, 2); assert.ok(pr.voices.coverage > 0.8);
+  assert.ok(pr.voices.edges.moved >= 3 && pr.voices.edges.kept >= 1, "the record counts the late changes moved and the one left: " + JSON.stringify(pr.voices.edges));
   assert.equal(pr.voices.resultHash, b.run.input.sha256);
   assert.match(pr.voices.method, /lined up with this text word by word \(\d+% of its words matched\)/);
   // Deepgram's words are kept beside the run, so the alignment can be checked without asking again

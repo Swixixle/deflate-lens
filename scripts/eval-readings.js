@@ -118,7 +118,8 @@ function kindOf(prompt) {
   if (prompt.startsWith("Help a reader understand this passage accurately.")) return (prompt.includes("This is ONE claim") ? "claim" : "reading") + (/The draft was held before display|Your previous answer could not be used/.test(prompt) ? " (correction)" : "");
   if (prompt.startsWith("Review this reading before it is shown")) return prompt.includes("closing overview") ? "overview review" : "review";
   if (prompt.startsWith("Correct a reading.")) return "correction";
-  if (prompt.startsWith("Check a correction to a reading")) return "check of a correction";
+  if (prompt.startsWith("Review a corrected reading")) return "review of the corrected reading";
+  if (prompt.startsWith("Check a correction to a reading")) return "check of a correction (0.13.0)";
   if (prompt.startsWith("This transcript has no speaker labels") || prompt.startsWith("Find recordings played")) return "speaker structure";
   if (prompt.startsWith("Review a speaker structure")) return "review of the speaker structure";
   if (prompt.startsWith("These transcript turns are labelled SPEAKER 1")) return "names for voices";
@@ -168,7 +169,7 @@ function attemptsFor(entries, calls, exchanges, pair) {
     const decidedBy = c && c.review && c.review.callId ? byId.get(c.review.callId) : null;
     const next = c ? timed.find(z => z.at > c.at && z !== c) : null;
     // the review (or the check of a correction) asked for this attempt, an unreadable answer and its retry included
-    const reviews = c ? calls.filter(z => /_(review|recheck)$/.test(z.purpose) && z.at >= c.at && (!next || z.at < next.at)).sort(byTime).map(z => { const e = pair(z); return { callId: z.callId, decided: !!(decidedBy && decidedBy.callId === z.callId), error: z.error || "", stopReason: z.stopReason || "", exchange: e ? e.n : null, text: e && e.data == null ? e.text : undefined }; }) : [];
+    const reviews = c ? calls.filter(z => /_(review|recheck)$/.test(z.purpose) && z.at >= c.at && (!next || z.at < next.at)).sort(byTime).map(z => { const e = pair(z); return { callId: z.callId, decided: !!(decidedBy && decidedBy.callId === z.callId), error: z.error || "", unusable: z.unusable || "", stopReason: z.stopReason || "", exchange: e ? e.n : null, text: e && e.data == null ? e.text : undefined }; }) : [];
     const finalShown = shown && (i === list.length - 1 || list[list.length - 1].kind === "decision" && i === list.length - 2);
     return { attempt: i + 1, kind: t.kind || "draft", round: t.round || 0, callId: t.callId || "", exchange: x ? x.n : null, shown: finalShown, error: t.error || "", stopReason: c && c.stopReason || "",
       reasons: t.issues || [], changed: t.changed || [], ignored: t.ignored || [], g5Withheld: !!t.g5Withheld,
@@ -323,8 +324,8 @@ function sheet(results, ai, done) {
             out.push("", t.reasons.length ? "Still open after it:" : "Nothing was still open after it.", "");
           } else out.push("_Attempt " + t.attempt + "_ (full draft, call " + t.callId + (t.stopReason && t.stopReason !== "end_turn" ? ", stopped: " + t.stopReason : "") + "). Not shown because:", "");
           (t.kind === "correction" ? t.reasons : t.reasons.length ? t.reasons : ["no reason recorded"]).forEach(x => out.push("- " + x));
-          if (t.review && t.review.answer) out.push("", t.kind === "correction" ? "The check of the correction (exchange " + t.review.exchange + ") answered: " + JSON.stringify(t.review.answer) : "The separate review (exchange " + t.review.exchange + ") answered approved: " + String(t.review.answer.approved) + (Array.isArray(t.review.answer.issues) && t.review.answer.issues.length ? ", with the issues above." : "; the reasons above came from the app's own checks."));
-          for (const z of (t.reviewCalls || []).filter(z => z.error)) out.push("", "A review answer could not be used (" + z.error + (z.stopReason ? ", " + z.stopReason : "") + ", exchange " + z.exchange + ")" + (z.decided ? "." : "; the review was asked again."));
+          if (t.review && t.review.answer) out.push("", t.kind === "correction" ? "The review of the whole corrected reading (exchange " + t.review.exchange + ") answered: " + JSON.stringify(t.review.answer) : "The separate review (exchange " + t.review.exchange + ") answered approved: " + String(t.review.answer.approved) + (Array.isArray(t.review.answer.issues) && t.review.answer.issues.length ? ", with the issues above." : "; the reasons above came from the app's own checks."));
+          for (const z of (t.reviewCalls || []).filter(z => z.error || z.unusable)) out.push("", "A review answer could not be used (" + (z.error || z.unusable) + (z.stopReason && z.error ? ", " + z.stopReason : "") + ", exchange " + z.exchange + ")" + (z.decided ? "." : "; the review was asked again."));
           out.push("");
           if (t.kind !== "correction" && t.draft) reading(out, shared.sanitizeAnalysis(t.draft), r.kind);
           else if (t.draftText) out.push("The answer could not be read as JSON:", "", "````text", t.draftText, "````", "");

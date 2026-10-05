@@ -1211,7 +1211,7 @@ function nameConfirm(r, ro, k, keys, record){
     box.append(row);
     if (x.bio) box.append(h("p",{class:"hint",text:x.bio}));
     suggestions.filter(function(sg){ return sg.key === x.key; }).forEach(function(sg){
-      box.append(h("p",{class:"hint"}, document.createTextNode("Suggested: " + sg.name + " (" + String(sg.kind || "").replace(/_/g, " ") + ": “" + String(sg.quote || "").slice(0, 160) + "”) "), ro ? null : h("button",{type:"button", class:"linkish inline", text:"Use", onclick:function(){ inp.value = sg.name; UI.drafts[k + "cname-" + x.key] = sg.name; }})));
+      box.append(h("p",{class:"hint"}, document.createTextNode("Suggested: " + sg.name + (sg.beyondTheWords ? " (more than the words give; they say: “" : " (" + String(sg.kind || "").replace(/_/g, " ") + ": “") + String(sg.quote || "").slice(0, 160) + "”) "), ro ? null : h("button",{type:"button", class:"linkish inline", text:"Use", onclick:function(){ inp.value = sg.name; UI.drafts[k + "cname-" + x.key] = sg.name; }})));
     });
   });
   if (!ro && Object.keys(inputs).length) {

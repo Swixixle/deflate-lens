@@ -63,13 +63,13 @@ test("eval: a run stopped partway keeps every case it finished and says the shee
 test("eval: a draft the review rejected is kept with its reasons and the review's answer, then the correction that changed only what was named", async t => {
   const out = await fsp.mkdtemp(path.join(os.tmpdir(), "deflate-eval-")); t.after(() => fsp.rm(out, { recursive: true, force: true }));
   const LONG = "jump.hs (also revision): the draft's concern does not match what the speaker said. " + "It replaces the speaker's claim with a narrower one and builds the concern on that. ".repeat(5) + "END-OF-REASON";
-  // a stand-in whose review rejects the first draft of each passage (with REJECT=all also every check of a correction),
+  // a stand-in whose review rejects the first draft of each passage (with REJECT=all also every review of a corrected reading),
   // with a reason longer than 300 characters
   const preload = path.join(out, "reviewer.js");
   fs.writeFileSync(preload, "const ai = require(" + JSON.stringify(path.join(ROOT, "server", "ai.js")) + "); const make = ai.createAI;\n" +
     "ai.createAI = env => { const a = make(env); if (!a || !a.mock) return a; const sample = a.sample.bind(a); a.sample = async args => { const p = String(args.prompt || ''); const say = data => ({ data, text: JSON.stringify(data), usage: null, model: 'mock', stopReason: 'end_turn' });" +
     " if (p.startsWith('Review this reading before it is shown') && !p.includes('closing overview')) return say({ approved: false, issues: [" + JSON.stringify(LONG) + "] });" +
-    " if (process.env.REJECT === 'all' && p.startsWith('Check a correction to a reading')) return say({ resolved: [false], newIssues: [] });" +
+    " if (process.env.REJECT === 'all' && p.startsWith('Review a corrected reading')) return say({ resolved: [false], approved: false, issues: [] });" +
     " return sample(args); }; return a; };\n");
   const first = await run(["--allow-mock", "--out", path.join(out, "first"), "--cases", "sound-library"], { preload }).done;
   assert.equal(first.code, 0, first.out);
@@ -79,7 +79,7 @@ test("eval: a draft the review rejected is kept with its reasons and the review'
   assert.ok(p.attempts[0].reasons.includes(LONG), "the whole reason, not cut");
   assert.equal(p.attempts[0].review.answer.approved, false); assert.ok(p.attempts[0].draft && p.attempts[0].draft.deflated, "the rejected draft itself is kept");
   assert.deepEqual(p.attempts[1].changed.map(c => c.path), ["jump.hs"], "the correction changed only the field the problem names");
-  assert.deepEqual(p.attempts[1].review.answer, { resolved: [true], newIssues: [] }, "the check of the correction, as the app recorded it");
+  assert.deepEqual(p.attempts[1].review.answer, { resolved: [true], approved: true, issues: [] }, "the review of the whole corrected reading, as the app recorded it");
   assert.notEqual(p.attempts[0].review.exchange, p.attempts[1].review.exchange);
   assert.ok(Array.isArray(p.attempts[0].checks), "and the pointers are run on the rejected draft too");
   let sheet = fs.readFileSync(path.join(out, "first", "scoring-sheet.md"), "utf8");
@@ -90,7 +90,7 @@ test("eval: a draft the review rejected is kept with its reasons and the review'
   assert.match(section, /\*\*High school\*\*\n\n- In plain words: MOCK/);
   assert.match(section, /Mechanical pointers for this draft: /);
   const ex = lines(path.join(out, "first", "exchanges", "sound-library.jsonl"));
-  assert.deepEqual(ex.map(x => x.kind).filter(k => !["other", "speaker structure", "review of the speaker structure"].includes(k)), ["reading", "review", "correction", "check of a correction"]);
+  assert.deepEqual(ex.map(x => x.kind).filter(k => !["other", "speaker structure", "review of the speaker structure"].includes(k)), ["reading", "review", "correction", "review of the corrected reading"]);
   assert.ok(ex.every(x => typeof x.prompt === "string" && x.prompt.length === x.promptChars && typeof x.text === "string"), "every exchange keeps its prompt and answer");
   assert.ok(ex.find(x => x.kind === "correction").prompt.includes(LONG), "the correction was told the whole reason");
   // every check says the problem is still there: the passage is held after two corrections, and the sheet shows why

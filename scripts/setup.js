@@ -9,6 +9,7 @@
                                      (about 480 MB; the page offers the same install when it first needs it)
    Exit code 0 means ready to launch; 1 means something is missing and the message says what. */
 const fs = require("fs"), path = require("path"), { spawnSync } = require("child_process");
+const { lockedDependencies } = require("./deps");
 const root = path.join(__dirname, "..");
 const args = new Set(process.argv.slice(2));
 const log = m => console.log("  " + m);
@@ -27,15 +28,16 @@ const npmV = spawnSync(npmCmd[0], npmCmd.slice(1).concat(["--version"]), { encod
 if (npmV.status !== 0) fail("npm was not found. It comes with Node from https://nodejs.org; reinstall Node and run this again.");
 log("npm " + String(npmV.stdout).trim() + "  ok");
 
-// 3. dependencies from the lockfile, only when missing or out of date
-const lock = path.join(root, "package-lock.json"), nm = path.join(root, "node_modules"), nmLock = path.join(nm, ".package-lock.json");
-if (!fs.existsSync(lock)) fail("package-lock.json is missing; this copy of the project is incomplete.");
-const need = !fs.existsSync(path.join(nm, "express")) || !fs.existsSync(nmLock) || fs.statSync(lock).mtimeMs > fs.statSync(nmLock).mtimeMs;
-if (need) {
-  if (args.has("--no-install")) fail("dependencies are not installed and --no-install was given. Run  npm ci  in " + root + " and then this again.");
-  log("Installing locked dependencies (npm ci)…");
+// 3. dependencies from the lockfile, only when missing or different from it (compared by each package's version)
+const deps = lockedDependencies(root);
+if (!deps.total) fail(deps.why);
+if (!deps.ok) {
+  if (args.has("--no-install")) fail(deps.why + ", and --no-install was given. Run  npm ci  in " + root + " and then this again.");
+  log("Installing locked dependencies (npm ci): " + deps.why + "…");
   const r = spawnSync(npmCmd[0], npmCmd.slice(1).concat(["ci", "--no-audit", "--no-fund"]), { cwd: root, stdio: "inherit" });
   if (r.status !== 0) fail("npm ci failed (see the lines above). Usual causes: no network, or a proxy that blocks registry.npmjs.org. Fix that and run  npm run setup  again.");
+  const after = lockedDependencies(root);
+  if (!after.ok) fail("npm ci finished, but " + after.why.replace(/^the /, "") + ". Run  npm ci  in " + root + " and look at its messages.");
   log("Dependencies installed  ok");
 } else log("Dependencies already installed  ok");
 

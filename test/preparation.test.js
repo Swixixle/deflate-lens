@@ -154,11 +154,11 @@ test("a missing quote triggers one automatic repair and still cannot be approved
 test("a failed review holds the reading after a bounded retry without replacing the current saved card", async t => {
   const mock = createMockAI(); let reviews = 0, checks = 0;
   const ai = Object.assign({}, mock, { sample: async o => o.prompt.startsWith("Review this reading") ? (++reviews, { data: { approved: false, issues: [{ field: "deflated", level: "hs", problem: "The rewrite removes a hedge." }] } })
-    : o.prompt.startsWith("Check a correction") ? (++checks, { data: { resolved: [false], newIssues: [] } }) : mock.sample(o) });
+    : o.prompt.startsWith("Review a corrected reading") ? (++checks, { data: { resolved: [false], approved: false, issues: [] } }) : mock.sample(o) });
   const f = await fixture(t, ai); let b = await run(f);
   b = (await f.api("POST", "/api/runs/" + b.run.id + "/prepare-speakers", {})).data; b = await passage(f, b);
   const result = await sample(f, b); assert.equal(result.status, 422); assert.equal(result.data.code, "reading_held");
-  assert.equal(reviews, 1, "one full review"); assert.equal(checks, 2, "two bounded corrections, each checked");
+  assert.equal(reviews, 1, "one full review of the draft"); assert.equal(checks, 2, "two bounded corrections, each followed by a review of the whole corrected reading");
   assert.deepEqual(result.data.issues, ["deflated.hs: The rewrite removes a hedge."]);
   assert.equal((await f.store.bundle(b.run.id)).passages[0].analysis, undefined);
 });

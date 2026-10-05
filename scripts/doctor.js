@@ -4,7 +4,7 @@ const fs = require("fs"), path = require("path");
 const root = path.join(__dirname, "..");
 const [major, minor] = process.versions.node.split(".").map(Number);
 console.log("Node " + process.versions.node + ((major > 18 || (major === 18 && minor >= 17)) ? "  ok" : "  TOO OLD: install Node 18.17 or newer from https://nodejs.org"));
-console.log(fs.existsSync(path.join(root, "node_modules", "express")) ? "Dependencies installed  ok" : "Dependencies missing: run  npm run setup");
+{ const deps = require("./deps").lockedDependencies(root); console.log(deps.ok ? "Dependencies installed  ok" : "Dependencies: " + (deps.why || "missing") + "; run  npm run setup"); }
 const envPath = path.join(root, ".env");
 if (!fs.existsSync(envPath)) console.log(".env missing: run  npm run setup  (the page asks for a key when needed)");
 else {

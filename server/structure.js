@@ -195,20 +195,46 @@ function labelText(text, paras, cuts) {
 /* Names proposed for numbered speakers, kept only when the quoted words are found where they must be. `turns` are the
    labelled pieces in order ({key, text}); each name carries the key it is proposed for. A self-identification or an
    introduction by name (just before the person's first words) is applied when it was also reviewed (or `trusted`); an
-   address by name or the source's title is a suggestion for a person to confirm. */
+   address by name or the source's title is a suggestion for a person to confirm.
+
+   0.13.1: a name is applied only as far as the quoted words give it. The applied name is the longest run of the quote's
+   words that are all words of the proposed name, in the quote's order; for a self-identification it must follow the words
+   that introduce oneself ("my name is", "I'm", "this is", "call me"). Anything the model added ("Dana Inventedsurname" for
+   "My name is Dana") is offered for a person to confirm, never applied. (0.13.0 accepted a name when any one of its
+   words appeared in the quote; found by GPT.) */
+const SELF_CUE = /\b(?:my name is|my name's|name is|i am|i'm|im|this is|call me|it's)$/;
+function supportedName(name, quote, kind) {
+  const nameWords = String(name).replace(/\s+/g, " ").trim().split(" "), norm = nameWords.map(w => shared.wordsOf(w));
+  const q = shared.wordsOf(quote).split(" ").filter(Boolean);
+  let best = null;
+  for (let i = 0; i < q.length; i++) {
+    const used = new Set(); let j = i;
+    while (j < q.length) { const k = norm.findIndex((w, x) => w === q[j] && !used.has(x)); if (k < 0) break; used.add(k); j++; }
+    if (j === i) continue;
+    if (kind === "self_identification" && !SELF_CUE.test(q.slice(0, i).join(" "))) continue;
+    if (!best || j - i > best.n) best = { i, n: j - i, used: [...used] };
+  }
+  if (!best || !q.slice(best.i, best.i + best.n).some(w => w.length >= 2)) return null;
+  // in the quote's order, written as the proposal wrote each word
+  const words = q.slice(best.i, best.i + best.n).map(w => nameWords[norm.findIndex(x => x === w)]);
+  return { name: words.join(" "), complete: best.n === nameWords.length };
+}
 function verifyNames(names, turns, run, trusted) {
   const applied = new Map(), suggestions = [];
+  const suggest = entry => { if (!suggestions.some(x => x.key === entry.key && x.name === entry.name)) suggestions.push(entry); };
   for (const n of names) {
     const key = n.key; if (!/^SPEAKER \d+$/.test(key) || !n.name || !/^[A-Za-z][A-Za-z0-9 .'\-]*$/.test(n.name) || n.name.split(" ").length > 4) continue;
     const ofVoice = turns.filter(s => s.key === key).map(s => s.text).join("\n"), others = turns.filter(s => s.key !== key).map(s => s.text).join("\n");
-    const nameWord = shared.wordsOf(n.name).split(" ").some(w => w.length > 2 && shared.wordsOf(n.quote).split(" ").includes(w));
     // an introduction must come just before the person's first words; an address can come anywhere another person speaks
     const first = turns.findIndex(s => s.key === key), justBefore = turns.slice(Math.max(0, first - 2), Math.max(0, first)).filter(s => s.key !== key).map(s => s.text).join("\n");
-    const verified = n.kind === "self_identification" ? contains(ofVoice, n.quote) && nameWord : n.kind === "introduced_by_name" ? first > 0 && contains(justBefore, n.quote) && nameWord : n.kind === "addressed_by_name" ? contains(others, n.quote) && nameWord : n.kind === "source_title" ? contains(context(run), n.quote) && nameWord : false;
-    if (!verified) continue;
-    const entry = { key, name: n.name, kind: n.kind, quote: n.quote };
-    if (NAME_APPLIED.includes(n.kind) && (n.reviewed || trusted) && !applied.has(key) && ![...applied.values()].some(x => x.name === n.name)) applied.set(key, entry);
-    else if (!suggestions.some(x => x.key === key && x.name === n.name)) suggestions.push(entry);
+    const found = n.kind === "self_identification" ? contains(ofVoice, n.quote) : n.kind === "introduced_by_name" ? first > 0 && contains(justBefore, n.quote) : n.kind === "addressed_by_name" ? contains(others, n.quote) : n.kind === "source_title" ? contains(context(run), n.quote) : false;
+    const support = found ? supportedName(n.name, n.quote, n.kind) : null;
+    if (!support) continue;
+    const entry = { key, name: support.name, kind: n.kind, quote: n.quote };
+    if (NAME_APPLIED.includes(n.kind) && (n.reviewed || trusted) && !applied.has(key) && ![...applied.values()].some(x => x.name === support.name)) applied.set(key, entry);
+    else suggest(entry);
+    // what the words do not give is offered, not applied
+    if (!support.complete) suggest({ key, name: n.name, kind: n.kind, quote: n.quote, beyondTheWords: true });
   }
   return { applied, suggestions };
 }
@@ -337,4 +363,4 @@ function finishLabelled({ b, text, found, rejected, calls, basis, mode, speakers
   return { changed: true, text: out, speakers, record, basis };
 }
 
-module.exports = { structureSpeakers, labelledClips, decideUnlabelled, decideLabelled, finishUnlabelled, finishLabelled, paragraphs, labelledTurns, chunksOf, labelText, verifyNames, nameVoices, tokens, contains, CUE, CLIP_KEY, structurePrompt, reviewPrompt };
+module.exports = { structureSpeakers, supportedName, labelledClips, decideUnlabelled, decideLabelled, finishUnlabelled, finishLabelled, paragraphs, labelledTurns, chunksOf, labelText, verifyNames, nameVoices, tokens, contains, CUE, CLIP_KEY, structurePrompt, reviewPrompt };

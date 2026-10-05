@@ -11,14 +11,14 @@
         with nothing takes its neighbours' voice only when both neighbours agree, and not when it is a short sentence of
         its own (a "Right." the recording missed is as likely to be someone else's).
      3. Settle each sentence (a paragraph break or a spaced dash, the transcriber's mark of a break-in, also ends one;
-        a text with no sentence marks, such as automatic captions, uses the recording's where the words line up).
-        A sentence is one person's unless the recording clearly says otherwise: when most of its words (60%) have one
-        voice, a stray word or two in the middle, up to three at either end (where the recording's timing is loosest),
-        and its unmatched words take that voice. Without a majority, one pattern is still settled: a single change
-        within the first three words, from the voice of the sentence before to the voice of the sentence after (the
-        recording noticed the new voice late). Any other mix (an interruption) keeps its changes. Elsewhere a run of
-        one or two words between two runs of the same voice is the recording flickering, not a turn, unless it is a
-        whole sentence of its own ("Right.").
+        a text with no sentence marks, such as automatic captions, uses the recording's where the words line up). A voice
+        the recording gives to words it heard is kept, with one narrow exception backed by the recording itself: the
+        recording noticing a change of speakers a word or three late (or early). A sentence heard in exactly two voices,
+        the first continuing from the sentence before and the second into the sentence after, whose change of voice is
+        at most three words from one edge (and the part beyond it at most half as long as the rest), has the change
+        moved to that edge when the recording paused there for at least 0.15 s and longer than where its voice changed.
+        Words the recording heard nothing for take the voice of most of the sentence (60%). A short interruption
+        ("no way"), and the words around it, stay with the voices the recording heard say them.
      4. Cut the text where the voice changes and label each piece SPEAKER 1, SPEAKER 2… in order of first appearance;
         what the recording could not settle stays UNLABELED. No word is rewritten, reordered or lost (checked).
 
@@ -29,7 +29,7 @@ const shared = require("../shared/transcript");
 const { paragraphs, labelText, tokens, nameVoices, labelledClips, finishLabelled, CUE, CLIP_KEY } = require("./structure");
 const { classify, isPrivateHost } = require("./podcast/resolve");
 
-const MIN_COVERAGE = 0.6, NGRAM = 4, GAP_DP_LIMIT = 300, UNIT_MAX_WORDS = 60, MAJORITY = 0.6;
+const MIN_COVERAGE = 0.6, NGRAM = 4, GAP_DP_LIMIT = 300, UNIT_MAX_WORDS = 60, MAJORITY = 0.6, MIN_PAUSE = 0.15;
 const SENT_END = /[.?!…]["”’')\]]*$/;
 const AUDIO_FILE = /\.(mp3|m4a|m4b|aac|wav|ogg|oga|opus|flac|mp4)$/i;
 
@@ -159,47 +159,60 @@ function separate(text, d) {
     if (lv !== null && lv === rv && (unitLen(i) >= 4 || unitOf[l] === unitOf[i] && unitOf[r] === unitOf[i])) voice[i] = lv;
   }
 
-  // 3. each sentence settled when the recording mostly agrees
-  let adjusted = 0;
+  // 3. each sentence settled where the recording has nothing to say, and at a change of speakers where the recording itself
+  //    shows that it noticed the change a word or three late (or early). A voice the recording gives to words it heard is
+  //    otherwise never overwritten: a short interruption ("no way") stays with the voice the recording heard say it, and
+  //    so do the words around it, and so does a word the recording got wrong; telling those apart is not the app's to
+  //    guess. (0.13.0 gave stray words in the middle of a sentence to its majority voice and erased a genuine
+  //    interruption; found by GPT.)
+  let adjusted = 0; const edges = { moved: 0, kept: 0 };
   const set = (from, to, v) => { for (let k = from; k < to; k++) { if (voice[k] !== v) adjusted++; voice[k] = v; } };
   const knownBefore = i => { for (let k = i - 1; k >= 0; k--) if (voice[k] !== null) return voice[k]; return null; };
   const knownFrom = i => { for (let k = i; k < voice.length; k++) if (voice[k] !== null) return voice[k]; return null; };
+  // the longest pause the recording heard between the text word before i that it heard and text word i itself (seconds),
+  // so a word it missed or a word it added in between does not hide the pause; null when there is nothing to measure
+  const gapBefore = i => {
+    if (i <= 0 || i >= words.length || heard[i] <= 0 || !(rec[heard[i]].start > 0)) return null;
+    let p = i - 1; while (p >= 0 && i - p <= 8 && heard[p] < 0) p--;
+    if (p < 0 || heard[p] < 0 || i - p > 8) return null;
+    let most = -Infinity; for (let j = heard[p] + 1; j <= heard[i]; j++) most = Math.max(most, rec[j].start - rec[j - 1].end);
+    return most === -Infinity ? null : most;
+  };
+  // the first text word from i (and before limit) that the recording heard, or -1
+  const heardFrom = (i, limit) => { for (let k = i; k < Math.min(limit, words.length); k++) if (heard[k] >= 0) return k; return -1; };
+  // the recording puts a change of voice at the sentence boundary rather than where its voice changed: it paused before
+  // the boundary's first heard word (hb) for at least MIN_PAUSE, and longer than before the first heard word in the new
+  // voice (hk). Words given a voice in step 2 were not heard, so they carry no timing.
+  const pauseSays = (hb, hk) => { if (hb < 0 || hk < 0) return false; const atBoundary = gapBefore(hb), atChange = gapBefore(hk); return atBoundary !== null && atChange !== null && atBoundary >= MIN_PAUSE && atBoundary > atChange; };
   for (const [s, e] of units) {
     if (e - s > UNIT_MAX_WORDS) continue;
+    // the runs of voices the recording heard in this sentence (words it heard nothing for go with what surrounds them)
+    const runs = []; for (let i = s; i < e; i++) { const v = voice[i]; if (v === null) continue; if (runs.length && runs[runs.length - 1].v === v) runs[runs.length - 1].end = i + 1; else runs.push({ v, start: i, end: i + 1, n: 0 }); runs[runs.length - 1].n++; }
+    if (!runs.length) continue;
+    // A change of speakers the recording placed one to three words from the sentence's edge is moved to the edge only
+    // when all of this holds: the sentence has exactly two voices; the first continues from the sentence before and the
+    // second into the sentence after, so moving the change only moves where one long turn ends and the next begins (it
+    // never takes words from a short interruption, nor gives an interruption the words around it), unless the edge is
+    // a spaced dash, the transcriber's own mark that someone broke in there; the part that moves is at most three words
+    // and at most half as long as the rest; and the recording paused at the edge for at least 0.15 s, longer than where
+    // its voice changed.
+    if (runs.length === 2) {
+      const [a, b] = runs, change = heardFrom(b.start, b.end);
+      const brokeInAtStart = s > 0 && dashAfter(s - 1), brokeInAtEnd = e < words.length && dashAfter(e - 1);
+      if (a.v === knownBefore(s) && (b.v === knownFrom(e) || brokeInAtStart) && a.end - s <= 3 && b.n >= 2 * a.n && pauseSays(heardFrom(s, b.start), change)) { set(s, b.start, b.v); edges.moved++; }          // noticed late
+      else if (b.v === knownFrom(e) && (a.v === knownBefore(s) || brokeInAtEnd) && e - b.start <= 3 && a.n >= 2 * b.n && pauseSays(heardFrom(e, e + 3), change)) { set(b.start, e, a.v); edges.moved++; } // noticed early
+      else if (a.end - s <= 3 || e - b.start <= 3) edges.kept++; // a change near an edge left where the recording put it
+    }
+    // words the recording heard nothing for take the sentence's voice when most of its heard words (60%) have one
     const count = new Map(); let known = 0;
     for (let i = s; i < e; i++) if (voice[i] !== null) { count.set(voice[i], (count.get(voice[i]) || 0) + 1); known++; }
-    if (!known) continue;
     const [top, n] = [...count.entries()].sort((x, y) => y[1] - x[1])[0];
-    if (n / known < MAJORITY) {
-      // no clear majority. One case is still settled: a single change of voice within the first three words, from the
-      // voice of the sentence before to the voice of the sentence after; the recording noticed the new voice late.
-      // Anything else is a real mix (an interruption) and is kept as the recording has it.
-      const seq = []; for (let i = s; i < e; i++) if (voice[i] !== null && voice[i] !== seq[seq.length - 1]) seq.push(voice[i]);
-      if (seq.length === 2) {
-        let k = s; while (voice[k] !== seq[1]) k++;
-        const after = knownFrom(e);
-        if (k - s <= 3 && knownBefore(s) === seq[0] && (after === seq[1] || after === null)) set(s, e, seq[1]);
-      }
-      continue;
-    }
-    for (let i = s; i < e;) {
-      if (voice[i] === top) { i++; continue; }
-      let j = i; while (j < e && voice[j] !== top) j++;
-      const unmatched = voice.slice(i, j).every(v => v === null), edge = i === s || j === e;
-      if (unmatched || (edge ? j - i <= 3 : j - i <= 2)) set(i, j, top);
-      i = j;
-    }
+    if (n / known >= MAJORITY) for (let i = s; i < e; i++) if (voice[i] === null) set(i, i + 1, top);
   }
-  // elsewhere: a run of one or two words between two runs of the same voice, unless it is a whole sentence
   const runsOf = () => { const runs = []; for (let i = 0; i < voice.length; i++) { if (runs.length && runs[runs.length - 1].v === voice[i]) runs[runs.length - 1].n++; else runs.push({ v: voice[i], i, n: 1 }); } return runs; };
-  let runs = runsOf();
-  for (let k = 1; k + 1 < runs.length; k++) {
-    const r = runs[k], whole = unitOf[r.i] !== unitOf[r.i - 1] && unitOf[r.i + r.n - 1] !== unitOf[r.i + r.n];
-    if (r.n <= 2 && !whole && runs[k - 1].v !== null && runs[k - 1].v === runs[k + 1].v) set(r.i, r.i + r.n, runs[k - 1].v);
-  }
 
   // 4. cuts where the voice changes, always between two whitespace tokens
-  runs = runsOf();
+  const runs = runsOf();
   const order = [], keyOf = v => { if (v === null) return "UNLABELED"; if (!order.includes(v)) order.push(v); return "SPEAKER " + (order.indexOf(v) + 1); };
   const cuts = [];
   for (const r of runs) {
@@ -213,7 +226,7 @@ function separate(text, d) {
   if (!cuts.length || cuts[0].at > toks[0].at) cuts.unshift({ at: toks[0].at, key: cuts.length ? cuts[0].key : "UNLABELED" });
   const out = labelText(text, paras, cuts);
   const keys = [...new Set(cuts.map(c => c.key))];
-  return { ok: true, text: out, coverage, voices: order.length, keys, turns: cuts.length, unaligned: words.length - matched, unlabelled: voice.filter(v => v === null).length, adjusted, anchors: anchorCount, words: words.length, recordingWords: rec.length };
+  return { ok: true, text: out, coverage, voices: order.length, keys, turns: cuts.length, unaligned: words.length - matched, unlabelled: voice.filter(v => v === null).length, adjusted, edges, anchors: anchorCount, words: words.length, recordingWords: rec.length };
 }
 
 /* The spoken text of a transcript whose labels were worked out by the app (from the words, by an earlier voice
@@ -299,9 +312,9 @@ async function separateVoices({ ai, store, id, link, engine, resolver, signal, b
   const record = {
     by: "recording", engine: engine.name || "deepgram", model: (meta.models && meta.models[0]) || engine.model || "", requestId: meta.request_id || "", audioUrl: audio.url, audioFoundBy: audio.how,
     durationSeconds: Math.round(Number(meta.duration) || 0), at: new Date().toISOString(), inputHash: b.run.input.sha256, earlierLabelsSetAside: labels.length ? origin : "",
-    coverage: Math.round(sep.coverage * 1000) / 1000, voices: sep.voices, turns: sep.turns, unaligned: sep.unaligned, unlabelled: sep.unlabelled, adjusted: sep.adjusted, anchors: sep.anchors, words: sep.words, recordingWords: sep.recordingWords,
+    coverage: Math.round(sep.coverage * 1000) / 1000, voices: sep.voices, turns: sep.turns, unaligned: sep.unaligned, unlabelled: sep.unlabelled, adjusted: sep.adjusted, edges: sep.edges, anchors: sep.anchors, words: sep.words, recordingWords: sep.recordingWords,
     names, nameCalls: named.calls, clips, clipsRejected, clipCalls,
-    method: "Voices were separated from the recording by " + (engine.name === "deepgram" || !engine.name ? "Deepgram" : engine.name) + " and lined up with this text word by word (" + pct + "% of its words matched). Each sentence takes the voice of most of its words; a change of voice inside a sentence is kept only where the recording clearly shows one. Every word of the text was kept (checked). Voices are numbered; a name comes only from the words, or from your confirmation." + (clips.length ? " Quotations read aloud and clips introduced in the words were set apart from their reader." : ""),
+    method: "Voices were separated from the recording by " + (engine.name === "deepgram" || !engine.name ? "Deepgram" : engine.name) + " and lined up with this text word by word (" + pct + "% of its words matched). Each word keeps the voice the recording heard say it, so a short interruption stays with the person who made it; a change of speaker the recording noticed a word or three late is moved to the sentence's edge only where its own pause shows that. Words the recording missed take the voice of most of their sentence. Every word of the text was kept (checked). Voices are numbered; a name comes only from the words, or from your confirmation." + (clips.length ? " Quotations read aloud and clips introduced in the words were set apart from their reader." : ""),
   };
   const diarization = { engine: record.engine, model: record.model, requestId: record.requestId, audioUrl: audio.url, durationSeconds: record.durationSeconds, words: recordingWords(d).map(w => [w.w, w.speaker, Math.round(w.start * 100) / 100, Math.round(w.end * 100) / 100]) };
   return { changed: true, text, speakers, record, basis, diarization };

@@ -116,9 +116,10 @@ function createMockAI() {
           if (typeof old === "string" && !changes.some(c => c.path === path)) changes.push({ path, value: old + " (MOCK corrected)" });
         }
         data = { changes };
-      } else if (p.startsWith("Check a correction to a reading")) {
+      } else if (p.startsWith("Review a corrected reading")) {
+        // fixture: every problem named before is resolved and nothing else is wrong; the real model reviews the whole reading
         const n = ((p.split("\n\nPROBLEMS:\n")[1] || "").split("\n\nCHANGES:\n")[0].match(/^\d+\./gm) || []).length;
-        data = { resolved: Array.from({ length: n }, () => true), newIssues: [] };
+        data = { resolved: Array.from({ length: n }, () => true), approved: true, issues: [] };
       } else if (p.startsWith("Review this reading before it is shown")) {
         data = { approved: true, issues: [] }; // fixture-only; the UI still labels every output as MOCK
       } else

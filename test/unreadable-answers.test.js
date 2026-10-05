@@ -79,7 +79,7 @@ test("an unreadable review is asked again once; a review that stays unreadable h
   f = await fixture(t, m.ai); b = await f.read();
   const held = b.passages.find(p => p.turnStart === 16);
   assert.equal(held.readingGate.status, "held");
-  assert.ok(held.readingGate.reasons.includes("The separate review's answer was not well-formed JSON. The draft was not approved."), JSON.stringify(held.readingGate.reasons));
+  assert.ok(held.readingGate.reasons.includes("The separate review's answer could not be used (it was not well-formed JSON), so the draft was not approved."), JSON.stringify(held.readingGate.reasons));
   // a draft whose review stays unreadable is held at once: a new draft would not make the review readable
   assert.equal(m.prompts.filter(p => isPassage(p) && p.includes("PASSAGE (turns 16–17")).length, 1);
 });

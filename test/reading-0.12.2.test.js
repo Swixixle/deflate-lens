@@ -76,7 +76,7 @@ test("a held reading keeps the review's reasons up to 2,000 characters on the pa
   const mock = createMockAI();
   const HUGE = "claims[0].plain.g5: " + "the simpler wording names a different group than the speaker did. ".repeat(40) + "TAIL";
   const ai = { ...mock, async sample(args) { const pr = String(args.prompt || "");
-    if (pr.startsWith("Check a correction to a reading")) { const data = { resolved: [false, false], newIssues: [] }; return { data, text: JSON.stringify(data), usage: null, model: "mock", stopReason: "end_turn" }; }
+    if (pr.startsWith("Review a corrected reading")) { const data = { resolved: [false, false], approved: false, issues: [] }; return { data, text: JSON.stringify(data), usage: null, model: "mock", stopReason: "end_turn" }; }
     if (pr.startsWith("Review this reading before it is shown") && !pr.includes("closing overview")) { const data = { approved: false, issues: [LONG, HUGE] }; return { data, text: JSON.stringify(data), usage: null, model: "mock", stopReason: "end_turn" }; } return mock.sample(args); } };
   const app = createApp({ dataDir: dir, examplesDir: dir, env: {}, envPath: path.join(dir, ".env"), ai, research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), run: async () => ({ code: 1, out: "" }) });
   await app.ready;
