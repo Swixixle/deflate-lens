@@ -36,13 +36,17 @@ function validateRunDoc(doc, ctx) {
     // a title/length search or a title lookup), with the comparison a person needs to check it. Absent on older records,
     // which the page calls "not recorded" (never confirmed after the fact).
     if (i && ["direct", "needs_confirmation"].includes(i.identity)) out.import.identity = i.identity;
+    // a recording the person uploaded (0.14.1): which file, by name, size and hash; the file itself is not kept
+    if (i && i.file && typeof i.file === "object") out.import.file = { name: str(i.file.name, 200), bytes: Number(i.file.bytes) || 0, sha256: /^[0-9a-f]{64}$/.test(String(i.file.sha256)) ? String(i.file.sha256) : "", format: str(i.file.format, 20) };
     if (i && i.match && typeof i.match === "object") out.import.match = validateMatch(i.match);
     if (i && Array.isArray(i.ambiguous) && i.ambiguous.length) out.import.ambiguous = i.ambiguous.map(x => str(x, 300)).slice(0, 10);
     if (i && i.episodeInfo && typeof i.episodeInfo === "object") out.import.episodeInfo = { guid: str(i.episodeInfo.guid, 500), title: str(i.episodeInfo.title, 300), durationSeconds: Number(i.episodeInfo.durationSeconds) || 0, pubDate: str(i.episodeInfo.pubDate, 60), link: isUrl(i.episodeInfo.link) ? str(i.episodeInfo.link, 2000) : "", audioUrl: isUrl(i.episodeInfo.audioUrl) ? str(i.episodeInfo.audioUrl, 2000) : "",
-      description: str(i.episodeInfo.description, 2000), author: str(i.episodeInfo.author, 120), persons: listedPersons(i.episodeInfo.persons) };
+      description: str(i.episodeInfo.description, 2000), author: str(i.episodeInfo.author, 120), persons: listedPersons(i.episodeInfo.persons),
+      ...(i.episodeInfo.origin === "file" ? { origin: "file", titleFrom: i.episodeInfo.titleFrom === "tag" ? "tag" : "name" } : {}) };
     // the show as its listing describes it (name, the feed's author, Apple's artist, <podcast:person> hosts), or a
     // video's channel: where the people who may be speaking are named
-    if (i && i.showInfo && typeof i.showInfo === "object") out.import.showInfo = { name: str(i.showInfo.name, 300), author: str(i.showInfo.author, 120), artist: str(i.showInfo.artist, 120), persons: listedPersons(i.showInfo.persons), channel: !!i.showInfo.channel };
+    // `origin: "file"`: the listing is an uploaded file's own tags (album, artist, title, comment) and its name
+    if (i && i.showInfo && typeof i.showInfo === "object") out.import.showInfo = { name: str(i.showInfo.name, 300), author: str(i.showInfo.author, 120), artist: str(i.showInfo.artist, 120), persons: listedPersons(i.showInfo.persons), channel: !!i.showInfo.channel, ...(i.showInfo.origin === "file" ? { origin: "file" } : {}) };
   }
   if ("provenance" in doc) out.provenance = validateProvenance(doc.provenance, ctx);
   return out;

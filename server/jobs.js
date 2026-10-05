@@ -26,7 +26,7 @@ function createJobs({ dataDir }) {
       delete j.result; j.diskOnly=true; jobs.set(j.id,j);
     }
   })();
-  function start(kind,input,runner) {
+  function start(kind,input,runner,opts) {
     const ctl=new AbortController();
     const j={id:"job"+Date.now().toString(36)+crypto.randomBytes(3).toString("hex"),kind,input:input||null,state:"running",startedAt:new Date().toISOString(),steps:[],progress:null,result:null,error:null,ctl};
     // Do not write or run the new job until recovery has finished scanning the old files.
@@ -35,6 +35,8 @@ function createJobs({ dataDir }) {
     j.saved=ready.then(()=>persist(view(j)));
     const finish=async(state,result,error)=>{
       if(ctl.signal.aborted){state="cancelled";result=null;}
+      // what the job held only for itself (an uploaded recording) is let go however the job ended
+      if(opts && opts.onEnd){ try { await opts.onEnd(); } catch(e){} }
       j.result=result; j.resultKind=result && result.kind || ""; j.error=error; j.finishedAt=new Date().toISOString();
       try { await persist(view(j,state)); j.state=state; j.result=null; j.diskOnly=true; }
       catch(e){j.state="error";j.error={code:"save_failed",message:"Could not save this fetch: "+e.message};}

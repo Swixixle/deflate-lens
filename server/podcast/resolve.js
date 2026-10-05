@@ -292,16 +292,43 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
     if (!/^https?:\/\//i.test(audioUrl) || isPrivateHost(audioHost)) return Object.assign(base, { ok: false, tried: tried.concat([{ step: "audio", error: "the feed's audio address is not a public http(s) address (" + audioUrl.slice(0, 80) + ")" }]), reason: "no transcript was found, and the audio file's address cannot be fetched" });
     const local = engines.local, cloud = engines.cloud;
     const have = { local: !!(local && local.installed()), cloud: !!(cloud && cloud.configured()) };
-    const pick = choice === "local" || choice === "cloud" ? choice : (env.TRANSCRIBE_PREFER === "local" && have.local ? "local" : env.TRANSCRIBE_PREFER === "cloud" && have.cloud ? "cloud" : have.cloud ? "cloud" : have.local ? "local" : "");
+    const pick = pickEngine(choice, have, env);
     if (!pick || !have[pick]) return Object.assign(base, { ok: false, tried, needsTranscription: { audioUrl, duration: item.duration, available: have, wanted: pick || null }, reason: "no transcript was published anywhere the app can look; the audio can be transcribed" + (pick && !have[pick] ? ", but " + (pick === "local" ? "local transcription is not installed" : "no Deepgram key is set") : "") });
     const engine = pick === "local" ? local : cloud;
     step("Audio", pick === "local" ? "transcribing on this computer (this takes a while)" : "transcribing with Deepgram");
     const r = await engine.transcribe({ audioUrl, durationSeconds: item.duration, fetch: fetchFn, signal, onProgress });
     return Object.assign(base, { ok: true, text: r.text, title: item.title, speakers: r.speakers || [], tried, source: { kind: "audio-transcription", url: audioUrl, engine: r.engine, model: r.model, requestId: r.requestId || "", durationSeconds: r.durationSeconds, note: r.note } });
   }
+  /* A recording the person uploaded (0.14.1): no episode to find, only the file to turn into text with the engine
+     already decided (see the upload route). Its own tags and its name are its listing: the album as the show, the
+     artist as the show's author, the title (or the file's name) as the episode's title, the comment as its notes. */
+  async function fileWords(up, { step, signal, engine: pick, onProgress }) {
+    const t = up.tags || {}, title = t.title || up.titleFromName || "Uploaded recording";
+    const base = { show: { name: t.album || "", feedUrl: "", link: "", author: t.artist || "", artist: t.albumArtist && t.albumArtist !== t.artist ? t.albumArtist : "", persons: [], origin: "file" },
+      episode: { title, guid: "", pubDate: t.date || "", duration: null, link: "", audioUrl: "", description: t.comment || "", author: "", persons: [], origin: "file", titleFrom: t.title ? "tag" : "name" },
+      matchedBy: "the file you uploaded", ambiguous: null, match: null, identity: "direct" };
+    const engine = pick === "local" ? engines.local : engines.cloud;
+    if (!engine || (pick === "local" ? !engine.installed() : !engine.configured())) throw Object.assign(new Error(pick === "local" ? "Transcription on this computer is not installed." : "No Deepgram key is set."), { code: "needs_engine" });
+    step("Audio", pick === "local" ? "transcribing on this computer (this takes a while)" : "sending it to Deepgram to transcribe, with the voices separated");
+    if (signal && signal.aborted) throw cancelled();
+    const r = await engine.transcribe({ file: up.path, type: up.type, durationSeconds: null, fetch: fetchFn, signal, onProgress });
+    const file = { name: up.name, bytes: up.bytes, sha256: up.sha256, format: up.format };
+    return Object.assign(base, { ok: true, text: r.text, title, speakers: r.speakers || [], tried: [], source: { kind: "audio-transcription", url: "", file, engine: r.engine, model: r.model, requestId: r.requestId || "", durationSeconds: r.durationSeconds, note: r.note + "; from the file you uploaded" } });
+  }
   function cancelled() { const e = new Error("stopped"); e.code = "cancelled"; return e; }
 
-  return { classify, locate, words, readFeed, appleLookup, appleSearchEpisodes, spotifyTitle };
+  return { classify, locate, words, fileWords, readFeed, appleLookup, appleSearchEpisodes, spotifyTitle };
 }
 
-module.exports = { createResolver, classify, appleEpisode, isPrivateHost };
+/* Which engine turns audio into text: the person's choice when there is one; otherwise the preference they set, and when
+   that preference is to keep audio on this computer, nothing else (a missing local engine is a choice to offer, never a
+   reason to send the audio away); otherwise Deepgram when a key is set, then the local engine. "" when none fits. */
+function pickEngine(choice, have, env) {
+  if (choice === "local" || choice === "cloud") return choice;
+  const prefer = env && env.TRANSCRIBE_PREFER || "";
+  if (prefer === "local") return have.local ? "local" : "";
+  if (prefer === "cloud" && have.cloud) return "cloud";
+  return have.cloud ? "cloud" : have.local ? "local" : "";
+}
+
+module.exports = { createResolver, classify, appleEpisode, isPrivateHost, pickEngine };

@@ -1,6 +1,6 @@
 # Deflate Lens
 
-Understand what was said, what supports it, and what remains uncertain. Paste a transcript, a claim, or a podcast, video or page link. Deflate Lens reads each passage in three short parts: **In plain words** (what was claimed and the reasons given), **A fair reading** (the strongest reasonable interpretation), and **What follows** (the assessment after that). Choose **High school** or **Fifth grade** on any card.
+Understand what was said, what supports it, and what remains uncertain. Paste a transcript, a claim, or a podcast, video or page link, or upload a recording. Deflate Lens reads each passage in three short parts: **In plain words** (what was claimed and the reasons given), **A fair reading** (the strongest reasonable interpretation), and **What follows** (the assessment after that). Choose **High school** or **Fifth grade** on any card.
 
 It runs on your own computer. Your work stays there. Only the text being read is sent to the AI model you set up.
 
@@ -45,7 +45,7 @@ The app opens at <http://127.0.0.1:3123>. Stop it with `Ctrl+C`. Start it again 
 
 ## Use it
 
-1. **Paste or upload.** A transcript file (`.txt`, `.srt`, `.vtt`, `.md`), any text, a single claim, or a podcast, video or page link.
+1. **Paste or upload.** A transcript file (`.txt`, `.srt`, `.vtt`, `.md`), a recording (MP3, M4A, MP4, WAV and other audio or video files), any text, a single claim, or a podcast, video or page link.
 2. **Press Read this.** That is the only button you need. It works out who said what and who each speaker is (keeping any speaker names that came with the text, finding the rest from introductions, people naming themselves and the episode's listing, and setting played clips and advertisements apart), picks the passages, writes and reviews each reading, and looks for sources. You never have to name anyone. You can close the page; it keeps going.
 3. **The key, once.** The first time, it asks for your Anthropic API key and saves it on your computer. Readings are billed to that key.
 4. **Read.** Open **Evidence** under a card for the original and the reasoning. **Readings** has your saved work; **Controls** has everything optional, and the **User guide**.
@@ -70,8 +70,8 @@ Settings live in `.env` in the app folder (setup creates it). The ones you might
 | `ANTHROPIC_API_KEY` | Your key for the readings. The page can save it for you. Billed to your Anthropic account. |
 | `ANTHROPIC_MAX_TOKENS` | The longest answer a reading may have (default 16000). |
 | `RESEARCH_CONTACT_EMAIL` | Your email, so Crossref answers faster. Optional. |
-| `DEEPGRAM_API_KEY` | For fast audio-to-text, and for separating voices from a recording (done by itself when a link's transcript has no speaker names). Optional; the page asks when needed. Billed to your Deepgram account. |
-| `TRANSCRIBE_PREFER` | `local` or `cloud`, when both audio options are set up. `local` also keeps the app from sending audio to Deepgram to separate voices. |
+| `DEEPGRAM_API_KEY` | For fast audio-to-text (a podcast's audio or a recording you upload, with the voices told apart), and for separating voices from a recording (done by itself when a link's transcript has no speaker names). Optional; the page asks when needed. Billed to your Deepgram account. |
+| `TRANSCRIBE_PREFER` | `local` or `cloud`, when both audio options are set up. `local` keeps audio on this computer: nothing is sent to Deepgram, to transcribe or to separate voices, unless you choose Deepgram when the page asks. |
 | `DEFLATE_MOCK_AI` | `1` to try the app with placeholder readings and no key. |
 
 `brew install yt-dlp` makes YouTube captions more reliable. Your work is saved as plain files in the `data/` folder; copy that folder to back it up.

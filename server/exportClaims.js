@@ -133,6 +133,9 @@ function buildMarkdown(b, level) {
   out.push("# " + (r.title || "Reading") + (L === "g5" ? " (fifth-grade reading level)" : "") + "\n");
   if (r.kind === "claim") out.push("_A claim supplied by a person, not taken from a transcript._\n");
   if (r.sourceUrl) out.push("Source: " + (r.sourceLabel || "") + " " + r.sourceUrl + "\n");
+  // an uploaded recording has no link: the file is named by its name, size and hash (0.14.1)
+  const file = r.import && r.import.file, eng = r.import && r.import.source && r.import.source.engine;
+  if (file && file.name) out.push((r.sourceUrl ? "Recording: " : "Source: the recording ") + file.name + " (" + (file.bytes >= 1048576 ? Math.round(file.bytes / 1048576) + " MB" : Math.max(1, Math.round((file.bytes || 0) / 1024)) + " KB") + (file.sha256 ? ", SHA-256 " + file.sha256 : "") + "), uploaded and transcribed " + (eng === "local" ? "on the person's computer" : "by Deepgram") + ".\n");
   const src = sourceLines(b); if (src.length) out.push(src.join("\n") + "\n");
   const sn = speakerNote(b); if (sn) out.push(sn + "\n");
   const who = whoLines(b); if (who.length) out.push("**Who is speaking.**\n" + who.join("\n") + "\n");

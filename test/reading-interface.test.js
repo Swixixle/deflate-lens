@@ -7,12 +7,12 @@ const { createMockAI } = require("../server/ai");
 const { page, visible, descendants } = require("./page-harness");
 const transcript = Array.from({ length: 18 }, (_, i) => (i % 2 ? "GUEST" : "HOST") + ": Here is an argument with enough words for the quoted passage " + i + "." + (i === 3 ? " That shows everyone agrees with it." : "")).join("\n");
 
-test("the start screen: one box, one helper line, Upload transcript and one Read this; Controls and Readings start closed", async t => {
+test("the start screen: one box, one helper line, one Upload (a transcript or a recording) and one Read this; Controls and Readings start closed", async t => {
   const f = await page(t), view = f.$("runView");
   assert.equal(view.querySelectorAll("textarea").length, 1);
   assert.equal(view.querySelectorAll(".btn.primary").length, 1); assert.equal(f.$("readThis").textContent, "Read this");
-  assert.equal(view.querySelectorAll("button").filter(b => b.textContent === "Upload transcript").length, 1);
-  assert.equal(view.querySelectorAll(".hint").length, 1); assert.equal(f.$("f-kind").textContent, "Paste text or a link, or upload a transcript.");
+  assert.equal(view.querySelectorAll("button").filter(b => b.textContent === "Upload").length, 1);
+  assert.equal(view.querySelectorAll(".hint").length, 1); assert.equal(f.$("f-kind").textContent, "Paste text or a link, or upload a transcript or a recording.");
   assert.equal(f.$("controls").hidden, true); assert.equal(f.$("readings").hidden, true);
   assert.match(visible(view), /What would you like to read\?/);
   assert.doesNotMatch(visible(view), /How it works|Processing options|plain words · where it jumps/);

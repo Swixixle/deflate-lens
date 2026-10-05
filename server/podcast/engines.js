@@ -10,9 +10,10 @@
           Face on first use into data/local-transcription/models/. Audio is decoded and transcribed in five-minute
           segments cut at quiet points, so a long episode never sits in memory whole.
 
-   CLOUD  Deepgram's prerecorded API, given the audio file's address (nothing is downloaded here): minutes per episode,
-          speaker labels, billed to a Deepgram key the person adds once. The audio goes to Deepgram. The same API also
-          separates voices for a text the app already has (diarize(), used by voices.js on a person's request).
+   CLOUD  Deepgram's prerecorded API, given the audio file's address (nothing is downloaded here) or, for a recording
+          the person uploaded (0.14.1), the file itself: minutes per episode, speaker labels, billed to a Deepgram key
+          the person adds once. The audio goes to Deepgram. The same API also separates voices for a text the app
+          already has (diarize(), used by voices.js).
 
    Either engine's output is a document with a stated origin: engine, model, duration, and what was and was not
    available (speakers). Neither is ever called without a person having chosen it. */
@@ -158,14 +159,18 @@ function deepgramEngine({ apiKey, fetch: fetchFn, env }) {
   return {
     name: "deepgram", model,
     configured() { return !!apiKey; },
-    async transcribe({ audioUrl, signal, onProgress }) {
+    async transcribe({ audioUrl, file, type, signal, onProgress }) {
       if (!apiKey) { const e = new Error("no DEEPGRAM_API_KEY"); e.code = "cloud_not_configured"; throw e; }
       onProgress && onProgress({ stage: "transcribing (Deepgram)", percent: null });
       const url = "https://api.deepgram.com/v1/listen?model=" + encodeURIComponent(model) + "&smart_format=true&punctuate=true&diarize=true&utterances=true";
-      const res = await (fetchFn || globalThis.fetch)(url, { method: "POST", signal, headers: { "Authorization": "Token " + apiKey, "Content-Type": "application/json" }, body: JSON.stringify({ url: audioUrl }) });
+      // an uploaded file goes as the request body (streamed from disk where Node can, read whole otherwise); a link as JSON
+      const body = file ? (typeof fs.openAsBlob === "function" ? await fs.openAsBlob(file) : await fsp.readFile(file)) : JSON.stringify({ url: audioUrl });
+      let res;
+      try { res = await (fetchFn || globalThis.fetch)(url, { method: "POST", signal, headers: { "Authorization": "Token " + apiKey, "Content-Type": file ? (type || "application/octet-stream") : "application/json" }, body }); }
+      catch (e) { if (signal && signal.aborted) throw abortError(); throw Object.assign(new Error("Deepgram could not be reached (" + String(e.message || e).slice(0, 120) + ")."), { code: "cloud_failed" }); }
       const text = await res.text();
-      if (res.status !== 200) throw new Error("Deepgram answered HTTP " + res.status + ": " + text.replace(/\s+/g, " ").slice(0, 200));
-      const d = JSON.parse(text);
+      if (res.status !== 200) throw Object.assign(new Error("Deepgram answered HTTP " + res.status + ": " + text.replace(/\s+/g, " ").slice(0, 200)), { code: "cloud_failed" });
+      let d; try { d = JSON.parse(text); } catch (e) { throw Object.assign(new Error("Deepgram's answer was not readable."), { code: "cloud_failed" }); }
       const utt = d.results && d.results.utterances || [];
       const cues = utt.map(u => ({ speaker: Number.isInteger(Number(u.speaker)) && u.speaker !== null && u.speaker !== undefined ? "SPEAKER " + (Number(u.speaker) + 1) : "", text: String(u.transcript || "").trim() })).filter(c => c.text);
       if (!cues.length) { const alt = d.results && d.results.channels && d.results.channels[0] && d.results.channels[0].alternatives && d.results.channels[0].alternatives[0]; if (alt && alt.transcript) cues.push({ speaker: "", text: alt.transcript }); }

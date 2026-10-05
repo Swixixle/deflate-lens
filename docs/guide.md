@@ -4,11 +4,12 @@ Deflate Lens helps you understand what was said, what supports it, and what rema
 
 ## Start a reading
 
-Paste text or a link into the box, or press **Upload transcript** (.txt, .srt, .vtt, .md). Then press **Read this**. That is the only step you need.
+Paste text or a link into the box, or press **Upload** to choose a transcript (.txt, .srt, .vtt, .md) or a recording (an audio or video file). Then press **Read this**. That is the only step you need.
 
 - **Text or a transcript.** Lines that start with a name and a colon (`ANN: …`) are read as speakers. A transcript copied from a web page is cleaned on the way in: "Copy link" buttons and timestamps are taken out of the words (every word is kept), and names the page shows above each paragraph become speakers.
 - **One claim.** A single sentence is read as a claim: the app explains it and looks for sources.
 - **A podcast, video or page link.** The app looks for a transcript the show published, then the video's captions, then the episode page. If none exists it can turn the audio into text. A link to an audio file goes straight to that step.
+- **A recording on your computer.** MP3, M4A, MP4, WAV and other audio or video files, up to 2 GB. The line under the box names the file, and **Read this** turns it into text (with Deepgram, which also tells the voices apart, or on your computer for an MP3), then reads it. The file's own details, such as its title and artist, help name the speakers. The file is not kept; the reading records its name and size.
 
 The app stops to ask only when it cannot decide for you:
 
@@ -34,7 +35,7 @@ For example, if someone said "We asked 18 evening visitors and 12 wanted later h
 
 **Who is speaking.** Speaker names that came with the text are kept. When a podcast link's transcript has none, the app separates the voices from the episode's recording with Deepgram (if you set up a Deepgram key, and unless you chose to keep audio on your computer); otherwise it works out from the words where the speaker changes, only where the words show it (a question answered, a guest introduced, a clip played and the host coming back), and leaves the rest alone. A clip, a quotation read aloud or an advertisement is kept apart from the conversation, so its words are never anyone's claims here. When the text has no speaker names at all, the words are shown without a speaker in front of every line, and one quiet line above the reading says so.
 
-**Who each speaker is.** You never have to name anyone. Before the reading appears, the app finds each numbered speaker's name from the conversation and the episode's listing: someone saying who they are ("I'm Dana Reyes"), a guest introduced just before they speak ("Joining us now, Marcus Delacroix"), the show's host opening the show, someone spoken to by name just before they answer. The listing says who might be speaking; the conversation decides which voice is whose. Quoted or reported words, introductions of another day, and names of companies or places don't count. The names appear on the cards, the quotes, the passages, the claims and the downloads. A speaker nothing identifies keeps a number ("Speaker 3"), and **Evidence → Who is speaking** says why.
+**Who each speaker is.** You never have to name anyone. Before the reading appears, the app finds each numbered speaker's name from the conversation and the episode's listing (for a recording you uploaded, the file's own title, artist and album, and its name): someone saying who they are ("I'm Dana Reyes"), a guest introduced just before they speak ("Joining us now, Marcus Delacroix"), the show's host opening the show, someone spoken to by name just before they answer. The listing says who might be speaking; the conversation decides which voice is whose. Quoted or reported words, introductions of another day, and names of companies or places don't count. The names appear on the cards, the quotes, the passages, the claims and the downloads. A speaker nothing identifies keeps a number ("Speaker 3"), and **Evidence → Who is speaking** says why.
 
 **Evidence** opens under each card. It shows, in order:
 
@@ -71,7 +72,7 @@ Your saved readings are under **Readings**, with **New reading** at the top. **D
 
 - **On your computer:** everything you paste or upload, every reading, every source decision and every earlier version, as plain files in the app's `data` folder. Copy that folder to back it up. Deleted readings go to `data/trash`.
 - **Sent to Anthropic:** the text being read, when a reading, review or overview is made, and once per text to find who each speaker is, using your key. Each of those is a charge on your Anthropic account. A typical passage takes one reading and one review.
-- **Sent to Deepgram:** the audio, when you choose Deepgram for audio-to-text, when you ask it to separate voices, and by itself when a podcast link's transcript has no speaker names and a Deepgram key is set (not if you chose to keep audio on your computer). Billed to your Deepgram key.
+- **Sent to Deepgram:** the audio, when you choose Deepgram for audio-to-text (for a podcast's audio or a recording you upload), when you ask it to separate voices, and by itself when a podcast link's transcript has no speaker names and a Deepgram key is set (not if you chose to keep audio on your computer). Billed to your Deepgram key.
 - **Sent to search services:** a short search query per checkable claim, to Crossref, PubMed, OpenAlex and GDELT. Free.
 - Your keys are kept in the `.env` file in the app folder. The page never shows them.
 

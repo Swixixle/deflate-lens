@@ -5,6 +5,7 @@
    DEFLATE_CHROMIUM_EXECUTABLE to use one already installed). Pictures go to scripts/ui-shots/. */
 const fs = require("fs"), os = require("os"), path = require("path"), assert = require("node:assert/strict");
 const { createApp } = require("../server/app"), { createMockAI } = require("../server/ai"), { createResearch } = require("../server/research");
+const { cuesToText } = require("../server/podcast/transcripts"), audioFiles = require("../test/fixtures/audio-files");
 
 const T = Array.from({ length: 18 }, (_, i) => (i % 2 ? "GUEST" : "HOST") + ": This is an argument with enough words for a quoted passage number " + i + "." + (i === 3 ? " That shows everyone agrees with it." : "")).join("\n");
 const LONG = Array.from({ length: 40 }, (_, i) => (i % 2 ? "GUEST" : "HOST") + ": Turn " + i + " says something worth reading with enough words in it to quote from." + (i === 9 ? " That shows everyone agrees with it." : "")).join("\n");
@@ -34,8 +35,26 @@ const fakeYtdlp = async (cmd, args) => {
 };
 /* The mock responder, slowed or made to fail on request so progress and failure can be watched. */
 const knob = { delay: 0, failTurns: null, deepgram: false, recording: null };
-/* Deepgram, faked for voice separation: no key until a check turns it on; its answer is set by the check. */
-const fakeCloud = { name: "deepgram", model: "nova-3", configured: () => knob.deepgram, async diarize() { return knob.recording; } };
+/* Deepgram, faked for voice separation and for a recording uploaded from this computer: no key until a check turns it
+   on; its answers are set here and by the checks. The uploaded file is looked at (size, type) and answered with an
+   invented interview, as Deepgram numbers its voices. */
+const UPLOAD_SAID = [
+  [0, "Good evening and welcome to the Straight Talk Hour. Lots to get to tonight. The steel numbers came out this morning, and they surprised a lot of people in Washington."],
+  [0, "Joining us now from Washington, Marcus Delacroix, former trade adviser. Marcus, thanks for coming on."],
+  [1, "Thanks for having me, Walt. It's good to be back."],
+  [0, "So, Marcus, what do the steel numbers actually show?"],
+  [1, "They show output up eleven percent since the tariffs took effect. The mills in Ohio reopened two lines this spring."],
+  [0, "But the critics say the new jobs went to machines, not to people."],
+  [1, "Some did. But the plants hired eight hundred workers last year, and that is in the company filings."],
+  [0, "Marcus Delacroix, thank you for joining us tonight."],
+];
+const fakeCloud = { name: "deepgram", model: "nova-3", configured: () => knob.deepgram, async diarize() { return knob.recording; },
+  async transcribe({ file, type }) {
+    knob.uploaded = { bytes: fs.statSync(file).size, type };
+    if (knob.uploadDelay) await new Promise(r => setTimeout(r, knob.uploadDelay));
+    const conv = cuesToText(UPLOAD_SAID.map(([v, text]) => ({ speaker: "SPEAKER " + (v + 1), text })));
+    return { text: conv.text, speakers: conv.speakers, engine: "deepgram", model: "nova-3", requestId: "req-ui-upload", durationSeconds: 600, note: "automatic transcription by Deepgram (nova-3); speakers are numbered by voice, not named; expect some misheard words and names" };
+  } };
 /* Deepgram's answer for a text whose paragraphs alternate between two voices. */
 const recordingOf = text => { const words = []; let t = 0; text.split(/\n\s*\n/).forEach((para, i) => para.split(/\s+/).filter(Boolean).forEach(w => { words.push({ word: w.toLowerCase().replace(/[^a-z0-9']/g, ""), punctuated_word: w, speaker: i % 2, start: t, end: t + 0.3 }); t += 0.4; })); return { metadata: { request_id: "req-ui", duration: Math.round(t), models: ["nova-3"] }, results: { channels: [{ alternatives: [{ words }] }] } }; };
 function testAI() {
@@ -73,7 +92,7 @@ function testAI() {
       const s = await page.evaluate(() => {
         const vis = el => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length) && getComputedStyle(el).visibility !== "hidden";
         const intake = document.querySelector("#intake");
-        return { inputs: [...intake.querySelectorAll("textarea,input:not([type=file])")].filter(vis).length, uploads: [...document.querySelectorAll("button")].filter(b => vis(b) && b.textContent === "Upload transcript").length,
+        return { inputs: [...intake.querySelectorAll("textarea,input:not([type=file])")].filter(vis).length, uploads: [...document.querySelectorAll("button")].filter(b => vis(b) && b.textContent === "Upload").length,
           primaries: [...document.querySelectorAll(".btn.primary")].filter(vis).map(b => b.textContent), helpers: [...intake.querySelectorAll("p")].filter(vis).length, controlsHidden: document.querySelector("#controls").hidden, readingsHidden: document.querySelector("#readings").hidden };
       });
       check("start@" + w, s.inputs === 1 && s.uploads === 1 && s.primaries.length === 1 && s.primaries[0] === "Read this" && s.helpers <= 1 && s.controlsHidden && s.readingsHidden, s);
@@ -275,6 +294,42 @@ function testAI() {
     check("speakerLineQuiet@390", phoneBox.height < 36 && await noHScroll(page), phoneBox);
     await page.screenshot({ path: path.join(shots, "speakers-voices-390.png") });
     await page.setViewportSize({ width: 1440, height: 900 }); knob.deepgram = false;
+
+    /* 10b. A recording from this computer (0.14.1): Upload takes it, the helper line names it, Read this sends the file as
+            it is (Deepgram, faked), and the reading says who said what from the conversation and the file's tags,
+            asking no one for a name */
+    knob.deepgram = true;
+    await page.locator("#readingsBtn").click(); await page.locator("#newRun").click(); await page.waitForSelector("#f-text");
+    const recording = audioFiles.mp3({ title: "We’ll Do It LIVE! — Marcus Delacroix", album: "Walt Brannigan’s Straight Talk Hour" });
+    await page.setInputFiles("#f-file", { name: "straight-talk-live.mp3", mimeType: "audio/mpeg", buffer: recording });
+    check("recordingNamed", /^A recording: straight-talk-live\.mp3 \(\d+ KB\)\. Read this turns it into text, finds who is speaking, then reads it\.$/.test((await page.locator("#f-kind").innerText()).trim()), await page.locator("#f-kind").innerText());
+    await page.locator("#readThis").click(); await ready(page);
+    const upText = await page.locator("#runView").innerText(), attribs = await page.locator(".card .attrib").allInnerTexts();
+    check("recordingSentAsItIs", knob.uploaded && knob.uploaded.bytes === recording.length && knob.uploaded.type === "audio/mpeg", knob.uploaded);
+    check("recordingNamedSpeakers", attribs.some(a => /Walt Brannigan/.test(a)) && attribs.some(a => /Marcus Delacroix/.test(a)) && !/Speaker [12]\b|Name them/.test(upText) && /Your recording transcribed by Deepgram/.test(upText) && (await page.locator("#speakerNotice").innerText()).trim() === "Speakers separated by voice. Details", { attribs });
+    check("recordingNotKept", !fs.existsSync(path.join(dir, "uploads")) || fs.readdirSync(path.join(dir, "uploads")).length === 0);
+    await page.screenshot({ path: path.join(shots, "recording-1440.png") });
+    // a transcription still running when the page is reloaded is picked up there, once, and read
+    knob.uploadDelay = 4000;
+    await page.locator("#readingsBtn").click(); await page.locator("#newRun").click(); await page.waitForSelector("#f-text");
+    await page.setInputFiles("#f-file", { name: "second-take.mp3", mimeType: "audio/mpeg", buffer: recording });
+    await page.locator("#readThis").click();
+    await page.waitForFunction(() => /Transcribing second-take\.mp3…/.test((document.querySelector("#intake") || {}).textContent || ""), null, { timeout: 10000 });
+    await page.reload();
+    await page.waitForFunction(() => /Still transcribing second-take\.mp3…/.test((document.querySelector("#intake") || {}).textContent || ""), null, { timeout: 10000 });
+    await ready(page);
+    const resumed = await bundle(page, await runId(page));
+    check("recordingResumed", resumed.run.import.file.name === "second-take.mp3" && (await page.evaluate(() => fetch("/api/transcript/engines").then(r => r.json()))).running.length === 0 && resumed.run.speakers.some(sp => sp.name === "Marcus Delacroix"));
+    // a page on another site (another origin on this computer, so the browser's own guard for local addresses does not
+    // decide it) cannot hand the app a recording: for a recording's type the browser asks first and the app gives no
+    // permission; a type the browser sends without asking (text/plain) reaches the app and is refused. Nothing is kept or sent.
+    knob.uploaded = null;
+    const foreignSite = await new Promise(r => { const s = require("http").createServer((q, a) => { a.writeHead(200, { "Content-Type": "text/html" }); a.end("<!doctype html><title>Another site</title><p>Another site</p>"); }); s.listen(0, "127.0.0.1", () => r(s)); });
+    const foreign = await context.newPage(); await foreign.goto("http://127.0.0.1:" + foreignSite.address().port + "/");
+    const crossSite = await foreign.evaluate(async ({ u, bytes }) => { const out = []; for (const type of ["audio/mpeg", "text/plain"]) { try { const r = await fetch(u + "/api/transcript/upload?name=x.mp3", { method: "POST", headers: { "Content-Type": type }, body: new Uint8Array(bytes) }); out.push(type + " answered " + r.status); } catch (e) { out.push(type + " refused"); } } return out; }, { u: root, bytes: [...recording] });
+    await foreign.close(); await new Promise(r => foreignSite.close(r));
+    check("crossSiteRefused", crossSite.every(x => / refused$/.test(x)) && !knob.uploaded && system.jobs.running("resolve").length === 0 && (!fs.existsSync(path.join(dir, "uploads")) || !fs.readdirSync(path.join(dir, "uploads")).length), crossSite);
+    knob.uploadDelay = 0; knob.deepgram = false;
 
     /* 11. A missing key: the text is saved, the prompt appears once, a refused key keeps it usable, the reading continues */
     system.state.ai = null; await page.reload(); await read(page, T.replace(/argument/g, "point"));

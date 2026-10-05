@@ -10,7 +10,10 @@ const { createImporter, htmlToText } = require("./importer");
 const { createSettings } = require("./settings");
 const { createAI } = require("./ai");
 const { createJobs } = require("./jobs");
-const { createResolver } = require("./podcast/resolve");
+const { createResolver, pickEngine } = require("./podcast/resolve");
+const AF = require("./podcast/audiofile");
+const { pipeline } = require("stream/promises");
+const { Transform } = require("stream");
 const { localEngine, deepgramEngine } = require("./podcast/engines");
 const YT = require("./podcast/youtube");
 const V = require("./validate");
@@ -61,9 +64,14 @@ function createApp(opts) {
   app.disable("x-powered-by");
   app.use(express.json({ limit: "40mb" }));
 
+  /* Uploaded recordings live under data/uploads only while the job that transcribes them runs; the job removes its file
+     when it ends, and anything left there from a server that stopped mid-job is removed at the next start. */
+  const uploadsDir = path.join(opts.dataDir, "uploads");
+  const MAX_UPLOAD_BYTES = opts.maxUploadBytes || 2 * 1024 * 1024 * 1024; // Deepgram takes files up to 2 GB
   const ready = (async () => {
     await store.init();
     await jobs.ready;
+    await fs.promises.rm(uploadsDir, { recursive: true, force: true });
     const exDir = opts.examplesDir || path.join(__dirname, "..", "examples");
     if (fs.existsSync(exDir)) for (const name of fs.readdirSync(exDir)) {
       const folder = path.join(exDir, name);
@@ -105,8 +113,8 @@ function createApp(opts) {
      reading is prepared in the same action. A job's result is also written under data/jobs so a refresh does not lose it. */
   app.get("/api/transcript/engines", wrap(async (req, res) => {
     const ytdlp = await YT.ytdlpAvailable(env, opts.run).catch(() => "");
-    const describe = j => ({ id:j.id, state:j.state, resultKind:j.resultKind || "", url:j.input && j.input.url || "", guid:j.input && j.input.guid || "", choice:j.input && j.input.choice || "", context:j.input && j.input.context || {}, targetRunId:j.input && j.input.targetRunId || "", startedAt:j.startedAt, progress:j.progress });
-    res.json({ local: { installed: engines.local.installed(), modelCached: engines.local.modelCached(), model: engines.local.model, packages: engines.local.packages }, cloud: { configured: engines.cloud.configured(), model: engines.cloud.model, provider: "deepgram" }, prefer: env.TRANSCRIBE_PREFER || "", ytdlp: ytdlp || "", installing: jobs.running("install-local").length > 0, running: jobs.running("resolve").map(describe), pending:(await jobs.pending("resolve")).map(describe) });
+    const describe = j => ({ id:j.id, state:j.state, resultKind:j.resultKind || "", url:j.input && j.input.url || "", guid:j.input && j.input.guid || "", choice:j.input && j.input.choice || "", context:j.input && j.input.context || {}, targetRunId:j.input && j.input.targetRunId || "", upload:j.input && j.input.upload ? { name:j.input.upload.name, bytes:j.input.upload.bytes } : null, startedAt:j.startedAt, progress:j.progress });
+    res.json({ local: { installed: engines.local.installed(), modelCached: engines.local.modelCached(), model: engines.local.model, packages: engines.local.packages }, cloud: { configured: engines.cloud.configured(), model: engines.cloud.model, provider: "deepgram" }, prefer: env.TRANSCRIBE_PREFER || "", upload: { maxBytes: MAX_UPLOAD_BYTES }, ytdlp: ytdlp || "", installing: jobs.running("install-local").length > 0, running: jobs.running("resolve").map(describe), pending:(await jobs.pending("resolve")).map(describe) });
   }));
   app.post("/api/transcript/resolve", wrap(async (req, res) => {
     const { url, guid, choice } = req.body || {};
@@ -129,6 +137,51 @@ function createApp(opts) {
       return Object.assign({ kind: w.ok ? "transcript" : "none" }, w, w.ok ? { chars: w.text.length, fetchedAt: new Date().toISOString() } : {});
     });
     res.json({ jobId: job.id });
+  }));
+  /* POST /api/transcript/upload?name=&choice=&title=&sourceLabel=&sourceDate= with a recording as the body (0.14.1): the
+     file is written to data/uploads as it arrives (counted, hashed, capped), checked to be a recording by its first
+     bytes, and turned into text by a job like a link's, so the page follows it and imports it the same way. Only an
+     audio or video type (or application/octet-stream) is accepted, which a page on another site cannot send without the
+     browser asking this server first. The engine is decided before the job starts (pickEngine; the local engine reads
+     MP3 only); when none fits, nothing is kept and the page offers the choice. */
+  app.post("/api/transcript/upload", wrap(async (req, res) => {
+    const type = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+    if (!/^(?:audio|video)\/[a-z0-9.+-]+$/.test(type) && type !== "application/octet-stream") return res.status(415).json({ error: "Upload a recording (an audio or video file).", code: "not_audio" });
+    const q = req.query || {}, one = v => typeof v === "string" ? v : "";
+    const name = one(q.name).replace(/^.*[\\/]/, "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 200) || "recording";
+    const choice = one(q.choice) === "local" || one(q.choice) === "cloud" ? one(q.choice) : "";
+    const context = Object.fromEntries(["title", "sourceLabel", "sourceDate"].filter(k => one(q[k]).trim()).map(k => [k, one(q[k]).slice(0, 600)]));
+    // where the recording came from, when the person said so under Add context (a recording has no link of its own)
+    if (/^https?:\/\/\S+$/i.test(one(q.sourceUrl).trim())) context.sourceUrl = one(q.sourceUrl).trim().slice(0, 2000);
+    // a file the browser says is too large is refused before a byte of it is read
+    if (Number(req.headers["content-length"]) > MAX_UPLOAD_BYTES) { res.set("Connection", "close"); return res.status(413).json({ error: "This file is larger than " + Math.round(MAX_UPLOAD_BYTES / 1048576) + " MB.", code: "too_large" }); }
+    const id = "up" + Date.now().toString(36) + crypto.randomBytes(4).toString("hex"), dir = path.join(uploadsDir, id), file = path.join(dir, "recording");
+    await fs.promises.mkdir(dir, { recursive: true });
+    const hash = crypto.createHash("sha256"); let bytes = 0;
+    const drop = () => fs.promises.rm(dir, { recursive: true, force: true });
+    try {
+      await pipeline(req, new Transform({ transform(chunk, enc, cb) { bytes += chunk.length; if (bytes > MAX_UPLOAD_BYTES) return cb(Object.assign(new Error("This file is larger than " + Math.round(MAX_UPLOAD_BYTES / 1048576) + " MB."), { status: 413, code: "too_large" })); hash.update(chunk); cb(null, chunk); } }), fs.createWriteStream(file));
+    } catch (e) { await drop(); if (e.status) throw e; throw Object.assign(new Error("The upload did not arrive whole; try again."), { status: 400, code: "upload_incomplete" }); }
+    const head = Buffer.alloc(64), fh = await fs.promises.open(file, "r"); try { await fh.read(head, 0, 64, 0); } finally { await fh.close(); }
+    const format = bytes ? AF.sniff(head) : null;
+    if (!format) { await drop(); return res.status(415).json({ error: bytes ? "This file is not a recording the app can read (MP3, M4A or MP4, WAV, Ogg, FLAC, AAC or WebM)." : "The file is empty.", code: "not_audio" }); }
+    const have = { local: engines.local.installed(), cloud: engines.cloud.configured() }, localReads = format === "mp3", formatName = AF.FORMATS[format].name;
+    const refuse = async (code, error) => { await drop(); return res.status(409).json({ error, code, format, formatName, bytes, available: have, localReads }); };
+    const mp3Only = "Transcription on this computer reads MP3 files only, and this file is " + formatName + ". Use Deepgram for it, or convert it to MP3.";
+    const pick = pickEngine(choice, { local: have.local && localReads, cloud: have.cloud }, env);
+    if (!pick) return have.local && !localReads && (env.TRANSCRIBE_PREFER === "local" || !have.cloud) ? refuse("local_format", mp3Only) : refuse("needs_engine", "Choose how to turn the recording into text.");
+    if (pick === "local" && !have.local) return refuse("needs_engine", "Transcription on this computer is not installed.");
+    if (pick === "local" && !localReads) return refuse("local_format", mp3Only);
+    if (pick === "cloud" && !have.cloud) return refuse("needs_engine", "No Deepgram key is set.");
+    const upload = { id, name, bytes, sha256: hash.digest("hex"), format, type: type === "application/octet-stream" ? AF.FORMATS[format].mime : type };
+    const tags = await AF.tags(file, format);
+    // the file goes when the job ends, however it ends (done, failed, stopped before it began)
+    const job = jobs.start("resolve", { url: "", guid: "", choice: pick, context, upload }, async ctx => {
+      ctx.step("Audio file", name + " (" + formatName + ", " + (bytes >= 1048576 ? Math.round(bytes / 1048576) + " MB" : Math.max(1, Math.round(bytes / 1024)) + " KB") + ")" + (tags.title || tags.album || tags.artist ? "; its tags: " + [tags.album, tags.artist, tags.title].filter(Boolean).join(" · ") : "; no tags"));
+      const w = await resolver.fileWords(Object.assign({ path: file, tags, titleFromName: AF.titleFromName(name) }, upload), { step: ctx.step, signal: ctx.signal, engine: pick, onProgress: ctx.progress });
+      return Object.assign({ kind: "transcript" }, w, { chars: w.text.length, fetchedAt: new Date().toISOString() });
+    }, { onEnd: drop });
+    res.json({ jobId: job.id, engine: pick, format });
   }));
   app.get("/api/transcript/jobs/:id", wrap(async (req, res) => { const j = await jobs.get(req.params.id); if (!j) return res.status(404).json({ error: "no such job" }); res.json(j); }));
   app.post("/api/transcript/jobs/:id/cancel", wrap(async (req, res) => { res.json({ ok: jobs.cancel(req.params.id) }); }));
@@ -155,11 +208,12 @@ function createApp(opts) {
       if (job.state !== "done" || !["transcript", "article"].includes(result.kind)) throw Object.assign(new Error("This fetch has no transcript ready to read."), {status:409});
       const input = job.input || {}, src = result.source || {};
       const show = result.show && result.show.name || "", title = result.episode && result.episode.title || result.title || "";
-      const doc = Object.assign({title, sourceLabel:(show ? show + (title ? " — " : "") : "") + title}, input.context || {}, {sourceUrl:input.url, speakers:[], import:{url:input.url, title, fetchedAt:result.fetchedAt || job.finishedAt, chars:result.text.length, method:result.kind === "article" ? "page text" : "transcript: " + src.kind, source:src, show, episode:title, matchedBy:result.matchedBy || "", speakers:result.speakers || [],
+      // an uploaded recording with no album tag is labelled by its file's name (its title already says what the name says)
+      const doc = Object.assign({title, sourceLabel:src.file && !show ? src.file.name : (show ? show + (title ? " — " : "") : "") + title}, input.context || {}, {sourceUrl:input.url || (input.upload && input.context && input.context.sourceUrl) || "", speakers:[], import:{url:input.url || "", file:src.file || null, title, fetchedAt:result.fetchedAt || job.finishedAt, chars:result.text.length, method:result.kind === "article" ? "page text" : "transcript: " + src.kind, source:src, show, episode:title, matchedBy:result.matchedBy || "", speakers:result.speakers || [],
         identity:result.kind === "article" ? "direct" : (result.identity || "direct"), match:result.match || null, ambiguous:result.ambiguous || null,
         // the episode and the show as the listing describes them: the names in them are candidates for who speaks
-        episodeInfo:result.episode ? {guid:result.episode.guid || "", title:result.episode.title || "", durationSeconds:result.episode.duration || 0, pubDate:result.episode.pubDate || "", link:result.episode.link || "", audioUrl:result.episode.audioUrl || "", description:result.episode.description || "", author:result.episode.author || "", persons:result.episode.persons || []} : null,
-        showInfo:result.show ? {name:result.show.name || "", author:result.show.author || "", artist:result.show.artist || "", persons:result.show.persons || []} : result.channel ? {name:result.channel, author:"", artist:"", persons:[], channel:true} : null}});
+        episodeInfo:result.episode ? {guid:result.episode.guid || "", title:result.episode.title || "", durationSeconds:result.episode.duration || 0, pubDate:result.episode.pubDate || "", link:result.episode.link || "", audioUrl:result.episode.audioUrl || "", description:result.episode.description || "", author:result.episode.author || "", persons:result.episode.persons || [], origin:result.episode.origin || "", titleFrom:result.episode.titleFrom || ""} : null,
+        showInfo:result.show ? {name:result.show.name || "", author:result.show.author || "", artist:result.show.artist || "", persons:result.show.persons || [], origin:result.show.origin || ""} : result.channel ? {name:result.channel, author:"", artist:"", persons:[], channel:true} : null}});
       if (!doc.title) delete doc.title;
       const prepared = await readInput(result.text, doc, importer);
       const rid = input.targetRunId || "r_" + id;
@@ -178,7 +232,7 @@ function createApp(opts) {
       // the text this fetch wrote (a retried consume finds the intake already saved and leaves the record alone).
       const voices = (result.speakers || []).filter(s => /^SPEAKER \d+$/.test(s));
       if (fresh && src.kind === "audio-transcription" && src.engine === "deepgram" && voices.length)
-        await store.recordTranscribedVoices(rid, { by: "recording", via: "transcription", engine: "deepgram", model: src.model || "", requestId: src.requestId || "", audioUrl: src.url || "", audioFoundBy: "the episode's audio, transcribed by Deepgram", durationSeconds: src.durationSeconds || 0, voices: voices.length,
+        await store.recordTranscribedVoices(rid, { by: "recording", via: "transcription", engine: "deepgram", model: src.model || "", requestId: src.requestId || "", audioUrl: src.url || "", audioFoundBy: src.file ? "the file you uploaded (" + src.file.name + "), transcribed by Deepgram" : "the episode's audio, transcribed by Deepgram", durationSeconds: src.durationSeconds || 0, voices: voices.length,
           method: "Deepgram separated the voices as it transcribed the recording, one label per voice: the labels came from the recording, not from the words. Voices are numbered by the recording; names come from what the conversation and the episode's listing show." });
       if (fresh) await store.saveIntake(rid, prepared.original, Object.assign(prepared.intake, {transcriptJobId:id}));
       await jobs.acknowledge(id, rid);

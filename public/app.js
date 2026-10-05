@@ -34,6 +34,10 @@ function plural(n, one, many){ return n + " " + (n === 1 ? one : (many || one + 
 function fmtDur(s){ s = Number(s)||0; var m = Math.round(s/60); return m >= 90 ? (Math.floor(m/60) + " h " + (m%60) + " min") : m + " min"; }
 function fmtSecs(s){ s = Math.round(Number(s)||0); var m = Math.floor(s/60), r = s % 60; return m ? m + " min" + (r ? " " + r + " s" : "") : r + " s"; }
 function cap(s){ s = String(s||""); return s.charAt(0).toUpperCase() + s.slice(1); }
+function fmtBytes(n){ n = Number(n)||0; return n >= 1048576 ? Math.round(n/1048576) + " MB" : Math.max(1, Math.round(n/1024)) + " KB"; }
+/* A recording (0.14.1): an audio or video file, by its type or its name. Only MP3 is read by the engine on this computer. */
+function isRecording(f){ return !!f && (/^(audio|video)\//i.test(f.type || "") || /\.(mp3|m4a|m4b|aac|wav|ogg|oga|opus|flac|webm|mp4|mov)$/i.test(f.name || "")); }
+function isMp3(f){ return !!f && (/\.mp3$/i.test(f.name || "") || /^audio\/(mpeg|mp3)$/i.test(f.type || "")); }
 function hasFn(o, name){ return !!o && typeof o[name] === "function"; }
 function paras(el, text){ String(text||"").split(/\n{2,}|\n/).forEach(function(t){ if (t.trim()) el.append(h("p",{text:t.trim()})); }); }
 /* Model text at both reading levels; CSS shows the one chosen for the card (or the page). */
@@ -79,10 +83,18 @@ function relationCounts(rc){ var n = {supports:0, contradicts:0, mentions:0, uns
 /* ---------- API ---------- */
 var API = {
   async req(method, url, body, signal){
-    var res = await fetch(url, {method:method, headers: body ? {"Content-Type":"application/json"} : {}, body: body ? JSON.stringify(body) : undefined, signal:signal});
+    return API.answer(await fetch(url, {method:method, headers: body ? {"Content-Type":"application/json"} : {}, body: body ? JSON.stringify(body) : undefined, signal:signal}));
+  },
+  async answer(res){
     var data = null; try { data = await res.json(); } catch(e){}
     if (!res.ok){ var err = new Error(data && (data.error || data.reason) || ("HTTP " + res.status)); err.code = data && data.code; err.text = data && data.text; err.status = res.status; err.data = data; throw err; }
     return data;
+  },
+  /* A recording goes as it is, the file as the request body; its name and the optional context ride in the address. */
+  async uploadRecording(file, params){
+    var q = Object.keys(params || {}).filter(function(k){ return params[k]; }).map(function(k){ return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); }).join("&");
+    var type = /^(audio|video)\/[a-z0-9.+-]+$/i.test(file.type || "") ? file.type : "application/octet-stream";
+    return API.answer(await fetch("/api/transcript/upload" + (q ? "?" + q : ""), {method:"POST", headers:{"Content-Type":type}, body:file}));
   },
   health(){ return API.req("GET","/api/health"); },
   listRuns(){ return API.req("GET","/api/runs"); },
@@ -365,13 +377,14 @@ function renderRun(){
 }
 
 /* ---- the start box ----
-   One box, one helper line, Upload transcript, and one Read this. Context is optional and lives in Controls. A link
-   is fetched by the transcript chain, which asks only for a choice it cannot make itself (which episode; how to turn
-   audio into text), and then continues by itself. */
+   One box, one helper line, Upload, and one Read this. Context is optional and lives in Controls. A link is fetched by
+   the transcript chain, which asks only for a choice it cannot make itself (which episode; how to turn audio into
+   text), and then continues by itself. An uploaded transcript fills the box; an uploaded recording (0.14.1) is named in
+   the helper line and turned into text when Read this is pressed. */
 function describeKind(text){
   var d = SH.detectKind(text);
   var podcast = false; if (d.kind === "link") { var host = hostOf(d.url); podcast = /(^|\.)(podcasts\.apple\.com|spotify\.com|youtube\.com|youtu\.be)$/.test(host) || /feeds?\.|rss|\.xml$|\/rss\b|\/feed\b/i.test(d.url); }
-  return {d:d, text: d.kind === "link" ? (podcast ? "A podcast or video link: the app finds its transcript, then reads it." : "A link: the app reads the page or finds its transcript.") : "Paste text or a link, or upload a transcript."};
+  return {d:d, text: d.kind === "link" ? (podcast ? "A podcast or video link: the app finds its transcript, then reads it." : "A link: the app reads the page or finds its transcript.") : "Paste text or a link, or upload a transcript or a recording."};
 }
 function renderNew(){
   S.view = "new"; S.rendered = null; UI.sig = {}; UI.cardSig = {};
@@ -381,25 +394,31 @@ function renderNew(){
   sec.append(h("h1",{id:"intake-title", text:"What would you like to read?"}));
   var ta = keep(h("textarea",{id:"f-text", rows:"7", "aria-labelledby":"intake-title", "aria-describedby":"f-kind"}), "intake-text");
   var kind = h("p",{class:"hint", id:"f-kind"});
-  var file = h("input",{id:"f-file", type:"file", accept:".txt,.md,.srt,.vtt,.json,text/plain", class:"file-input", tabindex:"-1", "aria-hidden":"true"});
+  var file = h("input",{id:"f-file", type:"file", accept:".txt,.md,.srt,.vtt,.json,text/plain,audio/*,video/mp4,video/quicktime,video/webm,.mp3,.m4a,.m4b,.aac,.wav,.ogg,.oga,.opus,.flac,.webm,.mp4,.mov", class:"file-input", tabindex:"-1", "aria-hidden":"true"});
   var go = h("button",{class:"btn primary", id:"readThis", type:"button", text:"Read this", onclick:function(){ return onGo(); }});
-  var upload = h("button",{class:"btn", id:"uploadBtn", type:"button", text:"Upload transcript", onclick:function(){ if (hasFn(file, "click")) file.click(); }});
+  var upload = h("button",{class:"btn", id:"uploadBtn", type:"button", text:"Upload", onclick:function(){ if (hasFn(file, "click")) file.click(); }});
   var ctx = h("button",{class:"linkish", id:"addContext", type:"button", text: S.draft.title || S.draft.sourceUrl || S.draft.sourceLabel ? "Context added · edit" : "Add context", onclick:function(){ openDrawer("controls", "#ctl-input"); }});
   var msg = h("div",{class:"intake-msg", id:"intake-msg"});
   sec.append(ta, kind, h("div",{class:"row intake-actions"}, go, upload, file, ctx), msg);
   view.append(sec);
-  var kindNow = null;
-  function updateStats(){ var k = describeKind(ta.value); kindNow = k.d; kind.textContent = k.text; }
+  var kindNow = null, recording = null;
+  function updateStats(){
+    if (recording) { kind.textContent = "A recording: " + (recording.name || "recording") + " (" + fmtBytes(recording.size) + "). Read this turns it into text, finds who is speaking, then reads it." + (ta.value.trim() ? " The text in the box is not used." : ""); return; }
+    var k = describeKind(ta.value); kindNow = k.d; kind.textContent = k.text;
+  }
   async function loadFile(f){
     if (!f) return;
-    if (!/\.(txt|md|srt|vtt|json)$/i.test(f.name || "")) { kind.textContent = "Use a transcript file (.txt, .srt, .vtt, or .md), or paste the text or a link."; return; }
+    if (isRecording(f)) { recording = f; updateStats(); return; }
+    if (!/\.(txt|md|srt|vtt|json)$/i.test(f.name || "")) { kind.textContent = "Use a transcript file (.txt, .srt, .vtt or .md) or a recording (MP3, M4A, WAV and others), or paste the text or a link."; return; }
+    recording = null;
     go.disabled = true; kind.textContent = "Opening " + f.name + "…";
     try { ta.value = await f.text(); UI.drafts["intake-text"] = ta.value; updateStats(); }
     catch(e) { kind.textContent = "Could not open the file. Paste the transcript instead."; }
     finally { go.disabled = false; }
   }
   file.addEventListener("change", function(){ return loadFile(file.files && file.files[0]); });
-  ta.addEventListener("input", updateStats);
+  // typing in the box means the box is what to read: a recording chosen before is let go
+  ta.addEventListener("input", function(){ recording = null; updateStats(); });
   ta.addEventListener("keydown", function(e){ if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); onGo(); } });
   ta.addEventListener("dragover", function(e){ e.preventDefault(); });
   ta.addEventListener("drop", function(e){ e.preventDefault(); loadFile(e.dataTransfer && e.dataTransfer.files[0]); });
@@ -413,10 +432,10 @@ function renderNew(){
   if (S.resumeFetch && !S.resumedJobs) { (async function(){
     await Promise.resolve();
     if (S.resumedJobs || (document.body && hasFn(document.body, "contains") && !document.body.contains(ta))) return;
-    var job = S.resumeFetch; if (!job || !job.url) return;
-    S.resumedJobs = true; ta.value = job.url; updateStats();
+    var job = S.resumeFetch; if (!job || !(job.url || job.upload)) return;
+    S.resumedJobs = true; if (job.url) { ta.value = job.url; updateStats(); }
     if (S.busy) return; S.busy = true; go.disabled = true;
-    try { await fetchTranscriptInner(job.url, job.guid || "", job.choice || "", {msg:msg, ta:ta, updateStats:updateStats, fromGo:true, onWords:onWords, context:job.context||{}, targetRunId:job.targetRunId||""}, job.id); }
+    try { await fetchTranscriptInner(job.url || "", job.guid || "", job.choice || "", {msg:msg, ta:ta, updateStats:updateStats, fromGo:true, onWords:onWords, context:job.context||{}, targetRunId:job.targetRunId||"", resumed:true, recording: job.upload ? {name:job.upload.name, bytes:job.upload.bytes} : null}, job.id); }
     catch(e) { msg.replaceChildren(h("div",{class:"note err",text:errCopy(e)})); }
     finally { S.busy = false; go.disabled = false; }
   })(); }
@@ -424,9 +443,11 @@ function renderNew(){
     if (blockWhileBusy()) return; S.busy = true; go.disabled = true; clear(msg);
     var text = ta.value, k = kindNow || describeKind(text).d;
     try {
-      if (k.kind === "empty") { msg.append(h("p",{class:"note",text:"Upload a transcript or paste something to read."})); return; }
       var doc = {title:(S.draft.title||"").trim(), sourceUrl:(S.draft.sourceUrl||"").trim(), sourceLabel:(S.draft.sourceLabel||"").trim(), sourceDate:S.draft.sourceDate||""};
       Object.keys(doc).forEach(function(x){ if (!doc[x]) delete doc[x]; });
+      // once its words have arrived the recording is done with: pressing Read this again reads them, never pays for them twice
+      if (recording) { await transcribeRecording(recording, "", {msg:msg, ta:ta, updateStats:updateStats, fromGo:true, onWords:onWords, context:doc, recordingDone:function(){ recording = null; }}); return; }
+      if (k.kind === "empty") { msg.append(h("p",{class:"note",text:"Upload a transcript or a recording, or paste something to read."})); return; }
       if (k.kind === "link") { await fetchTranscript(k.url, "", "", {msg:msg, ta:ta, updateStats:updateStats, fromGo:true, onWords:onWords, context:doc, targetRunId:""}); return; }
       msg.append(h("p",{class:"note info",text:"Saving and preparing your reading…"}));
       var nb = await API.intake(text, doc);
@@ -449,7 +470,8 @@ async function fetchTranscript(link, guid, choice, ui){
 async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
   clear(ui.msg);
   var box = h("div",{class:"note info"}), steps = h("ul",{class:"steps"}), prog = h("p",{class:"hint"}), stop = h("button",{class:"btn quiet",type:"button",text:"Stop"});
-  box.append(h("p",{text:(existingJobId ? "Still finding the transcript for " : "Finding the transcript for ") + link + "…"}), steps, prog, stop); ui.msg.append(box);
+  var rec = ui.recording || null;
+  box.append(h("p",{text: rec ? (ui.resumed ? "Still transcribing " : "Transcribing ") + rec.name + "…" : (existingJobId ? "Still finding the transcript for " : "Finding the transcript for ") + link + "…"}), steps, prog, stop); ui.msg.append(box);
   var jobId = existingJobId;
   if (!jobId) { var started; try { if (ui.jobId) await API.dismissJob(ui.jobId); started = await API.resolveTranscript(link, guid, choice, ui.context, ui.targetRunId); } catch(e){ ui.msg.replaceChildren(h("div",{class:"note",text:errCopy(e)}), fallbackHint(link)); return; } jobId = started.jobId; }
   ui.jobId = jobId; S.activeTranscriptJobId = jobId;
@@ -465,7 +487,7 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
   }
   clear(ui.msg);
   if (j.state === "cancelled" || cancelled){ await API.dismissJob(jobId); ui.msg.append(h("div",{class:"note",text:"Stopped. Nothing was saved."}), fallbackHint(link)); return; }
-  if (j.state === "error" || j.state === "interrupted"){ await API.dismissJob(jobId); ui.msg.append(h("div",{class:"note",text:(j.error && j.error.message) || "The transcript could not be fetched."}), fallbackHint(link)); return; }
+  if (j.state === "error" || j.state === "interrupted"){ await API.dismissJob(jobId); ui.msg.append(h("div",{class:"note",text:(j.error && j.error.message) || (rec ? "The recording could not be turned into text." : "The transcript could not be fetched.")}), fallbackHint(link)); return; }
   var res = j.result || {};
   if (res.kind === "choose"){
     var list = h("div",{class:"episodes"});
@@ -478,10 +500,11 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
   }
   if (res.kind === "transcript" || res.kind === "article"){
     // the words are in hand: the reading starts now, in the same action, with the origin recorded on the run
+    if (ui.recordingDone) ui.recordingDone();
     if (ui.ta) { ui.ta.value = res.text; if (ui.updateStats) ui.updateStats(); }
     var src = res.source || {}, showName = res.show && res.show.name || "", epTitle = res.episode && res.episode.title || res.title || "";
     var ok = h("div",{class:"note ok"});
-    ok.append(h("p",{text:(res.kind === "article" ? "Read " + res.text.length.toLocaleString() + " characters from the page." : "Transcript found: " + res.text.length.toLocaleString() + " characters" + (showName ? " · " + showName : "") + (epTitle ? " · " + epTitle : "") + ".") + " Preparing your reading…"}));
+    ok.append(h("p",{text:(res.kind === "article" ? "Read " + res.text.length.toLocaleString() + " characters from the page." : (rec ? "Turned into text: " : "Transcript found: ") + res.text.length.toLocaleString() + " characters" + (showName ? " · " + showName : "") + (epTitle ? " · " + epTitle : "") + ".") + " Preparing your reading…"}));
     if (src.note) ok.append(h("p",{class:"hint",text:"Where it came from: " + src.note + "."}));
     ui.msg.append(ok);
     if (ui.onWords) await ui.onWords(res.text, null, jobId);
@@ -495,48 +518,92 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
   ui.msg.append(none);
   if (nt && nt.audioUrl){
     var eng = null; try { eng = await API.engines(); } catch(e){}
-    ui.msg.append(engineChoice(link, guid, nt, eng, ui));
+    ui.msg.append(engineChoice(Object.assign({link:link}, nt), eng, ui, function(c){ fetchTranscript(link, guid, c, ui); }));
   } else { await API.dismissJob(jobId); ui.msg.append(fallbackHint(link)); }
 }
 function fallbackHint(link){ if (link && !S.draft.sourceUrl && !S.runId) S.draft.sourceUrl = link; return h("p",{class:"hint",text:"You can paste the transcript, or upload a .txt, .srt or .vtt file." + (link && !S.runId ? " The link is kept as the source." : "")}); }
 /* The one-time choice for the audio step. Once an engine is installed or a key is set, the chain runs through it on
-   its own from then on. The consequence of each choice (cost, where the audio goes) is stated at the choice. */
-function engineChoice(link, guid, nt, eng, ui){
+   its own from then on. The consequence of each choice (cost, where the audio goes) is stated at the choice. `again`
+   carries on with the choice made: the link's chain, or the uploaded recording (nt.recording; the engine on this
+   computer reads MP3 only, so it is offered only for an MP3). */
+function engineChoice(nt, eng, ui, again){
   var box = h("div",{class:"note info enginebox"});
-  var dur = nt.duration ? fmtDur(nt.duration) : "unknown length";
-  var localReady = eng && eng.local && eng.local.installed, cloudReady = eng && eng.cloud && eng.cloud.configured;
-  box.append(h("p",{text:"The audio (" + dur + ") can be transcribed. Choose once; after that it happens by itself."}));
+  var rec = nt.recording || null, dur = nt.duration ? fmtDur(nt.duration) : "unknown length";
+  var localReady = eng && eng.local && eng.local.installed, cloudReady = eng && eng.cloud && eng.cloud.configured, localFits = !rec || rec.mp3;
+  box.append(h("p",{text:(rec ? "The recording (" + fmtBytes(rec.bytes) + ")" : "The audio (" + dur + ")") + " can be transcribed. Choose once; after that it happens by itself."}));
   var row = h("div",{class:"row"});
-  if (localReady) row.append(h("button",{class:"btn primary",type:"button",text:"Transcribe on this computer (" + (nt.duration ? "about " + fmtDur(Math.max(60, nt.duration / 5)) : "slow") + ", free)",onclick:function(){ fetchTranscript(link, guid, "local", ui); }}));
-  else {
+  if (localFits && localReady) row.append(h("button",{class:"btn primary",type:"button",text:"Transcribe on this computer (" + (nt.duration ? "about " + fmtDur(Math.max(60, nt.duration / 5)) : "slow") + ", free)",onclick:function(){ again("local"); }}));
+  else if (localFits) {
     var inst = h("button",{class:"btn primary",type:"button",text:"Install local transcription (free, private; about 480 MB, once)"});
     inst.onclick = async function(){
       if (S.busy){ blockWhileBusy(); return; }
       inst.disabled = true; var note = h("p",{class:"hint",text:"Installing… a few minutes."}), stopInst = h("button",{class:"btn quiet",type:"button",text:"Stop"}); box.append(note, stopInst);
       S.busy = true;
       try {
-        var st = await API.installLocal(); if (st.installed){ S.busy = false; fetchTranscript(link, guid, "local", ui); return; }
+        var st = await API.installLocal(); if (st.installed){ S.busy = false; again("local"); return; }
         stopInst.onclick = async function(){ stopInst.disabled = true; try { await API.cancelJob(st.jobId); } catch(e){} };
         var misses = 0;
         for (;;){ var j; try { j = await API.job(st.jobId); misses = 0; } catch(e){ if (++misses > 20){ note.textContent = "Lost track of the install; run  npm run setup -- --local-transcription  in the app folder."; inst.disabled = false; break; } await new Promise(function(r){ setTimeout(r, 1500); }); continue; }
           if (j.progress && j.progress.log) note.textContent = "Installing… " + (String(j.progress.log).split("\n").filter(Boolean).slice(-1)[0] || "");
-          if (j.state !== "running") { stopInst.remove(); if (j.state === "done"){ note.textContent = "Installed."; try { await API.preferEngine("local"); } catch(e){} S.busy = false; fetchTranscript(link, guid, "local", ui); } else { note.textContent = (j.state === "cancelled" ? "Install stopped." : "Install failed: " + (j.error && j.error.message || "unknown") + ". Fix the cause and try again, or run  npm run setup -- --local-transcription  in the app folder."); inst.disabled = false; } break; }
+          if (j.state !== "running") { stopInst.remove(); if (j.state === "done"){ note.textContent = "Installed."; try { await API.preferEngine("local"); } catch(e){} S.busy = false; again("local"); } else { note.textContent = (j.state === "cancelled" ? "Install stopped." : "Install failed: " + (j.error && j.error.message || "unknown") + ". Fix the cause and try again, or run  npm run setup -- --local-transcription  in the app folder."); inst.disabled = false; } break; }
           await new Promise(function(r){ setTimeout(r, 1500); }); }
       } catch(e){ note.textContent = errCopy(e); inst.disabled = false; }
       finally { S.busy = false; }
     };
     row.append(inst);
   }
-  if (cloudReady) row.append(h("button",{class:"btn",type:"button",text:"Transcribe with Deepgram (fast, paid)",onclick:function(){ fetchTranscript(link, guid, "cloud", ui); }}));
+  if (cloudReady) row.append(h("button",{class:localFits ? "btn" : "btn primary",type:"button",text:"Transcribe with Deepgram (fast, paid)",onclick:function(){ again("cloud"); }}));
   else {
     var key = h("input",{type:"password",placeholder:"Deepgram API key",autocomplete:"off","aria-label":"Deepgram API key"});
-    var useCloud = h("button",{class:"btn",type:"button",text:"Save key and transcribe with Deepgram (fast, paid)",onclick:async function(){ useCloud.disabled = true; try { await API.setSetting("DEEPGRAM_API_KEY", key.value); key.value = ""; try { await API.preferEngine("cloud"); } catch(e){} fetchTranscript(link, guid, "cloud", ui); } catch(e){ useCloud.disabled = false; box.append(h("p",{class:"hint",text:errCopy(e)})); } }});
+    var useCloud = h("button",{class:"btn",type:"button",text:"Save key and transcribe with Deepgram (fast, paid)",onclick:async function(){ useCloud.disabled = true; try { await API.setSetting("DEEPGRAM_API_KEY", key.value); key.value = ""; try { await API.preferEngine("cloud"); } catch(e){} again("cloud"); } catch(e){ useCloud.disabled = false; box.append(h("p",{class:"hint",text:errCopy(e)})); } }});
     row.append(key, useCloud);
   }
   box.append(row);
-  box.append(h("p",{class:"hint",text:"On this computer: nothing leaves it, no speaker labels, about five times faster than real time. Deepgram: minutes per episode with speakers numbered by voice; the audio goes to Deepgram and is billed to your Deepgram key."}));
-  if (!localReady && !cloudReady) box.append(fallbackHint(link));
+  box.append(h("p",{class:"hint",text:(localFits ? "On this computer: nothing leaves it, no speaker labels, about five times faster than real time. " : "This is not an MP3 file, and transcription on this computer reads MP3 only. ") + "Deepgram: minutes per " + (rec ? "recording" : "episode") + " with speakers numbered by voice; the audio goes to Deepgram and is billed to your Deepgram key."}));
+  if (!localReady && !cloudReady) box.append(fallbackHint(rec ? "" : nt.link || ""));
   return box;
+}
+
+/* ---- a recording uploaded from this computer (0.14.1) ----
+   Sent to the app as it is, turned into text by the engine the person chose once (asked here first when none fits),
+   then followed and read exactly as a link's transcript is. */
+async function transcribeRecording(file, choice, ui){
+  if (S.busy && !ui.fromGo){ blockWhileBusy(); return; }
+  var own = !ui.fromGo; if (own) S.busy = true;
+  try { await transcribeRecordingInner(file, choice, ui); } catch(e) { ui.msg.replaceChildren(h("div",{class:"note err",text:errCopy(e)})); } finally { if (own) S.busy = false; }
+}
+/* Which engine the server would use, by the same rule (pickEngine), so a large file is not sent only to be refused:
+   "" when none fits, "unknown" when the engines could not be asked (the server then decides). */
+function engineFor(eng, mp3){
+  if (!eng) return "unknown";
+  var local = !!(eng.local && eng.local.installed) && mp3, cloud = !!(eng.cloud && eng.cloud.configured);
+  if (eng.prefer === "local") return local ? "local" : "";
+  return cloud ? "cloud" : local ? "local" : "";
+}
+async function transcribeRecordingInner(file, choice, ui){
+  clear(ui.msg);
+  var rec = {name:file.name || "recording", bytes:file.size || 0, mp3:isMp3(file)}, sub = Object.assign({}, ui, {fromGo:false, recording:rec});
+  var again = function(c){ return transcribeRecording(file, c, sub); };
+  var ask = async function(note){
+    var eng = null; try { eng = await API.engines(); S.engines = eng; } catch(x){}
+    clear(ui.msg); if (note) ui.msg.append(h("div",{class:"note"}, h("p",{text:note})));
+    ui.msg.append(engineChoice({recording:rec}, eng, sub, again));
+  };
+  if (!choice) {
+    var eng = null; try { eng = await API.engines(); S.engines = eng; } catch(x){}
+    if (eng && eng.upload && rec.bytes > eng.upload.maxBytes) { ui.msg.append(h("div",{class:"note",text:"This file is larger than " + Math.round(eng.upload.maxBytes / 1048576) + " MB, the most the app sends on. Upload a shorter recording, or its transcript."})); return; }
+    if (engineFor(eng, rec.mp3) === "") { await ask(eng.local && eng.local.installed && !rec.mp3 && (eng.prefer === "local" || !(eng.cloud && eng.cloud.configured)) ? "Transcription on this computer reads MP3 files only, and this file is not one. Use Deepgram for it, or convert it to MP3." : ""); return; }
+  }
+  ui.msg.append(h("div",{class:"note info"}, h("p",{text:"Sending " + rec.name + " (" + fmtBytes(rec.bytes) + ") to the app…"})));
+  var c = ui.context || {}, started;
+  try { started = await API.uploadRecording(file, {name:rec.name, choice:choice || "", title:c.title || "", sourceLabel:c.sourceLabel || "", sourceDate:c.sourceDate || "", sourceUrl:c.sourceUrl || ""}); }
+  catch(e){
+    // the server read the file's first bytes: its word on whether this computer's engine can read it is the one that counts
+    if (e.data && e.data.localReads === false) rec.mp3 = false;
+    if (e.code === "needs_engine" || e.code === "local_format") { await ask(e.code === "local_format" ? errCopy(e) : ""); return; }
+    clear(ui.msg); ui.msg.append(h("div",{class:"note err",text:errCopy(e)})); return;
+  }
+  await fetchTranscriptInner("", "", started.engine || choice || "", sub, started.jobId);
 }
 
 /* The one-time key prompt: shown when real analysis is asked for and no model is configured. The key goes to the
@@ -618,7 +685,8 @@ async function request(fn, okText){
 /* ---- title and source ---- */
 function acquisition(r){
   var imp = r.import, src = imp && imp.source || {};
-  if (imp) return ({"youtube-captions": src.automatic ? "YouTube's automatic captions" : "YouTube captions", "feed-transcript":"the show's published transcript", "episode-page":"the episode page", "audio-transcription": (src.engine === "local" ? "audio transcribed on this computer" : "audio transcribed by " + (src.engine || "a service"))})[src.kind] || (imp.method === "page text" ? "text of the page" : "fetched from the link");
+  var by = src.engine === "deepgram" ? "Deepgram" : src.engine || "a service", what = imp && imp.file ? "your recording" : "audio";
+  if (imp) return ({"youtube-captions": src.automatic ? "YouTube's automatic captions" : "YouTube captions", "feed-transcript":"the show's published transcript", "episode-page":"the episode page", "audio-transcription": (src.engine === "local" ? what + " transcribed on this computer" : what + " transcribed by " + by)})[src.kind] || (imp.method === "page text" ? "text of the page" : "fetched from the link");
   var it = r.intake || {};
   if (r.kind === "claim") return "typed claim";
   if (it.converted) return "uploaded " + it.converted;
@@ -638,7 +706,7 @@ function buildHead(el){
   el.append(row);
   var d = disclosure("orig-" + r.id, "View original", "original");
   var body = h("div",{class:"orig-body"});
-  if (r.import) body.append(h("p",{class:"hint",text:"Fetched from " + r.import.url + " on " + fmtDate(r.import.fetchedAt) + "." + (r.import.source && r.import.source.note ? " " + cap(r.import.source.note) + "." : "")}));
+  if (r.import) body.append(h("p",{class:"hint",text:(r.import.file ? "Transcribed from " + r.import.file.name + ", the file you uploaded (" + fmtBytes(r.import.file.bytes) + "), on " : "Fetched from " + r.import.url + " on ") + fmtDate(r.import.fetchedAt) + "." + (r.import.source && r.import.source.note ? " " + cap(r.import.source.note) + "." : "")}));
   if (r.intake && r.intake.changed) body.append(h("p",{class:"hint"}, document.createTextNode("Material outside the dialogue was removed before reading. "), h("a",{href:"/api/runs/" + r.id + "/original-input.txt", target:"_blank", text:"Open the upload as it was"})));
   body.append(h("pre",{class:"orig-text", tabindex:"0", "aria-label":"The text that was read", text: S.b.transcript || ""}));
   d.append(body);
@@ -1152,10 +1220,10 @@ function ctlInput(){
   s.append(meta);
   // where the words came from, and whether that is the intended source
   var idn = S.b.sourceIdentity || {}, src = h("div",{class:"ctl-item", id:"ctl-source", tabindex:"-1"}, h("h3",{text:"Source"}));
-  src.append(h("p",{text:cap(acquisition(r)) + (r.import ? ", from " + r.import.url : "") + "."}));
+  src.append(h("p",{text:cap(acquisition(r)) + (r.import ? (r.import.file ? ", from the file " + r.import.file.name + (r.import.file.sha256 ? " (SHA-256 " + r.import.file.sha256.slice(0, 12) + "…)" : "") : ", from " + r.import.url) : "") + "."}));
   if (idn.state === "needs_confirmation") src.append(compareBody(idn, true));
   else if (idn.state === "confirmed") src.append(h("p",{text:"You said on " + fmtDate(idn.confirmation.at) + " that this source is the intended episode. That is your statement about the match, not a check of the transcript."}));
-  else if (idn.state === "direct") src.append(h("p",{class:"hint",text:"Named directly by the link, the feed or the show; nothing to confirm."}));
+  else if (idn.state === "direct") src.append(h("p",{class:"hint",text:r.import && r.import.file ? "The file you uploaded; nothing to confirm." : "Named directly by the link, the feed or the show; nothing to confirm."}));
   else if (idn.state === "not_recorded") src.append(h("p",{class:"hint",text:"How this source was identified was not recorded (saved before version 0.12)."}));
   if (!ro && !isClaimRun()) {
     var link = keep(h("input",{type:"url", id:"ctl-relink", placeholder:"A podcast, video or page link"}), k + "relink"), msg = h("div");
@@ -1235,7 +1303,7 @@ function speakerNames(r, ro, k, keys, withBios){
       var list = Object.keys(inputs).map(function(key){ var x = inputs[key], o = {key:key, name:x.name.value.trim()}; if (x.bio) o.bio = x.bio.value.trim(); return {o:o, changed: o.name !== x.was || (x.bio && o.bio !== x.wasBio)}; }).filter(function(x){ return x.changed; }).map(function(x){ return x.o; });
       if (!list.length) { say("Nothing changed."); return; }
       try { var b = await API.confirmNames(r.id, list); Object.keys(inputs).forEach(function(key){ forget(k + "cname-" + key, k + "bio-" + key); }); await reload(b); say("Names saved."); } catch(e){ say(errCopy(e)); }
-    }}), h("p",{class:"hint",text:"Optional. The app finds names from the conversation and the episode's listing; a name you give here is kept. An empty field shows the label instead. Readings that used the old name are marked out of date and are read again when you press Read this."}));
+    }}), h("p",{class:"hint",text:"Optional. The app finds names from the conversation and " + (r.import && r.import.file ? "the file's name and tags" : "the episode's listing") + "; a name you give here is kept. An empty field shows the label instead. Readings that used the old name are marked out of date and are read again when you press Read this."}));
   }
   return box;
 }
