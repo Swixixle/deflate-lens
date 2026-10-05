@@ -123,6 +123,8 @@ const fakeYtdlp = async (cmd, a) => {
     await page.screenshot({ path: path.join(out, "2-reading.png") });
     const card = page.locator(".card").first();
     await card.locator("details.evidence > summary").click();
+    // the disclosure triangle turns in 0.15 s; a picture taken sooner catches it half way round
+    await page.waitForTimeout(400);
     // from the Evidence heading to the end of "Reasoning behind this reading", in page coordinates
     const clip = await card.evaluate(c => { const ev = c.querySelector("details.evidence").getBoundingClientRect(), rs = c.querySelector("details.evidence .reasoning").getBoundingClientRect(); return { x: ev.left - 24, y: ev.top + scrollY - 8, width: ev.width + 48, height: rs.bottom - ev.top + 24 }; });
     await page.screenshot({ path: path.join(out, "3-evidence.png"), clip, fullPage: true });
