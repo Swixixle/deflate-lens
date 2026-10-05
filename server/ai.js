@@ -88,16 +88,15 @@ function createMockAI() {
         // fixture: one voice throughout, no change of speaker, no clip; the real model reads the words
         const m = /\nNumbered paragraphs:\n\[(\d+)\] (.*)/.exec(p);
         data = { segments: m ? [{ para: +m[1], start: m[2].split(/\s+/).slice(0, 6).join(" "), voice: "A", change: { kind: "none", quote: "" } }] : [], clips: [], names: [], voices: [{ voice: "A", role: "MOCK: not read" }] };
-      } else if (p.startsWith("Find recordings played and quotations read aloud")) {
-        data = { clips: [] };
+      } else if (p.startsWith("Find recordings played")) {
+        data = { clips: [], ads: [] };
       } else if (p.startsWith("Review a speaker structure independently")) {
         const n = ((p.split("\nSegments:\n")[1] || "").match(/^\[\d+\]/gm) || []).length;
         data = { verdicts: Array.from({ length: n }, (_, i) => ({ segment: i, agree: true, reason: "MOCK" })), names: [] };
-      } else if (p.startsWith("These transcript turns are labelled SPEAKER 1")) {
-        // fixture: a turn that says "my name is First Last" names its own speaker; the real model reads the words
-        const names = [];
-        for (const t of turnsFrom(p.split("\nTurns:\n")[1] || "")) { const m = /\b[Mm]y name is ([A-Z][a-z]+(?: [A-Z][a-z]+)?)/.exec(t.text); if (m && /^SPEAKER \d+$/.test(t.label)) names.push({ speaker: t.label, name: m[1], kind: "self_identification", quote: m[0] }); }
-        data = { names };
+      } else if (p.startsWith("Who is each voice in this conversation?")) {
+        // fixture: no clues of its own; the app's own reading of the words and the listing decides. The real model quotes
+        // the words that show who each voice is, and every quotation is checked before it counts.
+        data = { voices: [], unnamed: [] };
       } else if (p.startsWith("Correct a reading.")) {
         // fixture: each named field gets " (MOCK corrected)" appended; nothing else changes
         let reading = {}; try { reading = JSON.parse((p.split("\n\nREADING:\n")[1] || "").split("\n\nPROBLEMS:\n")[0]); } catch (e) {}

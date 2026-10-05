@@ -22,11 +22,12 @@
      4. Cut the text where the voice changes and label each piece SPEAKER 1, SPEAKER 2… in order of first appearance;
         what the recording could not settle stays UNLABELED. No word is rewritten, reordered or lost (checked).
 
-   Voices are numbered, not named. Names come only from the words (a person naming themselves, or introduced by name
-   just before they speak; see structure.nameVoices) or from a person's one confirmation under Controls. A quotation
-   read aloud is in its reader's voice, so the same clip-and-quotation pass as for labelled transcripts runs after. */
+   Voices are numbered here, not named. Names are connected to them as the reading is prepared (identify.js: a person
+   naming themselves, introduced by name just before they speak, the listing's host opening the show…), or given by a
+   person under Controls. A quotation read aloud is in its reader's voice, and an advertisement is no one's part of the
+   conversation, so the same clip, quotation and advertisement pass as for labelled transcripts runs after. */
 const shared = require("../shared/transcript");
-const { paragraphs, labelText, tokens, nameVoices, labelledClips, finishLabelled, CUE, CLIP_KEY } = require("./structure");
+const { paragraphs, labelText, tokens, labelledClips, finishLabelled, CUE, AD_CUE, CLIP_KEY } = require("./structure");
 const { classify, isPrivateHost } = require("./podcast/resolve");
 
 const MIN_COVERAGE = 0.6, NGRAM = 4, GAP_DP_LIMIT = 300, UNIT_MAX_WORDS = 60, MAJORITY = 0.6, MIN_PAUSE = 0.15;
@@ -234,7 +235,7 @@ function separate(text, d) {
 function spokenText(text, keys) {
   const esc = k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const all = [...new Set(keys.filter(Boolean).concat(["UNLABELED"]))];
-  const re = new RegExp("^[ \\t]*(?:" + all.map(esc).join("|") + "|SPEAKER \\d+|CLIP \\d+|QUOTE \\d+)[ \\t]*:[ \\t]+", "gm");
+  const re = new RegExp("^[ \\t]*(?:" + all.map(esc).join("|") + "|SPEAKER \\d+|CLIP \\d+|QUOTE \\d+|AD \\d+)[ \\t]*:[ \\t]+", "gm");
   return text.replace(re, "");
 }
 
@@ -296,25 +297,26 @@ async function separateVoices({ ai, store, id, link, engine, resolver, signal, b
   const d = await engine.diarize({ audioUrl: audio.url, signal });
   const sep = separate(base, d);
   if (!sep.ok) throw Object.assign(new Error("The recording's voices could not be lined up with this text: " + sep.why + ". Nothing was changed."), { status: 422, code: "voices_not_aligned", coverage: sep.coverage });
-  const named = await nameVoices({ ai, store, id, basis, run: b.run, text: sep.text, signal });
+  // voices are numbered here; who each one is, is worked out from the conversation and the episode's listing as the
+  // reading is prepared (identify.js)
   const numbered = sep.keys.filter(k => /^SPEAKER \d+$/.test(k)).sort((x, y) => Number(x.split(" ")[1]) - Number(y.split(" ")[1]));
-  let speakers = numbered.map(key => { const a = named.applied.get(key); return { key, name: a ? a.name : "Speaker " + key.split(" ")[1], bio: a ? "Named from the words (" + a.kind.replace(/_/g, " ") + "): “" + a.quote.slice(0, 200) + "”" : "" }; })
+  let speakers = numbered.map(key => ({ key, name: "Speaker " + key.split(" ")[1], bio: "" }))
     .concat(sep.keys.includes("UNLABELED") ? [{ key: "UNLABELED", name: "Speaker not established", bio: "The recording did not settle who is speaking here: these words did not line up with it." }] : []);
-  // a quotation read aloud is in its reader's voice: the same clip-and-quotation pass as for any labelled transcript
-  let text = sep.text, clips = [], clipsRejected = [], clipCalls = [];
-  if (ai && CUE.test(text)) {
+  // a quotation read aloud is in its reader's voice, and an advertisement is no one's part of the conversation: the same
+  // pass as for any labelled transcript
+  let text = sep.text, clips = [], ads = [], clipsRejected = [], clipCalls = [];
+  if (ai && (CUE.test(text) || AD_CUE.test(text))) {
     const lc = await labelledClips({ ai, store, id, run: b.run, text, basis, signal });
     clipCalls = lc.calls; clipsRejected = lc.rejected.slice(0, 20);
-    if (lc.found.length) { const fin = finishLabelled({ b, text, found: lc.found, rejected: lc.rejected, calls: lc.calls, basis, mode: "labelled", speakers }); text = fin.text; speakers = fin.speakers; clips = fin.record.clips; }
+    if (lc.found.length) { const fin = finishLabelled({ b, text, found: lc.found, rejected: lc.rejected, calls: lc.calls, basis, mode: "labelled", speakers }); text = fin.text; speakers = fin.speakers; clips = fin.record.clips; ads = fin.record.ads; }
   }
   const meta = d && d.metadata || {}, pct = Math.round(sep.coverage * 100);
-  const names = [...named.applied.values()].map(x => Object.assign({ applied: true }, x)).concat(named.suggestions.map(x => Object.assign({ applied: false }, x)));
   const record = {
     by: "recording", engine: engine.name || "deepgram", model: (meta.models && meta.models[0]) || engine.model || "", requestId: meta.request_id || "", audioUrl: audio.url, audioFoundBy: audio.how,
     durationSeconds: Math.round(Number(meta.duration) || 0), at: new Date().toISOString(), inputHash: b.run.input.sha256, earlierLabelsSetAside: labels.length ? origin : "",
     coverage: Math.round(sep.coverage * 1000) / 1000, voices: sep.voices, turns: sep.turns, unaligned: sep.unaligned, unlabelled: sep.unlabelled, adjusted: sep.adjusted, edges: sep.edges, anchors: sep.anchors, words: sep.words, recordingWords: sep.recordingWords,
-    names, nameCalls: named.calls, clips, clipsRejected, clipCalls,
-    method: "Voices were separated from the recording by " + (engine.name === "deepgram" || !engine.name ? "Deepgram" : engine.name) + " and lined up with this text word by word (" + pct + "% of its words matched). Each word keeps the voice the recording heard say it, so a short interruption stays with the person who made it; a change of speaker the recording noticed a word or three late is moved to the sentence's edge only where its own pause shows that. Words the recording missed take the voice of most of their sentence. Every word of the text was kept (checked). Voices are numbered; a name comes only from the words, or from your confirmation." + (clips.length ? " Quotations read aloud and clips introduced in the words were set apart from their reader." : ""),
+    clips, ads, clipsRejected, clipCalls, clipsChecked: !!ai,
+    method: "Voices were separated from the recording by " + (engine.name === "deepgram" || !engine.name ? "Deepgram" : engine.name) + " and lined up with this text word by word (" + pct + "% of its words matched). Each word keeps the voice the recording heard say it, so a short interruption stays with the person who made it; a change of speaker the recording noticed a word or three late is moved to the sentence's edge only where its own pause shows that. Words the recording missed take the voice of most of their sentence. Every word of the text was kept (checked). Voices are numbered by the recording; names come from what the conversation and the episode's listing show." + (clips.length ? " Quotations read aloud and clips introduced in the words were set apart from their reader." : "") + (ads.length ? " Advertisements were set apart from the conversation." : ""),
   };
   const diarization = { engine: record.engine, model: record.model, requestId: record.requestId, audioUrl: audio.url, durationSeconds: record.durationSeconds, words: recordingWords(d).map(w => [w.w, w.speaker, Math.round(w.start * 100) / 100, Math.round(w.end * 100) / 100]) };
   return { changed: true, text, speakers, record, basis, diarization };

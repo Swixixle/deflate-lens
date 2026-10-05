@@ -444,5 +444,36 @@
     return level + names.join(" and ") + also + ": " + rest;
   }
 
-  return { issueText: issueText, claimTypeLabel: claimTypeLabel, historicalType: historicalType, EMPIRICAL_TYPES: EMPIRICAL, parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, readingContext: readingContext, CONTEXT_VERSION: CONTEXT_VERSION, chunkRanges: chunkRanges, carryOver: carryOver };
+  /* ---- who each speaker is (0.14) ----
+     A label that is not a name (a number, a letter, an unknown, a role) can be given one: by the app from the
+     conversation and the episode's listing (identify.js), or by a person. A clip, a quotation read aloud and an
+     advertisement are set apart and never named. speakerAccount gives one plain line for a label: how its name was
+     found, or why it has none; the page and the exports both use it, so they say the same thing. */
+  var SET_APART = /^(?:CLIP|QUOTE|AD) \d+$/;
+  var GENERIC = /^(?:(?:SPEAKER|SPK|VOICE|PERSON|PARTICIPANT|UNKNOWN(?: SPEAKER)?|UNIDENTIFIED(?: SPEAKER| VOICE)?)(?: ?(?:\d{1,3}|[A-Z]))?|S ?\d{1,2}|[A-Z])$/;
+  var ROLE = /^(?:HOST|CO-?HOST|GUEST|INTERVIEWER|INTERVIEWEE|MODERATOR|ANCHOR|CALLER|PANELL?IST|REPORTER|CORRESPONDENT|NARRATOR|Q|A|QUESTION|ANSWER)(?: ?\d{1,2})?$/;
+  function nameable(key) { key = String(key || ""); return key !== "UNLABELED" && !SET_APART.test(key) && (GENERIC.test(key) || ROLE.test(key)); }
+  function labelName(key) { return String(key || "").split(" ").map(function (w) { return w ? w[0] + w.slice(1).toLowerCase() : w; }).join(" "); }
+  function upFirst(t) { t = String(t || ""); return t.charAt(0).toUpperCase() + t.slice(1); }
+  function speakerAccount(run, key) {
+    var pr = run && run.provenance || {}, s = (run && run.speakers || []).filter(function (x) { return x.key === key; })[0] || null;
+    var label = key === "UNLABELED" ? "Speaker not established" : labelName(key), name = key === "UNLABELED" ? label : (s && s.name) || label;
+    var out = function (by, text) { return { key: key, name: name, label: label, by: by, text: text }; };
+    if (key === "UNLABELED") return out("none", "The text does not establish who is speaking here.");
+    if (SET_APART.test(key)) return out("set_apart", s && s.bio || "");
+    var byPerson = (pr.namesByPerson || {})[key];
+    if (byPerson !== undefined && byPerson === name) return out("person", name === label ? "You left this voice unnamed." : "Named by you.");
+    if (/^Named by a person/.test(s && s.bio || "")) return out("person", "Named by you.");
+    var id = pr.identification || {};
+    var d = (id.decisions || []).filter(function (x) { return x.key === key && x.name === name; })[0];
+    if (d) return out("identification", upFirst(d.how) + (/[.!?…]["”’)]*$/.test(d.how) ? "" : "."));
+    var u = (id.unnamed || []).filter(function (x) { return x.key === key; })[0];
+    if (u && name === label) return out("unnamed", "Not identified. " + u.why);
+    var words = ((pr.structure || {}).names || []).concat((pr.voices || {}).names || []).filter(function (n) { return n.applied && n.key === key && n.name === name; })[0];
+    if (words) return out("words", "Named from the words (" + String(words.kind || "").replace(/_/g, " ") + "): “" + String(words.quote || "").slice(0, 160) + "”.");
+    if (!nameable(key)) return out("transcript", "The name came with the transcript.");
+    if (name === label) return out("unnamed", "Not identified yet: the speakers' names are found when the reading is prepared.");
+    return out("earlier", "Named before names were recorded with their evidence.");
+  }
+  return { issueText: issueText, claimTypeLabel: claimTypeLabel, nameable: nameable, labelName: labelName, speakerAccount: speakerAccount, SET_APART_KEY: SET_APART, historicalType: historicalType, EMPIRICAL_TYPES: EMPIRICAL, parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, readingContext: readingContext, CONTEXT_VERSION: CONTEXT_VERSION, chunkRanges: chunkRanges, carryOver: carryOver };
 });

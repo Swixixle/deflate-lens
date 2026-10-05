@@ -53,7 +53,7 @@ set `DEFLATE_MOCK_AI=1` for the person; that produces placeholder output and is 
 
 ## Podcast and video links
 
-The page fetches transcripts itself (feed transcript → YouTube captions → episode page → audio). Two optional things make it better, and the person may ask you to set them up: `yt-dlp` on the PATH (`brew install yt-dlp`; makes YouTube captions reliable), and local speech-to-text (`npm run setup -- --local-transcription`, about 480 MB into `data/local-transcription/`; the page offers the same install when it first needs it). Do not add a Deepgram key or any other paid service unless the person asks for it; the page asks them once when the audio step is reached, or when they ask it to separate voices from a recording.
+The page fetches transcripts itself (feed transcript → YouTube captions → episode page → audio). Two optional things make it better, and the person may ask you to set them up: `yt-dlp` on the PATH (`brew install yt-dlp`; makes YouTube captions reliable), and local speech-to-text (`npm run setup -- --local-transcription`, about 480 MB into `data/local-transcription/`; the page offers the same install when it first needs it). Do not add a Deepgram key or any other paid service unless the person asks for it; the page asks them once when the audio step is reached, or when they ask it to separate voices from a recording. With a Deepgram key set, the app also sends an episode's audio to Deepgram by itself when a podcast link's transcript has no speaker names (to separate the voices), unless `TRANSCRIBE_PREFER=local`; say so if you set the key up for them.
 
 ## Repeat runs and updates
 

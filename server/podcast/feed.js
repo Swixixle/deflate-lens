@@ -25,13 +25,21 @@ function durationSeconds(s) { s = String(s || "").trim(); if (!s) return null; i
 function isoDate(s) { const d = new Date(String(s || "")); return isNaN(d.getTime()) ? "" : d.toISOString(); }
 
 function looksLikeFeed(body) { const head = String(body || "").slice(0, 4000); return /<rss[\s>]/i.test(head) || /<feed[\s>]/i.test(head) || /<channel[\s>]/i.test(head); }
+/* The people a feed names, from Podcasting 2.0 <podcast:person> (role "host" when none is given, as the namespace
+   defines it): who hosts the show, who is a guest on an episode. A listing, not proof of who speaks when. */
+function persons(xml) {
+  return tags(xml, "person").map(p => ({ name: clean(p.inner).slice(0, 80), role: String(p.attrs.role || "host").toLowerCase().slice(0, 40), group: String(p.attrs.group || "cast").toLowerCase().slice(0, 40) }))
+    .filter(p => p.name && /[A-Za-z]/.test(p.name)).slice(0, 20);
+}
+/* An author field that names a person rather than an address or a company. */
+function personAuthor(s) { s = String(s || "").trim(); return s && !/@|https?:/i.test(s) && s.length <= 80 ? s : ""; }
 
 function parseFeed(xml) {
   xml = String(xml || "");
   if (!looksLikeFeed(xml)) throw new Error("not an RSS feed");
   const channelXml = (tag(xml, "channel") || { inner: xml }).inner;
   const head = channelXml.replace(/<item[\s>][\s\S]*$/i, "");
-  const feed = { title: text(head, "title"), link: text(head, "link"), description: text(head, "description").slice(0, 600), author: text(head, "author"), language: text(head, "language"), image: (tag(head, "image") && tag(head, "image").attrs.href) || "", items: [] };
+  const feed = { title: text(head, "title"), link: text(head, "link"), description: text(head, "description").slice(0, 600), author: personAuthor(text(head, "author")), persons: persons(head), language: text(head, "language"), image: (tag(head, "image") && tag(head, "image").attrs.href) || "", items: [] };
   for (const it of tags(channelXml, "item")) {
     const x = it.inner;
     const enc = tag(x, "enclosure");
@@ -40,6 +48,7 @@ function parseFeed(xml) {
     const item = {
       title: text(x, "title"), guid: guidTag ? clean(guidTag.inner) : "", link: text(x, "link"), pubDate: isoDate(text(x, "pubDate")),
       duration: durationSeconds(text(x, "duration")), episode: text(x, "episode"), season: text(x, "season"), episodeType: text(x, "episodeType"),
+      author: personAuthor(text(x, "author")), persons: persons(x),
       description: clean((tag(x, "encoded") || tag(x, "description") || { inner: "" }).inner).slice(0, 2000),
       enclosure: enc ? { url: enc.attrs.url || "", type: String(enc.attrs.type || "").toLowerCase(), length: Number(enc.attrs.length) || null } : null,
       transcripts,

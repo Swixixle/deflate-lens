@@ -38,12 +38,17 @@ function validateRunDoc(doc, ctx) {
     if (i && ["direct", "needs_confirmation"].includes(i.identity)) out.import.identity = i.identity;
     if (i && i.match && typeof i.match === "object") out.import.match = validateMatch(i.match);
     if (i && Array.isArray(i.ambiguous) && i.ambiguous.length) out.import.ambiguous = i.ambiguous.map(x => str(x, 300)).slice(0, 10);
-    if (i && i.episodeInfo && typeof i.episodeInfo === "object") out.import.episodeInfo = { guid: str(i.episodeInfo.guid, 500), title: str(i.episodeInfo.title, 300), durationSeconds: Number(i.episodeInfo.durationSeconds) || 0, pubDate: str(i.episodeInfo.pubDate, 60), link: isUrl(i.episodeInfo.link) ? str(i.episodeInfo.link, 2000) : "", audioUrl: isUrl(i.episodeInfo.audioUrl) ? str(i.episodeInfo.audioUrl, 2000) : "" };
+    if (i && i.episodeInfo && typeof i.episodeInfo === "object") out.import.episodeInfo = { guid: str(i.episodeInfo.guid, 500), title: str(i.episodeInfo.title, 300), durationSeconds: Number(i.episodeInfo.durationSeconds) || 0, pubDate: str(i.episodeInfo.pubDate, 60), link: isUrl(i.episodeInfo.link) ? str(i.episodeInfo.link, 2000) : "", audioUrl: isUrl(i.episodeInfo.audioUrl) ? str(i.episodeInfo.audioUrl, 2000) : "",
+      description: str(i.episodeInfo.description, 2000), author: str(i.episodeInfo.author, 120), persons: listedPersons(i.episodeInfo.persons) };
+    // the show as its listing describes it (name, the feed's author, Apple's artist, <podcast:person> hosts), or a
+    // video's channel: where the people who may be speaking are named
+    if (i && i.showInfo && typeof i.showInfo === "object") out.import.showInfo = { name: str(i.showInfo.name, 300), author: str(i.showInfo.author, 120), artist: str(i.showInfo.artist, 120), persons: listedPersons(i.showInfo.persons), channel: !!i.showInfo.channel };
   }
   if ("provenance" in doc) out.provenance = validateProvenance(doc.provenance, ctx);
   return out;
 }
 
+function listedPersons(list) { return (Array.isArray(list) ? list : []).slice(0, 20).map(p => p && typeof p === "object" ? { name: str(p.name, 80).trim(), role: str(p.role, 40).toLowerCase(), group: str(p.group, 40).toLowerCase() } : null).filter(p => p && p.name); }
 function validateMatch(m) {
   const vid = v => v && typeof v === "object" ? { id: /^[A-Za-z0-9_-]{11}$/.test(String(v.id)) ? String(v.id) : "", url: isUrl(v.url) ? str(v.url, 2000) : "", title: str(v.title, 300), channel: str(v.channel, 200), durationSeconds: Number(v.durationSeconds) || 0 } : null;
   const out = { method: ["youtube-search", "episode-notes-link", "title-lookup"].includes(m.method) ? m.method : "other", basis: str(m.basis, 200) };

@@ -3,59 +3,8 @@
    sees and in what order, what a click sends, and that progress updates leave untouched cards alone. Layout, focus,
    panels and phone widths are checked in a real browser by scripts/ui-check.js. */
 const test = require("node:test"), assert = require("node:assert/strict");
-const fs = require("node:fs"), os = require("node:os"), path = require("node:path"), vm = require("node:vm");
-const { createApp } = require("../server/app"), { createMockAI } = require("../server/ai"), { createResearch } = require("../server/research");
-
-class Element {
-  constructor(tag, text = "") { this.tag = tag; this.children = []; this.attrs = {}; this.listeners = {}; this.ownText = text; this.style = {}; this.value = ""; this.hidden = false;
-    this.classList = { contains: cls => this.className.split(/\s+/).includes(cls), toggle: (cls, force) => { const has = this.classList.contains(cls), on = force === undefined ? !has : force; this.className = this.className.split(/\s+/).filter(x => x && x !== cls).concat(on ? [cls] : []).join(" "); return on; } };
-  }
-  get className() { return this.attrs.class || ""; } set className(value) { this.attrs.class = value; }
-  append(...children) { for (let child of children) { if (!(child instanceof Element)) child = new Element("#text", String(child)); child.parent = this; this.children.push(child); } }
-  replaceChildren(...children) { this.children.forEach(c => { c.parent = null; }); this.children = []; this.ownText = ""; this.append(...children); }
-  removeChild(child) { this.children.splice(this.children.indexOf(child), 1); child.parent = null; }
-  remove() { if (this.parent) this.parent.removeChild(this); }
-  insertBefore(child, before) { child.parent = this; const at = this.children.indexOf(before); if (at === -1) this.children.push(child); else this.children.splice(at, 0, child); }
-  get firstChild() { return this.children[0]; }
-  set textContent(text) { this.ownText = String(text); this.children = []; }
-  get textContent() { return this.ownText + this.children.map(c => c.textContent).join(""); }
-  setAttribute(key, value) { this.attrs[key] = String(value); if (key === "id") this.id = String(value); if (key === "value") this.value = String(value); if (key === "disabled") this.disabled = true; }
-  removeAttribute(key) { delete this.attrs[key]; } getAttribute(key) { return this.attrs[key] ?? null; }
-  addEventListener(event, handler) { this.listeners[event] = handler; }
-  click() { if (!this.disabled) return this.listeners.click && this.listeners.click({ preventDefault() {} }); }
-  scrollIntoView() {}
-  matches(selector) { const id = selector.match(/#([\w-]+)/), cls = [...selector.matchAll(/\.([\w-]+)/g)].map(m => m[1]), tag = selector.match(/^[a-z][a-z0-9]*/); return (!id || this.id === id[1]) && cls.every(c => this.classList.contains(c)) && (!tag || this.tag === tag[0]); }
-  querySelectorAll(selector) { const parts = selector.split(/\s+/); return descendants(this).filter(e => { if (!e.matches(parts.at(-1))) return false; let parent = e.parent; for (let i = parts.length - 2; i >= 0; i--) { while (parent && !parent.matches(parts[i])) parent = parent.parent; if (!parent) return false; parent = parent.parent; } return true; }); }
-  querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
-}
-function descendants(node) { return node.children.flatMap(c => [c, ...descendants(c)]); }
-function visible(node) { if (node.hidden) return ""; if (node.tag === "details" && node.getAttribute("open") === null) return node.children.filter(c => c.tag === "summary").map(visible).join(""); return node.ownText + node.children.map(visible).join(""); }
-function el(tag, id, cls) { const n = new Element(tag); if (id) n.id = id; if (cls) n.className = cls; return n; }
-
-async function page(t, opts = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "deflate-ui-")), system = createApp({ dataDir: dir, examplesDir: dir, ai: opts.ai === undefined ? createMockAI() : opts.ai, research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), resolver: opts.resolver, cloudEngine: opts.cloudEngine, env: {}, envPath: path.join(dir, ".env") });
-  await system.ready;
-  const server = await new Promise(r => { const s = system.app.listen(0, "127.0.0.1", () => r(s)); });
-  const base = "http://127.0.0.1:" + server.address().port, body = new Element("body");
-  const readings = el("aside", "readings", "panel left"), controls = el("aside", "controls", "panel right");
-  readings.append(el("button", "", "panel-close"), el("button", "newRun"), el("ul", "runList"), el("div", "trash")); readings.hidden = true;
-  controls.append(el("button", "", "panel-close"), el("div", "controlsBody")); controls.hidden = true;
-  body.append(el("span", "storeChip"), el("span", "storeText"), el("button", "readingsBtn"), el("button", "controlsBtn"), el("div", "welcome"), el("div", "runView"), el("article", "guideView"), el("div", "backdrop"), readings, controls);
-  const store = new Map(Object.entries(opts.storage || {}));
-  const document = { body, createElement: tag => new Element(tag), createTextNode: text => new Element("#text", text), getElementById: id => descendants(body).find(n => n.id === id), querySelector: s => body.querySelector(s), querySelectorAll: s => body.querySelectorAll(s) };
-  const timers = new Map(), requests = [], errors = []; let counter = 0;
-  const ctx = vm.createContext({ document, window: { DeflateShared: require("../shared/transcript"), DeflatePrompts: require("../shared/prompts"), addEventListener() {} },
-    location: { hash: opts.hash || "" }, localStorage: { getItem: k => store.has(k) ? store.get(k) : null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) }, AbortController, URL, Blob,
-    alert: text => errors.push(text), setTimeout: fn => { timers.set(++counter, fn); return counter; }, clearTimeout: id => timers.delete(id),
-    fetch: (url, o) => { requests.push([url, o && o.method || "GET"]); return (opts.fetch || fetch)(base + url, o); } });
-  const source = fs.readFileSync(path.join(__dirname, "../public/app.js"), "utf8").replace("\nboot();\n", "\nglobalThis.page = {boot, reload, selectRun, startReading, API, get S(){return S;}, get UI(){return UI;}};\n");
-  vm.runInContext(source, ctx); await ctx.page.boot();
-  const settle = async () => { const id = ctx.page.S.runId, job = system.reader.jobs.get(id); if (job) await job.done; const pending = [...timers.values()]; timers.clear(); for (const fn of pending) await fn(); if (!pending.length) await ctx.page.reload(); };
-  t.after(async () => { for (const job of system.reader.jobs.values()) job.controller.abort(); await Promise.all([...system.reader.jobs.values()].map(j => j.done)); await new Promise(r => server.close(r)); fs.rmSync(dir, { recursive: true, force: true }); });
-  const $ = id => document.getElementById(id);
-  const pump = async (done, rounds = 80) => { for (let i = 0; i < rounds && !done(); i++) { const pending = [...timers.values()]; timers.clear(); for (const fn of pending) await fn(); await new Promise(r => setTimeout(r, 25)); } };
-  return { ctx, body, document, system, requests, errors, settle, pump, store, $, type: async text => { const ta = $("f-text"); ta.value = text; ta.listeners.input(); await $("readThis").click(); await settle(); } };
-}
+const { createMockAI } = require("../server/ai");
+const { page, visible, descendants } = require("./page-harness");
 const transcript = Array.from({ length: 18 }, (_, i) => (i % 2 ? "GUEST" : "HOST") + ": Here is an argument with enough words for the quoted passage " + i + "." + (i === 3 ? " That shows everyone agrees with it." : "")).join("\n");
 
 test("the start screen: one box, one helper line, Upload transcript and one Read this; Controls and Readings start closed", async t => {
@@ -227,7 +176,7 @@ function recordingOf(text, voiceOfParagraph) {
 }
 const PLAIN = "Welcome back to the show. Today we are talking about the transit survey the city released last month.\n\nThanks for having me. The survey covered four hundred households in three neighborhoods, which is a small sample for a city this size.\n\nSo when the report says riders everywhere support more lanes, it is stretching what those households can tell you.";
 
-test("speakers: a text with no labels shows one quiet line and no speaker before every line; voices from the recording say where they came from and ask for one confirmation of names", async t => {
+test("speakers: a text with no labels shows one quiet line and no speaker before every line; voices from the recording say where they came from; names are never asked for, and correcting one is optional", async t => {
   let configured = false; const sent = [];
   const cloudEngine = { name: "deepgram", model: "nova-3", configured: () => configured, async diarize({ audioUrl }) { sent.push(audioUrl); return recordingOf(PLAIN, [0, 1, 1]); } };
   const f = await page(t, { cloudEngine }); await f.type(PLAIN);
@@ -256,21 +205,29 @@ test("speakers: a text with no labels shows one quiet line and no speaker before
   await f.settle();
   assert.deepEqual(sent, ["https://cdn.example.org/ep7.mp3"]);
   assert.ok(f.requests.some(r => r[0] === "/api/runs/" + f.ctx.page.S.runId + "/voices" && r[1] === "POST"));
-  assert.equal(visible(f.$("speakerNotice")), "Speakers separated by voice. Name them");
+  assert.equal(visible(f.$("speakerNotice")), "Speakers separated by voice. Details", "the line never asks the reader to name anyone");
   const ev2 = f.body.querySelector(".card details.evidence"); ev2.setAttribute("open", "");
   assert.match(visible(ev2), /Speaker 1: Welcome back to the show[\s\S]*Speaker 2: Thanks for having me/);
-  // one confirmation of names
+  // nothing in these words names anyone (and a pasted text has no listing): each voice keeps its number, with the reason
+  assert.match(visible(ev2), /Who is speaking[\s\S]*Speaker 1: Not identified\. Nothing in the conversation or the episode's listing names this voice\./);
+  // optional names under Controls
   f.$("controlsBtn").click(); sp = f.$("ctl-speakers");
   assert.match(visible(sp), /Separated by voice from the recording: 2 voices, with 100% of this text's words lined up/);
+  assert.match(visible(sp), /Not identified\. Nothing in the conversation or the episode's listing names this voice\./);
   const names = sp.querySelectorAll("input").filter(i => /^Name for Speaker/.test(i.getAttribute("aria-label") || ""));
   assert.deepEqual(names.map(i => i.getAttribute("aria-label")), ["Name for Speaker 1", "Name for Speaker 2"]);
+  assert.deepEqual(names.map(i => i.value), ["", ""]);
   names[0].value = "Sam Okafor"; names[0].listeners.input(); names[1].value = "Dana Reyes"; names[1].listeners.input();
-  await sp.querySelectorAll("button").find(b => b.textContent === "Confirm names").click();
+  await sp.querySelectorAll("button").find(b => b.textContent === "Save names").click();
   await f.settle();
   assert.equal(visible(f.$("speakerNotice")), "Speakers separated by voice. Details");
-  const ev3 = f.body.querySelector(".card details.evidence"); ev3.setAttribute("open", "");
+  // the readings were written under the old names: they say so, and the names show everywhere at once
+  const card = f.body.querySelector(".card");
+  assert.match(visible(card), /Out of date: a speaker's name changed after this reading was made\./);
+  assert.match(visible(card), /Sam Okafor/);
+  const ev3 = card.querySelector("details.evidence"); ev3.setAttribute("open", "");
   assert.match(visible(ev3), /Sam Okafor: Welcome back to the show[\s\S]*Dana Reyes: Thanks for having me/);
-  assert.match(visible(f.body.querySelector(".card")), /Sam Okafor/);
+  assert.match(visible(ev3), /Who is speaking[\s\S]*Sam Okafor \(Speaker 1\): Named by you\./);
 });
 
 test("a reading whose fifth-grade wording failed shows the high-school reading at both levels and says so only at fifth grade", async t => {

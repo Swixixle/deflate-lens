@@ -234,7 +234,8 @@ function testAI() {
     check("badDeepgramKeyRefused", !fs.existsSync(path.join(dir, ".env")) || !fs.readFileSync(path.join(dir, ".env"), "utf8").includes("short"));
 
     /* 10. No speaker labels: one quiet line, no speaker in front of each line. Voices from the recording (Deepgram,
-           faked) label the text without changing a word; the line says where the labels came from; one confirmation names them */
+           faked) label the text without changing a word; the line says where the labels came from and never asks for
+           names; a voice nothing names keeps its number with the reason under Evidence; naming one is optional */
     const unlabeled = Array.from({ length: 10 }, (_, i) => "This is paragraph " + i + " of a transcript made from audio, with enough words in it to be quoted by a card, mentioning " + (i % 2 ? "my book" : "the show") + ".").join("\n\n");
     await read(page, unlabeled); await ready(page);
     const lineBox = await page.locator("#speakerNotice").boundingBox();
@@ -257,16 +258,18 @@ function testAI() {
     await find2.locator("input[type=url]").fill("https://cdn.test/no.mp3");
     await find2.locator("button:has-text('Separate voices from the recording')").click();
     await page.waitForFunction(() => /separated by voice/.test((document.querySelector("#speakerNotice") || {}).textContent || ""), null, { timeout: 60000 }); await ready(page);
-    check("voicesLine", (await page.locator("#speakerNotice").innerText()).trim() === "Speakers separated by voice. Name them");
+    check("voicesLine", (await page.locator("#speakerNotice").innerText()).trim() === "Speakers separated by voice. Details");
     const vCard = page.locator(".card").first(); await vCard.locator("details.evidence > summary").click();
-    check("voicesOnTurns", /Speaker 1:\s*This is paragraph 0[\s\S]*Speaker 2:\s*This is paragraph 1/.test(await vCard.innerText()));
+    const vText = await vCard.innerText();
+    check("voicesOnTurns", /Speaker 1:\s*This is paragraph 0[\s\S]*Speaker 2:\s*This is paragraph 1/.test(vText));
+    check("unnamedExplained", /Who is speaking[\s\S]*Speaker 1:\s*Not identified\. Nothing in the conversation or the episode's listing names this voice\./.test(vText));
     await page.screenshot({ path: path.join(shots, "speakers-voices-1440.png") });
-    await page.locator("#speakerNotice button:has-text('Name them')").click(); await page.waitForSelector("#controls:not([hidden]) #ctl-speakers");
+    await page.locator("#speakerNotice button:has-text('Details')").click(); await page.waitForSelector("#controls:not([hidden]) #ctl-speakers");
     await page.fill("#ctl-speakers input[aria-label='Name for Speaker 1']", "Ann Lee"); await page.fill("#ctl-speakers input[aria-label='Name for Speaker 2']", "Bo Diaz");
-    await page.locator("#ctl-speakers button:has-text('Confirm names')").click();
-    await page.waitForFunction(() => /Details/.test((document.querySelector("#speakerNotice") || {}).textContent || ""), null, { timeout: 10000 });
+    await page.locator("#ctl-speakers button:has-text('Save names')").click();
+    await page.waitForFunction(() => /Ann Lee/.test((document.querySelector(".card") || {}).textContent || ""), null, { timeout: 10000 });
     await page.locator("#controls .panel-close").click();
-    check("namesConfirmed", /Ann Lee/.test(await page.locator(".card").first().innerText()) && (await page.locator("#speakerNotice").innerText()).trim() === "Speakers separated by voice. Details");
+    check("namesOptionalAndShown", /Ann Lee/.test(await page.locator(".card").first().innerText()) && /a speaker's name changed after this reading was made/.test(await page.locator(".card").first().innerText()) && (await page.locator("#speakerNotice").innerText()).trim() === "Speakers separated by voice. Details");
     await page.setViewportSize({ width: 390, height: 844 });
     const phoneBox = await page.locator("#speakerNotice").boundingBox();
     check("speakerLineQuiet@390", phoneBox.height < 36 && await noHScroll(page), phoneBox);

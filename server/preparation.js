@@ -71,9 +71,9 @@ async function prepareSpeakers({ ai, store, id, signal }) {
   if (!ai) throw Object.assign(new Error("Add the model key to prepare the speakers."), { status: 503, code: "no_ai" });
   const basis = await store.captureCallBasis(id, { transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig }, "prepare_speakers");
   const all = shared.parseTranscript(b.transcript, { mode: b.run.parseMode || "transcript" });
-  // a clip or a quotation read aloud was set apart from its speaker by the structure pass, with its introduction checked;
+  // a clip, a quotation read aloud or an advertisement was set apart by the structure pass, with its evidence checked;
   // it is not a label to audit
-  const speaking = all.filter(t => !t.heading && !/^(CLIP|QUOTE) \d+$/.test(shared.effSpeaker(t, b.run.provenance.overrides))), keys = new Set(shared.speakerLabels(all));
+  const speaking = all.filter(t => !t.heading && !/^(CLIP|QUOTE|AD) \d+$/.test(shared.effSpeaker(t, b.run.provenance.overrides))), keys = new Set(shared.speakerLabels(all));
   const contested = new Set((b.run.provenance.flags || []).map(f => f.turn));
   const overrides = Object.assign({}, b.run.provenance.overrides), corrections = [], unresolved = [], record = [], calls = [];
   const ranges = shared.chunkRanges(speaking, 16000).flatMap(([from, to]) => {
@@ -136,7 +136,7 @@ function reviewChecks(kind) {
     "It describes how the reading was made instead of what the claim says."
   ] : [
     "A restatement, claim paraphrase, fair reading or final assessment changes the meaning at either level (hs or g5). " + meaning + " This includes who is speaking versus who is quoted, quantities, denominators, units, dates, comparisons, and a clarification, concession or retraction the speaker made.",
-    "It adds a claim, quotation, motive, premise or piece of evidence the speaker did not give, or credits words to the wrong person: a clip's or a quotation's words (turns labelled CLIP or QUOTE) to the speaker who played or read them, words to a speaker whose turns do not contain them, or an UNLABELED turn to a particular person.",
+    "It adds a claim, quotation, motive, premise or piece of evidence the speaker did not give, or credits words to the wrong person: a clip's or a quotation's words (turns labelled CLIP or QUOTE) to the speaker who played or read them, words to a speaker whose turns do not contain them, or an UNLABELED turn to a particular person; or it takes a claim or a quotation from an advertisement (a turn labelled AD).",
     "A claim, finding or figure the speaker reports is stated in the draft's own voice as established (\"the poll shows…\" instead of \"the mayor says the poll shows…\"), in any field, including a claim's plain restatement.",
     "The card fields (deflated, defense, revision) describe the machinery of the reading (a concern raised, kept, withdrawn or surviving; a review, draft or correction; which turns were context) instead of stating what the passage supports and what remains uncertain. Framing a reading as such (\"The strongest reading is that…\", \"Read generously, …\") is not machinery.",
     "It raises a concern only because something was not verified outside the passage.",

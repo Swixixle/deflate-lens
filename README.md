@@ -12,7 +12,7 @@ It runs on your own computer. Your work stays there. Only the text being read is
 
 ![A finished card in three parts](docs/screenshots/2-reading.png)
 
-**Evidence, one click away.** The original passage with who said each turn, the turns around it that the model saw, the quotes it used and whether each was found word for word, and the reasoning: the first concern, where the reasoning turns, and whether the concern was kept, partly kept or withdrawn.
+**Evidence, one click away.** The original passage with who said each turn, the turns around it that the model saw, who each speaker is and how the app found out (or why it couldn't, as in this made-up show, where no one says a name), the quotes it used and whether each was found word for word, and the reasoning: the first concern, where the reasoning turns, and whether the concern was kept, partly kept or withdrawn.
 
 ![Evidence under a card](docs/screenshots/3-evidence.png)
 
@@ -46,7 +46,7 @@ The app opens at <http://127.0.0.1:3123>. Stop it with `Ctrl+C`. Start it again 
 ## Use it
 
 1. **Paste or upload.** A transcript file (`.txt`, `.srt`, `.vtt`, `.md`), any text, a single claim, or a podcast, video or page link.
-2. **Press Read this.** That is the only button you need. It works out who said what (keeping any speaker names that came with the text, and setting a played clip apart from the host), picks the passages, writes and reviews each reading, and looks for sources. You can close the page; it keeps going.
+2. **Press Read this.** That is the only button you need. It works out who said what and who each speaker is (keeping any speaker names that came with the text, finding the rest from introductions, people naming themselves and the episode's listing, and setting played clips and advertisements apart), picks the passages, writes and reviews each reading, and looks for sources. You never have to name anyone. You can close the page; it keeps going.
 3. **The key, once.** The first time, it asks for your Anthropic API key and saves it on your computer. Readings are billed to that key.
 4. **Read.** Open **Evidence** under a card for the original and the reasoning. **Readings** has your saved work; **Controls** has everything optional, and the **User guide**.
 
@@ -59,7 +59,7 @@ The [User guide](docs/guide.md) is short: starting a reading, reading the result
 - **The review is a second pass of the same model**, not an independent check. The original is always one click away so you can judge.
 - **The speaker is never graded.** Only the argument and each claim.
 - **It can be wrong.** When a reading still fails its checks after the app corrects the parts found wrong, the card says it couldn't be completed and its Evidence says why.
-- **Who is speaking is worked out, not proven.** From the words, only where they show a change of speaker; or by voice, from the recording, if you ask (Deepgram, your key).
+- **Who is speaking is worked out, not proven.** By voice from the recording (Deepgram, your key: by itself when a podcast link's transcript has no speaker names), or from the words where they show a change of speaker. Names come from what was said and the episode's listing; a speaker nothing identifies keeps a number, and Evidence says why.
 
 ## Settings
 
@@ -70,8 +70,8 @@ Settings live in `.env` in the app folder (setup creates it). The ones you might
 | `ANTHROPIC_API_KEY` | Your key for the readings. The page can save it for you. Billed to your Anthropic account. |
 | `ANTHROPIC_MAX_TOKENS` | The longest answer a reading may have (default 16000). |
 | `RESEARCH_CONTACT_EMAIL` | Your email, so Crossref answers faster. Optional. |
-| `DEEPGRAM_API_KEY` | For fast audio-to-text, and for separating voices from a recording. Optional; the page asks when needed. |
-| `TRANSCRIBE_PREFER` | `local` or `cloud`, when both audio options are set up. |
+| `DEEPGRAM_API_KEY` | For fast audio-to-text, and for separating voices from a recording (done by itself when a link's transcript has no speaker names). Optional; the page asks when needed. Billed to your Deepgram account. |
+| `TRANSCRIBE_PREFER` | `local` or `cloud`, when both audio options are set up. `local` also keeps the app from sending audio to Deepgram to separate voices. |
 | `DEFLATE_MOCK_AI` | `1` to try the app with placeholder readings and no key. |
 
 `brew install yt-dlp` makes YouTube captions more reliable. Your work is saved as plain files in the `data/` folder; copy that folder to back it up.

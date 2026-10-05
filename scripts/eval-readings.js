@@ -122,7 +122,8 @@ function kindOf(prompt) {
   if (prompt.startsWith("Check a correction to a reading")) return "check of a correction (0.13.0)";
   if (prompt.startsWith("This transcript has no speaker labels") || prompt.startsWith("Find recordings played")) return "speaker structure";
   if (prompt.startsWith("Review a speaker structure")) return "review of the speaker structure";
-  if (prompt.startsWith("These transcript turns are labelled SPEAKER 1")) return "names for voices";
+  if (prompt.startsWith("These transcript turns are labelled SPEAKER 1")) return "names for voices (0.13)";
+  if (prompt.startsWith("Who is each voice in this conversation?")) return "who each voice is";
   if (prompt.startsWith("Below are the final readings")) return "overview";
   if (prompt.startsWith("You are a deflation reader")) return "pre-0.12 prompt (comparison)";
   return "other";

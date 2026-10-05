@@ -8,7 +8,7 @@ Paste text or a link into the box, or press **Upload transcript** (.txt, .srt, .
 
 - **Text or a transcript.** Lines that start with a name and a colon (`ANN: …`) are read as speakers. A transcript copied from a web page is cleaned on the way in: "Copy link" buttons and timestamps are taken out of the words (every word is kept), and names the page shows above each paragraph become speakers.
 - **One claim.** A single sentence is read as a claim: the app explains it and looks for sources.
-- **A podcast, video or page link.** The app looks for a transcript the show published, then the video's captions, then the episode page. If none exists it can turn the audio into text.
+- **A podcast, video or page link.** The app looks for a transcript the show published, then the video's captions, then the episode page. If none exists it can turn the audio into text. A link to an audio file goes straight to that step.
 
 The app stops to ask only when it cannot decide for you:
 
@@ -32,7 +32,9 @@ For example, if someone said "We asked 18 evening visitors and 12 wanted later h
 
 **High school / Fifth grade** on each card switches the wording. Fifth grade uses shorter sentences and everyday words; it is meant to say the same thing, not less. The default for new cards is in **Controls → Reading**. Switching never calls the model.
 
-**Who is speaking.** Speaker names that came with the text are kept. When there are none, the app works out from the words where the speaker changes, only where the words show it (a question answered, a guest introduced, a clip played and the host coming back), and leaves the rest alone. A clip or a quotation read aloud is kept apart from the person who played it, so its claims stay its speaker's. When the text has no speaker names at all, the words are shown without a speaker in front of every line, and one quiet line above the reading says so.
+**Who is speaking.** Speaker names that came with the text are kept. When a podcast link's transcript has none, the app separates the voices from the episode's recording with Deepgram (if you set up a Deepgram key, and unless you chose to keep audio on your computer); otherwise it works out from the words where the speaker changes, only where the words show it (a question answered, a guest introduced, a clip played and the host coming back), and leaves the rest alone. A clip, a quotation read aloud or an advertisement is kept apart from the conversation, so its words are never anyone's claims here. When the text has no speaker names at all, the words are shown without a speaker in front of every line, and one quiet line above the reading says so.
+
+**Who each speaker is.** You never have to name anyone. Before the reading appears, the app finds each numbered speaker's name from the conversation and the episode's listing: someone saying who they are ("I'm Dana Reyes"), a guest introduced just before they speak ("Joining us now, Marcus Delacroix"), the show's host opening the show, someone spoken to by name just before they answer. The listing says who might be speaking; the conversation decides which voice is whose. Quoted or reported words, introductions of another day, and names of companies or places don't count. The names appear on the cards, the quotes, the passages, the claims and the downloads. A speaker nothing identifies keeps a number ("Speaker 3"), and **Evidence → Who is speaking** says why.
 
 **Evidence** opens under each card. It shows, in order:
 
@@ -50,7 +52,7 @@ A long reading has a **Contents** list at the top ("3 of 12") and ends with **Ac
 - **A model's assessment is not verification.** A "Checkable claim" is something evidence could settle; the app does not decide from the model's memory whether it is true. A search finds possible sources. Only you attach a source, and only you say whether it supports or contradicts the claim. Nothing in the app is ever marked "verified".
 - **Not checked does not mean false.** It means no one has looked yet.
 - **Source identity can be uncertain.** When a video was found by searching for the episode's title and length, the reading says **Video matched by title and length — Check source** until you compare the two and confirm. Confirming records what you said; it does not check the transcript.
-- **Speakers can be uncertain.** Speakers worked out from the words or from the recording are marked as such in one line above the reading, and are numbered until a name is given by the words or by you. "Speaker not established" means the app could not tell who said those words.
+- **Speakers can be uncertain.** Speakers worked out from the words or from the recording are marked as such in one line above the reading. A name the app found is shown with how it was found under **Evidence → Who is speaking**; it is worked out from what was said, not proven. "Speaker not established" means the app could not tell who said those words.
 - **Context is limited.** The model sees each passage plus up to two turns on each side. A correction made much later in a long conversation may not be seen. When the excerpt is not enough, the reading should say what remains unclear.
 
 ## Use optional controls
@@ -58,7 +60,7 @@ A long reading has a **Contents** list at the top ("3 of 12") and ends with **Ac
 Everything here is optional. Open **Controls**:
 
 - **Reading**: the default reading level; read again what is not ready; write the closing overview again; **Passage preparation** to split the conversation into passages again. Each says what it will cost before you press it.
-- **Input and speakers**: change the title or source; compare and confirm a matched source, or use a different link; edit the text; under **Speakers**, see where the speaker labels came from, name numbered speakers and confirm the names once, and correct who said each turn. When the text came without speaker names, **Find who is speaking** offers two ways: from the words (a few model passes on your key), or **Separate voices from the recording** (the episode's audio goes to Deepgram on your Deepgram key, and only the speaker labels come from it; every word of your text stays).
+- **Input and speakers**: change the title or source; compare and confirm a matched source, or use a different link; edit the text; under **Speakers**, see where the speaker labels came from and how each name was found, change a name if you want to (a name you give is kept; readings that used the old name are marked out of date), and correct who said each turn. When the text came without speaker names, **Find who is speaking** offers two ways: from the words (a few model passes on your key), or **Separate voices from the recording** (the episode's audio goes to Deepgram on your Deepgram key, and only the speaker labels come from it; every word of your text stays). If the app tried the recording by itself and couldn't use it, the reason is shown here.
 - **App and files**: your model key, audio-to-text settings, downloads, version details, and **Move this reading to the trash**.
 
 Sources for a claim are handled beside the claim, under **Evidence → Sources and search**: search, attach a link, accept or reject a suggestion, say what a source does for the claim, or withdraw it.
@@ -68,8 +70,8 @@ Your saved readings are under **Readings**, with **New reading** at the top. **D
 ## Know where work goes
 
 - **On your computer:** everything you paste or upload, every reading, every source decision and every earlier version, as plain files in the app's `data` folder. Copy that folder to back it up. Deleted readings go to `data/trash`.
-- **Sent to Anthropic:** the text being read, when a reading, review or overview is made, using your key. Each of those is a charge on your Anthropic account. A typical passage takes one reading and one review.
-- **Sent to Deepgram:** the audio, only if you choose Deepgram for audio-to-text or ask it to separate voices. Billed to your Deepgram key.
+- **Sent to Anthropic:** the text being read, when a reading, review or overview is made, and once per text to find who each speaker is, using your key. Each of those is a charge on your Anthropic account. A typical passage takes one reading and one review.
+- **Sent to Deepgram:** the audio, when you choose Deepgram for audio-to-text, when you ask it to separate voices, and by itself when a podcast link's transcript has no speaker names and a Deepgram key is set (not if you chose to keep audio on your computer). Billed to your Deepgram key.
 - **Sent to search services:** a short search query per checkable claim, to Crossref, PubMed, OpenAlex and GDELT. Free.
 - Your keys are kept in the `.env` file in the app folder. The page never shows them.
 

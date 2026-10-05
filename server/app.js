@@ -46,7 +46,9 @@ function createApp(opts) {
   const research = opts.research || null;
   const searchClaim = createClaimSearch(store, research);
   const importer = createImporter({ fetch: opts.fetch || require("./podcast/public-fetch").publicFetch });
-  const reader = createReader({ store, getAI: () => state.ai, searchClaim, research });
+  // the reader separates voices from an episode's recording on its own when a link's text came without speaker labels
+  // (Deepgram as configured now, the transcript chain's resolver, the person's audio-to-text choice); defined below
+  const reader = createReader({ store, getAI: () => state.ai, searchClaim, research, voices: { engine: () => engines.cloud, resolver: () => resolver, prefer: () => env.TRANSCRIBE_PREFER || "" } });
   const envPath = opts.envPath || path.join(__dirname, "..", ".env");
   const settings = createSettings({ envPath, examplePath: path.join(__dirname, "..", ".env.example") });
   /* The transcript chain (podcast and video links): engines read their keys from the environment the server was
@@ -155,7 +157,9 @@ function createApp(opts) {
       const show = result.show && result.show.name || "", title = result.episode && result.episode.title || result.title || "";
       const doc = Object.assign({title, sourceLabel:(show ? show + (title ? " — " : "") : "") + title}, input.context || {}, {sourceUrl:input.url, speakers:[], import:{url:input.url, title, fetchedAt:result.fetchedAt || job.finishedAt, chars:result.text.length, method:result.kind === "article" ? "page text" : "transcript: " + src.kind, source:src, show, episode:title, matchedBy:result.matchedBy || "", speakers:result.speakers || [],
         identity:result.kind === "article" ? "direct" : (result.identity || "direct"), match:result.match || null, ambiguous:result.ambiguous || null,
-        episodeInfo:result.episode ? {guid:result.episode.guid || "", title:result.episode.title || "", durationSeconds:result.episode.duration || 0, pubDate:result.episode.pubDate || "", link:result.episode.link || "", audioUrl:result.episode.audioUrl || ""} : null}});
+        // the episode and the show as the listing describes them: the names in them are candidates for who speaks
+        episodeInfo:result.episode ? {guid:result.episode.guid || "", title:result.episode.title || "", durationSeconds:result.episode.duration || 0, pubDate:result.episode.pubDate || "", link:result.episode.link || "", audioUrl:result.episode.audioUrl || "", description:result.episode.description || "", author:result.episode.author || "", persons:result.episode.persons || []} : null,
+        showInfo:result.show ? {name:result.show.name || "", author:result.show.author || "", artist:result.show.artist || "", persons:result.show.persons || []} : result.channel ? {name:result.channel, author:"", artist:"", persons:[], channel:true} : null}});
       if (!doc.title) delete doc.title;
       const prepared = await readInput(result.text, doc, importer);
       const rid = input.targetRunId || "r_" + id;
@@ -168,8 +172,15 @@ function createApp(opts) {
           await store._saveRun(rid, prepared.doc, prepared.text, {transcriptJobId:id});
         });
       } else if (!await store.getRun(rid)) await store.createRun(prepared.doc, prepared.text, rid);
-      const existing = await store.getRun(rid);
-      if (!existing.intake || existing.intake.transcriptJobId !== id) await store.saveIntake(rid, prepared.original, Object.assign(prepared.intake, {transcriptJobId:id}));
+      const existing = await store.getRun(rid), fresh = !existing.intake || existing.intake.transcriptJobId !== id;
+      // Deepgram separated the voices as it transcribed the recording: the labels are voices from the recording, as with
+      // voices lined up with a text (voices.js), not labels of unknown origin to audit turn by turn. Recorded once, for
+      // the text this fetch wrote (a retried consume finds the intake already saved and leaves the record alone).
+      const voices = (result.speakers || []).filter(s => /^SPEAKER \d+$/.test(s));
+      if (fresh && src.kind === "audio-transcription" && src.engine === "deepgram" && voices.length)
+        await store.recordTranscribedVoices(rid, { by: "recording", via: "transcription", engine: "deepgram", model: src.model || "", requestId: src.requestId || "", audioUrl: src.url || "", audioFoundBy: "the episode's audio, transcribed by Deepgram", durationSeconds: src.durationSeconds || 0, voices: voices.length,
+          method: "Deepgram separated the voices as it transcribed the recording, one label per voice: the labels came from the recording, not from the words. Voices are numbered by the recording; names come from what the conversation and the episode's listing show." });
+      if (fresh) await store.saveIntake(rid, prepared.original, Object.assign(prepared.intake, {transcriptJobId:id}));
       await jobs.acknowledge(id, rid);
       return rid;
     });
@@ -290,7 +301,8 @@ function createApp(opts) {
     await store.commitVoices(id, out.basis, out);
     res.status(202).json(Object.assign({ outcome: "voices" }, await reader.start(id)));
   }));
-  /* A person's one confirmation of the names of speakers the app numbered (from the words or the voices). */
+  /* A person's names for speakers (optional, under Controls): any label the text uses but a clip's, a quotation's or an
+     advertisement's. Only the names change; readings made under the old names say they are out of date. */
   app.post("/api/runs/:id/confirm-names", wrap(async (req, res) => {
     await store.confirmNames(req.params.id, req.body && req.body.names, "person at this computer");
     res.json(await store.bundle(req.params.id));

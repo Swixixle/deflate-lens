@@ -27,6 +27,8 @@ function classify(url) {
   if (YT.videoId(u.href)) return { kind: "youtube", id: YT.videoId(u.href), url: u.href };
   if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return { kind: "youtube-other", url: u.href };
   if (/\.(rss|xml)$/i.test(u.pathname) || /\/(rss|feed)\/?$/i.test(u.pathname) || /feeds?\./.test(host) || /rss/i.test(host)) return { kind: "feed", url: u.href };
+  // a link straight to an audio file: nothing to find, only the audio to turn into text
+  if (/\.(mp3|m4a|m4b|aac|wav|ogg|oga|opus|flac)$/i.test(u.pathname)) return { kind: "audio", url: u.href };
   return { kind: "page", url: u.href };
 }
 
@@ -124,12 +126,21 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
     return feed;
   }
 
+  /* The show as a located episode carries it: its name, feed and page, and who the listing says runs it (the feed's
+     author and <podcast:person> hosts, Apple's artist name). Used to name speakers; never proof of who speaks when. */
+  function showOf(feed, name, artist) { return { name: feed.title || name || "", feedUrl: feed.url, link: feed.link, author: feed.author || "", artist: artist || "", persons: feed.persons || [] }; }
   /* Step 0: the link to an episode (or a list to choose from). */
   async function locate(input, step) {
     const c = classify(input.url);
     if (c.kind === "invalid") throw Object.assign(new Error("that is not a link"), { status: 400 });
     if (c.kind === "youtube") return { kind: "video", video: { id: c.id, url: c.url } };
     if (c.kind === "youtube-other") throw Object.assign(new Error("a YouTube channel or playlist link; paste the link to one video"), { status: 400 });
+    if (c.kind === "audio") {
+      if (isPrivateHost(new URL(c.url).hostname)) throw Object.assign(new Error("the chain does not fetch addresses on this computer or a private network"), { status: 400, code: "private_address" });
+      step("Audio file", "the link is an audio file; it can be turned into text");
+      const name = decodeURIComponent(new URL(c.url).pathname.split("/").pop() || "audio");
+      return { kind: "episode", show: null, item: { title: name.replace(/\.[a-z0-9]+$/i, ""), guid: "", link: "", pubDate: "", duration: null, description: "", author: "", persons: [], enclosure: { url: c.url, type: "", length: null }, transcripts: [], youtube: "" }, matchedBy: "the audio file at the link given", audioOnly: true };
+    }
     if (c.kind === "apple-episode" || c.kind === "apple-show") {
       step("Apple Podcasts", "looking up the show");
       const a = await appleLookup(fetchFn, c.showId);
@@ -142,7 +153,7 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
       if (!want) throw new Error("Apple's listing does not include this episode (it may be older than the 300 most recent, or the link is wrong); open the show's link and pick the episode");
       const m = matchEpisode(feed, want);
       if (!m) throw new Error("the episode Apple names (" + (ae ? ae.title : input.guid) + ") is not in the show's feed" + (feed.truncated ? " (the feed arrived incomplete; try again)" : ""));
-      return { kind: "episode", show: { name: feed.title || a.show.name, feedUrl: feed.url, link: feed.link }, item: m.item, matchedBy: "Apple's listing, then the feed by " + m.matchedBy, apple: ae };
+      return { kind: "episode", show: showOf(feed, a.show.name, a.show.artist), item: m.item, matchedBy: "Apple's listing, then the feed by " + m.matchedBy, apple: ae };
     }
     if (c.kind === "spotify-episode" || c.kind === "spotify-show") {
       step("Spotify", "reading the title");
@@ -157,7 +168,7 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
         const feed = await readFeed(show.feedUrl);
         if (!input.guid) return { kind: "choose", show, feed, episodes: episodesToChoose(feed), note: "matched from Spotify by show title" };
         const m = matchEpisode(feed, { guid: input.guid }); if (!m) throw new Error("that episode is not in the feed");
-        return { kind: "episode", show: { name: feed.title || show.name, feedUrl: feed.url, link: feed.link }, item: m.item, matchedBy: "Spotify show title → Apple → feed by guid" };
+        return { kind: "episode", show: showOf(feed, show.name, show.artist), item: m.item, matchedBy: "Spotify show title → Apple → feed by guid" };
       }
       step("Spotify", "episode: " + title + "; looking it up at Apple by title");
       const hits = await appleSearchEpisodes(fetchFn, title);
@@ -168,13 +179,13 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
       const feed = await readFeed(pick.feedUrl);
       const m = matchEpisode(feed, { guid: pick.guid, enclosureUrl: pick.audioUrl, title: pick.title, pubDate: pick.releaseDate });
       if (!m) throw new Error("the episode is listed at Apple but not in the show's feed");
-      return { kind: "episode", show: { name: feed.title || pick.show, feedUrl: feed.url, link: feed.link }, item: m.item, matchedBy: "Spotify episode title → Apple search → feed by " + m.matchedBy, ambiguous: exact.length > 1 ? exact.map(h => h.show) : null,
+      return { kind: "episode", show: showOf(feed, pick.show), item: m.item, matchedBy: "Spotify episode title → Apple search → feed by " + m.matchedBy, ambiguous: exact.length > 1 ? exact.map(h => h.show) : null,
         match: { method: "title-lookup", basis: "the episode title Spotify shows, found once at Apple", episode: { title: title }, found: { show: pick.show || "", title: pick.title || "" } } };
     }
     if (c.kind === "feed") {
       step("Feed", "reading the feed");
       const feed = await readFeed(c.url);
-      if (input.guid) { const m = matchEpisode(feed, { guid: input.guid }); if (!m) throw new Error("that episode is not in the feed"); return { kind: "episode", show: { name: feed.title, feedUrl: feed.url, link: feed.link }, item: m.item, matchedBy: "feed by guid" }; }
+      if (input.guid) { const m = matchEpisode(feed, { guid: input.guid }); if (!m) throw new Error("that episode is not in the feed"); return { kind: "episode", show: showOf(feed), item: m.item, matchedBy: "feed by guid" }; }
       return { kind: "choose", show: { name: feed.title, feedUrl: feed.url }, feed, episodes: episodesToChoose(feed) };
     }
     // a page: a feed link in its head, or a YouTube embed, or an article (handed to the importer by the caller)
@@ -182,17 +193,17 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
     step("Page", "reading the page");
     const r = await fetchText(fetchFn, c.url, { timeoutMs: 30000 });
     if (r.status !== 200) throw Object.assign(new Error("the page answered HTTP " + r.status), { status: 502 });
-    if (looksLikeFeed(r.text)) { const feed = Object.assign(parseFeed(r.text), { url: r.url }); if (input.guid) { const m = matchEpisode(feed, { guid: input.guid }); if (m) return { kind: "episode", show: { name: feed.title, feedUrl: feed.url, link: feed.link }, item: m.item, matchedBy: "feed by guid" }; } return { kind: "choose", show: { name: feed.title, feedUrl: feed.url }, feed, episodes: episodesToChoose(feed) }; }
+    if (looksLikeFeed(r.text)) { const feed = Object.assign(parseFeed(r.text), { url: r.url }); if (input.guid) { const m = matchEpisode(feed, { guid: input.guid }); if (m) return { kind: "episode", show: showOf(feed), item: m.item, matchedBy: "feed by guid" }; } return { kind: "choose", show: { name: feed.title, feedUrl: feed.url }, feed, episodes: episodesToChoose(feed) }; }
     const feedLink = /<link[^>]+type=["']application\/(?:rss|atom)\+xml["'][^>]*href=["']([^"']+)["']/i.exec(r.text) || /<link[^>]+href=["']([^"']+)["'][^>]*type=["']application\/(?:rss|atom)\+xml["']/i.exec(r.text);
     const yt = YT.videoId(r.text.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z0-9_-]{11}/) ? r.text.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/embed\/|youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z0-9_-]{11}/)[0] : "");
     if (feedLink) {
       const feedUrl = new URL(decodeEntities(feedLink[1]), r.url).href;
       step("Page", "it links to a feed: " + feedUrl);
       const feed = await readFeed(feedUrl);
-      if (input.guid) { const picked = matchEpisode(feed, {guid:input.guid}); if (!picked) throw new Error("That episode is not in the feed."); return {kind:"episode", show:{name:feed.title,feedUrl:feed.url,link:feed.link}, item:picked.item, matchedBy:"feed by guid"}; }
+      if (input.guid) { const picked = matchEpisode(feed, {guid:input.guid}); if (!picked) throw new Error("That episode is not in the feed."); return {kind:"episode", show:showOf(feed), item:picked.item, matchedBy:"feed by guid"}; }
       const m = matchEpisode(feed, { title: decodeEntities((r.text.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [, ""])[1]).replace(/\s+/g, " ").trim() }) || (feed.items || []).map(i => i.link && i.link.replace(/\/$/, "") === c.url.replace(/\/$/, "") ? { item: i, matchedBy: "page link" } : null).find(Boolean);
-      if (m) return { kind: "episode", show: { name: feed.title, feedUrl: feed.url, link: feed.link }, item: m.item, matchedBy: "the page's feed by " + m.matchedBy, pageHtml: r.text };
-      if (input.guid) { const mm = matchEpisode(feed, { guid: input.guid }); if (mm) return { kind: "episode", show: { name: feed.title, feedUrl: feed.url, link: feed.link }, item: mm.item, matchedBy: "feed by guid" }; }
+      if (m) return { kind: "episode", show: showOf(feed), item: m.item, matchedBy: "the page's feed by " + m.matchedBy, pageHtml: r.text };
+      if (input.guid) { const mm = matchEpisode(feed, { guid: input.guid }); if (mm) return { kind: "episode", show: showOf(feed), item: mm.item, matchedBy: "feed by guid" }; }
       return { kind: "choose", show: { name: feed.title, feedUrl: feed.url }, feed, episodes: episodesToChoose(feed), note: "the page links to this feed; pick the episode" };
     }
     if (yt) return { kind: "video", video: { id: yt, url: "https://www.youtube.com/watch?v=" + yt }, note: "the page embeds this video" };
@@ -203,73 +214,77 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
   /* Steps 1–4 for a located episode. `choice` is the person's engine choice for step 4 ("local" | "cloud" | undefined). */
   async function words(located, { step, signal, choice, onProgress }) {
     const tried = [];
-    const base = { show: located.show, episode: located.item ? { title: located.item.title, guid: located.item.guid, pubDate: located.item.pubDate, duration: located.item.duration, link: located.item.link, audioUrl: located.item.enclosure && located.item.enclosure.url || "" } : null, matchedBy: located.matchedBy || "", ambiguous: located.ambiguous || null, match: located.match || null, identity: located.match ? "needs_confirmation" : "direct" };
+    // the episode as the feed lists it, with its notes and the people it names: what the speakers are named from
+    const base = { show: located.show, episode: located.item ? { title: located.item.title, guid: located.item.guid, pubDate: located.item.pubDate, duration: located.item.duration, link: located.item.link, audioUrl: located.item.enclosure && located.item.enclosure.url || "", description: located.item.description || "", author: located.item.author || "", persons: located.item.persons || [] } : null, matchedBy: located.matchedBy || "", ambiguous: located.ambiguous || null, match: located.match || null, identity: located.match ? "needs_confirmation" : "direct" };
     if (located.kind === "video") {
       step("YouTube", "reading captions");
       const r = await YT.captions({ id: located.video.id, fetch: fetchFn, env, run: runFn });
-      return Object.assign(base, { ok: true, text: r.text, title: r.title, speakers: r.speakers, tried: r.tried, source: { kind: "youtube-captions", url: located.video.url, reader: r.reader, automatic: !!(r.track && r.track.automatic), language: r.track && r.track.language || "", note: (r.track && r.track.automatic ? "YouTube's automatic captions" : "captions published with the video") + "; no speaker labels" + (r.reader === "built-in" ? "; read by the built-in reader" : "; read with yt-dlp") } });
+      return Object.assign(base, { ok: true, text: r.text, title: r.title, speakers: r.speakers, tried: r.tried, channel: r.channel || "", source: { kind: "youtube-captions", url: located.video.url, reader: r.reader, automatic: !!(r.track && r.track.automatic), language: r.track && r.track.language || "", note: (r.track && r.track.automatic ? "YouTube's automatic captions" : "captions published with the video") + "; no speaker labels" + (r.reader === "built-in" ? "; read by the built-in reader" : "; read with yt-dlp") } });
     }
     const item = located.item;
-    // 1. the feed's transcript
-    for (const t of bestTranscripts(item.transcripts)) {
-      step("Feed transcript", "fetching " + t.url);
-      try {
-        const r = await fetchText(fetchFn, t.url, { timeoutMs: 40000, accept: "*/*" });
-        if (r.status !== 200) { tried.push({ step: "feed transcript", url: t.url, error: "HTTP " + r.status }); continue; }
-        const conv = transcriptToText(r.text, t.type || r.type, t.url);
-        if (conv.text.replace(/\s+/g, " ").length < 200) { tried.push({ step: "feed transcript", url: t.url, error: "only " + conv.text.length + " characters of text" }); continue; }
-        return Object.assign(base, { ok: true, text: conv.text, title: item.title, speakers: conv.speakers, tried, source: { kind: "feed-transcript", url: t.url, format: conv.format, type: t.type, note: "the transcript the show publishes in its feed" + (conv.speakers.length ? " (speakers: " + conv.speakers.join(", ") + ")" : " (no speaker labels)") } });
-      } catch (e) { tried.push({ step: "feed transcript", url: t.url, error: e.message }); }
-    }
-    if (!item.transcripts.length) tried.push({ step: "feed transcript", error: "the feed has no transcript for this episode" });
-    if (signal && signal.aborted) throw cancelled();
-    // 2. YouTube: a video link in the episode's notes, or a search by title when yt-dlp is installed
-    let video = item.youtube ? { id: YT.videoId(item.youtube), via: "a link in the episode notes" } : null;
-    if (!video) {
-      // A title alone does not identify a video (clips, compilations and other episodes share words). A search result
-      // is taken only when it carries the episode's whole title AND its length is within max(120 s, 5% of the episode's
-      // length) of the episode's (podcast audio carries ads the video does not; measured on JRE #2308 and #2180, both
-      // 299 s longer than the video). The first passing result is used. Passing this filter is a heuristic match, not
-      // proof of the channel or the recording: the run records it as needing the person's confirmation.
-      const want = norm(item.title);
-      if (!item.duration || want.length < 12) tried.push({ step: "youtube search", error: "no video is linked from this episode, and its " + (!item.duration ? "length is not given" : "title is too short") + " to identify one by search" });
-      else {
-        const rows = await YT.searchVideo(item.title + " " + (located.show && located.show.name || ""), env, runFn).catch(e => { tried.push({ step: "youtube search", error: e.message }); return []; });
-        if (rows === null) tried.push({ step: "youtube search", error: "needs yt-dlp (brew install yt-dlp); not installed" });
+    if (located.audioOnly) tried.push({ step: "transcript", error: "the link is an audio file, so there is no published transcript to look for" });
+    if (!located.audioOnly) {
+      // 1. the feed's transcript
+      for (const t of bestTranscripts(item.transcripts)) {
+        step("Feed transcript", "fetching " + t.url);
+        try {
+          const r = await fetchText(fetchFn, t.url, { timeoutMs: 40000, accept: "*/*" });
+          if (r.status !== 200) { tried.push({ step: "feed transcript", url: t.url, error: "HTTP " + r.status }); continue; }
+          const conv = transcriptToText(r.text, t.type || r.type, t.url);
+          if (conv.text.replace(/\s+/g, " ").length < 200) { tried.push({ step: "feed transcript", url: t.url, error: "only " + conv.text.length + " characters of text" }); continue; }
+          return Object.assign(base, { ok: true, text: conv.text, title: item.title, speakers: conv.speakers, tried, source: { kind: "feed-transcript", url: t.url, format: conv.format, type: t.type, note: "the transcript the show publishes in its feed" + (conv.speakers.length ? " (speakers: " + conv.speakers.join(", ") + ")" : " (no speaker labels)") } });
+        } catch (e) { tried.push({ step: "feed transcript", url: t.url, error: e.message }); }
+      }
+      if (!item.transcripts.length) tried.push({ step: "feed transcript", error: "the feed has no transcript for this episode" });
+      if (signal && signal.aborted) throw cancelled();
+      // 2. YouTube: a video link in the episode's notes, or a search by title when yt-dlp is installed
+      let video = item.youtube ? { id: YT.videoId(item.youtube), via: "a link in the episode notes" } : null;
+      if (!video) {
+        // A title alone does not identify a video (clips, compilations and other episodes share words). A search result
+        // is taken only when it carries the episode's whole title AND its length is within max(120 s, 5% of the episode's
+        // length) of the episode's (podcast audio carries ads the video does not; measured on JRE #2308 and #2180, both
+        // 299 s longer than the video). The first passing result is used. Passing this filter is a heuristic match, not
+        // proof of the channel or the recording: the run records it as needing the person's confirmation.
+        const want = norm(item.title);
+        if (!item.duration || want.length < 12) tried.push({ step: "youtube search", error: "no video is linked from this episode, and its " + (!item.duration ? "length is not given" : "title is too short") + " to identify one by search" });
         else {
-          const tol = Math.max(120, item.duration * 0.05);
-          const fits = rows.filter(v => Number.isFinite(v.duration) && Math.abs(v.duration - item.duration) <= tol && (" " + norm(v.title) + " ").includes(" " + want + " "));
-          if (fits.length) {
-            const v = fits[0], off = Math.round(Math.abs(v.duration - item.duration) / 60), row = x => ({ id: x.id, url: "https://www.youtube.com/watch?v=" + x.id, title: x.title, channel: x.channel || "", durationSeconds: x.duration });
-            video = { id: v.id, via: "a YouTube search: “" + v.title + "” (" + (v.channel || "unknown channel") + "), with the episode's full title and a length within " + (off < 1 ? "a minute" : off + " min") + " of it; confirm it is the same episode",
-              match: { method: "youtube-search", basis: "title and length", episode: { title: item.title, durationSeconds: item.duration }, video: row(v), toleranceSeconds: Math.round(tol), differenceSeconds: Math.round(Math.abs(v.duration - item.duration)), passing: fits.length, alternatives: fits.slice(1, 4).map(row) } };
+          const rows = await YT.searchVideo(item.title + " " + (located.show && located.show.name || ""), env, runFn).catch(e => { tried.push({ step: "youtube search", error: e.message }); return []; });
+          if (rows === null) tried.push({ step: "youtube search", error: "needs yt-dlp (brew install yt-dlp); not installed" });
+          else {
+            const tol = Math.max(120, item.duration * 0.05);
+            const fits = rows.filter(v => Number.isFinite(v.duration) && Math.abs(v.duration - item.duration) <= tol && (" " + norm(v.title) + " ").includes(" " + want + " "));
+            if (fits.length) {
+              const v = fits[0], off = Math.round(Math.abs(v.duration - item.duration) / 60), row = x => ({ id: x.id, url: "https://www.youtube.com/watch?v=" + x.id, title: x.title, channel: x.channel || "", durationSeconds: x.duration });
+              video = { id: v.id, via: "a YouTube search: “" + v.title + "” (" + (v.channel || "unknown channel") + "), with the episode's full title and a length within " + (off < 1 ? "a minute" : off + " min") + " of it; confirm it is the same episode",
+                match: { method: "youtube-search", basis: "title and length", episode: { title: item.title, durationSeconds: item.duration }, video: row(v), toleranceSeconds: Math.round(tol), differenceSeconds: Math.round(Math.abs(v.duration - item.duration)), passing: fits.length, alternatives: fits.slice(1, 4).map(row) } };
+            }
+            else tried.push({ step: "youtube search", error: rows.length ? "no result had both the episode's full title and its length" : "no results" });
           }
-          else tried.push({ step: "youtube search", error: rows.length ? "no result had both the episode's full title and its length" : "no results" });
         }
       }
+      if (video && video.id) {
+        step("YouTube", "reading captions (" + video.via + ")");
+        try { const r = await YT.captions({ id: video.id, fetch: fetchFn, env, run: runFn }); return Object.assign(base, { ok: true, text: r.text, title: item.title, speakers: r.speakers, tried: tried.concat(r.tried || []), source: { kind: "youtube-captions", url: "https://www.youtube.com/watch?v=" + video.id, reader: r.reader, automatic: !!(r.track && r.track.automatic), videoTitle: r.title, note: (r.track && r.track.automatic ? "YouTube's automatic captions" : "captions published with the video") + " for the video found via " + video.via + "; no speaker labels" },
+          match: video.match || base.match || { method: "episode-notes-link", basis: "a link in the episode's notes" }, identity: video.match || base.match ? "needs_confirmation" : "direct" }); }
+        catch (e) { tried.push({ step: "youtube captions", url: "https://www.youtube.com/watch?v=" + video.id, error: e.message }); }
+      }
+      if (signal && signal.aborted) throw cancelled();
+      // 3. the episode's page, when it carries a transcript
+      if (item.link && /^https?:\/\//.test(item.link)) {
+        step("Episode page", "reading " + item.link);
+        try {
+          const r = located.pageHtml ? { status: 200, text: located.pageHtml } : await fetchText(fetchFn, item.link, { timeoutMs: 30000 });
+          if (r.status === 200) {
+            const page = htmlToText(r.text);
+            const tl = /<a[^>]+href=["']([^"']+\.(?:vtt|srt|json|txt)(?:\?[^"']*)?)["'][^>]*>[^<]*transcript/i.exec(r.text) || /<a[^>]+href=["']([^"']*transcript[^"']*)["']/i.exec(r.text);
+            if (tl) { const tu = new URL(decodeEntities(tl[1]), item.link).href; const tr = await fetchText(fetchFn, tu, { timeoutMs: 40000, accept: "*/*" }); if (tr.status === 200) { const conv = transcriptToText(tr.text, tr.type, tu); if (conv.text.length > Math.max(2000, 3 * (item.description || "").length)) return Object.assign(base, { ok: true, text: conv.text, title: item.title, speakers: conv.speakers, tried, source: { kind: "episode-page", url: tu, format: conv.format, note: "a transcript linked from the episode's page" + (conv.speakers.length ? "" : " (no speaker labels)") } }); } }
+            if (/transcript/i.test(page.text) && page.text.length > Math.max(6000, 4 * (item.description || "").length) && (item.duration ? page.text.length > item.duration * 8 : true)) return Object.assign(base, { ok: true, text: page.text, title: item.title, speakers: [], tried, source: { kind: "episode-page", url: item.link, format: "html", note: "the episode's page, which appears to carry the transcript (check that it is not show notes)" } });
+            tried.push({ step: "episode page", url: item.link, error: "no transcript on the page (" + page.text.length + " characters of text)" });
+          } else tried.push({ step: "episode page", url: item.link, error: "HTTP " + r.status });
+        } catch (e) { tried.push({ step: "episode page", url: item.link, error: e.message }); }
+      } else tried.push({ step: "episode page", error: "the feed gives no page for this episode" });
+      if (signal && signal.aborted) throw cancelled();
     }
-    if (video && video.id) {
-      step("YouTube", "reading captions (" + video.via + ")");
-      try { const r = await YT.captions({ id: video.id, fetch: fetchFn, env, run: runFn }); return Object.assign(base, { ok: true, text: r.text, title: item.title, speakers: r.speakers, tried: tried.concat(r.tried || []), source: { kind: "youtube-captions", url: "https://www.youtube.com/watch?v=" + video.id, reader: r.reader, automatic: !!(r.track && r.track.automatic), videoTitle: r.title, note: (r.track && r.track.automatic ? "YouTube's automatic captions" : "captions published with the video") + " for the video found via " + video.via + "; no speaker labels" },
-        match: video.match || base.match || { method: "episode-notes-link", basis: "a link in the episode's notes" }, identity: video.match || base.match ? "needs_confirmation" : "direct" }); }
-      catch (e) { tried.push({ step: "youtube captions", url: "https://www.youtube.com/watch?v=" + video.id, error: e.message }); }
-    }
-    if (signal && signal.aborted) throw cancelled();
-    // 3. the episode's page, when it carries a transcript
-    if (item.link && /^https?:\/\//.test(item.link)) {
-      step("Episode page", "reading " + item.link);
-      try {
-        const r = located.pageHtml ? { status: 200, text: located.pageHtml } : await fetchText(fetchFn, item.link, { timeoutMs: 30000 });
-        if (r.status === 200) {
-          const page = htmlToText(r.text);
-          const tl = /<a[^>]+href=["']([^"']+\.(?:vtt|srt|json|txt)(?:\?[^"']*)?)["'][^>]*>[^<]*transcript/i.exec(r.text) || /<a[^>]+href=["']([^"']*transcript[^"']*)["']/i.exec(r.text);
-          if (tl) { const tu = new URL(decodeEntities(tl[1]), item.link).href; const tr = await fetchText(fetchFn, tu, { timeoutMs: 40000, accept: "*/*" }); if (tr.status === 200) { const conv = transcriptToText(tr.text, tr.type, tu); if (conv.text.length > Math.max(2000, 3 * (item.description || "").length)) return Object.assign(base, { ok: true, text: conv.text, title: item.title, speakers: conv.speakers, tried, source: { kind: "episode-page", url: tu, format: conv.format, note: "a transcript linked from the episode's page" + (conv.speakers.length ? "" : " (no speaker labels)") } }); } }
-          if (/transcript/i.test(page.text) && page.text.length > Math.max(6000, 4 * (item.description || "").length) && (item.duration ? page.text.length > item.duration * 8 : true)) return Object.assign(base, { ok: true, text: page.text, title: item.title, speakers: [], tried, source: { kind: "episode-page", url: item.link, format: "html", note: "the episode's page, which appears to carry the transcript (check that it is not show notes)" } });
-          tried.push({ step: "episode page", url: item.link, error: "no transcript on the page (" + page.text.length + " characters of text)" });
-        } else tried.push({ step: "episode page", url: item.link, error: "HTTP " + r.status });
-      } catch (e) { tried.push({ step: "episode page", url: item.link, error: e.message }); }
-    } else tried.push({ step: "episode page", error: "the feed gives no page for this episode" });
-    if (signal && signal.aborted) throw cancelled();
     // 4. the audio
     const audioUrl = item.enclosure && item.enclosure.url;
     if (!audioUrl) return Object.assign(base, { ok: false, tried, reason: "no transcript was found and the feed has no audio file for this episode" });

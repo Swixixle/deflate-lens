@@ -72,6 +72,19 @@ function sourceIdentity(run) {
 }
 
 function unknownBasis() { return { transcriptUpdatedAt: "", inputHash: "", attrSig: "", origin: "unknown" }; }
+/* The names a reading is told and shows (0.14): a label's name on the run, or the label itself written as a name when the
+   run lists none. `namesSigFor` fingerprints the names of every label the text uses (and every label a correction
+   moved a turn to), so a reading made under other names is out of date: its own words name the speakers. */
+const SET_APART_KEY = /^(?:CLIP|QUOTE|AD) \d+$/;
+// records on a run's provenance that only the server writes; a page save never drops them
+const SERVER_PROVENANCE = ["assignment", "structure", "voices", "voicesAttempt", "labelsOrigin", "namesConfirmedAt", "namesConfirmedBy", "identification", "namesByPerson", "namesChangedAt"];
+const labelName = shared.labelName;
+function shownName(run, key) { const s = (run && run.speakers || []).find(x => x.key === key); return s && s.name ? s.name : labelName(key); }
+function namesSigFor(run, turns) {
+  const keys = new Set(shared.speakerLabels(turns || [])); Object.values(run && run.provenance && run.provenance.overrides || {}).forEach(k => keys.add(k));
+  return sha256([...keys].sort().map(k => k + "=" + shownName(run, k)).join("\n")).slice(0, 16);
+}
+function namesDiffer(a, b) { const keys = new Set((a || []).concat(b || []).map(s => s.key)); const ra = { speakers: a || [] }, rb = { speakers: b || [] }; return [...keys].some(k => shownName(ra, k) !== shownName(rb, k)); }
 function passagesSignature(passages) { return passages.filter(p => p.status === "done").map(p => p.id + "@" + (p.analyzedAt || "")).join(","); }
 /* Claim ids name an unchanged speaker and sentence. A client cannot recycle an old id for new wording. */
 function assignClaimIds(analysis, previous) {
@@ -305,12 +318,17 @@ class Store {
     // text changed = the hash of the text it was made from differs from the hash of the text now (an undone edit is no
     // change); readings from before 0.8.0 carry no hash and fall back to the timestamp rule
     const textChanged = b => b.inputHash ? b.inputHash !== run.input.sha256 : (b.transcriptUpdatedAt !== run.transcriptUpdatedAt);
+    // names changed = the names a reading was made under differ from the names now (0.14); a reading from before names
+    // were recorded on it is out of date only when a name changed after it was made
+    const nsig = namesSigFor(run, turns), namesAt = (run.provenance && run.provenance.namesChangedAt) || "";
+    const namesChanged = (b, at) => b.namesSig ? b.namesSig !== nsig : !!(namesAt && String(at || "") < namesAt);
     passages.forEach(p => {
       p.stale = [];
       if (p.analysis && (!p.basedOn || p.basedOn.origin === "unknown")) p.stale.push("the input used for this analysis is unknown");
       if (p.analysis && p.basedOn) {
         if (textChanged(p.basedOn)) p.stale.push("transcript changed since this analysis");
         if (p.basedOn.attrSig !== sig) p.stale.push("attribution changed since this analysis");
+        if (run.kind !== "claim" && namesChanged(p.basedOn, p.analyzedAt)) p.stale.push("speaker names changed since this analysis");
       }
       // quote checks are computed on every read from the transcript as it is now; a client's stored flags are never trusted
       if (p.analysis) p.quoteCheck = shared.verifyPassage(turns, overrides, p);
@@ -324,6 +342,7 @@ class Store {
       if (summary.basedOn.passagesSig !== cur) summary.stale.push("passages changed since the patterns were found");
       if (summary.basedOn.attrSig && summary.basedOn.attrSig !== sig) summary.stale.push("attribution changed since the patterns were found");
       if ((summary.basedOn.inputHash || summary.basedOn.transcriptUpdatedAt) && textChanged(summary.basedOn)) summary.stale.push("transcript changed since the patterns were found");
+      if (run.kind !== "claim" && namesChanged(summary.basedOn, summary.createdAt)) summary.stale.push("speaker names changed since the patterns were found");
       const used = new Set(String(summary.basedOn.passagesSig || "").split(",").map(x => x.split("@")[0]));
       if (passages.some(p => used.has(p.id) && p.stale.length)) summary.stale.push("a card it was based on is stale");
     }
@@ -420,10 +439,17 @@ class Store {
     const run = await this.getRun(id), transcript = await this.getTranscript(id);
     if (!run || run.example) throw Object.assign(new Error("This run cannot be changed."), { status: run ? 403 : 404 });
     if (sha256(transcript) !== basis.inputHash) throw Object.assign(new Error("The input changed while the speakers were worked out; try again on the current text."), { status: 409, code: "input_changed" });
+    const was = run.provenance || {};
     await this._saveRun(id, { speakers }, text);
     const after = await this.getRun(id);
-    const origin = record.mode === "labelled" ? (after.provenance && after.provenance.labelsOrigin) || "source" : "words";
+    // clips, quotations and advertisements set apart in a labelled text leave the labels as they were: where they came
+    // from (the source, the recording as Deepgram transcribed it, a model's assignment) is carried over with its record
+    const labelled = record.mode === "labelled";
+    const origin = labelled ? was.labelsOrigin || "source" : "words";
     after.provenance = Object.assign({}, after.provenance, { structure: Object.assign({}, record, { resultHash: sha256(text) }), labelsOrigin: origin });
+    if (labelled) { for (const k of ["voices", "assignment"]) if (was[k] !== undefined) after.provenance[k] = was[k]; if (was.method) after.provenance.method = was.method; }
+    // why the recording's voices could not be used, when they were tried first, stays with the labels the words gave
+    if (was.voicesAttempt) after.provenance.voicesAttempt = was.voicesAttempt;
     if (record.mode !== "labelled") after.provenance.method = record.method;
     delete after.id;
     await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(after, null, 2));
@@ -449,30 +475,85 @@ class Store {
     const archived = (after.provenanceHistory || []).some(h => h.provenance === was || JSON.stringify(h.provenance) === JSON.stringify(was));
     if (!archived && (was.structure || was.voices || was.assignment)) after.provenanceHistory = (after.provenanceHistory || []).concat([{ provenance: was, transcriptUpdatedAt: run.transcriptUpdatedAt || run.createdAt, replacedAt: after.updatedAt, why: "speakers separated by voice from the recording" }]);
     after.provenance = Object.assign({}, after.provenance, { voices: Object.assign({}, record, { file, resultHash: sha256(text) }), labelsOrigin: "voices", method: record.method });
-    delete after.provenance.structure; delete after.provenance.assignment; delete after.provenance.namesConfirmedAt; delete after.provenance.namesConfirmedBy;
+    delete after.provenance.structure; delete after.provenance.assignment; delete after.provenance.namesConfirmedAt; delete after.provenance.namesConfirmedBy; delete after.provenance.voicesAttempt;
     delete after.id;
     await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(after, null, 2));
     return Object.assign({ id }, after);
   }); }
-  /* A person's one confirmation of speaker names (labels worked out by the app from the words or the voices). Only the
-     names change; the text and its labels stay, so no reading goes out of date. */
-  async confirmNames(id, names, by) { return this.withLock(id, async () => {
-    const run = await this.getRun(id);
+  /* Deepgram separated the voices as it transcribed the recording (the transcript chain's last step): the labels came from
+     the recording, so they are recorded as voices for this exact text, as voices lined up with a text are (commitVoices).
+     Clips, quotations and advertisements in it have not been looked for yet (clipsChecked false): the reading's first
+     step does that when the words introduce one. */
+  async recordTranscribedVoices(id, record) { return this.withLock(id, async () => {
+    const run = await this.getRun(id), transcript = await this.getTranscript(id);
     if (!run || run.example) throw Object.assign(new Error("This run cannot be changed."), { status: run ? 403 : 404 });
-    const origin = run.provenance && run.provenance.labelsOrigin;
-    if (!["words", "voices"].includes(origin)) throw Object.assign(new Error("These speaker names did not come from the words or the recording; change them under Who said what."), { status: 409, code: "not_worked_out" });
-    const given = new Map((Array.isArray(names) ? names : []).map(n => [String(n && n.key || "").toUpperCase().trim(), String(n && n.name || "").replace(/\s+/g, " ").trim().slice(0, 60)]));
-    const speakers = (run.speakers || []).map(s => {
-      const name = given.get(String(s.key).toUpperCase());
-      if (!name || !/^SPEAKER \d+$/.test(s.key)) return s;
-      return Object.assign({}, s, { name, bio: name === s.name ? s.bio : "Named by a person at this computer." });
-    });
-    await this._saveRun(id, { speakers });
+    const h = sha256(transcript);
+    run.provenance = Object.assign({}, run.provenance, { voices: Object.assign({}, record, { at: nowISO(), inputHash: h, resultHash: h, clipsChecked: false, file: "" }), labelsOrigin: "voices", method: record.method || "" });
+    delete run.id; run.updatedAt = nowISO();
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
+    return Object.assign({ id }, run);
+  }); }
+  /* Names connected to numbered or unnamed voices (identify.js): only the names change, never the text or its labels.
+     Refused when the text or a label moved meanwhile; a name changed meanwhile (by a person, say) is left as it is. */
+  async commitIdentification(id, basis, { speakers, record, seen }) { return this.withLock(id, async () => {
+    const run = await this.getRun(id), transcript = await this.getTranscript(id);
+    if (!run || run.example) throw Object.assign(new Error("This run cannot be changed."), { status: run ? 403 : 404 });
+    if (!basis || !basis.inputHash || sha256(transcript) !== basis.inputHash || shared.attrSig(run.provenance && run.provenance.overrides) !== basis.attrSig)
+      throw Object.assign(new Error("The text or its speaker labels changed while the speakers were identified; try again on the current text."), { status: 409, code: "input_changed" });
+    const next = (run.speakers || []).map(s => Object.assign({}, s)), changed = [], keptMeanwhile = [];
+    for (const key of record.nameable || []) {
+      const want = (speakers || []).find(s => s.key === key); if (!want) continue;
+      let have = next.find(s => s.key === key);
+      const now = have ? have.name : "", then = seen && Object.prototype.hasOwnProperty.call(seen, key) ? seen[key] : now;
+      if (now !== then) { keptMeanwhile.push(key); continue; }
+      if (!have) { have = { key, name: labelName(key), bio: "" }; next.push(have); }
+      if (shownName({ speakers: [have] }, key) !== want.name) changed.push(key);
+      have.name = want.name; have.bio = want.bio || "";
+    }
+    await this._saveRun(id, { speakers: next });
     const after = await this.getRun(id);
-    after.provenance = Object.assign({}, after.provenance, { namesConfirmedAt: nowISO(), namesConfirmedBy: by || "person at this computer" });
+    after.provenance = Object.assign({}, after.provenance, { identification: Object.assign({}, record, { changed, keptMeanwhile }) });
     delete after.id;
     await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(after, null, 2));
     return Object.assign({ id }, after);
+  }); }
+  /* A person's names for speakers (0.14: optional, for any label the text uses that is not a clip, a quotation or an
+     advertisement). Only the names (and, when given, bios) change; the text and its labels stay. A name a person gives is
+     theirs: the automatic identification never replaces it. An empty name puts the label's own name back. Readings made
+     under the old names say so (out of date), since their words name the speakers. */
+  async confirmNames(id, names, by) { return this.withLock(id, async () => {
+    const run = await this.getRun(id), transcript = await this.getTranscript(id);
+    if (!run || run.example) throw Object.assign(new Error("This run cannot be changed."), { status: run ? 403 : 404 });
+    if (run.kind === "claim") throw Object.assign(new Error("A typed claim has no speakers."), { status: 409, code: "no_speakers" });
+    const turns = this.parseFor(run, transcript), labels = new Set(shared.speakerLabels(turns));
+    Object.values(run.provenance && run.provenance.overrides || {}).forEach(k => labels.add(k));
+    const speakers = (run.speakers || []).map(s => Object.assign({}, s)), byPerson = Object.assign({}, run.provenance && run.provenance.namesByPerson);
+    let changed = false;
+    for (const n of (Array.isArray(names) ? names : []).slice(0, 40)) {
+      const key = String(n && n.key || "").toUpperCase().trim();
+      if (!labels.has(key) || key === "UNLABELED" || SET_APART_KEY.test(key)) continue;
+      let s = speakers.find(x => x.key === key); if (!s) { s = { key, name: labelName(key), bio: "" }; speakers.push(s); }
+      const name = String(n && n.name || "").replace(/\s+/g, " ").trim().slice(0, 80) || labelName(key);
+      if (name !== s.name) { s.name = name; byPerson[key] = name; changed = true; }
+      if (n && typeof n.bio === "string" && n.bio.trim().slice(0, 600) !== (s.bio || "")) { s.bio = n.bio.trim().slice(0, 600); changed = true; }
+    }
+    if (!changed) return Object.assign({ id }, run);
+    await this._saveRun(id, { speakers });
+    const after = await this.getRun(id);
+    after.provenance = Object.assign({}, after.provenance, { namesByPerson: byPerson, namesConfirmedAt: nowISO(), namesConfirmedBy: by || "person at this computer" });
+    delete after.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(after, null, 2));
+    return Object.assign({ id }, after);
+  }); }
+  /* Voices that could not be separated from the recording when the reading tried that first (reading.js): why, for this
+     exact text, so it is not tried again on its own and Controls can say why the words were used instead. */
+  async recordVoicesAttempt(id, attempt) { return this.withLock(id, async () => {
+    const run = await this.getRun(id), transcript = await this.getTranscript(id);
+    if (!run || run.example) throw Object.assign(new Error("This run cannot be changed."), { status: run ? 403 : 404 });
+    run.provenance = Object.assign({}, run.provenance, { voicesAttempt: Object.assign({}, attempt, { inputHash: sha256(transcript) }) });
+    delete run.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
+    return Object.assign({ id }, run);
   }); }
   async recordStructure(id, basis, record) { return this.withLock(id, async () => {
     const run = await this.getRun(id), transcript = await this.getTranscript(id);
@@ -575,7 +656,8 @@ class Store {
     if (serverRecord && serverRecord.transcriptJobId) next.transcriptJobId = serverRecord.transcriptJobId;
     // a model assignment of speaker names is a server record on the provenance; a client save never drops it
     // so is the speaker structure worked out from the words, and voices separated from a recording
-    if (incoming.provenance && cur.provenance) { const keep = {}; ["assignment", "structure", "voices", "labelsOrigin", "namesConfirmedAt", "namesConfirmedBy"].forEach(k => { if (cur.provenance[k] !== undefined) keep[k] = cur.provenance[k]; }); next.provenance = Object.assign({}, incoming.provenance, keep); }
+    // and so are the names connected to voices (identification), the names a person gave, and when a name last changed
+    if (incoming.provenance && cur.provenance) { const keep = {}; SERVER_PROVENANCE.forEach(k => { if (cur.provenance[k] !== undefined) keep[k] = cur.provenance[k]; }); next.provenance = Object.assign({}, incoming.provenance, keep); }
     delete next.id; next.example = false; next.createdAt = cur.createdAt; next.updatedAt = nowISO();
     next.transcriptUpdatedAt = cur.transcriptUpdatedAt || cur.createdAt;
     if (!next.input) next.input = inputRecord(curText, cur.parseMode, next.transcriptUpdatedAt);
@@ -606,6 +688,9 @@ class Store {
           delete next.provenance.confirmedAt; delete next.provenance.confirmedBy;
         } else {
           next.provenance = Object.assign({ overrides: {}, flags: [], notes: "", method: "", labelsFound: shared.speakerLabels(newTurns), transcriptNote: "Transcript edited " + next.updatedAt + "; the turn structure changed (" + oldTurns.length + " → " + newTurns.length + " turns), so earlier attribution decisions were archived in provenanceHistory and must be redone." }, attributionNote(shared.speakerLabels(newTurns), cur.kind));
+          // who named which voice outlives the text it was done on: the app's names stay recognisable as the app's (and are
+          // worked out again for the new text), and a person's names stay theirs
+          for (const k of ["identification", "namesByPerson", "namesChangedAt"]) if (was[k] !== undefined) next.provenance[k] = was[k];
         }
         next.status = cur.kind === "claim" ? "analyzed" : "draft";
         if (cur.title === autoTitle(old, cur.kind) && !(doc && doc.title)) next.title = autoTitle(transcript, cur.kind);
@@ -620,6 +705,8 @@ class Store {
         }
       }
     }
+    // a name shown for a speaker changed: readings made under the old names are out of date from now on (bundle)
+    if (incoming.speakers && namesDiffer(cur.speakers, next.speakers)) next.provenance = Object.assign({}, next.provenance, { namesChangedAt: next.updatedAt });
     await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(next, null, 2));
     return Object.assign({ id }, next);
   }
@@ -736,6 +823,7 @@ class Store {
     const basis = { transcriptUpdatedAt: requested.transcriptUpdatedAt, attrSig: requested.attrSig || "", inputHash: this._inputHashFor(run, transcript, requested.transcriptUpdatedAt) };
     if (!basis.attrSig) basis.origin = "unknown";
     if (requested.passagesSig !== undefined) basis.passagesSig = requested.passagesSig;
+    if (typeof requested.namesSig === "string" && /^[0-9a-f]{16}$/.test(requested.namesSig)) basis.namesSig = requested.namesSig;
     return basis;
   }
 
@@ -752,6 +840,9 @@ class Store {
       const currentAttr = shared.attrSig(run.provenance && run.provenance.overrides);
       if (basis.inputHash !== currentHash || basis.attrSig !== currentAttr) {
         const e = new Error("the input changed before this analysis started; reload and try again"); e.status = 409; e.code = "input_changed"; throw e;
+      }
+      if (basis.namesSig && basis.namesSig !== namesSigFor(run, this.parseFor(run, transcript))) {
+        const e = new Error("the speaker names changed before this analysis started; reload and try again"); e.status = 409; e.code = "input_changed"; throw e;
       }
       if (purpose === "patterns") {
         const current = passagesSignature((await this.bundle(id)).passages.filter(p => !p.stale.length && (!requested.preparedOnly || p.readingGate.status === "ready")));
@@ -998,4 +1089,4 @@ class Store {
   }
 }
 
-module.exports = { sourceIdentity, sourceKey, Store, nowISO, newId, ID_RE, hasRecords, mergeRecords, unionRecords, autoTitle, claimPassage, canonicalClaimText, inputRecord, sha256, leakScan, provenanceOf };
+module.exports = { sourceIdentity, sourceKey, Store, nowISO, newId, ID_RE, hasRecords, mergeRecords, unionRecords, autoTitle, claimPassage, canonicalClaimText, inputRecord, sha256, leakScan, provenanceOf, namesSigFor, shownName, labelName };

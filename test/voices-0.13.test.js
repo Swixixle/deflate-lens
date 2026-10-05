@@ -178,7 +178,7 @@ async function fixture(t, cloud, extra) {
 }
 const fakeDeepgram = (answer, configured = true) => { const calls = []; return { calls, name: "deepgram", model: "nova-3", configured: () => configured, async diarize({ audioUrl }) { calls.push(audioUrl); return typeof answer === "function" ? answer(audioUrl) : answer; } }; };
 
-test("the route: an unlabeled transcript gets numbered speakers from the recording, a name from the words, and a fresh reading", async t => {
+test("the route: an unlabeled transcript gets numbered speakers from the recording, a name from the words (0.14: by the identification step), and a fresh reading", async t => {
   const cloud = fakeDeepgram(recording(TRUTH));
   const f = await fixture(t, cloud);
   const made = await f.api("POST", "/api/intake", { input: TEXT });
@@ -204,26 +204,35 @@ test("the route: an unlabeled transcript gets numbered speakers from the recordi
   // Deepgram's words are kept beside the run, so the alignment can be checked without asking again
   const kept = JSON.parse(await fs.readFile(path.join(f.dir, "runs", id, pr.voices.file), "utf8"));
   assert.equal(kept.requestId, "req-test-1"); assert.ok(kept.words.length > 100); assert.deepEqual(kept.words[0].slice(0, 2), ["welcome", 0]);
-  // the guest named herself; the host is only numbered
+  // the guest named herself; the host, whom nothing names (a pasted text has no listing), keeps his number with the reason
   const sp = Object.fromEntries(b.run.speakers.map(s => [s.key, s]));
-  assert.equal(sp["SPEAKER 2"].name, "Dana Reyes"); assert.match(sp["SPEAKER 2"].bio, /Named from the words \(self identification\): “My name is Dana Reyes”/);
+  assert.equal(sp["SPEAKER 2"].name, "Dana Reyes"); assert.equal(sp["SPEAKER 2"].bio, "", "how a name was found is in the identification record, not in the bio the reading is told");
   assert.equal(sp["SPEAKER 1"].name, "Speaker 1");
-  assert.deepEqual(pr.voices.names.map(n => [n.key, n.name, n.applied]), [["SPEAKER 2", "Dana Reyes", true]]);
+  const dec = pr.identification.decisions.find(d => d.key === "SPEAKER 2");
+  assert.equal(dec.name, "Dana Reyes"); assert.ok(dec.kinds.includes("self_identification")); assert.match(dec.how, /^names itself: “My name is Dana Reyes, and I run the survey lab at the university\.”; called by name just before answering: “Dana, thanks for joining me\.”$/);
+  assert.match(pr.identification.unnamed.find(u => u.key === "SPEAKER 1").why, /Nothing in the conversation or the episode's listing names this voice/);
+  assert.equal(pr.voices.names, undefined, "the old naming pass is gone");
+  assert.equal(pr.voices.clipsChecked, true);
   // the reading gate accepts labels from the recording, for this exact text; the reading was made again on it
   assert.equal(b.attributionGate.status, "ready"); assert.equal(b.attributionGate.origin, "voices");
   assert.ok(b.passages.length && b.passages.every(p => p.analysis && !p.stale.length), "read again on the labelled text");
   const turns = shared.parseTranscript(b.transcript, { mode: b.run.parseMode });
   assert.equal(turns.find(x => /four hundred households in three/.test(x.text)).label, "SPEAKER 2");
 
-  // one confirmation of the names: only the names change
+  // a person's names (optional): only the names change; "Speaker not established" is not a name to give
   const c = await f.api("POST", "/api/runs/" + id + "/confirm-names", { names: [{ key: "SPEAKER 1", name: "Sam Okafor" }, { key: "SPEAKER 2", name: "Dana Reyes" }, { key: "UNLABELED", name: "Nobody" }] });
   assert.equal(c.status, 200, JSON.stringify(c.data));
   assert.equal(c.data.run.speakers.find(s => s.key === "SPEAKER 1").name, "Sam Okafor");
-  assert.match(c.data.run.speakers.find(s => s.key === "SPEAKER 1").bio, /Named by a person/);
-  assert.match(c.data.run.speakers.find(s => s.key === "SPEAKER 2").bio, /self identification/, "a confirmed name keeps its evidence");
+  assert.deepEqual(c.data.run.provenance.namesByPerson, { "SPEAKER 1": "Sam Okafor" }, "a name given by a person is theirs; an unchanged name is not taken over");
+  assert.equal(c.data.run.provenance.identification.decisions.find(d => d.key === "SPEAKER 2").name, "Dana Reyes", "the name the words gave keeps its evidence");
+  assert.ok(!c.data.run.speakers.some(s => s.key === "UNLABELED" && s.name === "Nobody"));
   assert.ok(c.data.run.provenance.namesConfirmedAt); assert.equal(c.data.run.provenance.namesConfirmedBy, "person at this computer");
   assert.equal(c.data.run.input.sha256, b.run.input.sha256, "the text is unchanged");
-  assert.ok(c.data.passages.every(p => !p.stale.length), "no reading goes out of date");
+  // the readings were written under the old name, so they say so; reading again brings them up to date
+  assert.ok(c.data.passages.every(p => p.stale.includes("speaker names changed since this analysis")), JSON.stringify(c.data.passages.map(p => p.stale)));
+  await f.api("POST", "/api/runs/" + id + "/read", {}); const again = await f.finish(id);
+  assert.ok(again.passages.every(p => p.readingGate.status === "ready" && !p.stale.length), JSON.stringify(again.passages.map(p => p.readingGate)));
+  assert.equal(again.run.speakers.find(s => s.key === "SPEAKER 1").name, "Sam Okafor", "the identification step never replaces a person's name");
   // the export carries the record
   const ex = await f.api("GET", "/api/runs/" + id + "/export.json");
   assert.equal(ex.data.run.provenance.labelsOrigin, "voices"); assert.equal(ex.data.run.provenance.voices.requestId, "req-test-1"); assert.ok(ex.data.run.provenance.namesConfirmedAt);
@@ -254,8 +263,9 @@ test("the route refuses plainly: a different recording, source labels, no key, a
   await f.finish(labelled);
   r = await f.api("POST", "/api/runs/" + labelled + "/voices", { link: "https://cdn.example.org/ep.mp3" });
   assert.equal(r.status, 409); assert.equal(r.data.code, "source_labels");
-  r = await f.api("POST", "/api/runs/" + labelled + "/confirm-names", { names: [{ key: "HOST", name: "Sam" }] });
-  assert.equal(r.status, 409);
+  // ...and its role labels can still be given names (0.14: any label but a clip's, a quotation's or an advertisement's)
+  r = await f.api("POST", "/api/runs/" + labelled + "/confirm-names", { names: [{ key: "HOST", name: "Sam" }, { key: "CLIP 1", name: "x" }] });
+  assert.equal(r.status, 200); assert.equal(r.data.run.speakers.find(s => s.key === "HOST").name, "Sam");
   // no key: the page offers the key form
   const g = await fixture(t, fakeDeepgram(recording(TRUTH), false));
   const id2 = (await g.api("POST", "/api/intake", { input: TEXT })).data.run.id; await g.finish(id2);

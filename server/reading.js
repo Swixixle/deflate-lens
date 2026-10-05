@@ -3,14 +3,18 @@ const shared = require("../shared/transcript");
 const P = require("../shared/prompts");
 const Q = require("./quality");
 const V = require("./validate");
-const { newId, nowISO, autoTitle, sha256 } = require("./store");
+const { newId, nowISO, autoTitle, sha256, namesSigFor } = require("./store");
 const { cleanText } = require("./intake");
 const { obligationFor } = require("./research");
 const { prepareSpeakers, callModel, unreadable, reviewedReading, reviewedOverview, claimAnalysis } = require("./preparation");
-const { structureSpeakers, CUE } = require("./structure");
+const { structureSpeakers, CUE, AD_CUE } = require("./structure");
+const { identifySpeakers, needsIdentification } = require("./identify");
+const { separateVoices } = require("./voices");
 
+/* What a model call is made from: the text (its hash and version), the speaker labels (attrSig) and, since 0.14, the
+   speakers' names (namesSig), since a reading's own words name them. */
 function requestedBasis(b, patterns) {
-  const basis = { inputHash: b.run.input.sha256, transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig };
+  const basis = { inputHash: b.run.input.sha256, transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig, namesSig: namesSigFor(b.run, shared.parseTranscript(b.transcript, { mode: b.run.parseMode })) };
   if (patterns) {
     basis.preparedOnly = true;
     basis.passagesSig = b.passages.filter(p => p.readingGate.status === "ready" && !p.stale.length).map(p => p.id + "@" + (p.analyzedAt || "")).join(",");
@@ -77,7 +81,9 @@ function plainError(e) {
 
 // One background job per run. Closing or refreshing the browser does not cancel it. Every
 // write checks the input and job under the store lock, so a stopped job cannot publish late.
-function createReader({ store, getAI, searchClaim, research }) {
+/* `voices` (optional): { engine(), resolver(), prefer() } — the Deepgram engine as currently configured, the transcript
+   chain's resolver, and the person's audio-to-text choice ("local" keeps audio on this computer). */
+function createReader({ store, getAI, searchClaim, research, voices }) {
   const jobs = new Map();
   /* opts (all optional, from a person's request in Controls or a card's Evidence): reread = a passage id to read again
      even though it is prepared; overview = write the closing overview again; resegment = organize the passages again.
@@ -203,13 +209,29 @@ function createReader({ store, getAI, searchClaim, research }) {
   }
 
   /* Only new input (marked at intake), only once per text, and never under readings already made. A labelled transcript is
-     looked at only when its words introduce something played or read. */
+     looked at only when its words introduce something played or read, or carry a sponsor's message; that includes text
+     Deepgram transcribed with its voices (their clips and advertisements have not been looked for yet). */
   function needsStructure(b) {
-    const r = b.run;
+    const r = b.run, pr = r.provenance || {};
     if (r.kind !== "transcript" || r.example || !(r.intake && r.intake.speakers === "auto")) return false;
-    if (r.provenance && (r.provenance.structure || r.provenance.voices) || b.passages.some(p => p.analysis)) return false;
+    if (pr.structure || pr.voices && pr.voices.clipsChecked !== false || b.passages.some(p => p.analysis)) return false;
     const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
-    return labels.length ? CUE.test(b.transcript) : shared.wordsOf(b.transcript).split(" ").length >= 12;
+    return labels.length ? CUE.test(b.transcript) || AD_CUE.test(b.transcript) : !pr.voices && shared.wordsOf(b.transcript).split(" ").length >= 12;
+  }
+  /* New input from a podcast link that came without speaker labels (a feed transcript, captions, an episode page): its
+     voices are separated from the episode's recording by Deepgram before anything else (voices.js), when a Deepgram key
+     is set and the person has not chosen to keep audio on this computer. Once per text: a failure is recorded with its
+     reason (shown under Controls), and the words are tried instead. */
+  const cloud = () => { const e = voices && voices.engine && voices.engine(); return e && e.configured() ? e : null; };
+  const keepsAudioLocal = () => !!(voices && voices.prefer && voices.prefer() === "local");
+  const recordingOf = r => { const imp = r.import || {}, info = imp.episodeInfo || {}; return !!(info.audioUrl || imp.url && info.guid); };
+  function needsVoices(b) {
+    const r = b.run, pr = r.provenance || {}, src = (r.import || {}).source || {};
+    if (r.kind !== "transcript" || r.example || !(r.intake && r.intake.speakers === "auto") || b.passages.some(p => p.analysis)) return false;
+    if (pr.voices || pr.voicesAttempt && pr.voicesAttempt.inputHash === r.input.sha256) return false;
+    if (src.kind === "audio-transcription" || !recordingOf(r) || !cloud() || keepsAudioLocal()) return false;
+    const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
+    return !labels.length && shared.wordsOf(b.transcript).split(" ").length >= 12;
   }
   async function execute(id, job) {
     let b = await check(id, job), ai = getAI();
@@ -217,6 +239,24 @@ function createReader({ store, getAI, searchClaim, research }) {
       if (b.run.kind === "claim") await searchSources(id, job);
       await update(id, job, { status: "awaiting_key", phase: "key", message: b.run.kind === "claim" ? "Your claim and source search are ready. Add the model key once for a plain-language reading." : "Your transcript is saved. Add the model key once and the reading will continue automatically.", finishedAt: nowISO() });
       return;
+    }
+    // new input from a podcast link with no speaker labels: the voices, from the recording (see needsVoices)
+    if (needsVoices(b)) {
+      await update(id, job, { phase: "speakers", message: "Separating the voices in the recording…" });
+      let out = null, failed = null;
+      try { out = await separateVoices({ ai, store, id, link: "", engine: cloud(), resolver: voices.resolver(), signal: job.controller.signal }); }
+      catch (e) { if (job.controller.signal.aborted) throw stopped(); if (!e.code && !e.status) throw e; failed = e; }
+      await check(id, job);
+      if (out) {
+        out.record = Object.assign({}, out.record, { auto: true, method: "The text came without speaker labels, so the episode's recording was sent to Deepgram (your key) to separate the voices. " + out.record.method });
+        await store.commitVoices(id, out.basis, out);
+        const nb = await store.bundle(id);
+        job.inputHash = nb.run.input.sha256; job.attrSig = nb.attrSig;
+        await store.saveProcessing(id, { inputHash: job.inputHash }, job.id);
+      } else {
+        await store.recordVoicesAttempt(id, { at: nowISO(), auto: true, code: String(failed.code || ""), why: String(failed.message || failed).replace(/\s+/g, " ").slice(0, 300) });
+      }
+      b = await check(id, job);
     }
     // new input: work out from the words who is speaking and where a clip or quotation is played, before anything is
     // read (structure.js). The labelled text replaces the unlabelled one (kept in versions/); the job follows it.
@@ -243,6 +283,15 @@ function createReader({ store, getAI, searchClaim, research }) {
         await update(id, job, { status: "held", phase: "speakers", message: "The text leaves some speakers uncertain, so the reading is held back. A transcript with reliable speaker labels or the recording is needed.", finishedAt: nowISO() });
         return;
       }
+    }
+    // who each numbered or unnamed voice is, from the conversation and the episode's listing, before anything is read
+    // (identify.js); once per text and set of labels. A voice nothing names keeps its number, with the reason.
+    if (needsIdentification(b)) {
+      await update(id, job, { phase: "speakers", message: "Finding who each speaker is…" });
+      const out = await identifySpeakers({ ai, store, id, signal: job.controller.signal });
+      if (job.controller.signal.aborted) throw stopped();
+      await check(id, job);
+      await store.commitIdentification(id, out.basis, out);
     }
     b = await check(id, job);
     const process = b.run.processing;

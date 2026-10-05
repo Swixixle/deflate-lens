@@ -21,8 +21,8 @@ const cases = require("../eval/cases.json").cases;
 const passagePrompt = () => P.deflate({ speakers: [] }, { title: "t", stake: "s", turnStart: 0, turnEnd: 0 }, "[0] A: words", {});
 const claimPrompt = () => P.claim({}, "A typed claim.");
 
-test("the prompt (reading-3, kept in reading-4) names each distinction a simpler word must keep, attribution, and no machinery on the card", () => {
-  assert.ok(["reading-3", "reading-4"].includes(P.CONTRACT) && P.isNeutral("reading-3"));
+test("the prompt (reading-3, kept in reading-4 and reading-5) names each distinction a simpler word must keep, attribution, and no machinery on the card", () => {
+  assert.ok(["reading-3", "reading-4", "reading-5"].includes(P.CONTRACT) && P.isNeutral("reading-3"));
   const p = passagePrompt();
   for (const part of ["- who:", "- where and when:", "- how many and how varied:", "A bigger group is not a more varied or more representative one", "- under what conditions:", "- how sure:", "A broader word widens the claim and a narrower one shrinks it", "keep the speaker's word and explain it"]) assert.ok(p.includes(part), part);
   assert.match(p, /Attribution: what the speaker claims stays the speaker's claim, in every field and at both levels, including each claim's plain restatement/);

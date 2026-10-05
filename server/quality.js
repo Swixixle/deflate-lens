@@ -31,13 +31,17 @@ function attributionGate(b) {
   // labels established from the words (two passes, quotations checked) or by voice from the recording, for this exact text
   if (pr.labelsOrigin === "words" && pr.structure && pr.structure.established && pr.structure.resultHash === b.run.input.sha256) return { status: "ready", method: pr.structure.method, origin: "words", unestablished: pr.structure.unestablishedSegments || 0 };
   if (pr.labelsOrigin === "voices" && pr.voices && pr.voices.resultHash === b.run.input.sha256) return { status: "ready", method: pr.voices.method, origin: "voices" };
+  // voices from the recording, then clips, quotations or advertisements set apart in that very text (the labels kept)
+  const st = pr.structure;
+  if (pr.labelsOrigin === "voices" && pr.voices && st && st.mode === "labelled" && st.established && st.resultHash === b.run.input.sha256 && st.inputHash === pr.voices.resultHash)
+    return { status: "ready", method: pr.voices.method + " " + st.method, origin: "voices" };
   if (prep && prep.inputHash === b.run.input.sha256 && prep.attrSig === b.attrSig) {
     return { status: prep.status, corrected: prep.corrections.length, unresolved: prep.unresolved.length, method: prep.method, labelsOrigin: pr.labelsOrigin || "source" };
   }
   return { status: "held", method: "Speaker labels have not finished preparation." };
 }
 
-const { isNeutral, SPEAKER_CHECKED } = require("../shared/prompts");
+const { isNeutral, SPEAKER_CHECKED, AD_CHECKED } = require("../shared/prompts");
 const OLD_EMPIRICAL = ["fact", "contested", "unsupported"];
 /* `contract` is the reading contract the analysis was written under (recorded on its model call). Records written
    before 0.12 have none and keep the rules they were accepted under; the consistency rules below apply to reading-2 and
@@ -89,6 +93,11 @@ function contentIssues(a, p, turns, overrides, kind, contract) {
       const holders = inPassage.filter(t => shared.verifyQuote(c.text, t.text)), who = [...new Set(holders.map(t => shared.effSpeaker(t, overrides)))];
       if (who.length === 1 && who[0] !== String(c.speaker).toUpperCase()) issues.push("claims[" + i + "]: credited to " + c.speaker + ", but these words are " + who[0] + "'s (turn " + holders[0].i + "); a claim's speaker is the label of the turn that states it");
     }
+  }
+  // reading-5: an advertisement (AD n) is not part of the conversation; nothing in a reading comes from one
+  if (kind !== "claim" && AD_CHECKED.includes(contract)) {
+    a.claims.forEach((c, i) => { if (/^AD \d+$/.test(String(c.speaker || "").toUpperCase())) issues.push("claims[" + i + "]: taken from an advertisement (" + c.speaker + "), which is not part of the conversation"); });
+    if (a.asSaid.some(q => /^AD \d+$/.test(String(q.speaker || "").toUpperCase()) || (turns[q.turn] && /^AD \d+$/.test(shared.effSpeaker(turns[q.turn], overrides))))) issues.push("asSaid: a quotation is taken from an advertisement, which is not part of the conversation");
   }
   if (oversized || a.truncated.asSaid || a.truncated.claims) issues.push("the model output exceeded the card limits");
   return [...new Set(issues)];

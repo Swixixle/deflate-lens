@@ -29,9 +29,23 @@ function speakerName(key, run) {
 function allUnlabeled(b) { const l = shared.speakerLabels(shared.parseTranscript(b.transcript || "", { mode: b.run.parseMode || "transcript" })); return b.run.kind !== "claim" && l.length > 0 && l.every(x => x === "UNLABELED"); }
 function speakerNote(b) {
   const pr = b.run.provenance || {};
-  if (pr.labelsOrigin === "voices") return "_Speakers were separated by voice from the recording" + (pr.namesConfirmedAt ? "; a person confirmed the names" : "") + "._";
-  if (pr.labelsOrigin === "words") return "_Speakers were worked out from the words" + (pr.namesConfirmedAt ? "; a person confirmed the names" : "") + "._";
+  if (pr.labelsOrigin === "voices") return "_Speakers were separated by voice from the recording" + (pr.voices && pr.voices.via === "transcription" ? " as Deepgram transcribed it" : "") + "._";
+  if (pr.labelsOrigin === "words") return "_Speakers were worked out from the words._";
   return allUnlabeled(b) ? "_This text has no speaker labels._" : "";
+}
+/* The labels the text uses (and any a correction moved a turn to), in order of first appearance. */
+function labelsUsed(b) {
+  const turns = shared.parseTranscript(b.transcript || "", { mode: b.run.parseMode || "transcript" }), ov = b.run.provenance && b.run.provenance.overrides || {};
+  const keys = []; turns.forEach(t => { if (t.heading) return; const k = shared.effSpeaker(t, ov); if (!keys.includes(k)) keys.push(k); });
+  return keys;
+}
+/* "Who is speaking": each speaker's name and how it was found, or why there is none. Left out when every name came with
+   the transcript (nothing to explain) or the text has no labels. */
+function whoLines(b) {
+  if (b.run.kind === "claim" || allUnlabeled(b)) return [];
+  const acc = labelsUsed(b).map(k => shared.speakerAccount(b.run, k));
+  if (acc.every(a => a.by === "transcript" || a.by === "none")) return [];
+  return acc.map(a => "- " + a.name + (a.name !== a.label && a.by !== "set_apart" && a.by !== "transcript" ? " (" + a.label + ")" : "") + (a.text ? ": " + a.text : ""));
 }
 function activeReceipts(c) { return (c.receipts || []).filter(x => !x.withdrawnAt); }
 /* Why a claim's research should be read as provisional: its card is stale, or attribution is needed and unconfirmed. */
@@ -44,11 +58,11 @@ function heldSource(b, p) {
   return shared.fmtTurns(turns, b.run.provenance && b.run.provenance.overrides || {}, p.turnStart, p.turnEnd);
 }
 function buildExport(b) {
-  const r = b.run, pr = r.provenance || {};
+  const r = b.run, pr = r.provenance || {}, used = r.kind === "claim" ? [] : labelsUsed(b);
   const done = b.passages.filter(p => p.status === "done" && p.analysis);
   const claims = [];
   done.forEach(p => (p.analysis.claims || []).forEach((c, i) => claims.push({
-    id: c.id || (p.id + "-c" + (i + 1)), position: i + 1, passageId: p.id, readingRev: p.readingRev || 0, speaker: c.speaker ? speakerName(c.speaker, r) : "", speakerKey: c.speaker || "", text: c.text, type: c.type, displayType: shared.claimTypeLabel(c.type), historicalType: shared.historicalType(c.type), userSupplied: !!c.userSupplied,
+    id: c.id || (p.id + "-c" + (i + 1)), position: i + 1, passageId: p.id, readingRev: p.readingRev || 0, speaker: c.speaker ? speakerName(c.speaker, r) : "", speakerKey: c.speaker || "", speakerNamedBy: c.speaker ? shared.speakerAccount(r, c.speaker).by : "", text: c.text, type: c.type, displayType: shared.claimTypeLabel(c.type), historicalType: shared.historicalType(c.type), userSupplied: !!c.userSupplied,
     plain: c.plain || null, settle: c.settle || null,
     status: claimStatus(c), wouldSettle: c.wouldSettle || "", turns: [p.turnStart, p.turnEnd], provisional: provisionalFor(b, p),
     expectedSources: c.expectedSources || [], searchQuery: c.searchQuery || "", obligationId: c.obligation && c.obligation.id || "",
@@ -75,10 +89,11 @@ function buildExport(b) {
       sourceIdentity: b.sourceIdentity || sourceIdentity(r), sourceConfirmationHistory: r.sourceConfirmationHistory || [], attributionGate: b.attributionGate || Q.attributionGate(b),
       source: { url: r.sourceUrl || "", label: r.sourceLabel || "", date: r.sourceDate || "" },
       transcript: { updatedAt: r.transcriptUpdatedAt || "", characters: (b.transcript || "").length, sha256: r.input && r.input.sha256 || "", bytes: r.input && r.input.bytes || null, parseMode: r.input && r.input.parseMode || r.parseMode || "transcript", earlierVersions: (r.inputHistory || []).map(x => ({ sha256: x.sha256, chars: x.chars, transcriptUpdatedAt: x.transcriptUpdatedAt, replacedAt: x.replacedAt })) },
-      provenance: { confirmedAt: pr.confirmedAt || "", confirmedBy: pr.confirmedBy || "", notApplicable: !!pr.notApplicable, labelsOrigin: pr.labelsOrigin || "source", assignment: pr.assignment || null, structure: pr.structure || null, voices: pr.voices || null, namesConfirmedAt: pr.namesConfirmedAt || "", method: pr.method || "", attrSig: b.attrSig, transcriptNote: pr.transcriptNote || "",
+      provenance: { confirmedAt: pr.confirmedAt || "", confirmedBy: pr.confirmedBy || "", notApplicable: !!pr.notApplicable, labelsOrigin: pr.labelsOrigin || "source", assignment: pr.assignment || null, structure: pr.structure || null, voices: pr.voices || null, identification: pr.identification || null, namesByPerson: pr.namesByPerson || {}, namesConfirmedAt: pr.namesConfirmedAt || "", namesChangedAt: pr.namesChangedAt || "", method: pr.method || "", attrSig: b.attrSig, transcriptNote: pr.transcriptNote || "",
         preparation: r.preparation || null,
         corrected: Object.keys(pr.overrides || {}).map(i => ({ turn: Number(i), speaker: pr.overrides[i] })), flagged: (pr.flags || []).map(f => f.turn), earlierDecisions: (r.provenanceHistory || []).length },
-      speakers: (r.speakers || []).map(s => ({ key: s.key, name: s.name || s.key })),
+      speakersMeaning: "name is what the app shows for the label (key). namedBy: identification (the app connected the name to the voice from the conversation and the episode's listing; how says with which words), person (a person gave it), transcript (the label is the name), words (named when the speakers were worked out from the words), unnamed (no name was found; how says why), set_apart (a clip, a quotation read aloud or an advertisement), earlier (named before names were recorded with their evidence).",
+      speakers: [...new Set((r.speakers || []).map(s => s.key).concat(used))].map(k => { const a = shared.speakerAccount(r, k), s = (r.speakers || []).find(x => x.key === k) || {}; return { key: k, name: a.name, bio: s.bio || "", namedBy: a.by, how: a.text, inText: used.includes(k) }; }),
       orphans: (r.orphans || []).map(o => ({ id: o.id, claimText: o.claimText, from: o.from, receipts: (o.receipts || []).length, searches: (o.searches || []).length, rejections: (o.rejections || []).length, parkedAt: o.parkedAt })),
     },
     passagesHeld: b.passages.filter(p => p.readingGate && p.readingGate.status === "held").map(p => ({ id: p.id, title: p.title, turnStart: p.turnStart, turnEnd: p.turnEnd, reasons: p.readingGate.reasons || [], attempt: p.held || null,
@@ -87,7 +102,8 @@ function buildExport(b) {
       basedOn: { inputHash: p.basedOn && p.basedOn.inputHash || "", attrSig: p.basedOn && p.basedOn.attrSig || "", transcriptUpdatedAt: p.basedOn && p.basedOn.transcriptUpdatedAt || "" },
       provenance: p.provenance || null, readingGate: p.readingGate || null, levels: p.analysis.levels || null, attempts: b.attempts && b.attempts[p.id] || [],
       quoteCheck: p.quoteCheck || null,
-      quotes: (p.analysis.asSaid || []).map(q => ({ turn: q.turn, matchedTurn: q.matchedTurn == null ? null : q.matchedTurn, relocated: !!q.relocated, speakerClaimed: q.speaker, speakerNow: q.speakerNow || "", speakerMismatch: !!q.speakerMismatch, quote: q.quote, verbatim: !!q.verbatim, tolerated: q.tolerated || [], turnOk: q.turnOk !== false, foundIn: q.foundIn || [] })),
+      speakerNames: (p.speakers || []).map(k => speakerName(k, r)),
+      quotes: (p.analysis.asSaid || []).map(q => ({ turn: q.turn, matchedTurn: q.matchedTurn == null ? null : q.matchedTurn, relocated: !!q.relocated, speakerClaimed: q.speaker, speakerNow: q.speakerNow || "", speaker: speakerName(q.speakerNow || q.speaker, r), speakerMismatch: !!q.speakerMismatch, quote: q.quote, verbatim: !!q.verbatim, tolerated: q.tolerated || [], turnOk: q.turnOk !== false, foundIn: q.foundIn || [] })),
       judgments: p.analysis.judgments, fidelity: p.analysis.fidelity.grade, jump: { present: p.analysis.jump.present, pivot: p.analysis.jump.pivot || "", pivotVerbatim: p.analysis.jump.pivotVerbatim, survives: p.analysis.revision.jumpSurvives || "" } })),
     patterns: (b.summary && b.summary.patterns || []).map(x => ({ title: x.title.hs, passages: x.passages })),
     patternsGate: b.summary && b.summary.readingGate || null,
@@ -119,6 +135,7 @@ function buildMarkdown(b, level) {
   if (r.sourceUrl) out.push("Source: " + (r.sourceLabel || "") + " " + r.sourceUrl + "\n");
   const src = sourceLines(b); if (src.length) out.push(src.join("\n") + "\n");
   const sn = speakerNote(b); if (sn) out.push(sn + "\n");
+  const who = whoLines(b); if (who.length) out.push("**Who is speaking.**\n" + who.join("\n") + "\n");
   if (r.example) out.push("_Supplied example. Analysis written in chat by Claude, corrected after a second-reader review; attribution not confirmed by a person._\n");
   if (b.passages.some(p => /MOCK/i.test(p.analyzedBy || ""))) out.push("_MOCK OUTPUT: these readings are placeholders from the test responder, not a model's reading._\n");
   const ready = b.passages.filter(p => p.readingGate && p.readingGate.status === "ready");
@@ -131,7 +148,8 @@ function buildMarkdown(b, level) {
       return;
     }
     if (p.readingGate && p.readingGate.status !== "ready") { out.push("## " + p.title + where + "\n\n" + ((p.stale || []).length ? "**Out of date, not shown.**" : "**Not shown.**") + " Why: " + (why(p.readingGate.reasons) || "it did not pass its checks") + ".\n"); return; }
-    const a = p.analysis, qc = p.quoteCheck, speakers = bare ? [] : [...new Set((a.asSaid || []).map(q => speakerName(q.speakerNow || q.speaker, r)).filter(x => x !== "Speaker not established"))];
+    // the passage's speakers, as the page's card lists them (older passages without the list: the speakers quoted)
+    const a = p.analysis, qc = p.quoteCheck, speakers = bare ? [] : [...new Set(((p.speakers || []).length ? p.speakers : (a.asSaid || []).map(q => q.speakerNow || q.speaker)).map(k => speakerName(k, r)).filter(x => x !== "Speaker not established"))];
     // only the fifth-grade wording failed: the high-school reading stands in at both levels
     const g5Withheld = a.levels && a.levels.g5 === "withheld";
     const T = x => (x && typeof x === "object") ? ((g5Withheld ? x.hs : x[L]) || x.hs || "") : String(x || "");
@@ -148,7 +166,7 @@ function buildMarkdown(b, level) {
     (a.claims || []).forEach(c => {
       const rc = activeReceipts(c), settle = (c.settle && T(c.settle)) || c.wouldSettle || "", empirical = shared.EMPIRICAL_TYPES.includes(c.type), was = shared.historicalType(c.type);
       const contra = rc.filter(x => x.relation === "contradicts").length;
-      out.push("- " + shared.claimTypeLabel(c.type) + (was ? " (an earlier model labelled it “" + was + "”)" : "") + ": " + c.text + (c.plain && T(c.plain) ? " — in plain words: " + T(c.plain) : "") + (T(c.basis) ? " — " + T(c.basis) : "") + (settle ? " · what would check it: " + settle : "") +
+      out.push("- " + shared.claimTypeLabel(c.type) + (was ? " (an earlier model labelled it “" + was + "”)" : "") + (c.speaker && !bare && r.kind !== "claim" ? " — " + speakerName(c.speaker, r) : "") + ": " + c.text + (c.plain && T(c.plain) ? " — in plain words: " + T(c.plain) : "") + (T(c.basis) ? " — " + T(c.basis) : "") + (settle ? " · what would check it: " + settle : "") +
         (empirical ? " · " + ({ receipt: "sources attached by a person: " + rc.length + " (" + relationPhrase(rc) + ")", searched: "searched; no source attached", unchecked: "not checked" })[claimStatus(c)] : "") +
         (contra ? " · a person recorded " + contra + " source" + (contra > 1 ? "s" : "") + " as contradicting this claim" : "") +
         (rc.length ? " (" + rc.map(x => x.url + (x.relation && x.relation !== "unstated" ? " [" + x.relation + "]" : "")).join(" ") + ")" : ""));
@@ -178,7 +196,7 @@ function buildObligations(b) {
   const { obligationFor } = require("./research/index");
   const { EMPIRICAL_TYPES } = require("./research/types");
   const obligations = [];
-  b.passages.forEach(p => { if (p.status !== "done" || !p.analysis) return; const prov = provisionalFor(b, p); (p.analysis.claims || []).forEach((c, i) => { if (!EMPIRICAL_TYPES.includes(c.type)) return; obligations.push(Object.assign(obligationFor(b.run, p, c, i), { claim_type: c.type, claim_id: c.id || "", speaker: c.speaker || "", passage: p.id, reading_rev: p.readingRev || 0, status: claimStatus(c), stale: p.stale || [], provisional: prov.length > 0, provisional_reasons: prov })); }); });
+  b.passages.forEach(p => { if (p.status !== "done" || !p.analysis) return; const prov = provisionalFor(b, p); (p.analysis.claims || []).forEach((c, i) => { if (!EMPIRICAL_TYPES.includes(c.type)) return; obligations.push(Object.assign(obligationFor(b.run, p, c, i), { claim_type: c.type, claim_id: c.id || "", speaker: c.speaker || "", speaker_name: c.speaker ? speakerName(c.speaker, b.run) : "", passage: p.id, reading_rev: p.readingRev || 0, status: claimStatus(c), stale: p.stale || [], provisional: prov.length > 0, provisional_reasons: prov })); }); });
   return { schema: "deflate-lens/obligations@0.2", compatible_with: "Receipts src/surfacing/obligations.py EvidenceObligation.to_json", exportedAt: new Date().toISOString(), statusMeaning: STATUS_MEANING, run: { id: b.run.id, title: b.run.title, source: { url: b.run.sourceUrl || "", label: b.run.sourceLabel || "", date: b.run.sourceDate || "" }, attributionConfirmed: !!(b.run.provenance && b.run.provenance.confirmedAt) }, obligations };
 }
 
