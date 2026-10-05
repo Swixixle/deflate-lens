@@ -21,7 +21,7 @@ function createJobs({ dataDir }) {
         j.recoveryNote = "Legacy fetch: prior import status was not recorded; automatic re-import is disabled.";
         await persist(j);
       }
-      if (j.state === "running") { j.state="interrupted"; j.error={code:"interrupted",message:"The server stopped before the fetch finished. Start the link again."}; await persist(j); }
+      if (j.state === "running") { j.state="interrupted"; j.error={code:"interrupted",message:j.input && j.input.upload ? "The server stopped before the recording was turned into text. Upload it again." : "The server stopped before the fetch finished. Start the link again."}; await persist(j); }
       if (!j.resultKind) j.resultKind = j.result && j.result.kind || "";
       delete j.result; j.diskOnly=true; jobs.set(j.id,j);
     }

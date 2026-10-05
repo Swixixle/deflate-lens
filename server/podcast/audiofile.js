@@ -18,26 +18,89 @@ const FORMATS = {
   aac: { name: "AAC", mime: "audio/aac" },
   webm: { name: "WebM", mime: "audio/webm" },
 };
-const MAX_TAG_BYTES = 16 * 1024 * 1024, MAX_MOOV_BYTES = 64 * 1024 * 1024;
+const MAX_TAG_BYTES = 16 * 1024 * 1024, MAX_MOOV_BYTES = 64 * 1024 * 1024, HEAD_BYTES = 16 * 1024;
 
-/* The format from the first bytes, or null for anything that is not a recording the app can send on. */
+/* MPEG audio frame headers: the bitrate (kbit/s) by version and layer, the sample rate by version. A header is taken
+   only when its fields are valid and a second header stands where the first frame ends (text that happens to begin
+   with 0xFF, a UTF-16 byte-order mark, is not a frame). */
+const BITRATES = {
+  "1-1": [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448],
+  "1-2": [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384],
+  "1-3": [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320],
+  "2-1": [0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256],
+  "2-2": [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],
+  "2-3": [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],
+};
+const RATES = { 1: [44100, 48000, 32000], 2: [22050, 24000, 16000], 25: [11025, 12000, 8000] };
+/* The length of the MPEG audio frame whose header is at `o`, or 0 when those bytes are not a valid header. */
+function mpegFrame(buf, o) {
+  if (o + 4 > buf.length || buf[o] !== 0xFF || (buf[o + 1] & 0xE0) !== 0xE0) return 0;
+  const v = (buf[o + 1] >> 3) & 3, l = (buf[o + 1] >> 1) & 3, bi = buf[o + 2] >> 4, si = (buf[o + 2] >> 2) & 3, pad = (buf[o + 2] >> 1) & 1;
+  if (v === 1 || l === 0 || bi === 0 || bi === 15 || si === 3) return 0; // reserved version or layer, free or bad bitrate, reserved rate
+  const version = v === 3 ? 1 : v === 2 ? 2 : 25, layer = 4 - l, kbps = BITRATES[(version === 1 ? "1" : "2") + "-" + layer][bi], rate = RATES[version][si];
+  return layer === 1 ? Math.floor(12 * kbps * 1000 / rate + pad) * 4 : Math.floor((version === 1 || layer === 2 ? 144 : 72) * kbps * 1000 / rate) + pad;
+}
+const mpegAt = (buf, o) => { const n = mpegFrame(buf, o); return n > 0 && mpegFrame(buf, o + n) > 0; };
+/* An ADTS (AAC) header at `o`: a valid sampling index and length, and the next header where this frame ends when the
+   bytes are there. */
+function adtsAt(buf, o) {
+  if (o + 7 > buf.length || buf[o] !== 0xFF || (buf[o + 1] & 0xF6) !== 0xF0 || ((buf[o + 2] >> 2) & 0xF) > 12) return false;
+  const len = ((buf[o + 3] & 3) << 11) | (buf[o + 4] << 3) | (buf[o + 5] >> 5);
+  if (len < 7) return false;
+  return o + len + 2 > buf.length || (buf[o + len] === 0xFF && (buf[o + len + 1] & 0xF6) === 0xF0);
+}
+// an ISO file whose major brand is a still image (HEIC, AVIF) is not a recording
+const IMAGE_BRANDS = new Set(["heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "mif1", "msf1", "avif", "avis"]);
+/* An ID3v2 tag's whole length (header, body and footer), when `buf` starts with one. */
+const id3Length = buf => buf.length >= 10 && buf.toString("latin1", 0, 3) === "ID3" ? 10 + syncsafe(buf, 6) + (buf[5] & 0x10 ? 10 : 0) : 0;
+/* The format from the first bytes, or null for anything that is not a recording the app can send on. After an ID3 tag
+   the audio itself decides (an AAC or FLAC file may carry one too); when the tag runs past these bytes, use sniffFile. */
 function sniff(buf) {
   if (!buf || buf.length < 12) return null;
   const s = (a, b) => buf.toString("latin1", a, b);
-  if (s(0, 3) === "ID3") return "mp3";
-  if (buf[0] === 0xFF && (buf[1] & 0xF6) === 0xF0) return "aac"; // ADTS: sync, then layer 00
-  if (buf[0] === 0xFF && (buf[1] & 0xE0) === 0xE0 && ((buf[1] >> 3) & 3) !== 1 && ((buf[1] >> 1) & 3) !== 0) return "mp3"; // an MPEG audio frame
-  if (s(4, 8) === "ftyp") return "mp4";
+  const tag = id3Length(buf);
+  if (tag) return tag + 12 <= buf.length ? afterTag(buf.subarray(tag)) : "mp3";
+  if (adtsAt(buf, 0)) return "aac";
+  if (mpegAt(buf, 0)) return "mp3";
+  if (s(4, 8) === "ftyp") return IMAGE_BRANDS.has(s(8, 12)) ? null : "mp4";
   if (s(0, 4) === "RIFF" && s(8, 12) === "WAVE") return "wav";
   if (s(0, 4) === "OggS") return "ogg";
   if (s(0, 4) === "fLaC") return "flac";
   if (buf[0] === 0x1A && buf[1] === 0x45 && buf[2] === 0xDF && buf[3] === 0xA3) return "webm";
   return null;
 }
+/* What follows an ID3 tag: another tag, FLAC, AAC, or MPEG frames, which may come after padding or a little junk. */
+function afterTag(buf) {
+  if (buf.toString("latin1", 0, 3) === "ID3") return sniff(buf);
+  if (buf.toString("latin1", 0, 4) === "fLaC") return "flac";
+  let o = 0; while (o < buf.length && buf[o] === 0) o++;
+  if (adtsAt(buf, o)) return "aac";
+  for (let i = o; i + 4 <= buf.length; i++) if (buf[i] === 0xFF && mpegAt(buf, i)) return "mp3";
+  return null;
+}
+/* The format of a file on disk: its first bytes, and past any ID3 tag (up to four stacked), the audio's own. */
+async function sniffFile(file) {
+  const fh = await fsp.open(file, "r");
+  try {
+    const { size } = await fh.stat();
+    let at = 0;
+    for (let n = 0; n < 4; n++) {
+      const buf = await readAt(fh, at, Math.min(HEAD_BYTES, size - at));
+      const tag = id3Length(buf);
+      if (!tag || at === 0 && buf.length < 12) return at === 0 ? sniff(buf) : afterTag(buf);
+      if (at + tag >= size) return null; // a tag and nothing after it
+      at += tag;
+      const next = await readAt(fh, at, Math.min(HEAD_BYTES, size - at));
+      if (next.toString("latin1", 0, 3) !== "ID3") return afterTag(next);
+    }
+    return null;
+  } finally { await fh.close(); }
+}
 
-async function readAt(fh, pos, len) { const b = Buffer.alloc(Math.max(0, len)); const { bytesRead } = await fh.read(b, 0, b.length, pos); return b.subarray(0, bytesRead); }
-const syncsafe = (b, o) => ((b[o] & 0x7f) << 21) | ((b[o + 1] & 0x7f) << 14) | ((b[o + 2] & 0x7f) << 7) | (b[o + 3] & 0x7f);
-function unsync(b) { const out = []; for (let i = 0; i < b.length; i++) { out.push(b[i]); if (b[i] === 0xFF && b[i + 1] === 0x00) i++; } return Buffer.from(out); }
+/* Reads never ask for more than the file holds, so a size a header claims cannot make the server allocate it. */
+async function readAt(fh, pos, len) { const b = Buffer.alloc(Math.max(0, len | 0)); const { bytesRead } = await fh.read(b, 0, b.length, pos); return b.subarray(0, bytesRead); }
+function syncsafe(b, o) { return ((b[o] & 0x7f) << 21) | ((b[o + 1] & 0x7f) << 14) | ((b[o + 2] & 0x7f) << 7) | (b[o + 3] & 0x7f); }
+function unsync(b) { const out = Buffer.allocUnsafe(b.length); let o = 0; for (let i = 0; i < b.length; i++) { out[o++] = b[i]; if (b[i] === 0xFF && b[i + 1] === 0x00) i++; } return out.subarray(0, o); }
 function swap16(b) { const c = Buffer.from(b.subarray(0, b.length - (b.length % 2))); return c.swap16(); }
 function decode(buf, enc) {
   if (enc === 0) return buf.toString("latin1");
@@ -71,26 +134,36 @@ const ID3_TEXT = { TIT2: "title", TT2: "title", TPE1: "artist", TP1: "artist", T
 async function id3(file) {
   const fh = await fsp.open(file, "r");
   try {
-    const h = await readAt(fh, 0, 10);
+    const { size: total } = await fh.stat();
+    const h = await readAt(fh, 0, Math.min(10, total));
     if (h.length < 10 || h.toString("latin1", 0, 3) !== "ID3") return {};
     const ver = h[3], flags = h[5], size = syncsafe(h, 6);
     if (ver < 2 || ver > 4 || size <= 0) return {};
-    let body = await readAt(fh, 10, Math.min(size, MAX_TAG_BYTES));
+    let body = await readAt(fh, 10, Math.min(size, MAX_TAG_BYTES, total - 10));
     if ((flags & 0x80) && ver < 4) body = unsync(body); // the whole tag unsynchronised (2.2, 2.3)
     let pos = 0;
     if (ver === 3 && (flags & 0x40) && body.length >= 4) pos = 4 + body.readUInt32BE(0);
     if (ver === 4 && (flags & 0x40) && body.length >= 4) pos = syncsafe(body, 0);
     const idLen = ver === 2 ? 3 : 4, hdr = ver === 2 ? 6 : 10, out = {};
+    // 2.4 sizes are syncsafe, but some writers (older iTunes) wrote plain ones: a size whose bytes cannot be syncsafe, or
+    // one that only the plain reading lands on the next frame (or the padding, or the end) with, is read plain
+    const frameStart = q => q === body.length || q < body.length && (body[q] === 0 || q + 4 <= body.length && /^[A-Z0-9]{4}$/.test(body.toString("latin1", q, q + 4)));
+    const size24 = p => {
+      const plain = body.readUInt32BE(p + 4), safe = syncsafe(body, p + 4);
+      if ([0, 1, 2, 3].some(k => body[p + 4 + k] & 0x80)) return plain;
+      return safe === plain || frameStart(p + 10 + safe) || !frameStart(p + 10 + plain) ? safe : plain;
+    };
     while (pos + hdr <= body.length) {
       const id = body.toString("latin1", pos, pos + idLen);
       if (!/^[A-Z0-9]+$/.test(id)) break; // padding
-      const len = ver === 2 ? body.readUIntBE(pos + 3, 3) : ver === 4 ? syncsafe(body, pos + 4) : body.readUInt32BE(pos + 4);
+      const len = ver === 2 ? body.readUIntBE(pos + 3, 3) : ver === 4 ? size24(pos) : body.readUInt32BE(pos + 4);
       const ff = ver === 2 ? 0 : body.readUInt16BE(pos + 8) & 0xFF;
       let data = body.subarray(pos + hdr, pos + hdr + len);
       pos += hdr + len;
       if (!len || data.length < len) continue;
       if (ver === 3) { if (ff & 0xC0) continue; if (ff & 0x20) data = data.subarray(1); }  // compressed or encrypted: skipped; a group id byte
-      if (ver === 4) { if (ff & 0x0C) continue; if (ff & 0x40) data = data.subarray(1); if (ff & 0x02) data = unsync(data); if (ff & 0x01) data = data.subarray(4); }
+      // 2.4: the tag's own unsynchronisation flag means every frame is unsynchronised, flagged or not
+      if (ver === 4) { if (ff & 0x0C) continue; if (ff & 0x40) data = data.subarray(1); if ((ff & 0x02) || (flags & 0x80)) data = unsync(data); if (ff & 0x01) data = data.subarray(4); }
       if (!data.length) continue;
       if (id === "COMM" || id === "COM") {
         const c = described(data, 3);
@@ -136,7 +209,7 @@ async function mp4Tags(file) {
       o += size;
     }
     if (!moov || moov.size > MAX_MOOV_BYTES) return {};
-    const body = await readAt(fh, moov.start, moov.size);
+    const body = await readAt(fh, moov.start, Math.min(moov.size, total - moov.start));
     const udta = boxes(body, 0, body.length).find(b => b.type === "udta"); if (!udta) return {};
     const meta = boxes(body, udta.start, udta.end).find(b => b.type === "meta"); if (!meta) return {};
     // an ISO meta box starts with version and flags; a QuickTime one goes straight to its children
@@ -157,7 +230,10 @@ async function mp4Tags(file) {
   } finally { await fh.close(); }
 }
 
-/* WAV: the RIFF INFO list (INAM title, IART artist, IPRD album, ICMT comment, ICRD date), wherever it sits. */
+/* WAV: the RIFF INFO list (INAM title, IART artist, IPRD album, ICMT comment, ICRD date), wherever it sits. Its text has
+   no stated encoding: UTF-8 when it is valid UTF-8, otherwise Latin-1 (what Windows tools write). */
+const strictUtf8 = new TextDecoder("utf-8", { fatal: true });
+function utf8OrLatin1(b) { try { return strictUtf8.decode(b); } catch (e) { return b.toString("latin1"); } }
 const WAV_ITEMS = { INAM: "title", IART: "artist", IPRD: "album", ICMT: "comment", ICRD: "date" };
 async function wavInfo(file) {
   const fh = await fsp.open(file, "r");
@@ -167,10 +243,10 @@ async function wavInfo(file) {
       const h = await readAt(fh, o, 12); if (h.length < 8) break;
       const id = h.toString("latin1", 0, 4), size = h.readUInt32LE(4);
       if (id === "LIST" && h.toString("latin1", 8, 12) === "INFO" && size <= MAX_TAG_BYTES) {
-        const list = await readAt(fh, o + 12, size - 4);
+        const list = await readAt(fh, o + 12, Math.min(size - 4, total - o - 12));
         for (let p = 0; p + 8 <= list.length;) {
           const sid = list.toString("latin1", p, p + 4), sl = list.readUInt32LE(p + 4);
-          const key = WAV_ITEMS[sid], v = tidy(list.subarray(p + 8, p + 8 + sl).toString("utf8"));
+          const key = WAV_ITEMS[sid], v = tidy(utf8OrLatin1(list.subarray(p + 8, p + 8 + sl)));
           if (key && v && !out[key]) out[key] = v;
           p += 8 + sl + (sl % 2);
         }
@@ -197,4 +273,4 @@ function titleFromName(name) {
   return String(name || "").replace(/^.*[\\/]/, "").replace(/\.[A-Za-z0-9]{1,5}$/, "").replace(/[_]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
 }
 
-module.exports = { sniff, tags, titleFromName, FORMATS, id3, mp4Tags, wavInfo };
+module.exports = { sniff, sniffFile, mpegFrame, tags, titleFromName, FORMATS, id3, mp4Tags, wavInfo, unsync };

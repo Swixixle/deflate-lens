@@ -70,7 +70,9 @@ async function readInput(input, context, importer) {
   }
   const cleaned = cleanText(imported ? imported.text : raw);
   const kind = shared.detectKind(cleaned.text);
-  doc.kind = kind.kind === "claim" ? "claim" : "transcript";
+  // words the transcript chain brought (a feed's transcript, captions, a recording turned into text) are a transcript
+  // however short they are; only typed or pasted input can be a single claim
+  doc.kind = kind.kind === "claim" && !(doc.import && doc.import.source) ? "claim" : "transcript";
   delete doc.parseMode; delete doc.provenance; delete doc.status;
   if (imported) {
     // The fetched address is always the source of this input, including when an old form

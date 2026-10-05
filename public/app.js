@@ -401,16 +401,19 @@ function renderNew(){
   var msg = h("div",{class:"intake-msg", id:"intake-msg"});
   sec.append(ta, kind, h("div",{class:"row intake-actions"}, go, upload, file, ctx), msg);
   view.append(sec);
-  var kindNow = null, recording = null;
+  var kindNow = null, recording = null, pendingConsume = null;
   function updateStats(){
     if (recording) { kind.textContent = "A recording: " + (recording.name || "recording") + " (" + fmtBytes(recording.size) + "). Read this turns it into text, finds who is speaking, then reads it." + (ta.value.trim() ? " The text in the box is not used." : ""); return; }
     var k = describeKind(ta.value); kindNow = k.d; kind.textContent = k.text;
   }
+  // a new choice of what to read replaces the old one and whatever the old one left in the message area (an engine
+  // choice for another recording, an error); nothing is cleared while a fetch is running
+  function freshInput(){ recording = null; pendingConsume = null; if (!S.busy) clear(msg); }
   async function loadFile(f){
     if (!f) return;
+    freshInput();
     if (isRecording(f)) { recording = f; updateStats(); return; }
     if (!/\.(txt|md|srt|vtt|json)$/i.test(f.name || "")) { kind.textContent = "Use a transcript file (.txt, .srt, .vtt or .md) or a recording (MP3, M4A, WAV and others), or paste the text or a link."; return; }
-    recording = null;
     go.disabled = true; kind.textContent = "Opening " + f.name + "…";
     try { ta.value = await f.text(); UI.drafts["intake-text"] = ta.value; updateStats(); }
     catch(e) { kind.textContent = "Could not open the file. Paste the transcript instead."; }
@@ -418,13 +421,21 @@ function renderNew(){
   }
   file.addEventListener("change", function(){ return loadFile(file.files && file.files[0]); });
   // typing in the box means the box is what to read: a recording chosen before is let go
-  ta.addEventListener("input", function(){ recording = null; updateStats(); });
+  ta.addEventListener("input", function(){ freshInput(); updateStats(); });
   ta.addEventListener("keydown", function(e){ if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); onGo(); } });
   ta.addEventListener("dragover", function(e){ e.preventDefault(); });
   ta.addEventListener("drop", function(e){ e.preventDefault(); loadFile(e.dataTransfer && e.dataTransfer.files[0]); });
   updateStats();
   var onWords = async function(t, imp, jobId){
-    var nb2 = await API.consumeJob(jobId); S.runId = nb2.run.id; S.view = "run"; S.resumeFetch = null; forget("intake-text"); S.draft = {};
+    var nb2;
+    try { nb2 = await API.consumeJob(jobId); }
+    catch(e){
+      // the server could not finish importing (it failed, or did not answer): the next Read this asks it again, so words
+      // already fetched or paid for are not read a second time as plain text. A refusal (4xx) lets the fetch go.
+      pendingConsume = !e.status || e.status >= 500 ? jobId : null;
+      throw e;
+    }
+    pendingConsume = null; S.runId = nb2.run.id; S.view = "run"; S.resumeFetch = null; forget("intake-text"); S.draft = {};
     try { location.hash = "run-" + S.runId; } catch(e){} storeSet("deflate-run", S.runId);
     await refreshList(); await reload(nb2);
   };
@@ -445,7 +456,13 @@ function renderNew(){
     try {
       var doc = {title:(S.draft.title||"").trim(), sourceUrl:(S.draft.sourceUrl||"").trim(), sourceLabel:(S.draft.sourceLabel||"").trim(), sourceDate:S.draft.sourceDate||""};
       Object.keys(doc).forEach(function(x){ if (!doc[x]) delete doc[x]; });
-      // once its words have arrived the recording is done with: pressing Read this again reads them, never pays for them twice
+      // words fetched before whose import failed for a moment: imported now, not read again as the box's text
+      if (pendingConsume) {
+        var again = pendingConsume; msg.append(h("p",{class:"note info",text:"Importing the words fetched before…"}));
+        try { await onWords(null, null, again); } catch(e){ if (e && e.status >= 400 && e.status < 500) API.dismissJob(again).catch(function(){}); throw e; }
+        return;
+      }
+      // once its words have arrived the recording is done with: pressing Read this again never pays for them twice
       if (recording) { await transcribeRecording(recording, "", {msg:msg, ta:ta, updateStats:updateStats, fromGo:true, onWords:onWords, context:doc, recordingDone:function(){ recording = null; }}); return; }
       if (k.kind === "empty") { msg.append(h("p",{class:"note",text:"Upload a transcript or a recording, or paste something to read."})); return; }
       if (k.kind === "link") { await fetchTranscript(k.url, "", "", {msg:msg, ta:ta, updateStats:updateStats, fromGo:true, onWords:onWords, context:doc, targetRunId:""}); return; }
@@ -481,13 +498,13 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
   for (;;){
     try { j = await API.job(jobId); misses = 0; } catch(e){ if (++misses > 20 || (e && e.status === 404)){ ui.msg.replaceChildren(h("div",{class:"note err",text:"Lost track of the fetch (the server may have restarted). Nothing was saved; try again."}), fallbackHint(link)); return; } await new Promise(function(r){ setTimeout(r, 1500); }); continue; }
     for (; shown < (j.steps||[]).length; shown++) steps.append(h("li",{text: j.steps[shown].name + ": " + j.steps[shown].note}));
-    if (j.progress){ var p = j.progress; prog.textContent = p.stage === "transcribing" ? "Transcribing: " + fmtDur(p.secondsDone) + " of " + fmtDur(p.secondsTotal) + ". This runs on this computer; you can close this page and come back. Stop takes effect at the end of the current five-minute piece." : p.stage === "downloading" ? "Downloading the audio" + (p.percent != null ? ": " + p.percent + "%" : "") + "…" : p.stage === "downloading model" ? "Downloading the speech model (once): " + (p.file||"") + " " + (p.percent||0) + "%" : p.stage === "loading model" ? "Loading the speech model…" : p.stage === "decoding" ? "Reading the audio: " + fmtDur(p.secondsDecoded) + " decoded…" : p.log ? String(p.log).split("\n").filter(Boolean).slice(-1)[0] || "" : ""; }
+    if (j.progress){ var p = j.progress; prog.textContent = p.stage === "waiting" ? "Waiting: transcriptions on this computer run one at a time, and another is running." : p.stage === "transcribing" ? "Transcribing: " + fmtDur(p.secondsDone) + " of " + fmtDur(p.secondsTotal) + ". This runs on this computer; you can close this page and come back. Stop takes effect at the end of the current five-minute piece." : p.stage === "downloading" ? "Downloading the audio" + (p.percent != null ? ": " + p.percent + "%" : "") + "…" : p.stage === "downloading model" ? "Downloading the speech model (once): " + (p.file||"") + " " + (p.percent||0) + "%" : p.stage === "loading model" ? "Loading the speech model…" : p.stage === "decoding" ? "Reading the audio: " + fmtDur(p.secondsDecoded) + " decoded…" : p.log ? String(p.log).split("\n").filter(Boolean).slice(-1)[0] || "" : ""; }
     if (j.state !== "running") break;
     await new Promise(function(r){ setTimeout(r, 1200); });
   }
   clear(ui.msg);
-  if (j.state === "cancelled" || cancelled){ await API.dismissJob(jobId); ui.msg.append(h("div",{class:"note",text:"Stopped. Nothing was saved."}), fallbackHint(link)); return; }
-  if (j.state === "error" || j.state === "interrupted"){ await API.dismissJob(jobId); ui.msg.append(h("div",{class:"note",text:(j.error && j.error.message) || (rec ? "The recording could not be turned into text." : "The transcript could not be fetched.")}), fallbackHint(link)); return; }
+  if (j.state === "cancelled" || cancelled){ await API.dismissJob(jobId); ui.msg.append(h("div",{class:"note",text:"Stopped. Nothing was saved."}), fallbackHint(link, rec)); return; }
+  if (j.state === "error" || j.state === "interrupted"){ await API.dismissJob(jobId); ui.msg.append(h("div",{class:"note",text:(j.error && j.error.message) || (rec ? "The recording could not be turned into text." : "The transcript could not be fetched.")}), fallbackHint(link, rec)); return; }
   var res = j.result || {};
   if (res.kind === "choose"){
     var list = h("div",{class:"episodes"});
@@ -507,7 +524,10 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
     ok.append(h("p",{text:(res.kind === "article" ? "Read " + res.text.length.toLocaleString() + " characters from the page." : (rec ? "Turned into text: " : "Transcript found: ") + res.text.length.toLocaleString() + " characters" + (showName ? " · " + showName : "") + (epTitle ? " · " + epTitle : "") + ".") + " Preparing your reading…"}));
     if (src.note) ok.append(h("p",{class:"hint",text:"Where it came from: " + src.note + "."}));
     ui.msg.append(ok);
-    if (ui.onWords) await ui.onWords(res.text, null, jobId);
+    if (ui.onWords) {
+      // words the server refuses to import (a 4xx) are let go, so the same fetch is not offered again on every visit
+      try { await ui.onWords(res.text, null, jobId); } catch(e){ if (e && e.status >= 400 && e.status < 500) API.dismissJob(jobId).catch(function(){}); throw e; }
+    }
     S.activeTranscriptJobId = null;
     return;
   }
@@ -521,7 +541,7 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
     ui.msg.append(engineChoice(Object.assign({link:link}, nt), eng, ui, function(c){ fetchTranscript(link, guid, c, ui); }));
   } else { await API.dismissJob(jobId); ui.msg.append(fallbackHint(link)); }
 }
-function fallbackHint(link){ if (link && !S.draft.sourceUrl && !S.runId) S.draft.sourceUrl = link; return h("p",{class:"hint",text:"You can paste the transcript, or upload a .txt, .srt or .vtt file." + (link && !S.runId ? " The link is kept as the source." : "")}); }
+function fallbackHint(link, rec){ if (link && !S.draft.sourceUrl && !S.runId) S.draft.sourceUrl = link; return h("p",{class:"hint",text:rec ? "You can upload the recording again, or paste or upload its transcript (.txt, .srt or .vtt)." : "You can paste the transcript, or upload a .txt, .srt or .vtt file." + (link && !S.runId ? " The link is kept as the source." : "")}); }
 /* The one-time choice for the audio step. Once an engine is installed or a key is set, the chain runs through it on
    its own from then on. The consequence of each choice (cost, where the audio goes) is stated at the choice. `again`
    carries on with the choice made: the link's chain, or the uploaded recording (nt.recording; the engine on this
@@ -555,7 +575,9 @@ function engineChoice(nt, eng, ui, again){
   if (cloudReady) row.append(h("button",{class:localFits ? "btn" : "btn primary",type:"button",text:"Transcribe with Deepgram (fast, paid)",onclick:function(){ again("cloud"); }}));
   else {
     var key = h("input",{type:"password",placeholder:"Deepgram API key",autocomplete:"off","aria-label":"Deepgram API key"});
-    var useCloud = h("button",{class:"btn",type:"button",text:"Save key and transcribe with Deepgram (fast, paid)",onclick:async function(){ useCloud.disabled = true; try { await API.setSetting("DEEPGRAM_API_KEY", key.value); key.value = ""; try { await API.preferEngine("cloud"); } catch(e){} again("cloud"); } catch(e){ useCloud.disabled = false; box.append(h("p",{class:"hint",text:errCopy(e)})); } }});
+    // choosing Deepgram here is a choice for this audio; it becomes the standing preference only when none is set, so
+    // "keep audio on this computer" is never switched off by one exception
+    var useCloud = h("button",{class:"btn",type:"button",text:"Save key and transcribe with Deepgram (fast, paid)",onclick:async function(){ useCloud.disabled = true; try { await API.setSetting("DEEPGRAM_API_KEY", key.value); key.value = ""; if (!(eng && eng.prefer)) { try { await API.preferEngine("cloud"); } catch(e){} } again("cloud"); } catch(e){ useCloud.disabled = false; box.append(h("p",{class:"hint",text:errCopy(e)})); } }});
     row.append(key, useCloud);
   }
   box.append(row);
@@ -572,13 +594,13 @@ async function transcribeRecording(file, choice, ui){
   var own = !ui.fromGo; if (own) S.busy = true;
   try { await transcribeRecordingInner(file, choice, ui); } catch(e) { ui.msg.replaceChildren(h("div",{class:"note err",text:errCopy(e)})); } finally { if (own) S.busy = false; }
 }
-/* Which engine the server would use, by the same rule (pickEngine), so a large file is not sent only to be refused:
-   "" when none fits, "unknown" when the engines could not be asked (the server then decides). */
-function engineFor(eng, mp3){
-  if (!eng) return "unknown";
-  var local = !!(eng.local && eng.local.installed) && mp3, cloud = !!(eng.cloud && eng.cloud.configured);
-  if (eng.prefer === "local") return local ? "local" : "";
-  return cloud ? "cloud" : local ? "local" : "";
+/* Whether the server would refuse any file without a choice (pickEngine): no engine at all, or audio to stay on this
+   computer and no engine here. Then the choice is asked before a large file is sent. Otherwise the file is sent and the
+   server, which reads its first bytes, decides (a file named .m4a may be an MP3, and one named .mp3 may not be). */
+function mustChooseFirst(eng){
+  if (!eng) return false;
+  var local = !!(eng.local && eng.local.installed), cloud = !!(eng.cloud && eng.cloud.configured);
+  return eng.prefer === "local" ? !local : !local && !cloud;
 }
 async function transcribeRecordingInner(file, choice, ui){
   clear(ui.msg);
@@ -591,15 +613,15 @@ async function transcribeRecordingInner(file, choice, ui){
   };
   if (!choice) {
     var eng = null; try { eng = await API.engines(); S.engines = eng; } catch(x){}
-    if (eng && eng.upload && rec.bytes > eng.upload.maxBytes) { ui.msg.append(h("div",{class:"note",text:"This file is larger than " + Math.round(eng.upload.maxBytes / 1048576) + " MB, the most the app sends on. Upload a shorter recording, or its transcript."})); return; }
-    if (engineFor(eng, rec.mp3) === "") { await ask(eng.local && eng.local.installed && !rec.mp3 && (eng.prefer === "local" || !(eng.cloud && eng.cloud.configured)) ? "Transcription on this computer reads MP3 files only, and this file is not one. Use Deepgram for it, or convert it to MP3." : ""); return; }
+    if (eng && eng.upload && rec.bytes > eng.upload.maxBytes) { ui.msg.append(h("div",{class:"note",text:"This file is larger than " + fmtBytes(eng.upload.maxBytes) + ", the most the app sends on. Upload a shorter recording, or its transcript."})); return; }
+    if (mustChooseFirst(eng)) { await ask(""); return; }
   }
   ui.msg.append(h("div",{class:"note info"}, h("p",{text:"Sending " + rec.name + " (" + fmtBytes(rec.bytes) + ") to the app…"})));
   var c = ui.context || {}, started;
   try { started = await API.uploadRecording(file, {name:rec.name, choice:choice || "", title:c.title || "", sourceLabel:c.sourceLabel || "", sourceDate:c.sourceDate || "", sourceUrl:c.sourceUrl || ""}); }
   catch(e){
     // the server read the file's first bytes: its word on whether this computer's engine can read it is the one that counts
-    if (e.data && e.data.localReads === false) rec.mp3 = false;
+    if (e.data && typeof e.data.localReads === "boolean") rec.mp3 = e.data.localReads;
     if (e.code === "needs_engine" || e.code === "local_format") { await ask(e.code === "local_format" ? errCopy(e) : ""); return; }
     clear(ui.msg); ui.msg.append(h("div",{class:"note err",text:errCopy(e)})); return;
   }

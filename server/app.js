@@ -62,12 +62,21 @@ function createApp(opts) {
   const jobs = createJobs({ dataDir: opts.dataDir });
   const app = express();
   app.disable("x-powered-by");
+  /* A server bound to this computer answers only requests addressed to it by one of this computer's names. A page on
+     another site whose name was pointed at 127.0.0.1 (DNS rebinding) would otherwise count as the app's own page and
+     could use it, the paid routes included. `allowedHosts` is set by server/index.js unless HOST opens it to a network. */
+  if (Array.isArray(opts.allowedHosts)) app.use((req, res, next) => {
+    const host = String(req.headers.host || "").toLowerCase().replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
+    if (opts.allowedHosts.includes(host)) return next();
+    res.status(403).json({ error: "This server answers only requests addressed to this computer (127.0.0.1 or localhost).", code: "wrong_host" });
+  });
   app.use(express.json({ limit: "40mb" }));
 
   /* Uploaded recordings live under data/uploads only while the job that transcribes them runs; the job removes its file
      when it ends, and anything left there from a server that stopped mid-job is removed at the next start. */
   const uploadsDir = path.join(opts.dataDir, "uploads");
   const MAX_UPLOAD_BYTES = opts.maxUploadBytes || 2 * 1024 * 1024 * 1024; // Deepgram takes files up to 2 GB
+  const MAX_UPLOADS_AT_ONCE = opts.maxUploadsAtOnce || 3, UPLOAD_IDLE_MS = opts.uploadIdleMs || 120000;
   const ready = (async () => {
     await store.init();
     await jobs.ready;
@@ -146,24 +155,38 @@ function createApp(opts) {
      MP3 only); when none fits, nothing is kept and the page offers the choice. */
   app.post("/api/transcript/upload", wrap(async (req, res) => {
     const type = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
-    if (!/^(?:audio|video)\/[a-z0-9.+-]+$/.test(type) && type !== "application/octet-stream") return res.status(415).json({ error: "Upload a recording (an audio or video file).", code: "not_audio" });
+    // a refusal before the body is read closes the connection after the answer, so the unread bytes are not taken for the
+    // next request on it (a kept-alive connection would otherwise carry them into the next one)
+    const unread = () => res.set("Connection", "close");
+    if (!/^(?:audio|video)\/[a-z0-9.+-]+$/.test(type) && type !== "application/octet-stream") { unread(); return res.status(415).json({ error: "Upload a recording (an audio or video file).", code: "not_audio" }); }
     const q = req.query || {}, one = v => typeof v === "string" ? v : "";
     const name = one(q.name).replace(/^.*[\\/]/, "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 200) || "recording";
     const choice = one(q.choice) === "local" || one(q.choice) === "cloud" ? one(q.choice) : "";
     const context = Object.fromEntries(["title", "sourceLabel", "sourceDate"].filter(k => one(q[k]).trim()).map(k => [k, one(q[k]).slice(0, 600)]));
     // where the recording came from, when the person said so under Add context (a recording has no link of its own)
     if (/^https?:\/\/\S+$/i.test(one(q.sourceUrl).trim())) context.sourceUrl = one(q.sourceUrl).trim().slice(0, 2000);
+    // a date the run could not keep is refused now, not after a paid transcription
+    if (context.sourceDate && !/^\d{4}-\d{2}-\d{2}$/.test(context.sourceDate.trim())) { unread(); return res.status(400).json({ error: "The date must be written YYYY-MM-DD.", code: "invalid" }); }
+    // a few at a time, counting those still arriving: each holds its file on disk until its transcription ends
+    if (jobs.running("resolve").filter(j => j.input && j.input.upload).length + uploadsArriving >= MAX_UPLOADS_AT_ONCE) { unread(); return res.status(429).json({ error: "Recordings are already being turned into text; wait for one to finish, then upload this one.", code: "busy" }); }
     // a file the browser says is too large is refused before a byte of it is read
-    if (Number(req.headers["content-length"]) > MAX_UPLOAD_BYTES) { res.set("Connection", "close"); return res.status(413).json({ error: "This file is larger than " + Math.round(MAX_UPLOAD_BYTES / 1048576) + " MB.", code: "too_large" }); }
+    const limit = MAX_UPLOAD_BYTES >= 1048576 ? Math.round(MAX_UPLOAD_BYTES / 1048576) + " MB" : Math.round(MAX_UPLOAD_BYTES / 1024) + " KB";
+    if (Number(req.headers["content-length"]) > MAX_UPLOAD_BYTES) { unread(); return res.status(413).json({ error: "This file is larger than " + limit + ".", code: "too_large" }); }
+    uploadsArriving++;
+    try { await receiveUpload(req, res, { type, name, choice, context, limit, unread }); } finally { uploadsArriving--; }
+  }));
+  let uploadsArriving = 0;
+  async function receiveUpload(req, res, { type, name, choice, context, limit, unread }) {
     const id = "up" + Date.now().toString(36) + crypto.randomBytes(4).toString("hex"), dir = path.join(uploadsDir, id), file = path.join(dir, "recording");
     await fs.promises.mkdir(dir, { recursive: true });
+    // a transfer that stalls for two minutes is given up (the server's own limit on a whole request is lifted for a long upload)
+    req.setTimeout(UPLOAD_IDLE_MS, () => req.destroy(Object.assign(new Error("the upload stalled"), { code: "upload_stalled" })));
     const hash = crypto.createHash("sha256"); let bytes = 0;
     const drop = () => fs.promises.rm(dir, { recursive: true, force: true });
     try {
-      await pipeline(req, new Transform({ transform(chunk, enc, cb) { bytes += chunk.length; if (bytes > MAX_UPLOAD_BYTES) return cb(Object.assign(new Error("This file is larger than " + Math.round(MAX_UPLOAD_BYTES / 1048576) + " MB."), { status: 413, code: "too_large" })); hash.update(chunk); cb(null, chunk); } }), fs.createWriteStream(file));
-    } catch (e) { await drop(); if (e.status) throw e; throw Object.assign(new Error("The upload did not arrive whole; try again."), { status: 400, code: "upload_incomplete" }); }
-    const head = Buffer.alloc(64), fh = await fs.promises.open(file, "r"); try { await fh.read(head, 0, 64, 0); } finally { await fh.close(); }
-    const format = bytes ? AF.sniff(head) : null;
+      await pipeline(req, new Transform({ transform(chunk, enc, cb) { bytes += chunk.length; if (bytes > MAX_UPLOAD_BYTES) return cb(Object.assign(new Error("This file is larger than " + limit + "."), { status: 413, code: "too_large" })); hash.update(chunk); cb(null, chunk); } }), fs.createWriteStream(file));
+    } catch (e) { await drop(); unread(); if (e.status) throw e; throw Object.assign(new Error("The upload did not arrive whole; try again."), { status: 400, code: "upload_incomplete" }); }
+    let format; try { format = bytes ? await AF.sniffFile(file) : null; } catch (e) { await drop(); throw e; }
     if (!format) { await drop(); return res.status(415).json({ error: bytes ? "This file is not a recording the app can read (MP3, M4A or MP4, WAV, Ogg, FLAC, AAC or WebM)." : "The file is empty.", code: "not_audio" }); }
     const have = { local: engines.local.installed(), cloud: engines.cloud.configured() }, localReads = format === "mp3", formatName = AF.FORMATS[format].name;
     const refuse = async (code, error) => { await drop(); return res.status(409).json({ error, code, format, formatName, bytes, available: have, localReads }); };
@@ -182,7 +205,7 @@ function createApp(opts) {
       return Object.assign({ kind: "transcript" }, w, { chars: w.text.length, fetchedAt: new Date().toISOString() });
     }, { onEnd: drop });
     res.json({ jobId: job.id, engine: pick, format });
-  }));
+  }
   app.get("/api/transcript/jobs/:id", wrap(async (req, res) => { const j = await jobs.get(req.params.id); if (!j) return res.status(404).json({ error: "no such job" }); res.json(j); }));
   app.post("/api/transcript/jobs/:id/cancel", wrap(async (req, res) => { res.json({ ok: jobs.cancel(req.params.id) }); }));
   app.post("/api/transcript/jobs/:id/dismiss", wrap(async (req, res) => {
@@ -233,7 +256,7 @@ function createApp(opts) {
       const voices = (result.speakers || []).filter(s => /^SPEAKER \d+$/.test(s));
       if (fresh && src.kind === "audio-transcription" && src.engine === "deepgram" && voices.length)
         await store.recordTranscribedVoices(rid, { by: "recording", via: "transcription", engine: "deepgram", model: src.model || "", requestId: src.requestId || "", audioUrl: src.url || "", audioFoundBy: src.file ? "the file you uploaded (" + src.file.name + "), transcribed by Deepgram" : "the episode's audio, transcribed by Deepgram", durationSeconds: src.durationSeconds || 0, voices: voices.length,
-          method: "Deepgram separated the voices as it transcribed the recording, one label per voice: the labels came from the recording, not from the words. Voices are numbered by the recording; names come from what the conversation and the episode's listing show." });
+          method: "Deepgram separated the voices as it transcribed the recording, one label per voice: the labels came from the recording, not from the words. Voices are numbered by the recording; names come from what the conversation and " + (src.file ? "the file's name and tags" : "the episode's listing") + " show." });
       if (fresh) await store.saveIntake(rid, prepared.original, Object.assign(prepared.intake, {transcriptJobId:id}));
       await jobs.acknowledge(id, rid);
       return rid;

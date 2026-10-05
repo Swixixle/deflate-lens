@@ -12,7 +12,9 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "data");
 
 const ai = createAI(process.env);
 const research = createResearch(process.env);
-const { app, ready, state } = createApp({ dataDir: DATA_DIR, ai, research, envPath: path.join(__dirname, "..", ".env") });
+// bound to this computer (the default): only requests addressed to it by its own names are answered (see app.js)
+const loopback = HOST === "localhost" || HOST === "::1" || /^127\./.test(HOST);
+const { app, ready, state } = createApp({ dataDir: DATA_DIR, ai, research, envPath: path.join(__dirname, "..", ".env"), allowedHosts: loopback ? [...new Set(["127.0.0.1", "localhost", "::1", HOST])] : null });
 
 ready.then(() => {
   const server = app.listen(PORT, HOST, () => {
@@ -28,6 +30,9 @@ ready.then(() => {
     console.log("  Stop with Ctrl+C. Start again later with: npm start");
     console.log("");
   });
+  // an uploaded recording can take longer than Node's five-minute limit on a whole request to arrive; the upload route
+  // gives up on a transfer that stalls instead (app.js)
+  server.requestTimeout = 0;
   server.on("error", e => {
     if (e.code === "EADDRINUSE") { console.error("Port " + PORT + " is already in use. Stop the other program, or start with a different port:  PORT=3124 npm start"); process.exit(1); }
     throw e;

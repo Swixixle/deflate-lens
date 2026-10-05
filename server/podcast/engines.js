@@ -113,7 +113,7 @@ function localEngine({ dataDir, env }) {
       return { text: conv.text, speakers: [], engine: "local", model, durationSeconds: Math.round(done), sampleRate: decodedRate, note: "automatic transcription on this computer (Whisper " + model.split("/").pop() + "); no speaker labels; expect some misheard words and names" };
     } finally { await fsp.rm(tmpDir, { recursive: true, force: true }).catch(() => {}); }
   }
-  return { name: "local", dir, model, installed, modelCached, install, transcribe, packages: LOCAL_PACKAGES };
+  return { name: "local", dir, model, installed, modelCached, install, transcribe: oneAtATime(transcribe), packages: LOCAL_PACKAGES };
 }
 function abortError() { const e = new Error("stopped"); e.code = "cancelled"; return e; }
 function concat(parts, len) { const out = new Float32Array(len); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out; }
@@ -153,6 +153,32 @@ async function download(url, file, fetchFn, onProgress, signal) {
   return got;
 }
 
+async function fileBody(file) {
+  if (typeof fs.openAsBlob === "function") return fs.openAsBlob(file);
+  const { size } = await fsp.stat(file);
+  if (size > 1024 * 1024 * 1024) throw Object.assign(new Error("This version of Node.js cannot send a file this large to Deepgram. Install Node 20 or newer, or upload a shorter recording."), { code: "cloud_failed" });
+  return fsp.readFile(file);
+}
+/* One at a time: a second transcription on this computer waits for the first (each holds a model and hundreds of
+   megabytes of audio in memory). A wait can be stopped; it says it is waiting. */
+function oneAtATime(fn) {
+  let tail = Promise.resolve(), busy = 0;
+  return async function (args) {
+    const prev = tail; let release; const mine = new Promise(r => { release = r; });
+    tail = prev.then(() => mine);
+    try {
+      if (busy++ > 0 && args && args.onProgress) args.onProgress({ stage: "waiting", percent: null });
+      const stop = args && args.signal;
+      await new Promise((res, rej) => {
+        if (stop && stop.aborted) return rej(abortError());
+        const onAbort = () => rej(abortError()); if (stop) stop.addEventListener("abort", onAbort, { once: true });
+        prev.then(() => { if (stop) stop.removeEventListener("abort", onAbort); res(); });
+      });
+      return await fn(args);
+    } finally { busy--; release(); }
+  };
+}
+
 /* ---------------- cloud (Deepgram) ---------------- */
 function deepgramEngine({ apiKey, fetch: fetchFn, env }) {
   const model = (env && env.DEEPGRAM_MODEL) || "nova-3";
@@ -163,8 +189,9 @@ function deepgramEngine({ apiKey, fetch: fetchFn, env }) {
       if (!apiKey) { const e = new Error("no DEEPGRAM_API_KEY"); e.code = "cloud_not_configured"; throw e; }
       onProgress && onProgress({ stage: "transcribing (Deepgram)", percent: null });
       const url = "https://api.deepgram.com/v1/listen?model=" + encodeURIComponent(model) + "&smart_format=true&punctuate=true&diarize=true&utterances=true";
-      // an uploaded file goes as the request body (streamed from disk where Node can, read whole otherwise); a link as JSON
-      const body = file ? (typeof fs.openAsBlob === "function" ? await fs.openAsBlob(file) : await fsp.readFile(file)) : JSON.stringify({ url: audioUrl });
+      // an uploaded file goes as the request body, streamed from disk (Node 20 and later); an older Node reads it whole,
+      // which is refused past 1 GB rather than risk the memory. A link goes as JSON.
+      const body = file ? await fileBody(file) : JSON.stringify({ url: audioUrl });
       let res;
       try { res = await (fetchFn || globalThis.fetch)(url, { method: "POST", signal, headers: { "Authorization": "Token " + apiKey, "Content-Type": file ? (type || "application/octet-stream") : "application/json" }, body }); }
       catch (e) { if (signal && signal.aborted) throw abortError(); throw Object.assign(new Error("Deepgram could not be reached (" + String(e.message || e).slice(0, 120) + ")."), { code: "cloud_failed" }); }
@@ -194,4 +221,4 @@ function deepgramEngine({ apiKey, fetch: fetchFn, env }) {
   };
 }
 
-module.exports = { localEngine, deepgramEngine, toMono16k, quietestCut, LOCAL_PACKAGES, DEFAULT_MODEL };
+module.exports = { localEngine, deepgramEngine, toMono16k, quietestCut, oneAtATime, LOCAL_PACKAGES, DEFAULT_MODEL };

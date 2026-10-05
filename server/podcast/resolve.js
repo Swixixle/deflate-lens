@@ -297,6 +297,7 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
     const engine = pick === "local" ? local : cloud;
     step("Audio", pick === "local" ? "transcribing on this computer (this takes a while)" : "transcribing with Deepgram");
     const r = await engine.transcribe({ audioUrl, durationSeconds: item.duration, fetch: fetchFn, signal, onProgress });
+    noWords(r, "The episode's audio");
     return Object.assign(base, { ok: true, text: r.text, title: item.title, speakers: r.speakers || [], tried, source: { kind: "audio-transcription", url: audioUrl, engine: r.engine, model: r.model, requestId: r.requestId || "", durationSeconds: r.durationSeconds, note: r.note } });
   }
   /* A recording the person uploaded (0.14.1): no episode to find, only the file to turn into text with the engine
@@ -312,10 +313,16 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
     step("Audio", pick === "local" ? "transcribing on this computer (this takes a while)" : "sending it to Deepgram to transcribe, with the voices separated");
     if (signal && signal.aborted) throw cancelled();
     const r = await engine.transcribe({ file: up.path, type: up.type, durationSeconds: null, fetch: fetchFn, signal, onProgress });
+    noWords(r, "The recording");
     const file = { name: up.name, bytes: up.bytes, sha256: up.sha256, format: up.format };
     return Object.assign(base, { ok: true, text: r.text, title, speakers: r.speakers || [], tried: [], source: { kind: "audio-transcription", url: "", file, engine: r.engine, model: r.model, requestId: r.requestId || "", durationSeconds: r.durationSeconds, note: r.note + "; from the file you uploaded" } });
   }
   function cancelled() { const e = new Error("stopped"); e.code = "cancelled"; return e; }
+  /* Audio turned into no words (silence, music, a decoder that found nothing) is a failure to say, not a transcript: a
+     job that ended with nothing to read would otherwise be offered to the page again and again. */
+  function noWords(r, what) {
+    if (!String(r && r.text || "").replace(/\s+/g, "")) throw Object.assign(new Error(what + " was turned into no words (" + (r && r.engine === "local" ? "the engine on this computer" : "Deepgram") + " heard no speech in it). If it has speech, try the other way of turning audio into text, or upload its transcript."), { code: "no_words" });
+  }
 
   return { classify, locate, words, fileWords, readFeed, appleLookup, appleSearchEpisodes, spotifyTitle };
 }

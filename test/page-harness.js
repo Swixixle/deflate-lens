@@ -1,7 +1,7 @@
 "use strict";
 /* The shipped page (public/app.js) executed against the real server in a small DOM: the harness the page tests share.
    page(t, opts) starts the server (mock model, mock source search; opts.ai, opts.resolver, opts.cloudEngine,
-   opts.localEngine, opts.serverFetch, opts.run and opts.env replace the server's parts), boots the page in a VM and returns helpers. */
+   opts.localEngine, opts.maxUploadBytes, opts.serverFetch, opts.run and opts.env replace the server's parts), boots the page in a VM and returns helpers. */
 const fs = require("node:fs"), os = require("node:os"), path = require("node:path"), vm = require("node:vm");
 const { createApp } = require("../server/app"), { createMockAI } = require("../server/ai"), { createResearch } = require("../server/research");
 
@@ -32,7 +32,7 @@ function visible(node) { if (node.hidden) return ""; if (node.tag === "details" 
 function el(tag, id, cls) { const n = new Element(tag); if (id) n.id = id; if (cls) n.className = cls; return n; }
 
 async function page(t, opts = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "deflate-ui-")), system = createApp({ dataDir: dir, examplesDir: dir, ai: opts.ai === undefined ? createMockAI() : opts.ai, research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), resolver: opts.resolver, cloudEngine: opts.cloudEngine, localEngine: opts.localEngine, fetch: opts.serverFetch, run: opts.run, env: opts.env || {}, envPath: path.join(dir, ".env") });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "deflate-ui-")), system = createApp({ dataDir: dir, examplesDir: dir, ai: opts.ai === undefined ? createMockAI() : opts.ai, research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), resolver: opts.resolver, cloudEngine: opts.cloudEngine, localEngine: opts.localEngine, maxUploadBytes: opts.maxUploadBytes, fetch: opts.serverFetch, run: opts.run, env: opts.env || {}, envPath: path.join(dir, ".env") });
   await system.ready;
   const server = await new Promise(r => { const s = system.app.listen(0, "127.0.0.1", () => r(s)); });
   const base = "http://127.0.0.1:" + server.address().port, body = new Element("body");

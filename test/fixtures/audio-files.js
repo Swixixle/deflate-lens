@@ -61,7 +61,8 @@ function wav(tags = {}) {
 }
 const ogg = () => Buffer.concat([Buffer.from("OggS", "latin1"), Buffer.alloc(200)]);
 const flac = () => Buffer.concat([Buffer.from("fLaC", "latin1"), Buffer.alloc(200)]);
-const adts = () => Buffer.concat([Buffer.from([0xFF, 0xF1, 0x50, 0x80, 0x02, 0x1F, 0xFC]), Buffer.alloc(200)]);
+// ADTS frames of 16 bytes each: a header (sampling index 4, length 16) and nine bytes of silence
+const adts = () => Buffer.concat(Array.from({ length: 12 }, () => Buffer.concat([Buffer.from([0xFF, 0xF1, 0x50, 0x80, 0x02, 0x1F, 0xFC]), Buffer.alloc(9)])));
 const webm = () => Buffer.concat([Buffer.from([0x1A, 0x45, 0xDF, 0xA3]), Buffer.alloc(200)]);
 const png = () => Buffer.concat([Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]), Buffer.alloc(200)]);
 
