@@ -53,14 +53,14 @@ test("a bare claim with no title, date, speaker, URL or final period becomes a s
   } finally { await s.close(); fs.rmSync(dataDir, { recursive: true, force: true }); }
 });
 
-test("unlabeled text is usable: Speaker unknown, attribution not applicable, no heading heuristics; saved runs keep their parse rules", async () => {
+test("unlabeled text is usable: no speakers shown, attribution not applicable, no heading heuristics; saved runs keep their parse rules", async () => {
   const dataDir = tmp(); const s = await start(dataDir);
   try {
     const text = "Plans beat waiting\n\nA bad plan beats no plan. Waiting teaches nothing.\n\nFeeds optimise for now";
     const b = (await s.api("POST", "/api/runs", { run: {}, transcript: text })).data;
     assert.equal(b.run.kind, "transcript"); assert.equal(b.run.parseMode, "text"); assert.equal(b.run.title, "Plans beat waiting");
-    assert.deepEqual(b.run.speakers, [{ key: "UNLABELED", name: "Speaker unknown", bio: "" }]);
-    assert.equal(b.run.provenance.notApplicable, true); assert.match(b.run.provenance.method, /Speaker unknown/);
+    assert.deepEqual(b.run.speakers, [{ key: "UNLABELED", name: "Speaker not established", bio: "" }]);
+    assert.equal(b.run.provenance.notApplicable, true); assert.match(b.run.provenance.method, /No speaker labels came with the text/);
     const turns = SH.parseTranscript(b.transcript, { mode: "text" });
     assert.equal(turns.length, 3); assert.ok(turns.every(t => !t.heading), "no heading in text mode");
     assert.equal(SH.parseTranscript(b.transcript).filter(t => t.heading).length, 2, "the legacy rules would have made headings of two of them");

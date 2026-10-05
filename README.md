@@ -46,7 +46,7 @@ The app opens at <http://127.0.0.1:3123>. Stop it with `Ctrl+C`. Start it again 
 ## Use it
 
 1. **Paste or upload.** A transcript file (`.txt`, `.srt`, `.vtt`, `.md`), any text, a single claim, or a podcast, video or page link.
-2. **Press Read this.** That is the only button you need. It checks who said what, picks the passages, writes and reviews each reading, and looks for sources. You can close the page; it keeps going.
+2. **Press Read this.** That is the only button you need. It works out who said what (keeping any speaker names that came with the text, and setting a played clip apart from the host), picks the passages, writes and reviews each reading, and looks for sources. You can close the page; it keeps going.
 3. **The key, once.** The first time, it asks for your Anthropic API key and saves it on your computer. Readings are billed to that key.
 4. **Read.** Open **Evidence** under a card for the original and the reasoning. **Readings** has your saved work; **Controls** has everything optional, and the **User guide**.
 
@@ -58,7 +58,8 @@ The [User guide](docs/guide.md) is short: starting a reading, reading the result
 - **An assessment is not a verification.** A "Checkable claim" is something evidence could settle; the app does not decide from the model's memory whether it is true. Searches find possible sources; only you attach one, and only you say whether it supports or contradicts the claim. Nothing is ever marked "verified".
 - **The review is a second pass of the same model**, not an independent check. The original is always one click away so you can judge.
 - **The speaker is never graded.** Only the argument and each claim.
-- **It can be wrong.** When a reading cannot pass its checks, it is held and the card says why.
+- **It can be wrong.** When a reading still fails its checks after the app corrects the parts found wrong, the card says it couldn't be completed and its Evidence says why.
+- **Who is speaking is worked out, not proven.** From the words, only where they show a change of speaker; or by voice, from the recording, if you ask (Deepgram, your key).
 
 ## Settings
 
@@ -69,7 +70,7 @@ Settings live in `.env` in the app folder (setup creates it). The ones you might
 | `ANTHROPIC_API_KEY` | Your key for the readings. The page can save it for you. Billed to your Anthropic account. |
 | `ANTHROPIC_MAX_TOKENS` | The longest answer a reading may have (default 16000). |
 | `RESEARCH_CONTACT_EMAIL` | Your email, so Crossref answers faster. Optional. |
-| `DEEPGRAM_API_KEY` | For fast audio-to-text. Optional; the page asks when needed. |
+| `DEEPGRAM_API_KEY` | For fast audio-to-text, and for separating voices from a recording. Optional; the page asks when needed. |
 | `TRANSCRIBE_PREFER` | `local` or `cloud`, when both audio options are set up. |
 | `DEFLATE_MOCK_AI` | `1` to try the app with placeholder readings and no key. |
 

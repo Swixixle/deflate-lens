@@ -53,7 +53,7 @@ set `DEFLATE_MOCK_AI=1` for the person; that produces placeholder output and is 
 
 ## Podcast and video links
 
-The page fetches transcripts itself (feed transcript → YouTube captions → episode page → audio). Two optional things make it better, and the person may ask you to set them up: `yt-dlp` on the PATH (`brew install yt-dlp`; makes YouTube captions reliable), and local speech-to-text (`npm run setup -- --local-transcription`, about 480 MB into `data/local-transcription/`; the page offers the same install when it first needs it). Do not add a Deepgram key or any other paid service unless the person asks for it; the page asks them once when the audio step is reached.
+The page fetches transcripts itself (feed transcript → YouTube captions → episode page → audio). Two optional things make it better, and the person may ask you to set them up: `yt-dlp` on the PATH (`brew install yt-dlp`; makes YouTube captions reliable), and local speech-to-text (`npm run setup -- --local-transcription`, about 480 MB into `data/local-transcription/`; the page offers the same install when it first needs it). Do not add a Deepgram key or any other paid service unless the person asks for it; the page asks them once when the audio step is reached, or when they ask it to separate voices from a recording.
 
 ## Repeat runs and updates
 
@@ -63,7 +63,7 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 
 ## Where things are
 
-- `data/runs/<id>/` — one folder per run: `run.json`, `transcript.txt`, `versions/` (earlier texts, named by hash), `passages/*.json`, `summary.json`, `calls.jsonl` (model-call records: hashes, never prompt text), `attachments/`.
+- `data/runs/<id>/` — one folder per run: `run.json`, `transcript.txt`, `versions/` (earlier texts, named by hash), `passages/*.json`, `summary.json`, `calls.jsonl` (model-call records: hashes, never prompt text), `attempts/` (every draft and correction of each reading), `voices/` (a recording's words and voices, when speakers were separated by voice), `attachments/`.
 - `data/runs/<id>/archive/` — passages replaced by a re-segment. `data/trash/` — runs deleted in the app. The app
   never removes files.
 - `.env` — local settings, including the key. Mode 600 when the app writes it.
@@ -76,7 +76,7 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 - `npm run transcript-smoke` — hits Apple's catalogue, two podcast feeds and YouTube for the transcript chain (needs network; `-- --local` also transcribes a five-minute episode with the local engine).
 - `npm run research-smoke` — hits the live Crossref and PubMed services for two example claims (needs network).
 - `npm run ui-check` — headless-browser acceptance check; `npm run screenshots` regenerates the README pictures. Both need `npm install --no-save playwright && npx playwright install chromium` first.
-- `npm run eval` — reads the evaluation cases in `eval/cases.json` with the person's key and writes a scoring sheet under `data/eval/`. It costs money on their key (roughly $2–3 at current list prices); run it only when they ask.
+- `npm run eval` — reads the evaluation cases in `eval/cases.json` with the person's key and writes a scoring sheet under `data/eval/`. It costs money on their key (roughly $2–3 at current list prices for all 31 cases); run it only when they ask.
 
 `docs/technical.md` has the details behind all of this: how readings are checked, every record kept, and what was and was not verified.
 

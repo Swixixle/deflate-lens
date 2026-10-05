@@ -96,7 +96,11 @@ var API = {
   confirmSource(id, sourceUrl, key){ return API.req("POST", "/api/runs/" + id + "/source/confirm", {sourceUrl:sourceUrl, key:key}); },
   saveRun(id, run, transcript){ return API.req("PUT","/api/runs/" + id, {run:run, transcript:transcript}); },
   deleteRun(id){ return API.req("DELETE","/api/runs/" + id); },
-  assignSpeakers(id, names, context, signal){ return API.req("POST","/api/runs/" + id + "/assign-speakers", {names:names, context:context||""}, signal); },
+  /* Speakers, on request: worked out from the words, separated by voice from the recording, or named by the person. */
+  speakersFromWords(id, signal){ return API.req("POST","/api/runs/" + id + "/speakers-from-words", {}, signal); },
+  voices(id, link, signal){ return API.req("POST","/api/runs/" + id + "/voices", {link:link||""}, signal); },
+  confirmNames(id, names){ return API.req("POST","/api/runs/" + id + "/confirm-names", {names:names}); },
+  pageText(id){ return API.req("POST","/api/runs/" + id + "/page-text", {}); },
   duplicateRun(id){ return API.req("POST","/api/runs/" + id + "/duplicate"); },
   addAttachment(id, payload){ return API.req("POST","/api/runs/" + id + "/attachments", payload); },
   /* Used only for picture transcription and the optional attribution check; readings are made by the server. */
@@ -144,7 +148,18 @@ function say(text){ var el = $("say"); if (!el) return; el.textContent = text; i
 function run(){ return S.b && S.b.run; }
 function overrides(){ var r = run(); return r && r.provenance && r.provenance.overrides || {}; }
 function effSpeaker(t){ return SH.effSpeaker(t, overrides()); }
-function speakerName(key){ var r = run(); var s = r && (r.speakers||[]).filter(function(x){ return x.key === key; })[0]; return key === "UNLABELED" ? "Speaker unknown" : (s && s.name) ? s.name : key; }
+function speakerName(key){ var r = run(); var s = r && (r.speakers||[]).filter(function(x){ return x.key === key; })[0]; return key === "UNLABELED" ? "Speaker not established" : (s && s.name) ? s.name : key; }
+/* A text with no speaker labels at all shows its words without a speaker in front of every line; one quiet notice says
+   so. "Speaker not established" stays where some speakers are known and these words could not be placed. */
+function allUnlabeled(){ var l = speakerLabels(S.turns); return !isClaimRun() && l.length > 0 && l.every(function(x){ return x === "UNLABELED"; }); }
+function whoPrefix(key){ return allUnlabeled() && key === "UNLABELED" ? "" : speakerName(key) + ": "; }
+/* Why a reading couldn't be completed, in plain words: which part of the card, which level, what is wrong; speaker
+   labels by their names. */
+function plainReason(x){
+  var s = SH.issueText(FRIENDLY[x] || String(x)).replace(/\b(SPEAKER \d+|CLIP \d+|QUOTE \d+|UNLABELED)\b/g, function(k){ return speakerName(k); });
+  s = s.charAt(0).toUpperCase() + s.slice(1);
+  return /[.?!”"]$/.test(s) ? s : s + ".";
+}
 function attributionOk(){ var r = run(), pr = r && r.provenance || {}; return !!(S.b && S.b.attributionGate && S.b.attributionGate.status === "ready" || pr.confirmedAt || pr.notApplicable); }
 function isClaimRun(){ var r = run(); return !!(r && r.kind === "claim"); }
 function fmtTurns(from, to, ov){ return SH.fmtTurns(S.turns, ov === undefined ? overrides() : ov, from, to); }
@@ -632,7 +647,17 @@ function buildHead(el){
 
 /* ---- run-level notices: only what changes how the reading should be taken ---- */
 function anyMock(){ return (S.ai && S.ai.mock) || S.b.passages.some(function(p){ return /MOCK/.test(p.analyzedBy || ""); }); }
-function noticesSig(){ var r = run(), pr = r.provenance || {}, idn = S.b.sourceIdentity || {}; return JSON.stringify([r.id, r.example, anyMock(), idn.state, idn.sourceUrl, idn.key, UI.open["srccheck-" + r.id], pr.labelsOrigin, speakerLabels(S.turns).indexOf("UNLABELED") !== -1, S.b.attributionGate && S.b.attributionGate.status, r.processing && r.processing.sourceError, S.busy]); }
+function noticesSig(){ var r = run(), pr = r.provenance || {}, idn = S.b.sourceIdentity || {}; return JSON.stringify([r.id, r.example, anyMock(), idn.state, idn.sourceUrl, idn.key, UI.open["srccheck-" + r.id], pr.labelsOrigin, speakerLine(), S.b.attributionGate && S.b.attributionGate.status, r.processing && r.processing.sourceError, S.busy]); }
+/* The one quiet line about speakers: where the labels came from when the source gave none. Nothing when it did. */
+function unnamedSpeakers(){ var r = run(); return (r.speakers || []).filter(function(x){ return /^SPEAKER \d+$/.test(x.key) && /^Speaker \d+$/.test(x.name || "") && speakerLabels(S.turns).indexOf(x.key) !== -1; }); }
+function speakerLine(){
+  var r = run(), pr = r && r.provenance || {}; if (!r || isClaimRun()) return null;
+  var link = !pr.namesConfirmedAt && unnamedSpeakers().length ? "Name them" : "Details";
+  if (pr.labelsOrigin === "voices") return {text:"Speakers separated by voice.", link:link};
+  if (pr.labelsOrigin === "words") return {text:"Speakers worked out from the words.", link:link};
+  if (allUnlabeled()) return {text:"No speaker labels in this text.", link:"Find speakers"};
+  return null;
+}
 function buildNotices(el){
   var r = run(), pr = r.provenance || {}; clear(el);
   var add = function(text, action, cls){ var n = h("div",{class:"notice" + (cls ? " " + cls : "")}, h("p",{text:text})); if (action) n.append(h("button",{type:"button", class:"btn quiet", text:action[0], onclick:action[1]})); el.append(n); };
@@ -641,7 +666,8 @@ function buildNotices(el){
   var idn = S.b.sourceIdentity || {};
   if (idn.state === "needs_confirmation") el.append(sourceNotice(idn));
   if (pr.labelsOrigin === "model") add("Speaker names were suggested by AI from the words. They did not come with the source.", ["Check speakers", function(){ openDrawer("controls", "#ctl-speakers"); }]);
-  if (!isClaimRun() && speakerLabels(S.turns).indexOf("UNLABELED") !== -1) add("The text has no speaker names, so speakers show as “Speaker unknown”.", r.example ? null : ["Add names", function(){ openDrawer("controls", "#ctl-speakers"); }]);
+  var line = speakerLine();
+  if (line) el.append(h("p",{class:"notice quiet", id:"speakerNotice"}, document.createTextNode(line.text + " "), r.example ? null : h("button",{type:"button", class:"linkish inline", text:line.link, onclick:function(){ openDrawer("controls", "#ctl-speakers"); }})));
   if (!r.example && S.b.attributionGate && S.b.attributionGate.status !== "ready" && !isClaimRun() && r.processing && r.processing.status === "held" && r.processing.phase === "speakers") add("Some speakers could not be settled from the text, so the reading is held. A transcript with reliable speaker labels would settle them.", ["Who said what", function(){ openDrawer("controls", "#ctl-speakers"); }]);
   if (r.processing && r.processing.sourceError) add(r.processing.sourceError + " Claims whose search failed are not checked.");
 }
@@ -698,7 +724,7 @@ function statusInfo(){
   if (outdated && proc.status !== "held") return {text: "Some readings are out of date because the text or speakers changed. Read again to update them.", action: "Read again"};
   if (proc.status === "stopped") return {text: "Stopped. Your finished readings are kept.", action: "Resume reading"};
   if (proc.status === "interrupted") return {text: "The app was restarted while reading. Your finished readings are kept.", action: "Resume reading"};
-  if (proc.status === "partial") return {text: proc.message || "Some readings could not pass their checks and are held.", action: "Try the held readings again"};
+  if (proc.status === "partial") return {text: proc.message || "Some readings couldn't be completed.", action: "Try again"};
   if (proc.status === "held") return {text: proc.message, action: "Read again"};
   if (proc.status === "error") return {text: proc.message || "The reading could not finish. Your work is saved.", action: "Try again"};
   if (proc.status === "complete") return {text: "Some readings are out of date because the text or speakers changed. Read again to update them.", action: "Read again"};
@@ -729,7 +755,7 @@ function stateWord(p){
   var proc = run().processing || {};
   if (isReady(p)) return "";
   if (proc.status === "running" && proc.current === p.id) return "reading now";
-  if (p.readingGate && p.readingGate.status === "held") return (p.stale || []).length ? "out of date" : "held";
+  if (p.readingGate && p.readingGate.status === "held") return (p.stale || []).length ? "out of date" : "not completed";
   return "not read yet";
 }
 function contentsSig(){ return JSON.stringify(S.b.passages.map(function(p){ return [p.id, p.title, stateWord(p)]; })); }
@@ -747,7 +773,7 @@ function goToCard(pid){ var c = $("card-" + pid); if (!c) return; if (hasFn(c, "
 /* ---- cards: stable slots in passage order; a slot is redrawn only when its passage changes ---- */
 function cardSig(p, i, n){
   var proc = run().processing || {}, pr = run().provenance || {};
-  return JSON.stringify([p.id, i, n, p.readingRev, p.analyzedAt, p.status, p.readingGate, p.stale, p.held, p.quoteCheck, p.analysis && p.analysis.asSaid, p.analysis && p.analysis.jump, p.analysis && p.analysis.claims, p.speakers, p.title, p.historyCount, pr.labelsOrigin,
+  return JSON.stringify([p.id, i, n, p.readingRev, p.analyzedAt, p.status, p.readingGate, p.stale, p.held, p.quoteCheck, p.analysis && p.analysis.asSaid, p.analysis && p.analysis.jump, p.analysis && p.analysis.claims, p.analysis && p.analysis.levels, p.speakers, p.title, p.historyCount, pr.labelsOrigin, allUnlabeled(),
     (run().speakers || []).map(function(s){ return s.key + "=" + s.name; }), proc.status === "running" && proc.current === p.id, running(), readOnly(), !!S.research, S.turns.length, p.provenance && p.provenance.context && p.provenance.context.hash]);
 }
 function updateCards(force){
@@ -777,7 +803,7 @@ function friendly(reasons){ return (reasons || []).map(function(x){ return FRIEN
 function attributionLine(p){
   var r = run(), pr = r.provenance || {}, a = p.analysis || {}, parts = [];
   if (isClaimRun()) parts.push("Typed claim" + (a.by === "person" ? " · not yet read by the model" : ""));
-  else { var names = (p.speakers || []).map(speakerName).filter(function(x, i, l){ return l.indexOf(x) === i; }); if (names.length) parts.push(names.join(", ") + (pr.labelsOrigin === "model" ? " (names suggested by AI)" : "")); }
+  else { var names = (p.speakers || []).filter(function(k){ return k !== "UNLABELED"; }).map(speakerName).filter(function(x, i, l){ return l.indexOf(x) === i; }); if (names.length) parts.push(names.join(", ") + (pr.labelsOrigin === "model" ? " (names suggested by AI)" : "")); }
   if (/MOCK/.test(p.analyzedBy || "")) parts.push("mock output");
   return parts.join(" · ");
 }
@@ -792,28 +818,35 @@ function cardHead(p, i, n, withLevels, card){
   if (meta.firstChild) head.append(meta);
   return head;
 }
+/* The reading as shown: when only its fifth-grade wording failed, the high-school wording at both levels. */
+function shownAnalysis(a){
+  if (!(a && a.levels && a.levels.g5 === "withheld")) return a;
+  var copy = function(x){ if (Array.isArray(x)) return x.map(copy); if (!x || typeof x !== "object") return x; var o = {}; Object.keys(x).forEach(function(k){ o[k] = copy(x[k]); }); if (typeof o.hs === "string" && "g5" in o) o.g5 = o.hs; return o; };
+  return copy(a);
+}
 function buildCard(p, i, n){
-  var a = p.analysis, r = run();
+  var a = shownAnalysis(p.analysis), r = run();
   var card = h("article",{class:"card", id:"card-" + p.id, "data-run":r.id, "data-pid":p.id, "aria-labelledby":"t-" + p.id});
   card.append(cardHead(p, i, n, true, card));
   var notes = [];
-  if (p.held && p.held.kept) notes.push("A new reading of this passage was requested and did not pass its checks; this is the earlier reading.");
+  if (p.held && p.held.kept) notes.push("A new reading of this passage was requested and couldn't be completed; this is the earlier reading.");
   var contra = (a.claims || []).filter(function(c){ return activeReceipts(c).some(function(x){ return x.relation === "contradicts"; }); }).length;
   if (contra) notes.push("You marked a source as contradicting " + (contra === 1 ? "a claim" : contra + " claims") + " here. That is your judgment; the reading was not changed by it.");
   if (notes.length) card.append(h("div",{class:"card-notes"}, notes.map(function(t){ return h("p",{class:"card-note",text:t}); })));
-  if (isClaimRun()) claimBlocks(card, p);
+  if (a !== p.analysis) card.append(h("p",{class:"card-note only-5",text:"The fifth-grade wording couldn't be completed, so this card shows the high-school reading."}));
+  if (isClaimRun()) claimBlocks(card, p, a);
   else {
     card.append(block("In plain words", a.deflated, "plain"));
     card.append(block("A fair reading", a.defense, "fair"));
     card.append(block("What follows", {hs:a.revision.hs, g5:a.revision.g5}, "follows"));
   }
-  card.append(evidence(p, i, n));
+  card.append(evidence(p, i, n, a));
   applyCardLevel(card);
   return card;
 }
 /* A bare typed claim has no argument to assess: its faithful explanation and what would help check it, nothing more. */
-function claimBlocks(card, p){
-  var a = p.analysis, c = a.claims[0] || {};
+function claimBlocks(card, p, shown){
+  var a = shown || p.analysis, c = a.claims[0] || {};
   if (a.by === "person") card.append(h("section",{class:"blk plain"}, h("h3",{text:"The claim, as typed"}), h("p",{class:"typed",text:c.text}), h("p",{class:"hint",text:"Not yet read by the model."})));
   else card.append(block("In plain words", a.deflated, "plain"));
   var settle = c.settle && (c.settle.hs || c.settle.g5) ? c.settle : (c.wouldSettle ? {hs:c.wouldSettle, g5:c.wouldSettle} : null);
@@ -824,12 +857,21 @@ function buildPlaceholder(p, i, n){
   var r = run(), proc = r.processing || {};
   var card = h("article",{class:"card waiting", id:"card-" + p.id, "data-run":r.id, "data-pid":p.id, "aria-labelledby":"t-" + p.id});
   card.append(cardHead(p, i, n, false, card));
-  var gate = p.readingGate || {}, stale = friendly(p.stale), why = friendly((gate.reasons || []).filter(function(x){ return (p.stale || []).indexOf(x) === -1; }));
-  var text = proc.status === "running" && proc.current === p.id ? "Reading this passage now…" :
-    gate.status === "held" ? (stale.length ? "Out of date: " + stale.join("; ") + "." + (why.length ? " Also: " + why.join("; ") + "." : "") : "Held, not shown: " + (why.join("; ") || "it did not pass its checks") + ".") : "Not read yet.";
+  var gate = p.readingGate || {}, stale = friendly(p.stale), why = (gate.reasons || []).filter(function(x){ return (p.stale || []).indexOf(x) === -1; });
+  var now = proc.status === "running" && proc.current === p.id, failed = p.status === "error";
+  // a reading that failed its checks couldn't be completed; one made but not shown (out of date, or waiting on the
+  // speakers) says that instead
+  var text = now ? "Reading this passage now…" : gate.status === "held" ? (stale.length && !failed ? "Out of date: " + stale.join("; ") + "." : failed ? "This reading couldn't be completed." : "This reading isn't shown yet.") : "Not read yet.";
   card.append(h("p",{class:"waiting-text",text:text}));
-  if (gate.status === "held" && !readOnly() && !running() && r.processing) card.append(h("button",{class:"btn quiet", type:"button", text:"Read this passage again", onclick:function(){ request(function(id){ return API.reread(id, p.id); }); }}),
-    h("p",{class:"hint",text:"One new reading and one review, billed to your model key."}));
+  // the reasons, in plain words, and the passage they are about: under Evidence, closed by default. One retry for all
+  // of them is on the status line above.
+  if (!now && gate.status === "held" && !isClaimRun()) {
+    var d = disclosure("ev-" + r.id + "-" + p.id, "Evidence", "evidence"), body = h("div",{class:"ev-body"});
+    if (!stale.length || why.length || failed) { var ws = h("section",{class:"ev-sec why"}, h("h3",{text: failed ? "Why it couldn't be completed" : "Why it isn't shown"})), ul = h("ul",{class:"reasons"}); (why.length ? why : ["It did not pass its checks."]).map(plainReason).filter(function(x, k, l){ return l.indexOf(x) === k; }).forEach(function(x){ ul.append(h("li",{text:x})); }); ws.append(ul); body.append(ws); }
+    var sec = h("section",{class:"ev-sec"}, h("h3",{text:"The original passage"})), target = h("div",{class:"target-turns"});
+    for (var t = p.turnStart; t <= p.turnEnd; t++) target.append(turnLine(S.turns[t]));
+    sec.append(target); body.append(sec); d.append(body); card.append(d);
+  }
   return card;
 }
 
@@ -853,8 +895,8 @@ function claimStatusLong(c){
   return "Not checked. No source search is on record.";
 }
 function quoteLine(q){
-  var who = speakerName(q.speakerNow || q.speaker);
-  var line = h("p",{class:"q"}, h("span",{class:"sp",text: who + ": "}), document.createTextNode("“" + q.quote + "”"),
+  var who = whoPrefix(q.speakerNow || q.speaker);
+  var line = h("p",{class:"q"}, who ? h("span",{class:"sp",text: who}) : null, document.createTextNode("“" + q.quote + "”"),
     h("span",{class:"vq" + (q.verbatim ? "" : " no"),text: q.verbatim ? ((q.tolerated||[]).length ? "matched, numbers written differently" : "matched") : "not found word for word"}));
   if (q.relocated) line.append(h("span",{class:"vq no",text:"found in turn " + q.matchedTurn + ", not turn " + q.turn}));
   if (q.speakerMismatch) line.append(h("span",{class:"vq no",text:"the model said " + speakerName(q.speaker)}));
@@ -863,10 +905,11 @@ function quoteLine(q){
 function turnLine(t){
   if (!t) return null;
   if (t.heading) return h("p",{class:"turn heading",text:t.text});
-  return h("p",{class:"turn"}, h("span",{class:"sp",text:speakerName(effSpeaker(t)) + ": "}), document.createTextNode(t.text));
+  var who = whoPrefix(effSpeaker(t));
+  return h("p",{class:"turn"}, who ? h("span",{class:"sp",text:who}) : null, document.createTextNode(t.text));
 }
-function evidence(p, i, n){
-  var a = p.analysis, rid = run().id;
+function evidence(p, i, n, shown){
+  var a = shown || p.analysis, rid = run().id;
   var d = disclosure("ev-" + rid + "-" + p.id, "Evidence", "evidence");
   var body = h("div",{class:"ev-body"});
   if (!isClaimRun()) body.append(originalPassage(p));
@@ -874,7 +917,7 @@ function evidence(p, i, n){
   if (!isClaimRun()) body.append(reasoning(a));
   var cs = h("section",{class:"ev-sec"}, h("h3",{text: isClaimRun() ? "Sources" : "Claims in this passage"}));
   (a.claims || []).forEach(function(c){ cs.append(claimEvidence(p, c)); });
-  body.append(cs, checks(p));
+  body.append(cs, checks(p, a));
   d.append(body);
   return d;
 }
@@ -904,7 +947,7 @@ function settleOf(c){ if (c.settle && (c.settle.hs || c.settle.g5)) return lvl(c
 function claimEvidence(p, c){
   var box = h("div",{class:"claim-ev", "data-claim":c.id, tabindex:"-1"}), empirical = EMPIRICAL.indexOf(c.type) !== -1;
   box.append(h("p",{class:"claim-kind",text:SH.claimTypeLabel(c.type)}));
-  box.append(h("p",{class:"ct",text:(c.speaker ? speakerName(c.speaker) + ": " : "") + c.text}));
+  box.append(h("p",{class:"ct",text:(c.speaker ? whoPrefix(c.speaker) : "") + c.text}));
   if (!isClaimRun()) {
     if (c.plain && (c.plain.hs || c.plain.g5)) box.append(h("div",{class:"plain"}, lvl(c.plain)));
     if (c.basis && (c.basis.hs || c.basis.g5)) box.append(h("div",{class:"basis"}, lvl(c.basis)));
@@ -919,10 +962,11 @@ function claimEvidence(p, c){
   return box;
 }
 var JUDGE = { evidence: {strong:"strong", mixed:"partial or disputed", weak:"weak", none:"none", "n/a":"not applicable"}, inference: {valid:"the conclusion follows", gap:"a gap remains", unfalsifiable:"framed so nothing could count against it", "n/a":"not applicable"} };
-function checks(p){
-  var a = p.analysis, r = run(), rid = r.id, d = disclosure("chk-" + rid + "-" + p.id, "Checks and history", "checks"), b = h("div",{class:"chk-body"});
+function checks(p, shown){
+  var a = shown || p.analysis, r = run(), rid = r.id, d = disclosure("chk-" + rid + "-" + p.id, "Checks and history", "checks"), b = h("div",{class:"chk-body"});
   var review = p.provenance && p.provenance.review, qc = p.quoteCheck, ctx = p.provenance && p.provenance.context;
-  if (review) b.append(h("p",{text:"Separate review: a second pass of the same model checked this reading against the source before it was shown" + (review.attempts > 1 ? ", after one automatic correction" : "") + ". This is not an independent check." + ((review.corrections || []).length ? " " + plural(review.corrections.length, "quote attribution was", "quote attributions were") + " corrected from the transcript." : "")}));
+  if (review) b.append(h("p",{text:"Separate review: a second pass of the same model checked this reading against the source before it was shown" + (review.attempts > 1 ? ", after automatic correction of the parts it found wrong" : "") + ". This is not an independent check." + ((review.corrections || []).length ? " " + plural(review.corrections.length, "quote attribution was", "quote attributions were") + " corrected from the transcript." : "")}));
+  if (p.analysis.levels && p.analysis.levels.g5 === "withheld") { var g5 = h("div",{class:"why"}, h("p",{text:"The fifth-grade wording couldn't be completed, so the card shows the high-school reading at both levels. What was still wrong:"})), gl = h("ul",{class:"reasons"}); (p.analysis.levels.reasons || []).map(plainReason).forEach(function(x){ gl.append(h("li",{text:x})); }); g5.append(gl); b.append(g5); }
   if (qc && qc.quotes) b.append(h("p",{text:"Quotes: " + qc.matched + " of " + qc.quotes + " found word for word in the saved transcript" + (qc.tolerated ? " (" + qc.tolerated + " with numbers written differently)" : "") + "." + (qc.mismatched ? " The model credited " + plural(qc.mismatched, "quote") + " to a different speaker than the transcript shows; the transcript wins." : "")}));
   if (!isClaimRun() || a.by !== "person") {
     if (a.fidelity && a.fidelity.grade && a.fidelity.grade !== "unrated") { b.append(h("p",{text:"Rewrite check by the model: " + a.fidelity.grade + "."})); if (a.fidelity.notes && (a.fidelity.notes.hs || a.fidelity.notes.g5)) b.append(lvl(a.fidelity.notes)); }
@@ -932,7 +976,7 @@ function checks(p){
   b.append(h("p",{class:"hint",text:(isClaimRun() ? "" : "Turns " + p.turnStart + "–" + p.turnEnd + " · ") + (p.analyzedAt ? "read " + fmtDate(p.analyzedAt) : "") + (p.analyzedBy ? " by " + p.analyzedBy : "") + (p.provenance && p.provenance.recorded ? " · model call " + (p.provenance.requestId || p.provenance.callId) : "") + (p.provenance && p.provenance.contract ? " · " + p.provenance.contract : " · written before the reading-2 contract")}));
   if (p.historyCount) b.append(h("p",{class:"hint",text:"Read " + plural(p.historyCount, "time") + " before; every earlier reading is kept in this passage's file (data/runs/" + rid + "/passages/" + p.id + ".json)." + (p.rerun ? " Last time, " + plural(p.rerun.carried, "claim") + " kept " + (p.rerun.carried === 1 ? "its" : "their") + " sources" + (p.rerun.orphaned ? " and " + plural(p.rerun.orphaned, "earlier claim") + " did not reappear (still in the history)" : "") + "." : "")}));
   if ((p.adopted||[]).length) b.append(h("p",{class:"hint",text:plural(p.adopted.length, "set") + " of records from an earlier passage split " + (p.adopted.length === 1 ? "was" : "were") + " reattached here."}));
-  if (p.held && p.held.kept) b.append(h("p",{class:"hint",text:"The last attempt to read this passage again (" + fmtDate(p.held.at) + ") was held: " + friendly(p.held.issues).join("; ") + "."}));
+  if (p.held && p.held.kept) b.append(h("p",{class:"hint",text:"The last attempt to read this passage again (" + fmtDate(p.held.at) + ") couldn't be completed: " + (p.held.issues || []).map(plainReason).join(" ")}));
   var reset = h("button",{class:"btn quiet level-reset", type:"button", text:"Use the default reading level for this card", hidden: !cardOverride(rid, p.id), onclick:function(){ storeSet(cardKey(rid, p.id), null); var card = $("card-" + p.id); if (card) applyCardLevel(card); }});
   b.append(reset);
   if (!readOnly()) b.append(h("div",{class:"ctl-item"}, h("button",{class:"btn quiet", type:"button", text: isClaimRun() && a.by === "person" ? "Read it with the model" : "Read this passage again", disabled: running() ? "" : null, onclick:function(){ var go = function(){ return request(function(id){ return API.reread(id, p.id); }); }; if (!ensureAI(b, go)) return; go(); }}),
@@ -1038,7 +1082,7 @@ function buildAcross(el){
 function controlsSig(){
   var r = run(); if (!r) return JSON.stringify(["new", S.draft, !!S.ai, S.engines && [S.engines.local.installed, S.engines.cloud.configured, S.engines.prefer]]);
   var pr = r.provenance || {}, proc = r.processing || {}, idn = S.b.sourceIdentity || {};
-  return JSON.stringify([r.id, r.title, r.sourceUrl, r.sourceLabel, r.sourceDate, r.speakers, pr.overrides, pr.flags && pr.flags.length, pr.labelsOrigin, pr.confirmedAt, r.preparation && r.preparation.status, proc.status, S.b.summary && S.b.summary.readingGate, S.b.passages.length, S.b.passages.every(isReady), (r.orphans||[]).length, idn.state, idn.sourceUrl, idn.key, r.input && r.input.sha256, !!S.ai, S.ai && S.ai.model, S.engines && [S.engines.local.installed, S.engines.cloud.configured, S.engines.prefer], S.busy, attributionOk()]);
+  return JSON.stringify([r.id, r.title, r.sourceUrl, r.sourceLabel, r.sourceDate, r.speakers, pr.overrides, pr.flags && pr.flags.length, pr.labelsOrigin, pr.confirmedAt, pr.namesConfirmedAt, pr.structure && pr.structure.at, pr.voices && pr.voices.at, !!S.b.pageText, r.import && r.import.episodeInfo && (r.import.episodeInfo.audioUrl || r.import.episodeInfo.guid), r.preparation && r.preparation.status, proc.status, S.b.summary && S.b.summary.readingGate, S.b.passages.length, S.b.passages.every(isReady), (r.orphans||[]).length, idn.state, idn.sourceUrl, idn.key, r.input && r.input.sha256, !!S.ai, S.ai && S.ai.model, S.engines && [S.engines.local.installed, S.engines.cloud.configured, S.engines.prefer], S.busy, attributionOk()]);
 }
 function renderControls(force){
   var body = $("controlsBody"); if (!body) return;
@@ -1106,6 +1150,9 @@ function ctlInput(){
     src.append(field("Use a different link", link), h("button",{class:"btn quiet", type:"button", text:"Fetch and read", onclick:function(){ var u = link.value.trim(); if (!/^https?:\/\//.test(u)) { say("Enter a link that starts with http."); return; } forget(k + "relink"); fetchTranscript(u, "", "", {msg:msg, onWords:async function(t, imp, jobId){ var b = await API.consumeJob(jobId); await reload(b); closeDrawer("controls", true); }, context:{}, targetRunId:r.id}); }}),
       h("p",{class:"hint",text:"The text from the new link replaces this one. Readings made from the old text are kept and marked out of date, and a confirmation of the old source does not carry over."}), msg);
   }
+  if (!ro && S.b.pageText) src.append(h("div",{class:"ctl-sub"}, h("p",{text:"This text still holds a web page's controls and timestamps (saved before they were taken out at intake)."}),
+    h("button",{class:"btn quiet", type:"button", text:"Separate them from the words", onclick:function(){ request(API.pageText, "Separated. Readings made from the old text are kept and marked out of date."); }}),
+    h("p",{class:"hint",text:"Every spoken word is kept and the original stays saved. Readings made from the old text are marked out of date."})));
   s.append(src);
   // the text itself
   if (!ro) {
@@ -1117,22 +1164,91 @@ function ctlInput(){
     s.append(ed);
   }
   // speakers
+  s.append(ctlSpeakers(r, ro, k));
+  return s;
+}
+/* Speakers: where the labels came from, names (one confirmation for speakers the app numbered), and, when the source
+   gave no labels, the two ways to find them: from the words, or by voice from the recording. */
+function ctlSpeakers(r, ro, k){
   var sp = h("div",{class:"ctl-item", id:"ctl-speakers", tabindex:"-1"}, h("h3",{text:"Speakers"}));
-  var pr = r.provenance || {};
-  if (pr.labelsOrigin === "model" && pr.assignment) sp.append(h("p",{text:"Names suggested by AI from the words: " + pr.assignment.named + " of " + pr.assignment.turns + " turns named, " + pr.assignment.unknown + " left as Speaker unknown. They are not labels from the source. A person's correction under Who said what wins."}));
-  var labels = speakerLabels(S.turns), speakers = (r.speakers || []).filter(function(x){ return labels.indexOf(x.key) !== -1 && x.key !== "UNLABELED"; });
-  if (speakers.length && !isClaimRun()) {
-    speakers.forEach(function(x){ sp.append(h("div",{class:"speaker"}, h("span",{class:"key",text:x.key}), keep(h("input",{type:"text", value:x.name || "", "aria-label":"Display name for " + x.key, placeholder:"Display name", disabled: ro ? "" : null}), k + "name-" + x.key), keep(h("input",{type:"text", value:x.bio || "", "aria-label":"Short bio for " + x.key, placeholder:"Bio: job, books, role (optional)", disabled: ro ? "" : null}), k + "bio-" + x.key))); });
+  if (isClaimRun()) { sp.append(h("p",{class:"hint",text:"A typed claim has no speakers."})); return sp; }
+  var pr = r.provenance || {}, labels = speakerLabels(S.turns), origin = pr.labelsOrigin || "", st = pr.structure, vc = pr.voices;
+  var fromSource = labels.some(function(x){ return x !== "UNLABELED"; }) && (!origin || origin === "source");
+  // where the labels came from, in one line
+  if (origin === "voices" && vc) sp.append(h("p",{text:"Separated by voice from the recording: " + plural(vc.voices, "voice") + ", with " + Math.round((vc.coverage || 0) * 100) + "% of this text's words lined up with what the recording heard." + (vc.unlabelled ? " " + plural(vc.unlabelled, "word") + " could not be placed and show as “Speaker not established”." : "")}),
+    h("p",{class:"hint",text:vc.method + (vc.audioFoundBy ? " Recording: " + vc.audioFoundBy + "." : "")}));
+  else if (origin === "words" && st) sp.append(h("p",{text:"Worked out from the words: " + plural(st.voices, "speaker") + (st.clips && st.clips.length ? ", " + plural(st.clips.length, "clip or quotation", "clips or quotations") + " set apart" : "") + "." + (st.unestablishedSegments ? " " + plural(st.unestablishedSegments, "stretch", "stretches") + " where the words don't show who is speaking." : "")}),
+    h("p",{class:"hint",text:st.method}));
+  else if (origin === "model" && pr.assignment) sp.append(h("p",{text:"Names suggested by AI from the words: " + pr.assignment.named + " of " + pr.assignment.turns + " turns named, " + pr.assignment.unknown + " left without a name. They are not labels from the source. A person's correction under Who said what wins."}));
+  else if (fromSource) sp.append(h("p",{text:"The speaker labels came with the text." + (st && st.clips && st.clips.length ? " " + plural(st.clips.length, "clip or quotation was", "clips or quotations were") + " set apart from the speaker who played or read it." : "")}));
+  else if (allUnlabeled()) sp.append(h("p",{text:"No speaker labels came with this text." + (st && st.established === false ? " The words alone don't show where the speaker changes, so the text is read as it is." : "")}));
+  // names
+  var shownKeys = (r.speakers || []).filter(function(x){ return labels.indexOf(x.key) !== -1 && x.key !== "UNLABELED"; });
+  if ((origin === "words" || origin === "voices") && shownKeys.length) sp.append(nameConfirm(r, ro, k, shownKeys, (origin === "voices" ? vc : st) || {}));
+  else if (shownKeys.length) {
+    shownKeys.forEach(function(x){ sp.append(h("div",{class:"speaker"}, h("span",{class:"key",text:x.key}), keep(h("input",{type:"text", value:x.name || "", "aria-label":"Display name for " + x.key, placeholder:"Display name", disabled: ro ? "" : null}), k + "name-" + x.key), keep(h("input",{type:"text", value:x.bio || "", "aria-label":"Short bio for " + x.key, placeholder:"Bio: job, books, role (optional)", disabled: ro ? "" : null}), k + "bio-" + x.key))); });
     if (!ro) sp.append(h("button",{class:"btn quiet", type:"button", text:"Save names", onclick:async function(){
       var list = (r.speakers || []).map(function(x){ var nEl = sp.querySelector('[data-key="' + k + "name-" + x.key + '"]'), bEl = sp.querySelector('[data-key="' + k + "bio-" + x.key + '"]'); return {key:x.key, name: nEl ? nEl.value : x.name, bio: bEl ? bEl.value : x.bio}; });
       try { var b = await API.saveRun(r.id, {speakers:list}); (r.speakers||[]).forEach(function(x){ forget(k + "name-" + x.key, k + "bio-" + x.key); }); await reload(b); say("Saved."); } catch(e){ say(errCopy(e)); }
     }}), h("p",{class:"hint",text:"A display name only changes what is shown. A bio helps the speaker check; readings are not redone."}));
   }
-  if (!isClaimRun() && labels.indexOf("UNLABELED") !== -1 && !ro && S.turns.some(function(t){ return !t.heading; })) sp.append(nameSpeakersBox(r));
-  if (!isClaimRun() && S.turns.length) { var who = disclosure(k + "who", "Who said what: record and corrections", "ctl-who"); who.append(renderWhoSaid()); sp.append(who); }
-  if (isClaimRun()) sp.append(h("p",{class:"hint",text:"A typed claim has no speakers."}));
-  s.append(sp);
-  return s;
+  // finding the speakers when the source gave none
+  if (!ro && !fromSource && S.turns.some(function(t){ return !t.heading; })) sp.append(findSpeakers(r, k, origin));
+  if (S.turns.length) { var who = disclosure(k + "who", "Who said what: record and corrections", "ctl-who"); who.append(renderWhoSaid()); sp.append(who); }
+  return sp;
+}
+/* One confirmation of the names of speakers the app numbered: a name the words gave is filled in with its evidence; a
+   suggestion (someone addressed by name, the show's title) is offered, never applied. */
+function nameConfirm(r, ro, k, keys, record){
+  var box = h("div",{class:"names"}), inputs = {};
+  var suggestions = (record.names || []).filter(function(x){ return !x.applied; });
+  keys.forEach(function(x){
+    var numbered = /^SPEAKER \d+$/.test(x.key), label = numbered ? "Speaker " + x.key.split(" ")[1] : x.name;
+    if (!numbered) { box.append(h("p",{class:"hint",text:label + ": " + (x.bio || "")})); return; }
+    var inp = keep(h("input",{type:"text", value:/^Speaker \d+$/.test(x.name || "") ? "" : x.name, placeholder:"Name", "aria-label":"Name for " + label, disabled: ro ? "" : null}), k + "cname-" + x.key);
+    inputs[x.key] = inp;
+    var row = h("div",{class:"speaker"}, h("span",{class:"key",text:label}), inp);
+    box.append(row);
+    if (x.bio) box.append(h("p",{class:"hint",text:x.bio}));
+    suggestions.filter(function(sg){ return sg.key === x.key; }).forEach(function(sg){
+      box.append(h("p",{class:"hint"}, document.createTextNode("Suggested: " + sg.name + " (" + String(sg.kind || "").replace(/_/g, " ") + ": “" + String(sg.quote || "").slice(0, 160) + "”) "), ro ? null : h("button",{type:"button", class:"linkish inline", text:"Use", onclick:function(){ inp.value = sg.name; UI.drafts[k + "cname-" + x.key] = sg.name; }})));
+    });
+  });
+  if (!ro && Object.keys(inputs).length) {
+    box.append(h("button",{class:"btn quiet", type:"button", text:"Confirm names", onclick:async function(){
+      var list = Object.keys(inputs).map(function(key){ var v = inputs[key].value.trim(); return {key:key, name: v || "Speaker " + key.split(" ")[1]}; });
+      try { var b = await API.confirmNames(r.id, list); Object.keys(inputs).forEach(function(key){ forget(k + "cname-" + key); }); await reload(b); say("Names confirmed."); } catch(e){ say(errCopy(e)); }
+    }}), h("p",{class:"hint",text: (r.provenance && r.provenance.namesConfirmedAt ? "You confirmed these names on " + fmtDate(r.provenance.namesConfirmedAt) + ". " : "") + "Names change only what is shown; readings are not redone."}));
+  }
+  return box;
+}
+/* The two ways to find speakers the source didn't give, behind one disclosure. */
+function findSpeakers(r, k, origin){
+  var pr = r.provenance || {}, d = disclosure(k + "find", origin === "voices" ? "Separate the voices again" : "Find who is speaking", "ctl-find"), msg = h("div",{class:"hint", role:"status"});
+  var long = function(btn, label, fn){ return async function(){
+    if (blockWhileBusy()) return; S.busy = true; btn.disabled = true; S.abort = new AbortController(); msg.textContent = label;
+    try { var b = await fn(S.abort.signal); S.busy = false; S.abort = null; if (b && b.outcome === "nothing_established") { msg.textContent = "The words don't show where the speaker changes, so nothing was changed."; await reload(b); return; } closeDrawer("controls", true); await reload(b); }
+    catch(e){ msg.textContent = errCopy(e); btn.disabled = false; if (e && e.code === "cloud_not_configured") { S.engines = null; renderControls(true); } }
+    finally { S.busy = false; S.abort = null; }
+  }; };
+  if (origin !== "voices" && !pr.structure) {
+    var wb = h("button",{class:"btn quiet", type:"button", text:"Work out who is speaking from the words"});
+    wb.addEventListener("click", function(){ if (!ensureAI(d, function(){ wb.click(); })) return; return long(wb, "Reading the text for changes of speaker… a few model passes.", function(signal){ return API.speakersFromWords(r.id, signal); })(); });
+    d.append(ctlItem(wb, h("p",{class:"hint",text:"Labels only where the words show a change of speaker (a question answered, a guest introduced, a clip played), checked by a second pass. The words are never changed. A few model passes, billed to your key; the reading starts again."})));
+  }
+  var e = S.engines, info = r.import && r.import.episodeInfo || {}, known = !!(info.audioUrl || (r.import && r.import.url && info.guid));
+  var link = keep(h("input",{type:"url", placeholder: known ? "Leave empty to use the episode this text came from" : "The episode's link or its audio file"}), k + "voices-link");
+  var vb = h("button",{class:"btn quiet", type:"button", text:"Separate voices from the recording"});
+  vb.addEventListener("click", long(vb, "Sending the recording to Deepgram and lining its voices up with the text… this can take a minute or two.", function(signal){ return API.voices(r.id, link.value.trim(), signal); }));
+  var voice = h("div",{class:"ctl-item"}, field("Recording", link), vb, h("p",{class:"hint",text:"The audio goes to Deepgram and is billed to your Deepgram key. Every word of this text stays; only the labels come from the recording. Voices are numbered; you can name them after. The reading starts again."}));
+  if (e && !e.cloud.configured) {
+    var dk = h("input",{type:"password", autocomplete:"off", placeholder:"Deepgram API key", "aria-label":"Deepgram API key"});
+    var dsv = h("button",{class:"btn quiet", type:"button", text:"Save Deepgram key", onclick:async function(){ dsv.disabled = true; try { await API.setSetting("DEEPGRAM_API_KEY", dk.value); dk.value = ""; S.engines = await API.engines(); renderControls(true); say("Key saved."); } catch(err){ dsv.disabled = false; say(errCopy(err)); } }});
+    vb.disabled = true;
+    voice.append(h("p",{class:"hint",text:"Needs a Deepgram key first. It is written to .env on this computer and sent only to Deepgram."}), h("div",{class:"row"}, dk, dsv));
+  }
+  d.append(voice, msg);
+  return d;
 }
 function pictures(r, ta, k){
   var img = h("input",{id:"f-img",type:"file",accept:"image/png,image/jpeg,image/webp,image/gif",multiple:"",class:"file-input",tabindex:"-1","aria-hidden":"true"});
@@ -1218,26 +1334,6 @@ function ctlApp(){
   return s;
 }
 
-/* Optional, for a transcript with no speaker labels: the person names the speakers and the model assigns the turns
-   from the words; the reading then starts again by itself. The names stay marked as the model's suggestion. */
-function nameSpeakersBox(r){
-  var box = h("div",{class:"namebox"});
-  var names = h("input",{type:"text",placeholder:"Who is speaking? e.g. Ann Lee, Bo Diaz","aria-label":"Speaker names, separated by commas"});
-  var note = h("p",{class:"hint",text:"Optional. The model splits the text into turns and suggests a name for each from the words; a second pass checks every name, and disagreements stay Speaker unknown. The words are never rewritten. The names stay marked as AI suggestions. Two model passes, billed to your key."});
-  var btn = h("button",{class:"btn",type:"button",text:"Suggest names with AI",onclick:function(){
-    var list = names.value.split(/[,;\n]/).map(function(x){ return x.trim(); }).filter(Boolean);
-    if (!list.length){ note.textContent = "Type at least one name."; return; }
-    if (!ensureAI(box, run)) return; run();
-    async function run(){
-      if (blockWhileBusy()) return; S.busy = true; btn.disabled = true; S.abort = new AbortController(); note.textContent = "Assigning the turns… one model pass over the whole text, then a review pass.";
-      try { var ctx = (r.sourceLabel || "") + (r.title && r.title !== r.sourceLabel ? " — " + r.title : ""); var b = await API.assignSpeakers(r.id, list, ctx, S.abort.signal); S.busy = false; S.abort = null; closeDrawer("controls", true); await reload(b); }
-      catch(e){ note.textContent = errCopy(e); btn.disabled = false; }
-      finally { S.busy = false; S.abort = null; }
-    }
-  }});
-  box.append(h("div",{class:"row"}, names, btn), note);
-  return box;
-}
 /* Who said what: the preparation record, the optional attribution check, and per-turn corrections. */
 function renderWhoSaid(){
   var r = run(), pr = r.provenance || {overrides:{},flags:[]}, ro = readOnly(), b = h("div",{class:"who-body"});

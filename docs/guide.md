@@ -6,7 +6,7 @@ Deflate Lens helps you understand what was said, what supports it, and what rema
 
 Paste text or a link into the box, or press **Upload transcript** (.txt, .srt, .vtt, .md). Then press **Read this**. That is the only step you need.
 
-- **Text or a transcript.** Lines that start with a name and a colon (`ANN: …`) are read as speakers.
+- **Text or a transcript.** Lines that start with a name and a colon (`ANN: …`) are read as speakers. A transcript copied from a web page is cleaned on the way in: "Copy link" buttons and timestamps are taken out of the words (every word is kept), and names the page shows above each paragraph become speakers.
 - **One claim.** A single sentence is read as a claim: the app explains it and looks for sources.
 - **A podcast, video or page link.** The app looks for a transcript the show published, then the video's captions, then the episode page. If none exists it can turn the audio into text.
 
@@ -32,9 +32,11 @@ For example, if someone said "We asked 18 evening visitors and 12 wanted later h
 
 **High school / Fifth grade** on each card switches the wording. Fifth grade uses shorter sentences and everyday words; it is meant to say the same thing, not less. The default for new cards is in **Controls → Reading**. Switching never calls the model.
 
+**Who is speaking.** Speaker names that came with the text are kept. When there are none, the app works out from the words where the speaker changes, only where the words show it (a question answered, a guest introduced, a clip played and the host coming back), and leaves the rest alone. A clip or a quotation read aloud is kept apart from the person who played it, so its claims stay its speaker's. When the text has no speaker names at all, the words are shown without a speaker in front of every line, and one quiet line above the reading says so.
+
 **Evidence** opens under each card. It shows, in order:
 
-- **The original passage**, with the speaker of each turn. Turns just before and after, which the model saw for context, are shown in grey.
+- **The original passage**, with the speaker of each turn ("Speaker not established" where the words could not settle it). Turns just before and after, which the model saw for context, are shown in grey.
 - **Quoted in this reading**: each quote, marked *matched*, *matched, numbers written differently* (for example "fifteen percent" and "15%"), or *not found word for word*.
 - **Reasoning behind this reading**: the first concern the model raised, the exact words where it thought the reasoning turned, and whether that concern was kept, partly kept, or **withdrawn** after the fair reading.
 - **Claims in this passage**, each with what would help check it and any sources.
@@ -48,7 +50,7 @@ A long reading has a **Contents** list at the top ("3 of 12") and ends with **Ac
 - **A model's assessment is not verification.** A "Checkable claim" is something evidence could settle; the app does not decide from the model's memory whether it is true. A search finds possible sources. Only you attach a source, and only you say whether it supports or contradicts the claim. Nothing in the app is ever marked "verified".
 - **Not checked does not mean false.** It means no one has looked yet.
 - **Source identity can be uncertain.** When a video was found by searching for the episode's title and length, the reading says **Video matched by title and length — Check source** until you compare the two and confirm. Confirming records what you said; it does not check the transcript.
-- **Speakers can be uncertain.** Names suggested by AI are marked as such. Turns with no name show as "Speaker unknown".
+- **Speakers can be uncertain.** Speakers worked out from the words or from the recording are marked as such in one line above the reading, and are numbered until a name is given by the words or by you. "Speaker not established" means the app could not tell who said those words.
 - **Context is limited.** The model sees each passage plus up to two turns on each side. A correction made much later in a long conversation may not be seen. When the excerpt is not enough, the reading should say what remains unclear.
 
 ## Use optional controls
@@ -56,18 +58,18 @@ A long reading has a **Contents** list at the top ("3 of 12") and ends with **Ac
 Everything here is optional. Open **Controls**:
 
 - **Reading**: the default reading level; read again what is not ready; write the closing overview again; **Passage preparation** to split the conversation into passages again. Each says what it will cost before you press it.
-- **Input and speakers**: change the title or source; compare and confirm a matched source, or use a different link; edit the text; give speakers names and short bios; let AI suggest names for a transcript that has none; correct who said each turn.
+- **Input and speakers**: change the title or source; compare and confirm a matched source, or use a different link; edit the text; under **Speakers**, see where the speaker labels came from, name numbered speakers and confirm the names once, and correct who said each turn. When the text came without speaker names, **Find who is speaking** offers two ways: from the words (a few model passes on your key), or **Separate voices from the recording** (the episode's audio goes to Deepgram on your Deepgram key, and only the speaker labels come from it; every word of your text stays).
 - **App and files**: your model key, audio-to-text settings, downloads, version details, and **Move this reading to the trash**.
 
 Sources for a claim are handled beside the claim, under **Evidence → Sources and search**: search, attach a link, accept or reject a suggestion, say what a source does for the claim, or withdraw it.
 
-Your saved readings are under **Readings**, with **New reading** at the top. **Downloads** gives a readable Markdown version (held readings are left out and named) and the full record as JSON.
+Your saved readings are under **Readings**, with **New reading** at the top. **Downloads** gives a readable Markdown version (readings that couldn't be completed are left out and named) and the full record as JSON, including every attempt at each reading.
 
 ## Know where work goes
 
 - **On your computer:** everything you paste or upload, every reading, every source decision and every earlier version, as plain files in the app's `data` folder. Copy that folder to back it up. Deleted readings go to `data/trash`.
 - **Sent to Anthropic:** the text being read, when a reading, review or overview is made, using your key. Each of those is a charge on your Anthropic account. A typical passage takes one reading and one review.
-- **Sent to Deepgram:** the audio, only if you choose Deepgram for audio-to-text. Billed to your Deepgram key.
+- **Sent to Deepgram:** the audio, only if you choose Deepgram for audio-to-text or ask it to separate voices. Billed to your Deepgram key.
 - **Sent to search services:** a short search query per checkable claim, to Crossref, PubMed, OpenAlex and GDELT. Free.
 - Your keys are kept in the `.env` file in the app folder. The page never shows them.
 
@@ -75,7 +77,7 @@ Your saved readings are under **Readings**, with **New reading** at the top. **D
 
 - **It asks for a key.** Paste your Anthropic key once. Get one at console.anthropic.com. If the key is refused, use **Replace the model key**.
 - **The link gives no transcript.** The app lists what it tried. Paste the transcript, upload a caption file, or choose audio-to-text.
-- **A passage says "Held, not shown".** The card says why, for example that the model's answer was cut off or that a quote did not match. Press **Read this passage again**, or **Try the held readings again** at the top.
+- **"This reading couldn't be completed."** The reading did not pass its checks after the app corrected the parts the review found wrong. Open **Evidence** on that passage to see why, in plain words, next to the passage. Press **Try again** at the top to read all of them again. When only the fifth-grade wording failed, the card shows the high-school reading and says so at Fifth grade.
 - **"Out of date".** The text or a speaker changed after that reading was made. Press **Read again**; the earlier reading is kept in the history.
 - **Stop.** Stop cancels the request in progress. If the model had already started on it, that request may still be billed. Finished readings are kept; press **Resume reading** to continue.
 - **The app was closed or restarted.** Open it again. Finished readings are kept, and **Resume reading** continues from where it stopped.

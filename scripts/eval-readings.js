@@ -13,14 +13,17 @@
    Each finished case is written at once (results.jsonl, results.json, scoring-sheet.md), so a stopped run keeps what it
    finished. The readings themselves, with every model-call record, stay under <out>/store/ (the app's own format).
    Cost: every case is a real reading on your key (speaker preparation where there are labels, one reading and one
-   review per passage, an overview for several passages). The default set is about 120 model calls. */
+   review per passage, an overview for several passages). The default set is about 130 model calls.
+   A case marked "intake" goes in the way a paste does (readInput: page controls and timestamps separated, the speaker
+   structure worked out from the words at the start of the reading), and its "speakers" expectations are checked on
+   the labelled text and on whose claims the reading says they are. */
 const fs = require("fs"), path = require("path"), crypto = require("crypto");
 const ROOT = path.join(__dirname, "..");
 require("dotenv").config({ path: path.join(ROOT, ".env") });
 const { Store } = require("../server/store");
 const { createAI } = require("../server/ai");
 const { createReader, materialAsRead, readingMaterial } = require("../server/reading");
-const { claimAnalysis } = require("../server/preparation");
+const { readInput } = require("../server/intake");
 const shared = require("../shared/transcript");
 const P = require("../shared/prompts");
 
@@ -60,11 +63,12 @@ function attributed(text, labels) {
   return /\b(the )?speaker\b|\b(he|she|they|it|guest|host) (says|said|claims|claimed|argues|argued|reports|reported|thinks|believes|states|stated|asserts|recommends|suggests|predicts|expects|concludes|adds|notes|admits|insists|warns|hopes|calls|tells|told)\b|\bthe claim (says|is that|asserts|states)\b|\baccording to (him|her|them|the speaker)\b/i.test(t);
 }
 function labelsOf(text) { return [...new Set(String(text || "").split("\n").map(l => (l.match(/^([A-Z][A-Z .'-]{1,40}):/) || [])[1]).filter(Boolean))]; }
-/* Mechanical checks: an aid for the person scoring, not the score. */
-function mechanical(c, a) {
+/* Mechanical checks: an aid for the person scoring, not the score. `known` is the speakers' labels and names when the
+   app worked them out (an intake case); otherwise the labels in the case's text. */
+function mechanical(c, a, known) {
   const e = c.expect, res = [], rx = s => new RegExp(s, "i"), all = fields(a || {});
   if (!a) return [["reading present", false, "no reading (held or failed)"]];
-  const labels = labelsOf(c.text || "");
+  const labels = known || labelsOf(c.text || "");
   // every case: no narration of the process in the card text, and every restatement says whose claim it is
   const card = [["plain words", a.deflated], ["fair reading", a.defense], ["what follows", a.revision]];
   for (const L of ["hs", "g5"]) {
@@ -83,12 +87,41 @@ function mechanical(c, a) {
   return res;
 }
 
+/* Whose words are these, after intake (an "intake" case's "speakers" expectations): every spoken word kept, page
+   controls gone, a phrase in a turn with the expected label, two phrases in different (or the same) speakers' turns,
+   and every claim holding a phrase credited to the speaker of a given turn. Pointers for the person scoring. */
+function speakerChecks(c, b, before) {
+  const e = c.expect.speakers; if (!e) return [];
+  const res = [], W = s => shared.wordsOf(s), ov = b.run.provenance && b.run.provenance.overrides || {};
+  const turns = shared.parseTranscript(b.transcript, { mode: b.run.parseMode || "transcript" }).filter(t => !t.heading);
+  const turnOf = phrase => turns.find(t => (" " + W(t.text) + " ").includes(" " + W(phrase) + " "));
+  const label = phrase => { const t = turnOf(phrase); return t ? shared.effSpeaker(t, ov) : null; };
+  const strip = s => String(s).replace(/^[ \t]*[A-Z][A-Za-z0-9 .'\-]{0,40}:[ \t]+/gm, "");
+  res.push(["every spoken word kept, in order", W(strip(b.transcript)) === W(strip(before)), ""]);
+  if (e.chromeGone) { const hit = /Copy link|\b\d{1,2}:\d{2}:\d{2}\b/.exec(b.transcript); res.push(["no page controls or timestamps in the text", !hit, hit ? hit[0] : ""]); }
+  for (const [phrase, want] of e.label || []) { const l = label(phrase); res.push(["“" + phrase + "” is in a turn labelled /" + want + "/", !!l && new RegExp(want).test(l), l || "phrase not found"]); }
+  for (const [x, y] of e.differ || []) { const lx = label(x), ly = label(y); res.push(["“" + x + "” and “" + y + "” are different speakers' words", !!lx && !!ly && lx !== ly && lx !== "UNLABELED" && ly !== "UNLABELED", lx + " / " + ly]); }
+  for (const [x, y] of e.same || []) { const lx = label(x), ly = label(y); res.push(["“" + x + "” and “" + y + "” are the same speaker's words", !!lx && lx === ly && lx !== "UNLABELED", lx + " / " + ly]); }
+  for (const [claim, turn] of e.claim || []) {
+    const want = label(turn), held = b.passages.filter(p => p.analysis && p.readingGate.status === "ready").flatMap(p => p.analysis.claims || []).filter(x => (" " + W(x.text) + " ").includes(" " + W(claim) + " "));
+    res.push(["claims holding “" + claim + "” are credited to the speaker of “" + turn + "” (" + want + ")", held.length > 0 && held.every(x => x.speaker === want), held.length ? held.map(x => x.speaker).join(", ") : "no ready claim holds it"]);
+  }
+  const present = shared.speakerLabels(turns);
+  for (const l of e.absent || []) res.push(["no turn is labelled " + l, !present.includes(l), present.join(", ")]);
+  return res;
+}
+
 /* Every model exchange of a case, with its full text, appended to <out>/exchanges/<case>.jsonl as it happens. The app's
    call records keep hashes, not text; this keeps the drafts a review rejected, the review's own answers and the
    corrections, so a person can judge whether a hold or a rejection was warranted. */
 function kindOf(prompt) {
   if (prompt.startsWith("Help a reader understand this passage accurately.")) return (prompt.includes("This is ONE claim") ? "claim" : "reading") + (/The draft was held before display|Your previous answer could not be used/.test(prompt) ? " (correction)" : "");
   if (prompt.startsWith("Review this reading before it is shown")) return prompt.includes("closing overview") ? "overview review" : "review";
+  if (prompt.startsWith("Correct a reading.")) return "correction";
+  if (prompt.startsWith("Check a correction to a reading")) return "check of a correction";
+  if (prompt.startsWith("This transcript has no speaker labels") || prompt.startsWith("Find recordings played")) return "speaker structure";
+  if (prompt.startsWith("Review a speaker structure")) return "review of the speaker structure";
+  if (prompt.startsWith("These transcript turns are labelled SPEAKER 1")) return "names for voices";
   if (prompt.startsWith("Below are the final readings")) return "overview";
   if (prompt.startsWith("You are a deflation reader")) return "pre-0.12 prompt (comparison)";
   return "other";
@@ -108,35 +141,39 @@ function logged(ai, sink) {
    enough: two attempts that write the same draft send an identical review prompt and can get different answers. Each
    exchange is used once, in order, so identical pairs (same prompt, same answer) also pair in sequence. */
 function pairer(exchanges) {
-  const used = new Set();
+  const used = new Set(), t = v => Date.parse(v || "") || 0;
   return call => {
     if (!call) return null;
-    const x = exchanges.find(e => !used.has(e.n) && e.promptSha256 === call.promptHash && (e.outputSha256 || "") === (call.outputHash || ""));
+    // among exchanges with the same prompt and the same answer, the one made when the call was made
+    const fits = exchanges.filter(e => !used.has(e.n) && e.promptSha256 === call.promptHash && (e.outputSha256 || "") === (call.outputHash || ""));
+    const x = fits.sort((a, b) => Math.abs(t(a.at) - t(call.at)) - Math.abs(t(b.at) - t(call.at)) || a.n - b.n)[0];
     if (x) used.add(x.n);
     return x || null;
   };
 }
 const byTime = (x, y) => x.at < y.at ? -1 : x.at > y.at ? 1 : 0;
-/* Every attempt at one passage, in order: the draft, whether it was shown, every reason it was not (the app's checks
-   and the review's issues together, as recorded on the call), the answer of the review that decided, and every review
-   call made for that draft (an unreadable review and its retry included). Pass one pairer per case. */
-function attemptsFor(full, b, calls, exchanges, pair) {
+/* Every attempt at one passage, in order, from the app's own record (attempts/<pid>.jsonl, latest reading run): the
+   full draft, each correction (what it changed and what was still open after it), a fifth-grade withholding, whether
+   the result was shown, every reason it was not, and the review's own answer, which the app recorded from the same call.
+   Each attempt is linked to its exchange (the full prompt and answer) by the prompt's and the answer's fingerprints;
+   review calls that could not be read, and their retries, are listed with the attempt they belong to. One pairer per case. */
+function attemptsFor(entries, calls, exchanges, pair) {
   pair = pair || pairer(exchanges);
-  const isClaim = b.run.kind === "claim", hash = isClaim ? null : readingMaterial(b, full).context.hash, purpose = isClaim ? "claim" : "deflate";
-  const allGens = calls.filter(k => k.purpose === "claim" || k.purpose === "deflate").sort(byTime);
-  const gens = allGens.filter(k => isClaim ? k.purpose === "claim" : k.purpose === "deflate" && k.context && k.context.hash === hash);
-  return gens.map((k, i) => {
-    const x = pair(k), next = allGens.find(z => z.at > k.at);
-    // passages are read one at a time, so the review calls for this draft are those between it and the next draft
-    const reviews = calls.filter(z => z.purpose === purpose + "_review" && z.at >= k.at && (!next || z.at < next.at)).sort(byTime).map(z => {
-      const e = pair(z);
-      return { callId: z.callId, at: z.at, decided: !!(k.review && k.review.callId === z.callId), error: z.error || "", stopReason: z.stopReason || "", exchange: e ? e.n : null, answer: e ? e.data : null, text: e && e.data == null ? e.text : undefined };
-    });
-    const decided = reviews.find(z => z.decided) || null;
-    return { attempt: i + 1, callId: k.callId, at: k.at, exchange: x ? x.n : null, kind: x ? x.kind : "", shown: !!(k.review && k.review.approved === true), error: k.error || "", stopReason: k.stopReason || "",
-      reasons: k.review ? (k.review.issues || []) : k.error ? [k.errorMessage || k.error] : [],
-      review: decided ? { callId: decided.callId, exchange: decided.exchange, answer: decided.answer, text: decided.text } : null, reviewCalls: reviews,
-      draft: x ? x.data : null, draftText: x && x.data == null ? x.text : undefined };
+  const last = entries && entries[entries.length - 1];
+  if (!last) return [];
+  const byId = new Map(calls.map(c => [c.callId, c])), list = last.attempts || [], shown = /^shown/.test(last.outcome || "");
+  const timed = list.map(t => byId.get(t.callId)).filter(Boolean).sort(byTime);
+  return list.map((t, i) => {
+    const c = byId.get(t.callId), x = c ? pair(c) : null;
+    const decidedBy = c && c.review && c.review.callId ? byId.get(c.review.callId) : null;
+    const next = c ? timed.find(z => z.at > c.at && z !== c) : null;
+    // the review (or the check of a correction) asked for this attempt, an unreadable answer and its retry included
+    const reviews = c ? calls.filter(z => /_(review|recheck)$/.test(z.purpose) && z.at >= c.at && (!next || z.at < next.at)).sort(byTime).map(z => { const e = pair(z); return { callId: z.callId, decided: !!(decidedBy && decidedBy.callId === z.callId), error: z.error || "", stopReason: z.stopReason || "", exchange: e ? e.n : null, text: e && e.data == null ? e.text : undefined }; }) : [];
+    const finalShown = shown && (i === list.length - 1 || list[list.length - 1].kind === "decision" && i === list.length - 2);
+    return { attempt: i + 1, kind: t.kind || "draft", round: t.round || 0, callId: t.callId || "", exchange: x ? x.n : null, shown: finalShown, error: t.error || "", stopReason: c && c.stopReason || "",
+      reasons: t.issues || [], changed: t.changed || [], ignored: t.ignored || [], g5Withheld: !!t.g5Withheld,
+      review: t.review || decidedBy ? { callId: decidedBy ? decidedBy.callId : "", exchange: (reviews.find(z => z.decided) || {}).exchange || null, answer: t.review || null } : null, reviewCalls: reviews,
+      draft: t.draft || null, draftText: !t.draft && x && x.data == null ? x.text : undefined };
   });
 }
 
@@ -168,8 +205,15 @@ async function main() {
     let id = null;
     sink.list = []; sink.file = path.join(outDir, "exchanges", c.id + (repeat > 1 ? "-" + n : "") + ".jsonl");
     record.exchanges = path.relative(outDir, sink.file);
+    let before = text;
     try {
-      id = await store.createRun(c.kind === "claim" ? { kind: "claim", title: c.id } : { title: c.id }, text);
+      if (c.intake) {
+        // the way a paste comes in: the page's controls and times separated, the speaker structure left to the reading
+        const prepared = await readInput(text, { title: c.id }, async () => ({ ok: false, reason: "eval cases are text" }));
+        before = prepared.text; record.intake = { changed: prepared.intake.changed, web: prepared.intake.web || null };
+        id = await store.createRun(prepared.doc, prepared.text);
+        await store.saveIntake(id, prepared.original, prepared.intake);
+      } else id = await store.createRun(c.kind === "claim" ? { kind: "claim", title: c.id } : { title: c.id }, text);
       let b = await store.bundle(id);
       if (c.passages && c.kind !== "claim") {
         if (c.from) { const orig = shared.parseTranscript(fs.readFileSync(path.join(ROOT, c.from.file), "utf8")), now = shared.parseTranscript(b.transcript); for (const p of c.passages) for (let i = p.turnStart; i <= p.turnEnd; i++) if (!orig[i] || !now[i] || orig[i].text !== now[i].text) throw new Error("turn " + i + " moved when the excerpt was cut"); }
@@ -186,22 +230,29 @@ async function main() {
       record.usage = calls.reduce((u, x) => ({ input: u.input + (x.usage && x.usage.input || 0), output: u.output + (x.usage && x.usage.output || 0) }), { input: 0, output: 0 });
       record.failedCalls = calls.filter(x => x.error).map(x => ({ purpose: x.purpose, error: x.error, stopReason: x.stopReason || "" }));
       record.attribution = { gate: b.attributionGate.status, corrections: (b.run.preparation && b.run.preparation.corrections || []).length, unresolved: (b.run.preparation && b.run.preparation.unresolved || []).length };
+      const known = c.intake ? [...new Set((b.run.speakers || []).flatMap(x => [x.key, x.name]).filter(Boolean))] : undefined;
+      if (c.intake) {
+        const st = b.run.provenance.structure || null;
+        record.speakers = { labelsOrigin: b.run.provenance.labelsOrigin || "", labelled: b.transcript, speakers: b.run.speakers || [],
+          structure: st ? { established: st.established, mode: st.mode, voices: st.voices, clips: st.clips || [], clipsRejected: st.clipsRejected || [], changesProposed: st.changesProposed, changesEstablished: st.changesEstablished, notEstablished: st.notEstablished || [], reviewDisagreed: st.reviewDisagreed, unestablishedSegments: st.unestablishedSegments, names: st.names || [], calls: st.calls || [] } : null,
+          checks: speakerChecks(c, b, before) };
+      }
       record.passages = b.passages.map(p => ({ id: p.id, title: p.title, turns: [p.turnStart, p.turnEnd], gate: p.readingGate.status, reasons: p.readingGate.reasons, context: p.provenance && p.provenance.context || null, review: p.provenance && p.provenance.review ? { approved: p.provenance.review.approved, attempts: p.provenance.review.attempts, issues: p.provenance.review.issues } : null, quoteCheck: p.quoteCheck || null, analysis: p.analysis || null,
-        checks: p.analysis && p.readingGate.status === "ready" ? mechanical(c, p.analysis) : [["reading ready", false, (p.readingGate.reasons || []).join("; ")]] }));
+        checks: p.analysis && p.readingGate.status === "ready" ? mechanical(c, p.analysis, known) : [["reading ready", false, (p.readingGate.reasons || []).join("; ")]] }));
       record.overview = b.summary ? { gate: b.summary.readingGate.status, patterns: b.summary.patterns, survived: b.summary.survived } : null;
       // the exact passage and context each reading was made from, checked against the hash on its record; for a passage
       // with no reading, the material that was sent for it
       for (const p of record.passages) { const full = b.passages.find(x => x.id === p.id); p.material = !full ? null : full.analysis ? await materialAsRead(store, b, full) : c.kind === "claim" ? null : Object.assign({ available: true, matches: null, sentFor: "no reading kept" }, { source: readingMaterial(b, full).source }); }
       // every attempt at each passage, with the rejected drafts and the complete reasons
-      const pair = pairer(sink.list);
-      for (const p of record.passages) { const full = b.passages.find(x => x.id === p.id); p.attempts = full ? attemptsFor(full, b, calls, sink.list, pair) : []; p.held = full && full.held || null;
-        for (const t of p.attempts) if (!t.shown && t.draft) t.checks = mechanical(c, c.kind === "claim" ? claimAnalysis(t.draft, b, P.CONTRACT) : shared.sanitizeAnalysis(t.draft)); }
+      const pair = pairer(sink.list), log = await store.attemptsLog(id);
+      for (const p of record.passages) { const full = b.passages.find(x => x.id === p.id); p.attempts = full ? attemptsFor(log[p.id] || [], calls, sink.list, pair) : []; p.held = full && full.held || null; p.levels = full && full.analysis && full.analysis.levels || null;
+        for (const t of p.attempts) if (!t.shown && t.draft) t.checks = mechanical(c, shared.sanitizeAnalysis(t.draft), known); }
       if (opt("old") && c.kind !== "claim") {
         const turns = shared.parseTranscript(b.transcript), ov = b.run.provenance.overrides;
         record.old = [];
         for (const p of b.passages) { const t1 = Date.now(); try { const out = await model.sample({ prompt: P.deflateV1(b.run, p, shared.fmtTurns(turns, ov, p.turnStart, p.turnEnd)), json: true }); const a = shared.sanitizeAnalysis(out.data); record.old.push({ passage: p.id, model: out.model, usage: out.usage, latencyMs: Date.now() - t1, analysis: a, checks: mechanical(c, a) }); } catch (e) { record.old.push({ passage: p.id, error: e.code || e.message, stopReason: e.meta && e.meta.stopReason || "" }); } }
       }
-      const failed = record.passages.flatMap(p => p.checks.filter(x => !x[1]).map(x => x[0]));
+      const failed = record.passages.flatMap(p => p.checks.filter(x => !x[1]).map(x => x[0])).concat(record.speakers ? record.speakers.checks.filter(x => !x[1]).map(x => x[0]) : []);
       record.summaryLine = record.processing.status + " · " + record.calls + " calls · " + (failed.length ? failed.length + " check(s) to look at" : "mechanical checks pass");
     } catch (e) { record.error = String(e && e.message || e); }
     // where this case's readings and every model-call record (failed calls included) are kept
@@ -217,10 +268,11 @@ async function main() {
   console.log("Written: " + path.join(shown, "results.json") + ", results.jsonl, scoring-sheet.md and exchanges/. Score every case by hand; the mechanical checks only point at places to look.");
 }
 if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });
-module.exports = { mechanical, attributed, NARRATION, kindOf, attemptsFor, pairer, sheet };
+module.exports = { mechanical, attributed, speakerChecks, NARRATION, kindOf, attemptsFor, pairer, sheet };
 
 /* The sheet a person fills in: the expected meaning (written before the run), the outputs at both levels, the
    mechanical pointers, and the six scores per level from the brief. */
+function plural2(n, one, many) { return n + " " + (n === 1 ? one : (many || one + "s")); }
 function pointers(checks) { return (checks || []).map(x => (x[1] ? "✓ " : "✗ ") + x[0] + (x[2] && !x[1] ? " — " + x[2] : "")).join("; ") || "none"; }
 /* The reader-facing text of one reading, at both levels: the card, then the concern and the claims with their plain
    restatements (shown under Evidence in the app). */
@@ -244,6 +296,13 @@ function sheet(results, ai, done) {
     out.push("## " + r.id + (r.run > 1 ? " (run " + r.run + ")" : ""), "", "*Tests:* " + r.tests, "", "*Expected meaning (written before the run):* " + r.expect.meaning, "");
     if (r.provenance) out.push("*Source:* " + r.provenance.speaker + ", " + r.provenance.event + ", " + r.provenance.date + " — " + r.provenance.source + ". " + r.provenance.note, "");
     if (r.error) { out.push("**Error:** " + r.error + (r.callRecords ? " · call records: " + r.callRecords : ""), ""); continue; }
+    if (r.speakers) {
+      const st = r.speakers.structure, fence = /```/.test(r.speakers.labelled) ? "````" : "```";
+      out.push("**Speakers** (" + (r.speakers.labelsOrigin === "words" ? "worked out from the words" : r.speakers.labelsOrigin || "no labels") + (st ? "; " + (st.established ? plural2(st.voices, "voice") + ", " + plural2((st.clips || []).length, "clip or quotation", "clips or quotations") + ", " + st.changesEstablished + " of " + st.changesProposed + " proposed changes of speaker established" + (st.reviewDisagreed ? ", " + st.reviewDisagreed + " not agreed by the review" : "") : "nothing established") : "; the structure pass did not run") + "). The text as the reading saw it:", "", fence + "text", r.speakers.labelled, fence, "");
+      if (st && st.notEstablished && st.notEstablished.length) out.push("Proposed but not established: " + st.notEstablished.map(x => x.voice + " (" + x.kind + ": “" + x.quote + "”) — " + x.why).join(" · "), "");
+      if (st && st.clipsRejected && st.clipsRejected.length) out.push("Clips proposed but not established: " + st.clipsRejected.map(x => (x.id || "paragraph " + x.para) + " — " + x.why).join(" · "), "");
+      out.push("Speaker pointers: " + pointers(r.speakers.checks), "", "| whose words | right / partly / wrong | notes |", "|---|---|---|", "| speakers, clips and quotations | | |", "");
+    }
     out.push("*Run:* " + r.processing.status + " · model " + r.model + " · " + r.calls + " calls · " + r.usage.input + "/" + r.usage.output + " tokens · " + Math.round(r.latencyMs / 100) / 10 + " s · source sha256 " + r.sourceSha256.slice(0, 12) + "…" + (r.failedCalls.length ? " · failed calls: " + r.failedCalls.map(x => x.purpose + " " + x.error + (x.stopReason ? " (" + x.stopReason + ")" : "")).join(", ") : "") + " · call records: " + r.callRecords, "");
     for (const p of r.passages) {
       const a = p.analysis;
@@ -253,18 +312,23 @@ function sheet(results, ai, done) {
       else if (p.material) out.push("**Source as read:** not available — " + p.material.why, "");
       if (a) reading(out, a, r.kind);
       out.push("Mechanical pointers: " + pointers(p.checks), "");
-      const rejected = (p.attempts || []).filter(t => !t.shown);
+      if (p.levels && p.levels.g5 === "withheld") out.push("**Fifth grade withheld:** only the fifth-grade wording still failed its check after correction, so the card shows the high-school reading at both levels. Still open: " + (p.levels.reasons || []).join(" · "), "");
+      const rejected = (p.attempts || []).filter(t => !t.shown && t.kind !== "decision");
       if (rejected.length) {
-        out.push("**Rejected before display** (" + rejected.length + " of " + p.attempts.length + " attempt" + (p.attempts.length === 1 ? "" : "s") + "; full prompts and answers in " + r.exchanges + ")", "");
+        out.push("**Before display** (" + p.attempts.length + " attempt" + (p.attempts.length === 1 ? "" : "s") + "; full prompts and answers in " + r.exchanges + ")", "");
         for (const t of rejected) {
-          out.push("_Attempt " + t.attempt + "_ (" + (t.kind || "reading") + ", call " + t.callId + (t.stopReason && t.stopReason !== "end_turn" ? ", stopped: " + t.stopReason : "") + "). Not shown because:", "");
-          (t.reasons.length ? t.reasons : ["no reason recorded"]).forEach(x => out.push("- " + x));
-          if (t.review && t.review.answer) out.push("", "The separate review (exchange " + t.review.exchange + ") answered approved: " + String(t.review.answer.approved) + (Array.isArray(t.review.answer.issues) && t.review.answer.issues.length ? ", with the issues above." : "; the reasons above came from the app's own checks."));
+          if (t.kind === "correction") {
+            out.push("_Attempt " + t.attempt + "_ (correction " + t.round + ", call " + t.callId + "): " + (t.changed.length ? "changed only " + t.changed.map(c => c.path).join(", ") : "changed nothing" + (t.ignored.length ? " allowed (it tried " + t.ignored.join(", ") + ")" : "")) + ".", "");
+            for (const ch of t.changed) out.push("- " + ch.path + ": " + JSON.stringify(ch.before) + " → " + JSON.stringify(ch.after));
+            out.push("", t.reasons.length ? "Still open after it:" : "Nothing was still open after it.", "");
+          } else out.push("_Attempt " + t.attempt + "_ (full draft, call " + t.callId + (t.stopReason && t.stopReason !== "end_turn" ? ", stopped: " + t.stopReason : "") + "). Not shown because:", "");
+          (t.kind === "correction" ? t.reasons : t.reasons.length ? t.reasons : ["no reason recorded"]).forEach(x => out.push("- " + x));
+          if (t.review && t.review.answer) out.push("", t.kind === "correction" ? "The check of the correction (exchange " + t.review.exchange + ") answered: " + JSON.stringify(t.review.answer) : "The separate review (exchange " + t.review.exchange + ") answered approved: " + String(t.review.answer.approved) + (Array.isArray(t.review.answer.issues) && t.review.answer.issues.length ? ", with the issues above." : "; the reasons above came from the app's own checks."));
           for (const z of (t.reviewCalls || []).filter(z => z.error)) out.push("", "A review answer could not be used (" + z.error + (z.stopReason ? ", " + z.stopReason : "") + ", exchange " + z.exchange + ")" + (z.decided ? "." : "; the review was asked again."));
           out.push("");
-          if (t.draft) reading(out, r.kind === "claim" ? claimAnalysis(t.draft, { transcript: "" }, P.CONTRACT) : shared.sanitizeAnalysis(t.draft), r.kind);
+          if (t.kind !== "correction" && t.draft) reading(out, shared.sanitizeAnalysis(t.draft), r.kind);
           else if (t.draftText) out.push("The answer could not be read as JSON:", "", "````text", t.draftText, "````", "");
-          if (t.checks) out.push("Mechanical pointers for this draft: " + pointers(t.checks), "");
+          if (t.kind !== "correction" && t.checks) out.push("Mechanical pointers for this draft: " + pointers(t.checks), "");
         }
       }
       out.push("| level | meaning | qualifiers | attribution | justified judgment | fair to source | uncertainty | notes |", "|---|---|---|---|---|---|---|---|", "| HS | | | | | | | |", "| 5th | | | | | | | |", "");

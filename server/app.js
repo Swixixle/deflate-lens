@@ -16,11 +16,14 @@ const YT = require("./podcast/youtube");
 const V = require("./validate");
 const Q = require("./quality");
 const { assignSpeakers } = require("./assign");
+const { structureSpeakers } = require("./structure");
+const { separateVoices } = require("./voices");
 const { prepareSpeakers, reviewedReading, reviewedOverview } = require("./preparation");
 const { createClaimSearch } = require("./claim-search");
 const { createReader, readingMaterial, materialAsRead } = require("./reading");
 const P = require("../shared/prompts");
 const { readInput } = require("./intake");
+const { separatePageText, paragraphTimes } = require("./webtranscript");
 
 /* createApp({ dataDir, ai, research, examplesDir, envPath }) -> { app, store, state, ready }
    state.ai is null when no key is configured; the page then shows the example and asks for a key once when real
@@ -152,7 +155,7 @@ function createApp(opts) {
       const show = result.show && result.show.name || "", title = result.episode && result.episode.title || result.title || "";
       const doc = Object.assign({title, sourceLabel:(show ? show + (title ? " — " : "") : "") + title}, input.context || {}, {sourceUrl:input.url, speakers:[], import:{url:input.url, title, fetchedAt:result.fetchedAt || job.finishedAt, chars:result.text.length, method:result.kind === "article" ? "page text" : "transcript: " + src.kind, source:src, show, episode:title, matchedBy:result.matchedBy || "", speakers:result.speakers || [],
         identity:result.kind === "article" ? "direct" : (result.identity || "direct"), match:result.match || null, ambiguous:result.ambiguous || null,
-        episodeInfo:result.episode ? {guid:result.episode.guid || "", title:result.episode.title || "", durationSeconds:result.episode.duration || 0, pubDate:result.episode.pubDate || "", link:result.episode.link || ""} : null}});
+        episodeInfo:result.episode ? {guid:result.episode.guid || "", title:result.episode.title || "", durationSeconds:result.episode.duration || 0, pubDate:result.episode.pubDate || "", link:result.episode.link || "", audioUrl:result.episode.audioUrl || ""} : null}});
       if (!doc.title) delete doc.title;
       const prepared = await readInput(result.text, doc, importer);
       const rid = input.targetRunId || "r_" + id;
@@ -236,6 +239,61 @@ function createApp(opts) {
     if (reader.jobs.has(req.params.id)) await reader.stop(req.params.id);
     await store.commitAssignment(req.params.id, out.basis, out);
     res.status(202).json(await reader.start(req.params.id));
+  }));
+  /* For a text saved before 0.13 that still holds a web page's controls and timestamps: the same separation new input
+     gets at intake, on the person's request. The text before it is kept (inputs/ and versions/); readings made from it
+     are marked out of date and are not redone until the person reads again. */
+  app.post("/api/runs/:id/page-text", wrap(async (req, res) => {
+    const b = await store.bundle(req.params.id);
+    if (!b) return res.status(404).json({ error: "run not found" });
+    if (b.run.example) return res.status(403).json({ error: "Copy the supplied example before changing it." });
+    const w = separatePageText(b.transcript);
+    if (!w.changed) return res.status(409).json({ error: "This text holds no page controls or timestamps to separate.", code: "nothing_to_separate" });
+    if (reader.jobs.has(req.params.id)) await reader.stop(req.params.id);
+    const text = w.text.trim(), starts = paragraphTimes(text, w.paragraphs);
+    await store.repairIntake(req.params.id, text, {}, b.transcript, { source: "saved-input", requestedBy: "person at this computer", at: new Date().toISOString(), originalHash: sha256(b.transcript), cleanedHash: sha256(text),
+      originalChars: b.transcript.length, cleanedChars: text.length, removedBefore: 0, removedAfter: 0, changed: true, converted: "", method: w.record.method, web: w.record,
+      timing: starts ? { cleanedHash: sha256(text), unit: "paragraph", starts } : null }, b.run.input.sha256);
+    res.json(await store.bundle(req.params.id));
+  }));
+  /* On request, for a run saved before 0.13 (new input gets this at the start of its first reading): work out from the
+     words who is speaking and where a clip or quotation is played (structure.js). The labelled text replaces the old one
+     (kept in versions/); the reading starts again on it, so earlier readings are made again. */
+  app.post("/api/runs/:id/speakers-from-words", wrap(async (req, res) => {
+    const ctl = new AbortController(); res.on("close", () => { if (!res.writableEnded) ctl.abort(); });
+    const b = await store.bundle(req.params.id);
+    if (!b) return res.status(404).json({ error: "run not found" });
+    if (b.run.example) return res.status(403).json({ error: "Copy the supplied example before changing it." });
+    // a reading in progress is stopped first, and resumed if nothing changes
+    const wasReading = reader.jobs.has(req.params.id);
+    if (wasReading) await reader.stop(req.params.id);
+    let out;
+    try { out = await structureSpeakers({ ai: state.ai, store, id: req.params.id, signal: ctl.signal }); }
+    catch (e) { if (wasReading) await reader.start(req.params.id).catch(() => {}); throw e; }
+    if (out.changed) await store.commitStructure(req.params.id, out.basis, out); else await store.recordStructure(req.params.id, out.basis, out.record);
+    if (!out.changed) return res.json(Object.assign({ outcome: "nothing_established" }, wasReading ? await reader.start(req.params.id) : await store.bundle(req.params.id)));
+    res.status(202).json(Object.assign({ outcome: "structured" }, await reader.start(req.params.id)));
+  }));
+  /* On request, where the words cannot settle who is speaking: voices separated from the episode's recording by Deepgram
+     (the person's key) and lined up with this text word by word (voices.js). Every word of the text stays; only the
+     labels come from the recording. A reading in progress is stopped just before the recording is sent, and the reading
+     starts again on the labelled text. */
+  app.post("/api/runs/:id/voices", wrap(async (req, res) => {
+    const ctl = new AbortController(); res.on("close", () => { if (!res.writableEnded) ctl.abort(); });
+    const id = req.params.id;
+    // a reading in progress is stopped just before the recording is sent, and resumed if the voices cannot be used
+    let wasReading = false, out;
+    try {
+      out = await separateVoices({ ai: state.ai, store, id, link: req.body && req.body.link, engine: engines.cloud, resolver, signal: ctl.signal,
+        beforeRecording: async () => { if (reader.jobs.has(id)) { wasReading = true; await reader.stop(id); } } });
+    } catch (e) { if (wasReading) await reader.start(id).catch(() => {}); throw e; }
+    await store.commitVoices(id, out.basis, out);
+    res.status(202).json(Object.assign({ outcome: "voices" }, await reader.start(id)));
+  }));
+  /* A person's one confirmation of the names of speakers the app numbered (from the words or the voices). */
+  app.post("/api/runs/:id/confirm-names", wrap(async (req, res) => {
+    await store.confirmNames(req.params.id, req.body && req.body.names, "person at this computer");
+    res.json(await store.bundle(req.params.id));
   }));
   app.post("/api/runs/:id/prepare-speakers", wrap(async (req, res) => {
     const ctl = new AbortController(); res.on("close", () => { if (!res.writableEnded) ctl.abort(); });
@@ -365,7 +423,7 @@ function createApp(opts) {
     res.json(await store.bundle(req.params.id));
   }));
 
-  app.get("/api/runs/:id/export.json", wrap(async (req, res) => { const b = await store.bundle(req.params.id); if (!b) return res.status(404).json({ error: "run not found" }); res.setHeader("Content-Disposition", "attachment; filename=\"" + safeName(b.run.title) + ".deflate.json\""); res.json(buildExport(b)); }));
+  app.get("/api/runs/:id/export.json", wrap(async (req, res) => { const b = await store.bundle(req.params.id); if (!b) return res.status(404).json({ error: "run not found" }); res.setHeader("Content-Disposition", "attachment; filename=\"" + safeName(b.run.title) + ".deflate.json\""); b.attempts = await store.attemptsLog(req.params.id); res.json(buildExport(b)); }));
   app.get("/api/runs/:id/export.md", wrap(async (req, res) => { const b = await store.bundle(req.params.id); if (!b) return res.status(404).json({ error: "run not found" }); const level = req.query.level === "g5" ? "g5" : "hs"; res.setHeader("Content-Disposition", "attachment; filename=\"" + safeName(b.run.title) + (level === "g5" ? ".fifth-grade" : "") + ".deflate.md\""); res.type("text/markdown").send(buildMarkdown(b, level)); }));
 
   /* The model call. The page sends {prompt, json, images:[{mediaType,data}], runId?, purpose?} and gets
@@ -433,7 +491,7 @@ function createApp(opts) {
   app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
     const status = err.status || 500;
     if (status >= 500) console.error(err);
-    res.status(status).json(Object.assign({ error: err.message || "server error" }, err.code ? { code: err.code } : {}));
+    res.status(status).json(Object.assign({ error: err.message || "server error" }, err.code ? { code: err.code } : {}, err.code === "reading_held" && Array.isArray(err.issues) ? { issues: err.issues } : {}));
   });
 
   return { app, store, state, reader, get ai() { return state.ai; }, ready, jobs, engines, resolver };

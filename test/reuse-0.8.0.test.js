@@ -80,7 +80,7 @@ test("input record: the server hashes the text, binds every reading to the hash 
     b = (await s.api("PUT", "/api/runs/" + id, { run: {}, transcript: T1 })).data; assert.ok(!b.summary.stale.includes("transcript changed since the patterns were found"));
     // the export carries the hashes and the verifier checks them against a file
     const exp = (await s.api("GET", "/api/runs/" + id + "/export.json")).data;
-    assert.equal(exp.schema, "deflate-lens/claims@0.6"); assert.equal(exp.run.transcript.sha256, sha(T1)); assert.equal(exp.run.transcript.earlierVersions.length, 4); assert.equal(exp.passages[0].basedOn.inputHash, sha(T1));
+    assert.equal(exp.schema, "deflate-lens/claims@0.7"); assert.equal(exp.run.transcript.sha256, sha(T1)); assert.equal(exp.run.transcript.earlierVersions.length, 4); assert.equal(exp.passages[0].basedOn.inputHash, sha(T1));
     const ok = verify(exp, T1); assert.equal(ok.transcriptMatches, true); assert.equal(ok.passages[0].where, "read from exactly this text");
     const no = verify(exp, T2); assert.equal(no.transcriptMatches, false); assert.match(no.passages[0].where, /not name|earlier version/);
     const crlf = verify(exp, T1.replace(/\n/g, "\r\n")); assert.equal(crlf.transcriptMatches, false, "a changed line ending is a changed text");
@@ -214,7 +214,7 @@ test("relations: stated by the person on accept or attach, default unstated, cha
     const ec = exp.claims[0]; assert.deepEqual(ec.relations, { supports: 1, contradicts: 0, mentions: 1, unstated: 1 }, "active receipts only"); assert.equal(ec.receipts[1].relation, "contradicts"); assert.equal(ec.receipts[1].withdrawn, true); assert.equal(ec.receipts[0].relationHistory.length, 1);
     assert.equal(typeof exp.relationMeaning.supports, "string"); assert.match(exp.statusMeaning.receipt, /never inferred from a search/);
     const md = (await s.api("GET", "/api/runs/" + id + "/export.md")).text;
-    assert.match(md, /Reading held/); assert.doesNotMatch(md, /sources attached:/, "an unprepared reading is excluded from the normal Markdown export; the raw export above preserves every relation"); assert.match(md, /Transcript sha256: [0-9a-f]{64}/);
+    assert.match(md, /\*\*Out of date, not shown\.\*\* Why: /); assert.doesNotMatch(md, /sources attached:/, "an unprepared reading is excluded from the normal Markdown export; the raw export above preserves every relation"); assert.match(md, /Transcript sha256: [0-9a-f]{64}/);
     // a relation never changes a claim's status vocabulary: still "receipt", never "verified" anywhere
     assert.equal(ec.status, "receipt"); assert.ok(!/verified/i.test(JSON.stringify(exp.claims)));
   } finally { await s.close(); }

@@ -33,7 +33,7 @@ function visible(node) { if (node.hidden) return ""; if (node.tag === "details" 
 function el(tag, id, cls) { const n = new Element(tag); if (id) n.id = id; if (cls) n.className = cls; return n; }
 
 async function page(t, opts = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "deflate-ui-")), system = createApp({ dataDir: dir, examplesDir: dir, ai: opts.ai === undefined ? createMockAI() : opts.ai, research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), resolver: opts.resolver, env: {}, envPath: path.join(dir, ".env") });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "deflate-ui-")), system = createApp({ dataDir: dir, examplesDir: dir, ai: opts.ai === undefined ? createMockAI() : opts.ai, research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), resolver: opts.resolver, cloudEngine: opts.cloudEngine, env: {}, envPath: path.join(dir, ".env") });
   await system.ready;
   const server = await new Promise(r => { const s = system.app.listen(0, "127.0.0.1", () => r(s)); });
   const base = "http://127.0.0.1:" + server.address().port, body = new Element("body");
@@ -128,17 +128,20 @@ test("a held passage keeps its place and names its own reason; an out-of-date on
   b.passages[1].status = "error"; b.passages[1].readingGate = { status: "held", reasons: ["The model's answer was cut off at its length limit before it finished."] };
   b.run.processing.status = "partial"; b.run.processing.message = "2 of 3 readings are ready.";
   await f.ctx.page.reload(JSON.parse(JSON.stringify(b)));
-  assert.match(visible(f.$("reading-status")), /2 of 3 readings are ready\.Try the held readings again/);
+  assert.match(visible(f.$("reading-status")), /2 of 3 readings are ready\.Try again$/, "one retry, on the status line");
   b.passages[2].readingGate = { status: "held", reasons: ["transcript changed since this analysis"] }; b.passages[2].stale = ["transcript changed since this analysis"];
   b.run.processing.status = "partial"; b.run.processing.message = "1 of 3 readings are ready.";
   await f.ctx.page.reload(b);
   const cards = f.body.querySelectorAll(".card");
   assert.equal(cards.length, 3, "order and slots are kept");
-  assert.match(visible(cards[1]), /2 of 3[\s\S]*Held, not shown: The model's answer was cut off at its length limit before it finished\./);
+  assert.match(visible(cards[1]), /2 of 3[\s\S]*This reading couldn't be completed\.Evidence$/, "the reason is under Evidence, not on the card");
+  assert.equal(cards[1].querySelectorAll("button").filter(x => /again/i.test(x.textContent)).length, 0, "no second retry button on the card");
+  const ev = cards[1].querySelector("details.evidence"); ev.setAttribute("open", "");
+  assert.match(visible(cards[1]), /Why it couldn't be completed[\s\S]*The model's answer was cut off at its length limit before it finished\.[\s\S]*The original passage/);
   assert.match(visible(cards[2]), /Out of date: the text changed after this reading was made\./);
   assert.doesNotMatch(visible(cards[2]), /In plain words/);
   assert.match(visible(f.$("reading-status")), /Some readings are out of date because the text or speakers changed\. Read again to update them\.Read again/);
-  assert.match(f.$("contents-host").textContent, /2 of 3[^·]*· held[\s\S]*3 of 3[^·]*· out of date/);
+  assert.match(f.$("contents-host").textContent, /2 of 3[^·]*· not completed[\s\S]*3 of 3[^·]*· out of date/);
 });
 
 test("a typed claim shows its explanation and what would help check it, without an invented debate", async t => {
@@ -214,4 +217,72 @@ test("late bundles and out-of-order loads cannot replace the selected reading; a
   assert.equal(P.S.runId, other); assert.equal(P.S.b.run.id, other);
   assert.equal(await P.reload(stale), false, "a late bundle for the previous reading is ignored");
   P.S.busy = true; await P.selectRun(first); assert.equal(P.S.runId, other); P.S.busy = false;
+});
+
+/* Deepgram's answer for a text whose paragraphs are spoken by the given voices (one voice per paragraph). */
+function recordingOf(text, voiceOfParagraph) {
+  const words = []; let t = 0;
+  text.split(/\n\s*\n/).forEach((para, i) => para.split(/\s+/).filter(Boolean).forEach(w => { words.push({ word: w.toLowerCase().replace(/[^a-z0-9']/g, ""), punctuated_word: w, speaker: voiceOfParagraph[i], start: t, end: t + 0.3 }); t += 0.4; }));
+  return { metadata: { request_id: "req-ui-1", duration: Math.round(t), models: ["nova-3"] }, results: { channels: [{ alternatives: [{ words }] }] } };
+}
+const PLAIN = "Welcome back to the show. Today we are talking about the transit survey the city released last month.\n\nThanks for having me. The survey covered four hundred households in three neighborhoods, which is a small sample for a city this size.\n\nSo when the report says riders everywhere support more lanes, it is stretching what those households can tell you.";
+
+test("speakers: a text with no labels shows one quiet line and no speaker before every line; voices from the recording say where they came from and ask for one confirmation of names", async t => {
+  let configured = false; const sent = [];
+  const cloudEngine = { name: "deepgram", model: "nova-3", configured: () => configured, async diarize({ audioUrl }) { sent.push(audioUrl); return recordingOf(PLAIN, [0, 1, 1]); } };
+  const f = await page(t, { cloudEngine }); await f.type(PLAIN);
+  assert.equal(visible(f.$("speakerNotice")), "No speaker labels in this text. Find speakers", "one quiet line");
+  assert.equal(f.$("notices").querySelectorAll(".notice").filter(n => /speaker/i.test(n.textContent)).length, 1);
+  assert.ok(f.$("speakerNotice").classList.contains("quiet"));
+  assert.doesNotMatch(visible(f.$("runView")), /Speaker unknown|Speaker not established/);
+  const ev = f.body.querySelector(".card details.evidence"); ev.setAttribute("open", "");
+  assert.match(visible(ev), /The original passage[\s\S]*Welcome back to the show/);
+  assert.doesNotMatch(visible(ev), /Speaker unknown|Speaker not established|UNLABELED/, "no label in front of every line");
+  // Controls: where the labels came from, and the ways to find speakers behind one disclosure
+  f.$("controlsBtn").click();
+  let sp = f.$("ctl-speakers");
+  assert.match(visible(sp), /No speaker labels came with this text\. The words alone don't show where the speaker changes, so the text is read as it is\./);
+  let find = sp.querySelector("details.ctl-find"); assert.ok(find, "Find who is speaking"); assert.equal(find.getAttribute("open"), null, "closed until asked");
+  find.setAttribute("open", "");
+  assert.doesNotMatch(visible(find), /Work out who is speaking from the words/, "the words were already read at intake");
+  assert.match(visible(find), /Separate voices from the recording[\s\S]*Needs a Deepgram key first/);
+  // with a key, the voices route runs and the page says where the labels came from
+  configured = true; f.ctx.page.S.engines = null; f.$("controls").querySelector(".panel-close").click(); f.$("controlsBtn").click();
+  await f.pump(() => f.ctx.page.S.engines);
+  f.$("controls").querySelector(".panel-close").click(); f.$("controlsBtn").click();
+  sp = f.$("ctl-speakers"); find = sp.querySelector("details.ctl-find"); find.setAttribute("open", "");
+  const link = find.querySelector("input"); link.value = "https://cdn.example.org/ep7.mp3"; link.listeners.input();
+  await find.querySelectorAll("button").find(b => b.textContent === "Separate voices from the recording").click();
+  await f.settle();
+  assert.deepEqual(sent, ["https://cdn.example.org/ep7.mp3"]);
+  assert.ok(f.requests.some(r => r[0] === "/api/runs/" + f.ctx.page.S.runId + "/voices" && r[1] === "POST"));
+  assert.equal(visible(f.$("speakerNotice")), "Speakers separated by voice. Name them");
+  const ev2 = f.body.querySelector(".card details.evidence"); ev2.setAttribute("open", "");
+  assert.match(visible(ev2), /Speaker 1: Welcome back to the show[\s\S]*Speaker 2: Thanks for having me/);
+  // one confirmation of names
+  f.$("controlsBtn").click(); sp = f.$("ctl-speakers");
+  assert.match(visible(sp), /Separated by voice from the recording: 2 voices, with 100% of this text's words lined up/);
+  const names = sp.querySelectorAll("input").filter(i => /^Name for Speaker/.test(i.getAttribute("aria-label") || ""));
+  assert.deepEqual(names.map(i => i.getAttribute("aria-label")), ["Name for Speaker 1", "Name for Speaker 2"]);
+  names[0].value = "Sam Okafor"; names[0].listeners.input(); names[1].value = "Dana Reyes"; names[1].listeners.input();
+  await sp.querySelectorAll("button").find(b => b.textContent === "Confirm names").click();
+  await f.settle();
+  assert.equal(visible(f.$("speakerNotice")), "Speakers separated by voice. Details");
+  const ev3 = f.body.querySelector(".card details.evidence"); ev3.setAttribute("open", "");
+  assert.match(visible(ev3), /Sam Okafor: Welcome back to the show[\s\S]*Dana Reyes: Thanks for having me/);
+  assert.match(visible(f.body.querySelector(".card")), /Sam Okafor/);
+});
+
+test("a reading whose fifth-grade wording failed shows the high-school reading at both levels and says so only at fifth grade", async t => {
+  const f = await page(t); await f.type(transcript);
+  const b = JSON.parse(JSON.stringify(f.ctx.page.S.b)), a = b.passages[0].analysis;
+  a.deflated = { hs: "HS plain words.", g5: "FAILED fifth grade words." }; a.levels = { g5: "withheld", reasons: ["deflated.g5: “a wider mix of people” changes who was surveyed."] };
+  await f.ctx.page.reload(b);
+  const card = f.body.querySelector(".card");
+  card.setAttribute("data-level", "5");
+  const shown5 = descendants(card).filter(n => /\blvl-5\b/.test(n.className)).map(n => n.textContent).join(" | ");
+  assert.match(shown5, /HS plain words\./); assert.doesNotMatch(shown5, /FAILED/);
+  const note = card.querySelector(".only-5"); assert.ok(note); assert.equal(note.textContent, "The fifth-grade wording couldn't be completed, so this card shows the high-school reading.");
+  const ev = card.querySelector("details.evidence"); ev.setAttribute("open", ""); const chk = card.querySelector("details.checks"); chk.setAttribute("open", "");
+  assert.match(visible(chk), /What was still wrong:Fifth grade, In plain words: “a wider mix of people” changes who was surveyed\./);
 });

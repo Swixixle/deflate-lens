@@ -80,13 +80,21 @@ test("a typed claim: reading-2 stores a checkable claim with no inference to jud
 });
 
 test("an invalid draft is repaired through the bounded review, or held with its own reasons on the card", async t => {
-  // first draft inconsistent, the repair is consistent: the card is ready after one retry
-  let m = scripted((d, n) => { if (n === 1) d.judgments.inference = "gap"; });
+  // first draft inconsistent; the correction changes only what the problem names, and the card is ready
+  let m = scripted((d, n) => { d.judgments.inference = "gap"; });
+  const base = m.ai.sample;
+  m.ai.sample = async args => {
+    if (String(args.prompt).startsWith("Correct a reading.")) { m.prompts.push(args.prompt); const data = { changes: [{ path: "judgments", value: { evidence: "weak", inference: "valid" } }, { path: "deflated.hs", value: "not allowed: no problem names it" }] }; return { data, text: JSON.stringify(data), usage: null, model: "mock", stopReason: "end_turn" }; }
+    return base(args);
+  };
   let s = await fixture(t, { ai: m.ai });
   let id = (await s.api("POST", "/api/intake", { input: transcript })).data.run.id, b = await s.finish(id);
   assert.equal(b.run.processing.status, "complete");
   assert.ok(b.passages.every(p => p.readingGate.status === "ready"));
-  assert.ok(m.prompts.some(p => isPassage(p) && p.includes("a reasoning gap is recorded although no concern was raised")), "the repair prompt names the problem");
+  assert.ok(m.prompts.some(p => p.startsWith("Correct a reading.") && p.includes("a reasoning gap is recorded although no concern was raised")), "the correction is told the problem");
+  assert.equal(m.prompts.filter(isPassage).length, b.passages.length, "one full draft per passage; the correction is not a new draft");
+  assert.ok(b.passages.every(p => p.analysis.judgments.inference === "valid" && !/not allowed/.test(p.analysis.deflated.hs)), "only the part a problem names is changed");
+  assert.ok(b.passages.every(p => p.provenance.purpose === "deflate_fix" && p.provenance.review.approved && p.provenance.review.changed.join() === "judgments"));
   // every draft inconsistent: held, and the card says why (not a generic "has not passed")
   m = scripted(d => { d.jump.pivot = words(3).slice(0, 30); });
   s = await s.restart({ ai: m.ai });
@@ -96,7 +104,7 @@ test("an invalid draft is repaired through the bounded review, or held with its 
     assert.equal(p.readingGate.status, "held"); assert.ok(p.readingGate.reasons.includes("no concern was raised, so there can be no pivot"), JSON.stringify(p.readingGate));
   }
   assert.ok(b.run.processing.issues[0].reasons.length);
-  assert.match(buildMarkdown(b), /Reading held, not shown\.\*\* Why: no concern was raised, so there can be no pivot/);
+  assert.match(buildMarkdown(b), /This reading couldn't be completed\.\*\* Why: no concern was raised, so there can be no pivot/);
   assert.equal(buildExport(b).passagesHeld.length, b.passages.length);
 });
 
@@ -171,7 +179,7 @@ test("a reread from a card and the page's model route use the server's reading-2
   assert.equal(b.passages[0].readingGate.status, "ready"); assert.equal(b.passages[0].held.kept, true);
   assert.ok(b.passages[0].held.issues.includes("a reasoning gap is recorded although no concern was raised"));
   assert.equal(b.run.processing.status, "complete");
-  assert.match(buildMarkdown(b), /did not pass its checks; this is the earlier reading/);
+  assert.match(buildMarkdown(b), /couldn't be completed; this is the earlier reading/);
   // a second request while one runs is refused plainly; an unknown passage is refused
   assert.equal((await s.api("POST", "/api/runs/" + id + "/passages/p999/reread")).status, 404);
 });
@@ -205,7 +213,7 @@ test("a searched video stays 'matched by title and length' through reading, relo
   b = (await again.api("GET", "/api/runs/" + b.run.id)).data;
   assert.equal(b.run.title, "Renamed"); assert.equal(b.sourceIdentity.state, "needs_confirmation"); assert.equal(b.run.import.url, "https://show.test/feed.xml");
   const exp = (await again.api("GET", "/api/runs/" + b.run.id + "/export.json")).data;
-  assert.equal(exp.run.sourceIdentity.state, "needs_confirmation"); assert.equal(exp.schema, "deflate-lens/claims@0.6");
+  assert.equal(exp.run.sourceIdentity.state, "needs_confirmation"); assert.equal(exp.schema, "deflate-lens/claims@0.7");
   const md = (await again.api("GET", "/api/runs/" + b.run.id + "/export.md")).data;
   assert.match(md, /The video was matched by title and length; no person has confirmed that it is the intended episode\./);
   assert.match(md, /Selected video: The Test Show — Ep 1: No transcript — The Test Show \(58 min 00 s\)/);

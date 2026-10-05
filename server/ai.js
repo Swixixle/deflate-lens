@@ -84,6 +84,41 @@ function createMockAI() {
       } else if (p.startsWith("Review these speaker assignments independently")) {
         const n = (p.split("\nTurns:\n")[1] || "").split("\n").filter(l => /^\[\d+\]/.test(l));
         data = { verdicts: n.map((l, i) => ({ index: i, agree: !/MOCK-DISAGREE/.test(l), speaker: (l.match(/^\[\d+\] ([^:]+):/) || [0, "UNKNOWN"])[1], reason: "MOCK: agrees unless the turn says MOCK-DISAGREE." })) };
+      } else if (p.startsWith("This transcript has no speaker labels. Work out who is speaking")) {
+        // fixture: one voice throughout, no change of speaker, no clip; the real model reads the words
+        const m = /\nNumbered paragraphs:\n\[(\d+)\] (.*)/.exec(p);
+        data = { segments: m ? [{ para: +m[1], start: m[2].split(/\s+/).slice(0, 6).join(" "), voice: "A", change: { kind: "none", quote: "" } }] : [], clips: [], names: [], voices: [{ voice: "A", role: "MOCK: not read" }] };
+      } else if (p.startsWith("Find recordings played and quotations read aloud")) {
+        data = { clips: [] };
+      } else if (p.startsWith("Review a speaker structure independently")) {
+        const n = ((p.split("\nSegments:\n")[1] || "").match(/^\[\d+\]/gm) || []).length;
+        data = { verdicts: Array.from({ length: n }, (_, i) => ({ segment: i, agree: true, reason: "MOCK" })), names: [] };
+      } else if (p.startsWith("These transcript turns are labelled SPEAKER 1")) {
+        // fixture: a turn that says "my name is First Last" names its own speaker; the real model reads the words
+        const names = [];
+        for (const t of turnsFrom(p.split("\nTurns:\n")[1] || "")) { const m = /\b[Mm]y name is ([A-Z][a-z]+(?: [A-Z][a-z]+)?)/.exec(t.text); if (m && /^SPEAKER \d+$/.test(t.label)) names.push({ speaker: t.label, name: m[1], kind: "self_identification", quote: m[0] }); }
+        data = { names };
+      } else if (p.startsWith("Correct a reading.")) {
+        // fixture: each named field gets " (MOCK corrected)" appended; nothing else changes
+        let reading = {}; try { reading = JSON.parse((p.split("\n\nREADING:\n")[1] || "").split("\n\nPROBLEMS:\n")[0]); } catch (e) {}
+        const problems = (p.split("\n\nPROBLEMS:\n")[1] || "").split("\n").map(l => l.replace(/^\d+\.\s*/, "")).filter(Boolean);
+        const get = path => path.split(/\.|(?=\[)/).reduce((x, k) => x == null ? undefined : k.startsWith("[") ? x[Number(k.slice(1, -1))] : x[k], reading);
+        const changes = [];
+        for (const pr of problems) {
+          if (/quotation|quote/.test(pr) && !changes.some(c => c.path === "asSaid")) {
+            // quote the passage's first turn, as the mock reading does
+            const t = turnsFrom((p.split(/\nPASSAGE \(turns [^\n]*\n/)[1] || "").split(/\n\nCONTEXT AFTER|\n\nREADING:/)[0])[0];
+            if (t) changes.push({ path: "asSaid", value: [{ turn: t.i, speaker: t.label, quote: t.text.split(/\s+/).slice(0, 12).join(" ") }] });
+            continue;
+          }
+          const m = /^((?:claims\[\d+\]\.(?:plain|basis|settle))|deflated|defense|revision|jump)\.(hs|g5)\b/.exec(pr) || (/pivot|concern|jump/.test(pr) ? [0, "jump", "hs"] : [0, "deflated", "hs"]);
+          const path = m[1] + "." + m[2], old = get(path);
+          if (typeof old === "string" && !changes.some(c => c.path === path)) changes.push({ path, value: old + " (MOCK corrected)" });
+        }
+        data = { changes };
+      } else if (p.startsWith("Check a correction to a reading")) {
+        const n = ((p.split("\n\nPROBLEMS:\n")[1] || "").split("\n\nCHANGES:\n")[0].match(/^\d+\./gm) || []).length;
+        data = { resolved: Array.from({ length: n }, () => true), newIssues: [] };
       } else if (p.startsWith("Review this reading before it is shown")) {
         data = { approved: true, issues: [] }; // fixture-only; the UI still labels every output as MOCK
       } else

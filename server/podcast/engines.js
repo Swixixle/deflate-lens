@@ -11,7 +11,8 @@
           segments cut at quiet points, so a long episode never sits in memory whole.
 
    CLOUD  Deepgram's prerecorded API, given the audio file's address (nothing is downloaded here): minutes per episode,
-          speaker labels, billed to a Deepgram key the person adds once. The audio goes to Deepgram.
+          speaker labels, billed to a Deepgram key the person adds once. The audio goes to Deepgram. The same API also
+          separates voices for a text the app already has (diarize(), used by voices.js on a person's request).
 
    Either engine's output is a document with a stated origin: engine, model, duration, and what was and was not
    available (speakers). Neither is ever called without a person having chosen it. */
@@ -172,6 +173,18 @@ function deepgramEngine({ apiKey, fetch: fetchFn, env }) {
       const conv = cuesToText(cues);
       const meta = d.metadata || {};
       return { text: conv.text, speakers: conv.speakers, engine: "deepgram", model: (meta.models && meta.models[0]) || model, requestId: meta.request_id || "", durationSeconds: Math.round(meta.duration || 0), note: "automatic transcription by Deepgram (" + model + "); speakers are numbered by voice, not named; expect some misheard words and names" };
+    },
+    /* The voices only, for a text the app already has (voices.js): Deepgram's full answer, every word with its voice
+       number and times. The words are used to line the voices up with the text, never to replace it. */
+    async diarize({ audioUrl, signal }) {
+      if (!apiKey) { const e = new Error("Add a Deepgram key to separate voices from the recording."); e.code = "cloud_not_configured"; e.status = 409; throw e; }
+      const url = "https://api.deepgram.com/v1/listen?model=" + encodeURIComponent(model) + "&smart_format=true&punctuate=true&diarize=true";
+      let res;
+      try { res = await (fetchFn || globalThis.fetch)(url, { method: "POST", signal, headers: { "Authorization": "Token " + apiKey, "Content-Type": "application/json" }, body: JSON.stringify({ url: audioUrl }) }); }
+      catch (e) { if (signal && signal.aborted) throw abortError(); throw Object.assign(new Error("Deepgram could not be reached (" + String(e.message || e).slice(0, 120) + ")."), { status: 502, code: "cloud_failed" }); }
+      const text = await res.text();
+      if (res.status !== 200) throw Object.assign(new Error("Deepgram answered HTTP " + res.status + ": " + text.replace(/\s+/g, " ").slice(0, 200)), { status: 502, code: "cloud_failed" });
+      try { return JSON.parse(text); } catch (e) { throw Object.assign(new Error("Deepgram's answer was not readable."), { status: 502, code: "cloud_failed" }); }
     },
   };
 }

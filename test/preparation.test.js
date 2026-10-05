@@ -46,7 +46,7 @@ test("the existing pilot is held before reading and Markdown never publishes its
   assert.equal(b.attributionGate.status, "held");
   assert.ok(b.passages.every(p => p.readingGate.status === "held"));
   assert.equal(b.summary.readingGate.status, "held");
-  assert.match(buildMarkdown(b), /Reading held/);
+  assert.match(buildMarkdown(b), /\*\*Not shown\.\*\* Why: .*[Ss]peaker labels are still unresolved/);
   assert.ok(!buildMarkdown(b).includes(b.passages[0].analysis.deflated.hs));
 });
 
@@ -136,25 +136,30 @@ test("a quote's uniquely identifiable turn and speaker are corrected before the 
 });
 
 test("a missing quote triggers one automatic repair and still cannot be approved by a model vote", async t => {
-  const mock = createMockAI(); let generations = 0;
+  const mock = createMockAI(); let generations = 0, fixes = 0;
   const ai = Object.assign({}, mock, { sample: async o => {
-    const r = await mock.sample(o); if (o.prompt.startsWith("Help a reader understand this passage")) { generations++; if (generations === 1) r.data.asSaid[0].quote = "Words that nobody said."; } return r;
+    const r = await mock.sample(o); if (o.prompt.startsWith("Help a reader understand this passage")) { generations++; if (generations === 1) r.data.asSaid[0].quote = "Words that nobody said."; }
+    if (o.prompt.startsWith("Correct a reading.")) { fixes++; assert.match(o.prompt, /a quotation does not match the passage/); } return r;
   } });
   const f = await fixture(t, ai); let b = await run(f);
   b = (await f.api("POST", "/api/runs/" + b.run.id + "/prepare-speakers", {})).data; b = await passage(f, b);
-  const result = await sample(f, b); assert.equal(result.status, 200); assert.equal(generations, 2);
-  assert.equal(result.data.provenance.review.attempts, 2);
+  const result = await sample(f, b); assert.equal(result.status, 200);
+  assert.equal(generations, 1, "one full draft"); assert.equal(fixes, 1, "one correction that changes only the quotation");
+  assert.equal(result.data.provenance.review.attempts, 2); assert.deepEqual(result.data.provenance.review.changed, ["asSaid"]);
   b = (await save(f, b, result)).data; assert.equal(b.passages[0].readingGate.status, "ready");
   const calls = (await fs.readFile(path.join(f.dir, "runs", b.run.id, "calls.jsonl"), "utf8")).trim().split("\n").map(JSON.parse);
   assert.ok(calls.some(c => c.review && !c.review.approved), "the failed draft stays documented");
 });
 
 test("a failed review holds the reading after a bounded retry without replacing the current saved card", async t => {
-  const mock = createMockAI(); let reviews = 0;
-  const ai = Object.assign({}, mock, { sample: async o => o.prompt.startsWith("Review this reading") ? (++reviews, { data: { approved: false, issues: ["The rewrite removes a hedge."] } }) : mock.sample(o) });
+  const mock = createMockAI(); let reviews = 0, checks = 0;
+  const ai = Object.assign({}, mock, { sample: async o => o.prompt.startsWith("Review this reading") ? (++reviews, { data: { approved: false, issues: [{ field: "deflated", level: "hs", problem: "The rewrite removes a hedge." }] } })
+    : o.prompt.startsWith("Check a correction") ? (++checks, { data: { resolved: [false], newIssues: [] } }) : mock.sample(o) });
   const f = await fixture(t, ai); let b = await run(f);
   b = (await f.api("POST", "/api/runs/" + b.run.id + "/prepare-speakers", {})).data; b = await passage(f, b);
-  const result = await sample(f, b); assert.equal(result.status, 422); assert.equal(result.data.code, "reading_held"); assert.equal(reviews, 2);
+  const result = await sample(f, b); assert.equal(result.status, 422); assert.equal(result.data.code, "reading_held");
+  assert.equal(reviews, 1, "one full review"); assert.equal(checks, 2, "two bounded corrections, each checked");
+  assert.deepEqual(result.data.issues, ["deflated.hs: The rewrite removes a hedge."]);
   assert.equal((await f.store.bundle(b.run.id)).passages[0].analysis, undefined);
 });
 

@@ -29,6 +29,7 @@ const fsp = require("fs/promises");
 const path = require("path");
 const crypto = require("crypto");
 const shared = require("../shared/transcript");
+const { separatePageText } = require("./webtranscript");
 const V = require("./validate");
 const T = require("./research/types");
 const Q = require("./quality");
@@ -115,7 +116,7 @@ function autoTitle(text, kind) {
 function attributionNote(labels, kind) {
   const speaking = labels.filter(l => l !== "UNLABELED");
   if (kind === "claim") return { notApplicable: true, method: "A claim supplied by a person; there is nothing to attribute." };
-  if (speaking.length === 0) return { notApplicable: true, method: "No speaker labels in the text; every turn is shown as Speaker unknown. Nothing to confirm." };
+  if (speaking.length === 0) return { notApplicable: true, method: "No speaker labels came with the text, so its words are shown without speakers. Nothing to confirm." };
   if (speaking.length === 1) return { notApplicable: true, method: "One speaker label (" + speaking[0] + ") in the text; nothing can be mis-assigned, so there is nothing to confirm." };
   return {};
 }
@@ -328,6 +329,10 @@ class Store {
     }
     const b = { run, transcript, passages, summary, attachments, attrSig: sig };
     b.sourceIdentity = sourceIdentity(run);
+    // a saved text that still holds a web page's controls and timestamps (imported before 0.13): offered under Controls,
+    // never applied without the person's request
+    b.pageText = null;
+    if (run.kind !== "claim" && !(run.intake && run.intake.web)) { const w = separatePageText(transcript); if (w.changed) b.pageText = { format: w.record.format, removed: w.record.removed, paragraphs: w.record.paragraphs }; }
     b.attributionGate = Q.attributionGate(b);
     for (const p of passages) p.readingGate = Q.readingGate(b, p);
     if (summary) {
@@ -408,6 +413,94 @@ class Store {
     return Object.assign({ id }, after);
   }); }
 
+  /* The speaker structure worked out from the words (structure.js): the labelled text, its speakers, and the record of
+     how each label was established. The text before it is kept (versions/), as for any edit. Refused when the text moved
+     meanwhile. `recordStructure` keeps the record of a pass that established nothing, so it is not asked again. */
+  async commitStructure(id, basis, { text, speakers, record }) { return this.withLock(id, async () => {
+    const run = await this.getRun(id), transcript = await this.getTranscript(id);
+    if (!run || run.example) throw Object.assign(new Error("This run cannot be changed."), { status: run ? 403 : 404 });
+    if (sha256(transcript) !== basis.inputHash) throw Object.assign(new Error("The input changed while the speakers were worked out; try again on the current text."), { status: 409, code: "input_changed" });
+    await this._saveRun(id, { speakers }, text);
+    const after = await this.getRun(id);
+    const origin = record.mode === "labelled" ? (after.provenance && after.provenance.labelsOrigin) || "source" : "words";
+    after.provenance = Object.assign({}, after.provenance, { structure: Object.assign({}, record, { resultHash: sha256(text) }), labelsOrigin: origin });
+    if (record.mode !== "labelled") after.provenance.method = record.method;
+    delete after.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(after, null, 2));
+    return Object.assign({ id }, after);
+  }); }
+  /* Speakers separated by voice from the recording (voices.js): the labelled text, its numbered speakers, the record of
+     how it was done, and Deepgram's words with their voices (voices/<hash>.json, so the alignment can be checked later
+     without asking Deepgram again). The text before it is kept (versions/), and so is the earlier speaker record
+     (provenanceHistory). Refused when the text moved meanwhile. */
+  async commitVoices(id, basis, { text, speakers, record, diarization }) { return this.withLock(id, async () => {
+    const run = await this.getRun(id), transcript = await this.getTranscript(id);
+    if (!run || run.example) throw Object.assign(new Error("This run cannot be changed."), { status: run ? 403 : 404 });
+    if (!basis || !basis.inputHash || sha256(transcript) !== basis.inputHash) throw Object.assign(new Error("The text changed while the recording was processed; try again on the current text."), { status: 409, code: "input_changed" });
+    const was = run.provenance || {};
+    let file = "";
+    if (diarization) {
+      const body = JSON.stringify(diarization);
+      file = "voices/" + sha256(body).slice(0, 16) + ".json";
+      await writeAtomic(path.join(this.runDir(id), file), body);
+    }
+    await this._saveRun(id, { speakers }, text);
+    const after = await this.getRun(id);
+    const archived = (after.provenanceHistory || []).some(h => h.provenance === was || JSON.stringify(h.provenance) === JSON.stringify(was));
+    if (!archived && (was.structure || was.voices || was.assignment)) after.provenanceHistory = (after.provenanceHistory || []).concat([{ provenance: was, transcriptUpdatedAt: run.transcriptUpdatedAt || run.createdAt, replacedAt: after.updatedAt, why: "speakers separated by voice from the recording" }]);
+    after.provenance = Object.assign({}, after.provenance, { voices: Object.assign({}, record, { file, resultHash: sha256(text) }), labelsOrigin: "voices", method: record.method });
+    delete after.provenance.structure; delete after.provenance.assignment; delete after.provenance.namesConfirmedAt; delete after.provenance.namesConfirmedBy;
+    delete after.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(after, null, 2));
+    return Object.assign({ id }, after);
+  }); }
+  /* A person's one confirmation of speaker names (labels worked out by the app from the words or the voices). Only the
+     names change; the text and its labels stay, so no reading goes out of date. */
+  async confirmNames(id, names, by) { return this.withLock(id, async () => {
+    const run = await this.getRun(id);
+    if (!run || run.example) throw Object.assign(new Error("This run cannot be changed."), { status: run ? 403 : 404 });
+    const origin = run.provenance && run.provenance.labelsOrigin;
+    if (!["words", "voices"].includes(origin)) throw Object.assign(new Error("These speaker names did not come from the words or the recording; change them under Who said what."), { status: 409, code: "not_worked_out" });
+    const given = new Map((Array.isArray(names) ? names : []).map(n => [String(n && n.key || "").toUpperCase().trim(), String(n && n.name || "").replace(/\s+/g, " ").trim().slice(0, 60)]));
+    const speakers = (run.speakers || []).map(s => {
+      const name = given.get(String(s.key).toUpperCase());
+      if (!name || !/^SPEAKER \d+$/.test(s.key)) return s;
+      return Object.assign({}, s, { name, bio: name === s.name ? s.bio : "Named by a person at this computer." });
+    });
+    await this._saveRun(id, { speakers });
+    const after = await this.getRun(id);
+    after.provenance = Object.assign({}, after.provenance, { namesConfirmedAt: nowISO(), namesConfirmedBy: by || "person at this computer" });
+    delete after.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(after, null, 2));
+    return Object.assign({ id }, after);
+  }); }
+  async recordStructure(id, basis, record) { return this.withLock(id, async () => {
+    const run = await this.getRun(id), transcript = await this.getTranscript(id);
+    if (!run || run.example) throw Object.assign(new Error("This run cannot be changed."), { status: run ? 403 : 404 });
+    if (sha256(transcript) !== basis.inputHash) throw Object.assign(new Error("The input changed while the speakers were worked out."), { status: 409, code: "input_changed" });
+    run.provenance = Object.assign({}, run.provenance, { structure: Object.assign({}, record, { resultHash: sha256(transcript) }) });
+    delete run.id;
+    await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
+    return Object.assign({ id }, run);
+  }); }
+
+  /* Every attempt at a reading (each draft, the problems found, the review's answer, each correction), one line per
+     reading run in attempts/<pid>.jsonl, so a held or corrected reading can be judged against its source later.
+     Append-only; the page gets only the count, the export gets everything. */
+  async appendAttempts(id, pid, entry) {
+    if (!ID_RE.test(String(id)) || !/^p\d{3}$/.test(String(pid))) return;
+    const line = JSON.stringify(Object.assign({ at: nowISO() }, entry)) + "\n";
+    leakScan(line);
+    await fsp.mkdir(path.join(this.runDir(id), "attempts"), { recursive: true });
+    await fsp.appendFile(path.join(this.runDir(id), "attempts", pid + ".jsonl"), line);
+  }
+  async attemptsLog(id) {
+    const dir = path.join(this.runDir(id), "attempts"), out = {};
+    let files = []; try { files = await fsp.readdir(dir); } catch (e) { if (e.code !== "ENOENT") throw e; }
+    for (const f of files) { const m = /^(p\d{3})\.jsonl$/.exec(f); if (!m) continue; out[m[1]] = (await fsp.readFile(path.join(dir, f), "utf8")).split("\n").filter(Boolean).map(l => { try { return JSON.parse(l); } catch (e) { return null; } }).filter(Boolean); }
+    return out;
+  }
+
   async saveProcessing(id, value, expectedJobId) { return this.withLock(id, async () => {
     const run = await this.getRun(id);
     if (!run || run.example) throw Object.assign(new Error("This reading cannot be started."), { status: run ? 403 : 404 });
@@ -445,7 +538,7 @@ class Store {
     const title = clean.title && clean.title !== "Untitled run" ? clean.title : autoTitle(text, kind);
     const run = Object.assign({ title, sourceUrl: "", sourceLabel: "", sourceDate: "", speakers: [], status: "draft" }, clean,
       { title, kind, parseMode, provenance: Object.assign({ overrides: {}, flags: [], notes: "", method: "", labelsFound: labels }, attributionNote(labels, kind)), createdAt: now, updatedAt: now, transcriptUpdatedAt: now, example: false, input: inputRecord(text, parseMode, now), inputHistory: [] });
-    if (!run.speakers.length) run.speakers = labels.map(k => ({ key: k, name: k === "UNLABELED" ? "Speaker unknown" : k.split(" ").map(w => w[0] + w.slice(1).toLowerCase()).join(" "), bio: "" }));
+    if (!run.speakers.length) run.speakers = labels.map(k => ({ key: k, name: k === "UNLABELED" ? "Speaker not established" : k.split(" ").map(w => w[0] + w.slice(1).toLowerCase()).join(" "), bio: "" }));
     if (kind === "claim") run.status = "analyzed";
     delete run.id;
     await writeAtomic(path.join(target, "run.json"), JSON.stringify(run, null, 2));
@@ -481,7 +574,8 @@ class Store {
     }
     if (serverRecord && serverRecord.transcriptJobId) next.transcriptJobId = serverRecord.transcriptJobId;
     // a model assignment of speaker names is a server record on the provenance; a client save never drops it
-    if (incoming.provenance && cur.provenance && cur.provenance.assignment) { next.provenance = Object.assign({}, incoming.provenance, { assignment: cur.provenance.assignment, labelsOrigin: cur.provenance.labelsOrigin }); }
+    // so is the speaker structure worked out from the words, and voices separated from a recording
+    if (incoming.provenance && cur.provenance) { const keep = {}; ["assignment", "structure", "voices", "labelsOrigin", "namesConfirmedAt", "namesConfirmedBy"].forEach(k => { if (cur.provenance[k] !== undefined) keep[k] = cur.provenance[k]; }); next.provenance = Object.assign({}, incoming.provenance, keep); }
     delete next.id; next.example = false; next.createdAt = cur.createdAt; next.updatedAt = nowISO();
     next.transcriptUpdatedAt = cur.transcriptUpdatedAt || cur.createdAt;
     if (!next.input) next.input = inputRecord(curText, cur.parseMode, next.transcriptUpdatedAt);
@@ -879,6 +973,8 @@ class Store {
     for (const p of b.passages) { const d = Object.assign({}, p, { copiedFrom: id + "/" + p.id }); delete d.id; delete d.stale; delete d.quoteCheck; cleanComputed(d.analysis); await writeAtomic(path.join(this.runDir(nid), "passages", p.id + ".json"), JSON.stringify(d, null, 2)); }
     if (b.summary) { const s = Object.assign({}, b.summary, { copiedFrom: id }); delete s.stale; await writeAtomic(path.join(this.runDir(nid), "summary.json"), JSON.stringify(s, null, 2)); }
     try { await fsp.copyFile(path.join(this.runDir(id), "calls.jsonl"), path.join(this.runDir(nid), "calls.jsonl")); } catch (e) { if (e.code !== "ENOENT") throw e; } // the copy's readings keep their call records
+    try { for (const f of await fsp.readdir(path.join(this.runDir(id), "attempts"))) { await fsp.mkdir(path.join(this.runDir(nid), "attempts"), { recursive: true }); await fsp.copyFile(path.join(this.runDir(id), "attempts", f), path.join(this.runDir(nid), "attempts", f)); } } catch (e) { if (e.code !== "ENOENT") throw e; } // and every attempt behind them
+    try { for (const f of await fsp.readdir(path.join(this.runDir(id), "voices"))) { await fsp.mkdir(path.join(this.runDir(nid), "voices"), { recursive: true }); await fsp.copyFile(path.join(this.runDir(id), "voices", f), path.join(this.runDir(nid), "voices", f)); } } catch (e) { if (e.code !== "ENOENT") throw e; } // and the recording's voices behind its labels
     try { for (const f of await fsp.readdir(path.join(this.runDir(id), "versions"))) { await fsp.mkdir(path.join(this.runDir(nid), "versions"), { recursive: true }); await fsp.copyFile(path.join(this.runDir(id), "versions", f), path.join(this.runDir(nid), "versions", f)); } } catch (e) { if (e.code !== "ENOENT") throw e; } // and the texts their history was read from
     for (const a of b.attachments) { try { await fsp.mkdir(path.join(this.runDir(nid), "attachments"), { recursive: true }); await fsp.copyFile(path.join(this.runDir(id), "attachments", a.file), path.join(this.runDir(nid), "attachments", a.file)); } catch (e) {} }
     if (b.attachments.length) await writeAtomic(path.join(this.runDir(nid), "attachments.json"), JSON.stringify(b.attachments, null, 2));

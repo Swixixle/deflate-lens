@@ -7,6 +7,7 @@ const { newId, nowISO, autoTitle, sha256 } = require("./store");
 const { cleanText } = require("./intake");
 const { obligationFor } = require("./research");
 const { prepareSpeakers, callModel, unreadable, reviewedReading, reviewedOverview, claimAnalysis } = require("./preparation");
+const { structureSpeakers, CUE } = require("./structure");
 
 function requestedBasis(b, patterns) {
   const basis = { inputHash: b.run.input.sha256, transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig };
@@ -57,9 +58,9 @@ async function materialAsRead(store, b, p) {
 }
 /* What is ready, what is held, and the first held reason in plain words: enough to decide whether to retry. */
 function partialMessage(done, total, issues) {
-  const held = issues.filter(x => x.passage), first = (issues.find(x => (x.reasons || []).length) || {}).reasons;
-  return done + " of " + total + " readings are ready. " + (held.length ? (held.length === 1 ? "One passage" : held.length + " passages") + " could not pass " + (held.length === 1 ? "its" : "their") + " checks and " + (held.length === 1 ? "is" : "are") + " held" : "The closing overview is held") +
-    (first && first.length ? " (" + String(first[0]).replace(/\.$/, "") + ")" : "") + ". Press Read this to try " + (held.length === 1 ? "it" : "them") + " again; finished readings are kept.";
+  // the main status says how many, nothing more; each held passage says why under its own Evidence (0.13)
+  const held = issues.filter(x => x.passage).length, overview = issues.some(x => !x.passage);
+  return done + " " + (done === 1 ? "reading" : "readings") + " ready. " + (held ? held + " couldn't be completed." : "") + (overview ? (held ? " " : "") + "The closing overview couldn't be completed." : "");
 }
 function stopped() { return Object.assign(new Error("Reading stopped. Prepared readings have been kept."), { code: "cancelled" }); }
 function plainError(e) {
@@ -94,7 +95,7 @@ function createReader({ store, getAI, searchClaim, research }) {
     job.init = (async () => {
       let b = await store.bundle(id);
       if (!b || b.run.example) throw Object.assign(new Error(b ? "Copy this example to prepare it." : "Reading not found."), { status: b ? 403 : 404 });
-      const c = cleanText(b.transcript, { captions: false }), doc = {};
+      const c = cleanText(b.transcript, { captions: false, web: false }), doc = {};
       const imp = b.run.import;
       if (imp && imp.url) {
         doc.sourceUrl = imp.url;
@@ -201,12 +202,36 @@ function createReader({ store, getAI, searchClaim, research }) {
     await store.saveSummary(id,Object.assign(res.data,{callId:res.provenance.callId,createdAt:nowISO(),passagesCounted:ready.length,leftOut:[],model:res.model||ai.model,by:ai.mock?"MOCK":ai.model,contract:P.CONTRACT}),options(job));
   }
 
+  /* Only new input (marked at intake), only once per text, and never under readings already made. A labelled transcript is
+     looked at only when its words introduce something played or read. */
+  function needsStructure(b) {
+    const r = b.run;
+    if (r.kind !== "transcript" || r.example || !(r.intake && r.intake.speakers === "auto")) return false;
+    if (r.provenance && (r.provenance.structure || r.provenance.voices) || b.passages.some(p => p.analysis)) return false;
+    const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
+    return labels.length ? CUE.test(b.transcript) : shared.wordsOf(b.transcript).split(" ").length >= 12;
+  }
   async function execute(id, job) {
     let b = await check(id, job), ai = getAI();
     if (!ai) {
       if (b.run.kind === "claim") await searchSources(id, job);
       await update(id, job, { status: "awaiting_key", phase: "key", message: b.run.kind === "claim" ? "Your claim and source search are ready. Add the model key once for a plain-language reading." : "Your transcript is saved. Add the model key once and the reading will continue automatically.", finishedAt: nowISO() });
       return;
+    }
+    // new input: work out from the words who is speaking and where a clip or quotation is played, before anything is
+    // read (structure.js). The labelled text replaces the unlabelled one (kept in versions/); the job follows it.
+    if (needsStructure(b)) {
+      await update(id, job, { phase: "speakers", message: "Working out who is speaking…" });
+      const out = await structureSpeakers({ ai, store, id, signal: job.controller.signal, onProgress: (n, total) => total > 1 ? store.saveProcessing(id, { message: "Working out who is speaking (" + n + " of " + total + ")…" }, job.id).catch(() => {}) : null });
+      if (job.controller.signal.aborted) throw stopped();
+      await check(id, job);
+      if (out.changed) {
+        await store.commitStructure(id, out.basis, out);
+        const nb = await store.bundle(id);
+        job.inputHash = nb.run.input.sha256; job.attrSig = nb.attrSig;
+        await store.saveProcessing(id, { inputHash: job.inputHash }, job.id);
+      } else await store.recordStructure(id, out.basis, out.record);
+      b = await check(id, job);
     }
     if (b.attributionGate.status !== "ready") {
       await update(id, job, { phase: "speakers", message: "Checking who said what…" });
@@ -238,11 +263,13 @@ function createReader({ store, getAI, searchClaim, research }) {
       try {
         const res = await reviewedReading({ ai, store, b: current, p, purpose, prompt: m.prompt, basis, signal: job.controller.signal, source: m.source, contract: P.CONTRACT, context: m.context });
         await check(id, job);
+        await store.appendAttempts(id, p.id, { outcome: res.data && res.data.levels && res.data.levels.g5 === "withheld" ? "shown at the high-school level; fifth grade withheld" : "shown", contract: P.CONTRACT, attempts: res.attempts || [] });
         await store.savePassage(id, p.id, Object.assign({}, p, { analysis: purpose === "claim" ? claimAnalysis(res.data, current, P.CONTRACT) : res.data, status: "done", analyzedAt: nowISO(), analyzedBy: ai.mock ? "MOCK" : ai.model,
           model: res.model || ai.model, usage: res.usage, callId: res.provenance.callId, error: "", held: null }), Object.assign(options(job), { expectedReadingRev: p.readingRev || 0 }));
       } catch (e) {
         if (e.code !== "reading_held") throw e;
         const held = { issues: e.issues && e.issues.length ? e.issues : ["The separate review did not approve the draft."], at: nowISO(), callId: e.callId || "" };
+        await store.appendAttempts(id, p.id, { outcome: p.id === job.opts.reread && p.readingGate.status === "ready" ? "held; the earlier reading was kept" : "held", contract: P.CONTRACT, attempts: e.attempts || [], issues: held.issues });
         // A reread a person asked for that fails keeps the ready reading it was meant to replace, with the failed attempt
         // noted; it is not counted as held material. Anything else that fails is held and says why.
         const keep = p.id === job.opts.reread && p.readingGate.status === "ready";

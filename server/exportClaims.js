@@ -21,14 +21,28 @@ function relationCounts(receipts) { const out = { supports: 0, contradicts: 0, m
 function relationPhrase(rc) { const n = relationCounts(rc); const parts = []; if (n.supports) parts.push(n.supports + " marked supports"); if (n.contradicts) parts.push(n.contradicts + " marked contradicts"); if (n.mentions) parts.push(n.mentions + " marked mentions"); if (n.unstated) parts.push(n.unstated + " with no relation stated"); return parts.join(", "); }
 
 function speakerName(key, run) {
+  if (key === "UNLABELED") return "Speaker not established";
   const s = (run.speakers || []).find(x => x.key === key);
-  return (s && s.name) ? s.name : (key === "UNLABELED" ? "Speaker unknown" : key);
+  return (s && s.name) ? s.name : key;
+}
+/* A text with no speaker labels at all: its words are given without a speaker in front of each; one line says why. */
+function allUnlabeled(b) { const l = shared.speakerLabels(shared.parseTranscript(b.transcript || "", { mode: b.run.parseMode || "transcript" })); return b.run.kind !== "claim" && l.length > 0 && l.every(x => x === "UNLABELED"); }
+function speakerNote(b) {
+  const pr = b.run.provenance || {};
+  if (pr.labelsOrigin === "voices") return "_Speakers were separated by voice from the recording" + (pr.namesConfirmedAt ? "; a person confirmed the names" : "") + "._";
+  if (pr.labelsOrigin === "words") return "_Speakers were worked out from the words" + (pr.namesConfirmedAt ? "; a person confirmed the names" : "") + "._";
+  return allUnlabeled(b) ? "_This text has no speaker labels._" : "";
 }
 function activeReceipts(c) { return (c.receipts || []).filter(x => !x.withdrawnAt); }
 /* Why a claim's research should be read as provisional: its card is stale, or attribution is needed and unconfirmed. */
 function provisionalFor(b, p) { const out = (p.stale || []).slice(); const pr = b.run.provenance || {}; if (Q.attributionGate(b).status !== "ready") out.push("speaker preparation is unresolved"); if (p.readingGate && p.readingGate.status !== "ready") out.push("reading held before display"); return out; }
 function claimStatus(c) { return activeReceipts(c).length ? "receipt" : (c.searches && c.searches.length ? "searched" : "unchecked"); }
 
+/* The passage a held reading was made from, as it is labelled now. */
+function heldSource(b, p) {
+  const turns = shared.parseTranscript(b.transcript || "", { mode: b.run.parseMode || "transcript" });
+  return shared.fmtTurns(turns, b.run.provenance && b.run.provenance.overrides || {}, p.turnStart, p.turnEnd);
+}
 function buildExport(b) {
   const r = b.run, pr = r.provenance || {};
   const done = b.passages.filter(p => p.status === "done" && p.analysis);
@@ -48,7 +62,8 @@ function buildExport(b) {
     rejections: (c.rejections || []).map(x => ({ doi: x.doi || "", url: x.url || "", reason: x.reason, detail: x.detail || "", at: x.at || "" }))
   })));
   return {
-    schema: "deflate-lens/claims@0.6",
+    schema: "deflate-lens/claims@0.7",
+    attemptsMeaning: "attempts: every draft of a reading in order (the model's full draft, then each correction that changed only the parts named), the problems found in it, and the review's own answer, from attempts/<passage>.jsonl. A held reading's drafts were never shown; they are here so a person can judge whether the hold was right.",
     typeMeaning: "displayType is what the app shows. type is the saved value: \"claim\" for an empirical assertion read under the neutral contract (reading-2 or later; never judged true or false from the model's memory); \"fact\", \"contested\" and \"unsupported\" are kept as an earlier model labelled them (historicalType) and are shown as \"Checkable claim\".",
     exportedAt: new Date().toISOString(),
     generator: "deflate-lens local app",
@@ -60,16 +75,17 @@ function buildExport(b) {
       sourceIdentity: b.sourceIdentity || sourceIdentity(r), sourceConfirmationHistory: r.sourceConfirmationHistory || [], attributionGate: b.attributionGate || Q.attributionGate(b),
       source: { url: r.sourceUrl || "", label: r.sourceLabel || "", date: r.sourceDate || "" },
       transcript: { updatedAt: r.transcriptUpdatedAt || "", characters: (b.transcript || "").length, sha256: r.input && r.input.sha256 || "", bytes: r.input && r.input.bytes || null, parseMode: r.input && r.input.parseMode || r.parseMode || "transcript", earlierVersions: (r.inputHistory || []).map(x => ({ sha256: x.sha256, chars: x.chars, transcriptUpdatedAt: x.transcriptUpdatedAt, replacedAt: x.replacedAt })) },
-      provenance: { confirmedAt: pr.confirmedAt || "", confirmedBy: pr.confirmedBy || "", notApplicable: !!pr.notApplicable, labelsOrigin: pr.labelsOrigin || "source", assignment: pr.assignment || null, method: pr.method || "", attrSig: b.attrSig, transcriptNote: pr.transcriptNote || "",
+      provenance: { confirmedAt: pr.confirmedAt || "", confirmedBy: pr.confirmedBy || "", notApplicable: !!pr.notApplicable, labelsOrigin: pr.labelsOrigin || "source", assignment: pr.assignment || null, structure: pr.structure || null, voices: pr.voices || null, namesConfirmedAt: pr.namesConfirmedAt || "", method: pr.method || "", attrSig: b.attrSig, transcriptNote: pr.transcriptNote || "",
         preparation: r.preparation || null,
         corrected: Object.keys(pr.overrides || {}).map(i => ({ turn: Number(i), speaker: pr.overrides[i] })), flagged: (pr.flags || []).map(f => f.turn), earlierDecisions: (r.provenanceHistory || []).length },
       speakers: (r.speakers || []).map(s => ({ key: s.key, name: s.name || s.key })),
       orphans: (r.orphans || []).map(o => ({ id: o.id, claimText: o.claimText, from: o.from, receipts: (o.receipts || []).length, searches: (o.searches || []).length, rejections: (o.rejections || []).length, parkedAt: o.parkedAt })),
     },
-    passagesHeld: b.passages.filter(p => p.readingGate && p.readingGate.status === "held").map(p => ({ id: p.id, title: p.title, turnStart: p.turnStart, turnEnd: p.turnEnd, reasons: p.readingGate.reasons || [], attempt: p.held || null })),
+    passagesHeld: b.passages.filter(p => p.readingGate && p.readingGate.status === "held").map(p => ({ id: p.id, title: p.title, turnStart: p.turnStart, turnEnd: p.turnEnd, reasons: p.readingGate.reasons || [], attempt: p.held || null,
+      source: heldSource(b, p), attempts: b.attempts && b.attempts[p.id] || [] })),
     passages: done.map(p => ({ id: p.id, title: p.title, held: p.held || null, turnStart: p.turnStart, turnEnd: p.turnEnd, speakers: p.speakers || [], analyzedAt: p.analyzedAt || "", analyzedBy: p.analyzedBy || "", model: p.model || "", stale: p.stale || [], rev: p.rev || 0, readingRev: p.readingRev || 0, earlierReadings: (p.history || []).length,
       basedOn: { inputHash: p.basedOn && p.basedOn.inputHash || "", attrSig: p.basedOn && p.basedOn.attrSig || "", transcriptUpdatedAt: p.basedOn && p.basedOn.transcriptUpdatedAt || "" },
-      provenance: p.provenance || null, readingGate: p.readingGate || null,
+      provenance: p.provenance || null, readingGate: p.readingGate || null, levels: p.analysis.levels || null, attempts: b.attempts && b.attempts[p.id] || [],
       quoteCheck: p.quoteCheck || null,
       quotes: (p.analysis.asSaid || []).map(q => ({ turn: q.turn, matchedTurn: q.matchedTurn == null ? null : q.matchedTurn, relocated: !!q.relocated, speakerClaimed: q.speaker, speakerNow: q.speakerNow || "", speakerMismatch: !!q.speakerMismatch, quote: q.quote, verbatim: !!q.verbatim, tolerated: q.tolerated || [], turnOk: q.turnOk !== false, foundIn: q.foundIn || [] })),
       judgments: p.analysis.judgments, fidelity: p.analysis.fidelity.grade, jump: { present: p.analysis.jump.present, pivot: p.analysis.jump.pivot || "", pivotVerbatim: p.analysis.jump.pivotVerbatim, survives: p.analysis.revision.jumpSurvives || "" } })),
@@ -93,31 +109,36 @@ function sourceLines(b) {
   } else if (idn.state === "not_recorded") out.push("_How this source was identified was not recorded (saved before 0.12)._");
   return out;
 }
-const why = reasons => (reasons || []).map(x => String(x).replace(/[.\s]+$/, "")).filter(Boolean).join("; ");
+const why = reasons => [...new Set((reasons || []).map(x => shared.issueText(String(x)).replace(/[.\s]+$/, "")).filter(Boolean))].join("; ");
 function buildMarkdown(b, level) {
   const L = level === "g5" ? "g5" : "hs";
   const T = x => (x && typeof x === "object") ? (x[L] || x.hs || "") : String(x || "");
-  const r = b.run, out = [];
+  const r = b.run, out = [], bare = allUnlabeled(b);
   out.push("# " + (r.title || "Reading") + (L === "g5" ? " (fifth-grade reading level)" : "") + "\n");
   if (r.kind === "claim") out.push("_A claim supplied by a person, not taken from a transcript._\n");
   if (r.sourceUrl) out.push("Source: " + (r.sourceLabel || "") + " " + r.sourceUrl + "\n");
   const src = sourceLines(b); if (src.length) out.push(src.join("\n") + "\n");
+  const sn = speakerNote(b); if (sn) out.push(sn + "\n");
   if (r.example) out.push("_Supplied example. Analysis written in chat by Claude, corrected after a second-reader review; attribution not confirmed by a person._\n");
   if (b.passages.some(p => /MOCK/i.test(p.analyzedBy || ""))) out.push("_MOCK OUTPUT: these readings are placeholders from the test responder, not a model's reading._\n");
   const ready = b.passages.filter(p => p.readingGate && p.readingGate.status === "ready");
-  if (ready.length !== b.passages.length) out.push("_This export has " + ready.length + " of " + b.passages.length + " readings. The others are held, out of date or not read yet, and are listed as such below._\n");
+  if (ready.length !== b.passages.length) out.push("_This export has " + ready.length + " of " + b.passages.length + " readings. The others couldn't be completed, are out of date or are not read yet, and are listed as such below._\n");
   out.push("_A separate pass of the same model reviewed each reading before display; that is not independent validation. Quotes are checked against the saved transcript; a match that needs numbers written differently is marked. A source attached to a claim records a person's judgment of relevance, and [supports] / [contradicts] / [mentions] is what that person said the document does; none of this makes a claim verified._" + (r.input && r.input.sha256 ? " _Transcript sha256: " + r.input.sha256 + "._" : "") + "\n");
   b.passages.forEach((p, n) => {
     const where = b.passages.length > 1 ? " (" + (n + 1) + " of " + b.passages.length + ")" : "";
     if (!p.analysis || p.status !== "done") {
-      out.push("## " + p.title + where + "\n\n" + (p.readingGate && p.readingGate.status === "held" ? "**Reading held, not shown.** Why: " + (why(p.readingGate.reasons) || "it did not pass its checks") + "." : "Not read yet.") + "\n");
+      out.push("## " + p.title + where + "\n\n" + (p.readingGate && p.readingGate.status === "held" ? "**This reading couldn't be completed.** Why: " + (why(p.readingGate.reasons) || "it did not pass its checks") + "." : "Not read yet.") + "\n");
       return;
     }
-    if (p.readingGate && p.readingGate.status !== "ready") { out.push("## " + p.title + where + "\n\n**Reading held, not shown.** Why: " + (why(p.readingGate.reasons) || "it did not pass its checks") + ".\n"); return; }
-    const a = p.analysis, qc = p.quoteCheck, speakers = [...new Set((a.asSaid || []).map(q => speakerName(q.speakerNow || q.speaker, r)))];
+    if (p.readingGate && p.readingGate.status !== "ready") { out.push("## " + p.title + where + "\n\n" + ((p.stale || []).length ? "**Out of date, not shown.**" : "**Not shown.**") + " Why: " + (why(p.readingGate.reasons) || "it did not pass its checks") + ".\n"); return; }
+    const a = p.analysis, qc = p.quoteCheck, speakers = bare ? [] : [...new Set((a.asSaid || []).map(q => speakerName(q.speakerNow || q.speaker, r)).filter(x => x !== "Speaker not established"))];
+    // only the fifth-grade wording failed: the high-school reading stands in at both levels
+    const g5Withheld = a.levels && a.levels.g5 === "withheld";
+    const T = x => (x && typeof x === "object") ? ((g5Withheld ? x.hs : x[L]) || x.hs || "") : String(x || "");
     out.push("## " + p.title + where + "\n");
     if (speakers.length) out.push("_" + speakers.join(", ") + (r.provenance && r.provenance.labelsOrigin === "model" ? " (names suggested by AI from the words)" : "") + "_\n");
-    if (p.held && p.held.kept) out.push("_A new reading of this passage was requested and did not pass its checks; this is the earlier reading._\n");
+    if (p.held && p.held.kept) out.push("_A new reading of this passage was requested and couldn't be completed; this is the earlier reading._\n");
+    if (g5Withheld && L === "g5") out.push("_The fifth-grade wording couldn't be completed, so this passage is shown at the high-school level._\n");
     out.push("**In plain words.** " + T(a.deflated) + "\n");
     if (r.kind !== "claim") {
       if (a.defense.hs) out.push("**A fair reading.** " + T(a.defense) + "\n");
@@ -125,16 +146,16 @@ function buildMarkdown(b, level) {
     }
     out.push("**Claims.**");
     (a.claims || []).forEach(c => {
-      const rc = activeReceipts(c), settle = (c.settle && (c.settle[L] || c.settle.hs)) || c.wouldSettle || "", empirical = shared.EMPIRICAL_TYPES.includes(c.type), was = shared.historicalType(c.type);
+      const rc = activeReceipts(c), settle = (c.settle && T(c.settle)) || c.wouldSettle || "", empirical = shared.EMPIRICAL_TYPES.includes(c.type), was = shared.historicalType(c.type);
       const contra = rc.filter(x => x.relation === "contradicts").length;
-      out.push("- " + shared.claimTypeLabel(c.type) + (was ? " (an earlier model labelled it “" + was + "”)" : "") + ": " + c.text + (c.plain && (c.plain[L] || c.plain.hs) ? " — in plain words: " + (c.plain[L] || c.plain.hs) : "") + (T(c.basis) ? " — " + T(c.basis) : "") + (settle ? " · what would check it: " + settle : "") +
+      out.push("- " + shared.claimTypeLabel(c.type) + (was ? " (an earlier model labelled it “" + was + "”)" : "") + ": " + c.text + (c.plain && T(c.plain) ? " — in plain words: " + T(c.plain) : "") + (T(c.basis) ? " — " + T(c.basis) : "") + (settle ? " · what would check it: " + settle : "") +
         (empirical ? " · " + ({ receipt: "sources attached by a person: " + rc.length + " (" + relationPhrase(rc) + ")", searched: "searched; no source attached", unchecked: "not checked" })[claimStatus(c)] : "") +
         (contra ? " · a person recorded " + contra + " source" + (contra > 1 ? "s" : "") + " as contradicting this claim" : "") +
         (rc.length ? " (" + rc.map(x => x.url + (x.relation && x.relation !== "unstated" ? " [" + x.relation + "]" : "")).join(" ") + ")" : ""));
     });
     if ((a.asSaid || []).length) {
       out.push("\n**The words as said.**");
-      a.asSaid.forEach(q => out.push("> " + speakerName(q.speakerNow || q.speaker, r) + ": “" + q.quote + "”" + (q.verbatim ? ((q.tolerated || []).length ? " (matched, numbers written differently)" : "") : " (not found word for word)") + (q.speakerMismatch ? " (the model labelled this " + speakerName(q.speaker, r) + ")" : "")));
+      a.asSaid.forEach(q => out.push("> " + (bare ? "" : speakerName(q.speakerNow || q.speaker, r) + ": ") + "“" + q.quote + "”" + (q.verbatim ? ((q.tolerated || []).length ? " (matched, numbers written differently)" : "") : " (not found word for word)") + (q.speakerMismatch ? " (the model labelled this " + speakerName(q.speaker, r) + ")" : "")));
     }
     if (r.kind !== "claim") {
       const outcome = a.jump.present ? ({ yes: "After the fair reading, the concern stands.", partly: "After the fair reading, the concern partly stands; “What follows” says what remains.", no: "After the fair reading, the concern was withdrawn." })[a.revision.jumpSurvives] || "" : "";

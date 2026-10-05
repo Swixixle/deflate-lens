@@ -37,6 +37,7 @@ pre,code{font-family:var(--mono);font-size:.82rem}
 .lvl-5{display:none}
 [data-level="5"] .lvl-5{display:block} [data-level="5"] .lvl-hs{display:none}
 [data-level="hs"] .lvl-hs{display:block} [data-level="hs"] .lvl-5{display:none}
+.only-5{display:none} [data-level="5"] .only-5{display:block}
 
 /* header */
 .top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:6px max(16px,env(safe-area-inset-left)) 6px max(16px,env(safe-area-inset-right));min-height:56px}
@@ -86,6 +87,9 @@ select[multiple]{min-height:auto}
 .note.ok{border-left-color:var(--ok)}
 .notice .btn,.note .btn{margin-top:8px}
 .notices{display:grid;gap:10px;margin:14px 0}
+/* a quiet notice: one line of fact, no box (the speakers line) */
+.notice.quiet{border:0;background:none;padding:0;color:var(--muted);font-size:.875rem}
+.linkish.inline{padding:4px 2px;min-height:0;font-size:inherit;font-weight:600}
 .notices:empty{display:none}
 .steps{margin:8px 0 0;padding-left:1.2em;font-size:.8125rem;color:var(--muted)}
 .episodes{display:grid;gap:6px;margin-top:8px}
@@ -142,6 +146,9 @@ details[open] > summary::before{transform:rotate(90deg)}
 .claim-kind{font-family:var(--display);font-size:.8125rem;font-weight:600;color:var(--muted);margin-top:12px}
 .card.waiting .waiting-text{font-family:var(--display);font-size:.9375rem;color:var(--muted)}
 .card.waiting .btn{margin-top:10px}
+.reasons{margin:4px 0 0;padding-left:1.2em;font-family:var(--display);font-size:.875rem;line-height:1.5}
+.reasons li + li{margin-top:4px}
+.chk-body .why{margin-top:8px}
 .evidence{margin-top:20px;border-top:1px dashed var(--line)}
 .ev-body{display:grid;gap:22px;padding:6px 0 10px}
 .ev-sec h3{font-size:.9375rem;font-weight:600;margin-bottom:8px}
@@ -211,7 +218,10 @@ details[open] > summary::before{transform:rotate(90deg)}
 .speaker{display:grid;grid-template-columns:minmax(4em,auto) 1fr;gap:6px 8px;align-items:center;margin-top:8px}
 .speaker input:last-child{grid-column:2}
 .speaker .key{font-weight:600;font-size:.8125rem}
-.namebox{margin-top:10px}
+.names{margin-top:6px}
+.names .speaker + .hint,.names .hint + .hint{margin-top:2px}
+.ctl-find{margin-top:6px}
+.ctl-sub{margin-top:10px}
 .links{margin:0;padding-left:1.1em;display:grid;gap:4px}
 .links a{display:inline-block;padding:6px 0}
 .kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;margin:8px 0;font-size:.8125rem}

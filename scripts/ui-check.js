@@ -33,7 +33,11 @@ const fakeYtdlp = async (cmd, args) => {
   return { code: 1, out: "", err: "?" };
 };
 /* The mock responder, slowed or made to fail on request so progress and failure can be watched. */
-const knob = { delay: 0, failTurns: null };
+const knob = { delay: 0, failTurns: null, deepgram: false, recording: null };
+/* Deepgram, faked for voice separation: no key until a check turns it on; its answer is set by the check. */
+const fakeCloud = { name: "deepgram", model: "nova-3", configured: () => knob.deepgram, async diarize() { return knob.recording; } };
+/* Deepgram's answer for a text whose paragraphs alternate between two voices. */
+const recordingOf = text => { const words = []; let t = 0; text.split(/\n\s*\n/).forEach((para, i) => para.split(/\s+/).filter(Boolean).forEach(w => { words.push({ word: w.toLowerCase().replace(/[^a-z0-9']/g, ""), punctuated_word: w, speaker: i % 2, start: t, end: t + 0.3 }); t += 0.4; })); return { metadata: { request_id: "req-ui", duration: Math.round(t), models: ["nova-3"] }, results: { channels: [{ alternatives: [{ words }] }] } }; };
 function testAI() {
   const mock = createMockAI();
   return { ...mock, async sample(args) {
@@ -47,7 +51,7 @@ function testAI() {
 (async () => {
   const { chromium } = require("playwright");
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "deflate-browser-")), shots = path.join(__dirname, "ui-shots"); fs.mkdirSync(shots, { recursive: true });
-  const system = createApp({ dataDir: dir, ai: testAI(), research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), fetch: fakeFetch, run: fakeYtdlp, env: {}, envPath: path.join(dir, ".env") }); await system.ready;
+  const system = createApp({ dataDir: dir, ai: testAI(), research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), fetch: fakeFetch, run: fakeYtdlp, cloudEngine: fakeCloud, env: {}, envPath: path.join(dir, ".env") }); await system.ready;
   const server = await new Promise(r => { const s = system.app.listen(0, "127.0.0.1", () => r(s)); });
   const root = "http://127.0.0.1:" + server.address().port;
   const report = {}, errors = [], refused = []; let browser;
@@ -156,14 +160,20 @@ function testAI() {
     check("stopResumeRefresh", /Resume reading/.test(stopNote) && await page.locator(".card:not(.waiting)").count() === 5, stopNote);
     knob.delay = 0;
 
-    /* 7. A held passage names its reason; an out-of-date one says so; the export does not pass held text off */
+    /* 7. A reading that couldn't be completed: a plain status with one retry, the reason under that passage's Evidence;
+          an out-of-date one says so; the export does not pass it off */
     knob.failTurns = "8–15";
-    await read(page, T.replace(/argument/g, "case")); await page.waitForFunction(() => /could not pass/.test((document.querySelector("#reading-status") || {}).textContent || ""), null, { timeout: 60000 });
+    await read(page, T.replace(/argument/g, "case")); await page.waitForFunction(() => /couldn't be completed/.test((document.querySelector("#reading-status") || {}).textContent || ""), null, { timeout: 60000 });
     knob.failTurns = null;
-    const heldText = await page.locator(".card.waiting").first().innerText();
-    const status = await page.locator("#reading-status").innerText();
+    const held = page.locator(".card.waiting").first(), heldText = await held.innerText();
+    const status = await page.locator("#reading-status").innerText(), statusButtons = await page.locator("#reading-status button").allInnerTexts();
+    await held.locator("details.evidence > summary").click();
+    const heldEvidence = await held.innerText();
     const heldId = await runId(page), md = await page.evaluate(i => fetch("/api/runs/" + i + "/export.md").then(r => r.text()), heldId);
-    check("heldNamed", /Held, not shown: The model's answer was cut off at its length limit before it finished\./.test(heldText) && /Try the held readings again/.test(status) && /\*\*Reading held, not shown\.\*\* Why: The model's answer was cut off/.test(md), { heldText, status });
+    check("heldPlain", /^\d+ readings? ready\. 1 couldn't be completed\.\s*Try again$/.test(status.trim()) && statusButtons.length === 1 && statusButtons[0] === "Try again", { status, statusButtons });
+    check("heldReasonUnderEvidence", /This reading couldn't be completed\./.test(heldText) && !/cut off|deflated|\.g5|\.hs|Read this passage again/.test(heldText) &&
+      /Why it couldn't be completed\s*The model's answer was cut off at its length limit before it finished\.[\s\S]*The original passage/.test(heldEvidence) && await held.locator("button:has-text('again')").count() === 0, { heldText, heldEvidence });
+    check("heldExport", /\*\*This reading couldn't be completed\.\*\* Why: The model's answer was cut off/.test(md));
     await page.screenshot({ path: path.join(shots, "held-1440.png"), fullPage: true });
     const hb = await bundle(page, heldId);
     await page.evaluate(([i, t]) => fetch("/api/runs/" + i, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: {}, transcript: t }) }), [heldId, hb.transcript.replace("number 2.", "number two.")]);
@@ -190,7 +200,7 @@ function testAI() {
     const vidId = await runId(page);
     const notice = page.locator(".notice.source");
     check("matchedNotice", (await notice.innerText()).trim() === "Video matched by title and length — Check source");
-    check("unknownSpeakerNotice", /no speaker names, so speakers show as “Speaker unknown”/.test(await page.locator("#notices").innerText()));
+    check("quietSpeakerLine", (await page.locator("#speakerNotice").innerText()).trim() === "No speaker labels in this text. Find speakers" && !/Speaker unknown|Speaker not established/.test(await page.locator("#runView").innerText()));
     await notice.locator("button:has-text('Check source')").click();
     const cmp = await notice.innerText();
     check("comparison", /Episode you asked for\s*An episode found on video · 90 min[\s\S]*Video used\s*UI Check Show — An episode found on video \(full\) · UI Check Show · 88 min 20 s[\s\S]*differ by 1 min 40 s\. Up to 4 min 30 s is allowed/.test(cmp) && !/official|verified/i.test(await page.locator("#runView").innerText()), cmp);
@@ -223,14 +233,45 @@ function testAI() {
     await page.waitForFunction(() => /does not look like a Deepgram API key/.test(document.querySelector("#intake").textContent), null, { timeout: 10000 });
     check("badDeepgramKeyRefused", !fs.existsSync(path.join(dir, ".env")) || !fs.readFileSync(path.join(dir, ".env"), "utf8").includes("short"));
 
-    /* 10. AI-suggested names stay marked; unknown speakers are named as such until then */
-    await read(page, Array.from({ length: 10 }, (_, i) => "This is paragraph " + i + " of a transcript made from audio, with enough words in it to be quoted by a card, mentioning " + (i % 2 ? "my book" : "the show") + ".").join("\n\n"));
-    await ready(page);
-    check("unknownOnCard", /Speaker unknown/.test(await page.locator(".card").first().innerText()));
-    await page.locator("#notices button:has-text('Add names')").click(); await page.waitForSelector("#controls:not([hidden]) .namebox");
-    await page.fill(".namebox input", "Ann Lee, Bo Diaz"); await page.locator(".namebox button").click();
-    await page.waitForFunction(() => /suggested by AI/.test((document.querySelector("#notices") || {}).textContent || ""), null, { timeout: 60000 }); await ready(page);
-    check("aiNamesMarked", /Ann Lee[\s\S]*names suggested by AI/.test(await page.locator(".card").first().innerText()));
+    /* 10. No speaker labels: one quiet line, no speaker in front of each line. Voices from the recording (Deepgram,
+           faked) label the text without changing a word; the line says where the labels came from; one confirmation names them */
+    const unlabeled = Array.from({ length: 10 }, (_, i) => "This is paragraph " + i + " of a transcript made from audio, with enough words in it to be quoted by a card, mentioning " + (i % 2 ? "my book" : "the show") + ".").join("\n\n");
+    await read(page, unlabeled); await ready(page);
+    const lineBox = await page.locator("#speakerNotice").boundingBox();
+    check("speakerLineQuiet", (await page.locator("#speakerNotice").innerText()).trim() === "No speaker labels in this text. Find speakers" && lineBox.height < 36, lineBox);
+    const firstCard = page.locator(".card").first(); await firstCard.locator("details.evidence > summary").click();
+    check("noSpeakerPrefix", !/Speaker unknown|Speaker not established|UNLABELED/.test(await firstCard.innerText()) && await firstCard.locator(".target-turns .sp").count() === 0);
+    await page.screenshot({ path: path.join(shots, "speakers-none-1440.png") });
+    await page.locator("#speakerNotice button:has-text('Find speakers')").click(); await page.waitForSelector("#controls:not([hidden]) #ctl-speakers");
+    const find = page.locator("#ctl-speakers details.ctl-find");
+    check("findSpeakersClosed", await find.count() === 1 && !(await find.evaluate(d => d.open)) && /No speaker labels came with this text/.test(await page.locator("#ctl-speakers").innerText()));
+    await find.locator(":scope > summary").click();
+    check("voicesNeedKey", /Needs a Deepgram key first/.test(await find.innerText()) && await find.locator("button:has-text('Separate voices from the recording')").isDisabled());
+    knob.deepgram = true; knob.recording = recordingOf((await bundle(page, await runId(page))).transcript);
+    // the key is now set (as if saved under Controls): a fresh page asks the server again
+    await page.reload(); await page.waitForSelector("#speakerNotice");
+    await page.locator("#speakerNotice button:has-text('Find speakers')").click(); await page.waitForSelector("#controls:not([hidden]) #ctl-speakers details.ctl-find");
+    await page.waitForFunction(() => { const b = [...document.querySelectorAll("#ctl-speakers details.ctl-find button")].find(x => x.textContent === "Separate voices from the recording"); return b && !b.disabled; }, null, { timeout: 10000 });
+    const find2 = page.locator("#ctl-speakers details.ctl-find");
+    if (!(await find2.evaluate(d => d.open))) await find2.locator(":scope > summary").click();
+    await find2.locator("input[type=url]").fill("https://cdn.test/no.mp3");
+    await find2.locator("button:has-text('Separate voices from the recording')").click();
+    await page.waitForFunction(() => /separated by voice/.test((document.querySelector("#speakerNotice") || {}).textContent || ""), null, { timeout: 60000 }); await ready(page);
+    check("voicesLine", (await page.locator("#speakerNotice").innerText()).trim() === "Speakers separated by voice. Name them");
+    const vCard = page.locator(".card").first(); await vCard.locator("details.evidence > summary").click();
+    check("voicesOnTurns", /Speaker 1:\s*This is paragraph 0[\s\S]*Speaker 2:\s*This is paragraph 1/.test(await vCard.innerText()));
+    await page.screenshot({ path: path.join(shots, "speakers-voices-1440.png") });
+    await page.locator("#speakerNotice button:has-text('Name them')").click(); await page.waitForSelector("#controls:not([hidden]) #ctl-speakers");
+    await page.fill("#ctl-speakers input[aria-label='Name for Speaker 1']", "Ann Lee"); await page.fill("#ctl-speakers input[aria-label='Name for Speaker 2']", "Bo Diaz");
+    await page.locator("#ctl-speakers button:has-text('Confirm names')").click();
+    await page.waitForFunction(() => /Details/.test((document.querySelector("#speakerNotice") || {}).textContent || ""), null, { timeout: 10000 });
+    await page.locator("#controls .panel-close").click();
+    check("namesConfirmed", /Ann Lee/.test(await page.locator(".card").first().innerText()) && (await page.locator("#speakerNotice").innerText()).trim() === "Speakers separated by voice. Details");
+    await page.setViewportSize({ width: 390, height: 844 });
+    const phoneBox = await page.locator("#speakerNotice").boundingBox();
+    check("speakerLineQuiet@390", phoneBox.height < 36 && await noHScroll(page), phoneBox);
+    await page.screenshot({ path: path.join(shots, "speakers-voices-390.png") });
+    await page.setViewportSize({ width: 1440, height: 900 }); knob.deepgram = false;
 
     /* 11. A missing key: the text is saved, the prompt appears once, a refused key keeps it usable, the reading continues */
     system.state.ai = null; await page.reload(); await read(page, T.replace(/argument/g, "point"));

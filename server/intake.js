@@ -2,6 +2,7 @@
 const shared = require("../shared/transcript");
 const { autoTitle, sha256 } = require("./store");
 const { transcriptToText } = require("./podcast/transcripts");
+const { separatePageText, paragraphTimes } = require("./webtranscript");
 
 // Trim only material outside a clearly labelled dialogue. Keep every word between the first
 // speaker and an explicit end marker; the original upload is saved separately by the store.
@@ -24,11 +25,28 @@ function cleanText(raw, opts) {
     const out = transcriptToText(text, /^WEBVTT/.test(text) ? "text/vtt" : "application/x-subrip", "upload");
     text = out.text.trim(); converted = (out.format === "vtt" ? "WebVTT" : "SRT") + " captions" + (out.rolling ? " (rolling captions, each line kept once)" : "");
   }
-  const lines = text.split("\n"), counts = new Map();
+  // a transcript copied from a web page: its controls and timestamps leave the spoken text, its speaker names become
+  // labels, and each paragraph keeps its start time beside the text (webtranscript.js). New input only: a saved run is
+  // never re-cleaned behind the person's back (`opts.web === false`); Controls offers it instead.
+  let web = null;
+  if (!converted && !(opts && opts.web === false)) { const w = separatePageText(text); if (w.changed) { text = w.text.trim(); web = w; } }
   const label = line => (line.match(/^\s*([A-Z][A-Za-z0-9 .'\-]{0,40}?)\s*:\s+\S/) || [])[1];
+  // a source's speaker label written mid-line ("HOST: So the issue is— GUEST: The cost.") starts a turn of its own;
+  // only labels the source also uses at the start of a line, and only after a sentence end or a dash; no word changes
+  let inlineSplits = 0;
+  {
+    const seen = new Map(); for (const line of text.split("\n")) { const k = label(line); if (k) seen.set(k, (seen.get(k) || 0) + 1); }
+    const known = [...seen.keys()].filter(k => k.length >= 2).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    if (known.length >= 2 && [...seen.values()].reduce((a, b) => a + b, 0) >= 2) {
+      const re = new RegExp("([.?!…—–-][\"”')]?)[ \\t]+(?=(?:" + known.join("|") + "):\\s)", "g");
+      text = text.split("\n").map(line => label(line) ? line.replace(re, (m, c) => { inlineSplits++; return c + "\n"; }) : line).join("\n");
+    }
+  }
+  const lines = text.split("\n"), counts = new Map();
   for (const line of lines) { const k = label(line); if (k) counts.set(k, (counts.get(k) || 0) + 1); }
   const repeated = new Set([...counts].filter(([, n]) => n >= 2).map(([k]) => k));
-  const first = lines.findIndex(line => repeated.has(label(line)));
+  // the dialogue starts at its first labelled line (a speaker who talks only once, first, is still part of it)
+  const first = repeated.size ? lines.findIndex(line => counts.has(label(line))) : -1;
   let removedBefore = 0, removedAfter = 0;
   if (first >= 0 && [...counts.values()].reduce((n, v) => n + v, 0) >= 3) {
     removedBefore = first;
@@ -37,8 +55,10 @@ function cleanText(raw, opts) {
     else text = lines.slice(first).join("\n").trim();
   }
   if (!text) throw Object.assign(new Error("There is no transcript text in this file."), { status: 400 });
+  const starts = web ? paragraphTimes(text, web.paragraphs) : null;
   return { text, original, record: { originalHash: sha256(original), cleanedHash: sha256(text), originalChars: original.length,
-    cleanedChars: text.length, removedBefore, removedAfter, changed: text !== original, converted, method: (converted ? "Converted from " + converted + " to text. " : "") + "Only outside-dialogue material and an explicit end marker are removed; spoken words are kept." } };
+    cleanedChars: text.length, removedBefore, removedAfter, changed: text !== original, converted, method: (converted ? "Converted from " + converted + " to text. " : "") + (web ? web.record.method + " " : "") + "Only outside-dialogue material and an explicit end marker are removed; spoken words are kept.",
+    web: web ? web.record : null, inlineLabelsSplit: inlineSplits, timing: starts ? { cleanedHash: sha256(text), unit: "paragraph", starts } : null } };
 }
 
 async function readInput(input, context, importer) {
@@ -60,7 +80,8 @@ async function readInput(input, context, importer) {
     doc.import = { url: doc.sourceUrl, title: imported.title || "", fetchedAt: imported.fetchedAt, chars: cleaned.text.length, method: imported.method };
     if (!doc.title || /^(?:Listen LIVE|Untitled run)$/i.test(doc.title) || doc.title === autoTitle(raw, doc.kind)) doc.title = imported.title || autoTitle(cleaned.text, doc.kind);
   }
-  return { doc, text: cleaned.text, original: cleaned.original, intake: Object.assign(cleaned.record, { source: imported ? "link" : (doc.import && doc.import.source ? "transcript-chain" : "upload-or-paste"), url: imported ? doc.sourceUrl : (doc.import && doc.import.url) || "", at: new Date().toISOString() }) };
+  // new input gets the speaker structure worked out at the start of its first reading (structure.js); saved runs only on request
+  return { doc, text: cleaned.text, original: cleaned.original, intake: Object.assign(cleaned.record, { speakers: "auto", source: imported ? "link" : (doc.import && doc.import.source ? "transcript-chain" : "upload-or-paste"), url: imported ? doc.sourceUrl : (doc.import && doc.import.url) || "", at: new Date().toISOString() }) };
 }
 
 module.exports = { cleanText, readInput };

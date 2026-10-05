@@ -21,13 +21,14 @@ const cases = require("../eval/cases.json").cases;
 const passagePrompt = () => P.deflate({ speakers: [] }, { title: "t", stake: "s", turnStart: 0, turnEnd: 0 }, "[0] A: words", {});
 const claimPrompt = () => P.claim({}, "A typed claim.");
 
-test("reading-3: the prompt names each distinction a simpler word must keep, attribution, and no process on the card", () => {
-  assert.equal(P.CONTRACT, "reading-3");
+test("the prompt (reading-3, kept in reading-4) names each distinction a simpler word must keep, attribution, and no machinery on the card", () => {
+  assert.ok(["reading-3", "reading-4"].includes(P.CONTRACT) && P.isNeutral("reading-3"));
   const p = passagePrompt();
   for (const part of ["- who:", "- where and when:", "- how many and how varied:", "A bigger group is not a more varied or more representative one", "- under what conditions:", "- how sure:", "A broader word widens the claim and a narrower one shrinks it", "keep the speaker's word and explain it"]) assert.ok(p.includes(part), part);
   assert.match(p, /Attribution: what the speaker claims stays the speaker's claim, in every field and at both levels, including each claim's plain restatement/);
   assert.match(p, /never restate it in your own voice as established/);
-  assert.match(p, /The card: deflated, defense and revision are shown to a reader who never sees how the reading was made\. Do not describe the process in them/);
+  assert.match(p, /The card: deflated, defense and revision are shown to a reader who never sees how the reading was made\. Do not describe the machinery in them/);
+  assert.match(p, /Framing a reading as a reading is fine \("The strongest reading is that…", "Read generously, …"\)/, "reading-4: framing a reading is not machinery (the live run flagged it)");
   assert.match(p, /The outcome is recorded in jumpSurvives, not narrated in the text/);
   assert.doesNotMatch(p, /withdraw it and say so plainly/, "the old instruction that invited narration is gone");
   assert.match(p, /plain \(the claim restated at both levels, attributed to the speaker/);
@@ -52,9 +53,11 @@ test("the review checks each distinction against the source, attribution, and pr
   assert.match(r, /a word about how varied or representative a group is replaced by one about how large it is, or the reverse/);
   assert.match(r, /A simpler word that is broader or narrower than the speaker's word changes the meaning/);
   assert.match(r, /stated in the draft's own voice as established/);
-  assert.match(r, /The card fields \(deflated, defense, revision\) describe how the reading was made/);
+  assert.match(r, /The card fields \(deflated, defense, revision\) describe the machinery of the reading/);
+  assert.match(r, /Framing a reading as such \("The strongest reading is that…", "Read generously, …"\) is not machinery/);
   assert.match(r, /Do not require a flaw/);
-  assert.match(r, /describing the process in the card fields, and an unattributed claim, are not matters of style/);
+  assert.match(r, /describing the machinery in the card fields, and an unattributed claim, are not matters of style/);
+  assert.match(r, /List every problem now, each once, in the field where it occurs/, "0.13: the review lists everything at once, because only corrected parts are checked again");
   const c = reviewPrompt("claim", "SOURCE", {});
   assert.match(c, /states it in its own voice as established/); assert.match(c, /how varied or representative/);
 });
@@ -72,7 +75,9 @@ test("a held reading keeps the review's reasons up to 2,000 characters on the pa
   const LONG = "jump.hs and jump.g5 (also revision): the draft's concern does not match the speaker's claim. " + "The speaker said something broader than the draft reports, and the draft sets up a different premise. ".repeat(6) + "END-OF-REASON";
   const mock = createMockAI();
   const HUGE = "claims[0].plain.g5: " + "the simpler wording names a different group than the speaker did. ".repeat(40) + "TAIL";
-  const ai = { ...mock, async sample(args) { const pr = String(args.prompt || ""); if (pr.startsWith("Review this reading before it is shown") && !pr.includes("closing overview")) { const data = { approved: false, issues: [LONG, HUGE] }; return { data, text: JSON.stringify(data), usage: null, model: "mock", stopReason: "end_turn" }; } return mock.sample(args); } };
+  const ai = { ...mock, async sample(args) { const pr = String(args.prompt || "");
+    if (pr.startsWith("Check a correction to a reading")) { const data = { resolved: [false, false], newIssues: [] }; return { data, text: JSON.stringify(data), usage: null, model: "mock", stopReason: "end_turn" }; }
+    if (pr.startsWith("Review this reading before it is shown") && !pr.includes("closing overview")) { const data = { approved: false, issues: [LONG, HUGE] }; return { data, text: JSON.stringify(data), usage: null, model: "mock", stopReason: "end_turn" }; } return mock.sample(args); } };
   const app = createApp({ dataDir: dir, examplesDir: dir, env: {}, envPath: path.join(dir, ".env"), ai, research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), run: async () => ({ code: 1, out: "" }) });
   await app.ready;
   const id = await app.store.createRun({ kind: "claim", title: "c" }, "Most people in the town own a bicycle.");
@@ -154,5 +159,6 @@ test("eval cases: the universal testimonial keeps 'everybody', and the new cases
   assert.deepEqual(failed("universal-testimonial", faithful), []);
   const s = caseOf("self-selected-correspondence"); assert.equal(s.expect.concern, true); assert.match(s.text, /letters from listeners who finished it/);
   for (const id of ["breadth-not-number", "place-and-group"]) assert.match(caseOf(id).tests, /Held out from the prompt/);
-  assert.equal(cases.length, 28);
+  assert.equal(cases.length, 31, "28 reading cases and, from 0.13, three attribution cases read through intake");
+  assert.deepEqual(cases.filter(c => c.intake).map(c => c.id), ["clip-and-return", "unlabeled-monologue", "interview-interruptions"]);
 });

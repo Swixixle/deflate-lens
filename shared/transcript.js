@@ -401,6 +401,8 @@
       judgments: { evidence: ["strong", "mixed", "weak", "none", "n/a"].indexOf(o.judgments && o.judgments.evidence) !== -1 ? o.judgments.evidence : "n/a", inference: ["valid", "gap", "unfalsifiable", "n/a"].indexOf(o.judgments && o.judgments.inference) !== -1 ? o.judgments.inference : "n/a" }
     };
     if (o.by) out.by = str(o.by, 80);
+    // 0.13: the fifth-grade wording failed its check after correction; the reading is shown at the high-school level
+    if (o.levels && o.levels.g5 === "withheld") out.levels = { g5: "withheld", reasons: (Array.isArray(o.levels.reasons) ? o.levels.reasons : []).slice(0, 10).map(function (x) { return str(x, 2000); }) };
     return out;
   }
 
@@ -412,5 +414,35 @@
   function claimTypeLabel(type) { return EMPIRICAL.indexOf(type) !== -1 ? TYPE_LABELS.claim : (TYPE_LABELS[type] || "Claim"); }
   function historicalType(type) { return ["fact", "contested", "unsupported"].indexOf(type) !== -1 ? type : ""; }
 
-  return { claimTypeLabel: claimTypeLabel, historicalType: historicalType, EMPIRICAL_TYPES: EMPIRICAL, parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, readingContext: readingContext, CONTEXT_VERSION: CONTEXT_VERSION, chunkRanges: chunkRanges, carryOver: carryOver };
+  /* A problem found in a reading, in plain words: "deflated.g5: …" becomes "Fifth grade, In plain words: …". The record
+     keeps the field names (the correction needs them); the page and the exports show this. */
+  var FIELD_NAMES = { deflated: "In plain words", defense: "A fair reading", revision: "What follows", jump: "The concern", fidelity: "The rewrite check", asSaid: "The quotes", judgments: "The judgments" };
+  var PART_NAMES = { text: "its wording", plain: "plain wording", basis: "support", settle: "what would check it" };
+  function fieldName(f) {
+    var m = /^claims\[(\d+)\](?:\.(text|plain|basis|settle))?$/.exec(f);
+    if (m) return "Claim " + (Number(m[1]) + 1) + (m[2] ? ", " + PART_NAMES[m[2]] : "");
+    return FIELD_NAMES[f.replace(/\.notes$/, "")] || "";
+  }
+  function issueText(issue) {
+    var s = String(issue || "");
+    var m = /^((?:claims\[\d+\](?:\.(?:text|plain|basis|settle))?)|deflated|defense|revision|jump|fidelity(?:\.notes)?|asSaid|judgments)(?:\.(hs|g5|both))?:\s*([\s\S]*)$/.exec(s);
+    if (m) {
+      var name = fieldName(m[1]);
+      return (m[2] === "hs" ? "High school, " : m[2] === "g5" ? "Fifth grade, " : "") + name + (m[2] === "both" ? " (both levels)" : "") + ": " + m[3];
+    }
+    var cut = s.indexOf(": ");
+    if (cut < 0 || cut > 140) return s;
+    var head = s.slice(0, cut), rest = s.slice(cut + 2);
+    if (!/\b(deflated|defense|revision|jump|fidelity|asSaid|judgments|claims|plain|basis|settle)\b/.test(head)) return s;
+    var also = "", am = /\(also ([a-zA-Z]+)\)/.exec(head);
+    if (am) { also = " (also " + (FIELD_NAMES[am[1]] || am[1]) + ")"; head = head.replace(am[0], ""); }
+    var hs = /\bhs\b/.test(head), g5 = /\bg5\b/.test(head), names = [];
+    var tokens = head.match(/claims\[\d+\](?:\.(?:text|plain|basis|settle))?|\b(?:deflated|defense|revision|jump|fidelity|asSaid|judgments|plain|basis|settle)\b/g) || [];
+    tokens.forEach(function (t) { var n = /^(plain|basis|settle)$/.test(t) || /^claims/.test(t) ? "the claims" : fieldName(t); if (n && names.indexOf(n) === -1) names.push(n); });
+    if (!names.length) return s;
+    var level = hs && !g5 ? "High school, " : g5 && !hs ? "Fifth grade, " : "";
+    return level + names.join(" and ") + also + ": " + rest;
+  }
+
+  return { issueText: issueText, claimTypeLabel: claimTypeLabel, historicalType: historicalType, EMPIRICAL_TYPES: EMPIRICAL, parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, readingContext: readingContext, CONTEXT_VERSION: CONTEXT_VERSION, chunkRanges: chunkRanges, carryOver: carryOver };
 });

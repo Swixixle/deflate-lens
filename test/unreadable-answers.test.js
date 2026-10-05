@@ -64,7 +64,7 @@ test("a passage that stays unreadable is held with its reason after two attempts
   assert.equal(held.readingGate.status, "held"); assert.deepEqual(held.readingGate.reasons, ["The model's answer was cut off at its length limit before it finished."]);
   assert.ok(b.passages.filter(p => p !== held).every(p => p.readingGate.status === "ready"), "progress on the other passages is kept");
   assert.equal(b.run.processing.status, "partial");
-  assert.equal(b.run.processing.message, "2 of 3 readings are ready. One passage could not pass its checks and is held (The model's answer was cut off at its length limit before it finished). Press Read this to try it again; finished readings are kept.");
+  assert.equal(b.run.processing.message, "2 readings ready. 1 couldn't be completed.", "the main status says how many; the reason is on the passage");
   // Read this again reads only the held passage
   m.prompts.length = 0; await f.app.reader.start(b.run.id); const job = f.app.reader.jobs.get(b.run.id); if (job) await job.done;
   assert.ok(m.prompts.filter(isPassage).every(p => p.includes("PASSAGE (turns 8–15")));
@@ -80,7 +80,8 @@ test("an unreadable review is asked again once; a review that stays unreadable h
   const held = b.passages.find(p => p.turnStart === 16);
   assert.equal(held.readingGate.status, "held");
   assert.ok(held.readingGate.reasons.includes("The separate review's answer was not well-formed JSON. The draft was not approved."), JSON.stringify(held.readingGate.reasons));
-  assert.equal(m.prompts.filter(p => isPassage(p) && p.includes("PASSAGE (turns 16–17")).length, 2);
+  // a draft whose review stays unreadable is held at once: a new draft would not make the review readable
+  assert.equal(m.prompts.filter(p => isPassage(p) && p.includes("PASSAGE (turns 16–17")).length, 1);
 });
 
 test("splitting into passages, the overview and speaker preparation each recover from one unreadable answer", async t => {

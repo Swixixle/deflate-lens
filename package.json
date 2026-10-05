@@ -1,6 +1,6 @@
 {
   "name": "deflate-lens",
-  "version": "0.12.3",
+  "version": "0.13.0",
   "private": true,
   "description": "Local web app: understand what was said, what supports it, and what remains uncertain.",
   "main": "server/index.js",

@@ -28,13 +28,16 @@ function attributionGate(b) {
   const pr = b.run.provenance || {}, prep = b.run.preparation;
   if (pr.notApplicable) return { status: "ready", method: "No speaker correction is needed for this input." };
   if (pr.confirmedAt) return { status: "ready", method: "Speaker labels confirmed by a person." + (pr.labelsOrigin === "model" ? " The names were first assigned by a model from the words, not taken from the source." : "") };
+  // labels established from the words (two passes, quotations checked) or by voice from the recording, for this exact text
+  if (pr.labelsOrigin === "words" && pr.structure && pr.structure.established && pr.structure.resultHash === b.run.input.sha256) return { status: "ready", method: pr.structure.method, origin: "words", unestablished: pr.structure.unestablishedSegments || 0 };
+  if (pr.labelsOrigin === "voices" && pr.voices && pr.voices.resultHash === b.run.input.sha256) return { status: "ready", method: pr.voices.method, origin: "voices" };
   if (prep && prep.inputHash === b.run.input.sha256 && prep.attrSig === b.attrSig) {
     return { status: prep.status, corrected: prep.corrections.length, unresolved: prep.unresolved.length, method: prep.method, labelsOrigin: pr.labelsOrigin || "source" };
   }
   return { status: "held", method: "Speaker labels have not finished preparation." };
 }
 
-const { isNeutral } = require("../shared/prompts");
+const { isNeutral, SPEAKER_CHECKED } = require("../shared/prompts");
 const OLD_EMPIRICAL = ["fact", "contested", "unsupported"];
 /* `contract` is the reading contract the analysis was written under (recorded on its model call). Records written
    before 0.12 have none and keep the rules they were accepted under; the consistency rules below apply to reading-2 and
@@ -76,6 +79,16 @@ function contentIssues(a, p, turns, overrides, kind, contract) {
     if (kind !== "claim" && c.speaker && !turns.slice(p.turnStart, p.turnEnd + 1).some(t => !t.heading && shared.effSpeaker(t, overrides) === c.speaker)) issues.push("claim " + (i + 1) + " names a speaker outside this passage");
     levels(c.plain, "claim " + (i + 1)); levels(c.basis, "claim " + (i + 1) + " explanation");
     if (c.wouldSettle) levels(c.settle, "claim " + (i + 1) + " evidence needed");
+  }
+  // reading-4: a claim whose words stand in the turns of exactly one speaker is credited to that speaker (a clip's claim to
+  // the clip, never to the speaker who played it; a claim from an unestablished stretch to no one in particular)
+  if (kind !== "claim" && SPEAKER_CHECKED.includes(contract)) {
+    const inPassage = turns.slice(p.turnStart, p.turnEnd + 1).filter(t => !t.heading);
+    for (const [i, c] of a.claims.entries()) {
+      if (!c.speaker || shared.wordsOf(c.text).split(" ").length < 4) continue;
+      const holders = inPassage.filter(t => shared.verifyQuote(c.text, t.text)), who = [...new Set(holders.map(t => shared.effSpeaker(t, overrides)))];
+      if (who.length === 1 && who[0] !== String(c.speaker).toUpperCase()) issues.push("claims[" + i + "]: credited to " + c.speaker + ", but these words are " + who[0] + "'s (turn " + holders[0].i + "); a claim's speaker is the label of the turn that states it");
+    }
   }
   if (oversized || a.truncated.asSaid || a.truncated.claims) issues.push("the model output exceeded the card limits");
   return [...new Set(issues)];

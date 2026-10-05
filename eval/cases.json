@@ -1,5 +1,5 @@
 {
-  "about": "Evaluation cases for npm run eval. The expected meaning and constraints were written before any model output was seen. Invented cases use invented speakers. 'expect' fields: meaning = what a faithful reading must convey (for the person scoring); sound = no concern may survive the fair reading (no jump, or jump withdrawn; inference not 'gap'); concern = a concern should survive (jumpSurvives yes or partly); keep = groups of patterns, each group must match the plain-words restatement at BOTH reading levels; forbid = patterns that must not appear in any generated field at either level; mention = patterns that must appear somewhere in the reading; plainForbid = patterns that must not appear in the plain-words restatement at either level; types = claim types that must be present. Patterns are case-insensitive regular expressions. Two checks apply to every passage case: the card text (In plain words, A fair reading, What follows) at both levels must not narrate how the reading was made (a concern raised, kept or withdrawn; the fair reading as a step; context rules), and every claim's plain restatement must name its speaker or report the claim as theirs. The mechanical checks are an aid to the person scoring, not the score.",
+  "about": "Evaluation cases for npm run eval. The expected meaning and constraints were written before any model output was seen. Invented cases use invented speakers. 'expect' fields: meaning = what a faithful reading must convey (for the person scoring); sound = no concern may survive the fair reading (no jump, or jump withdrawn; inference not 'gap'); concern = a concern should survive (jumpSurvives yes or partly); keep = groups of patterns, each group must match the plain-words restatement at BOTH reading levels; forbid = patterns that must not appear in any generated field at either level; mention = patterns that must appear somewhere in the reading; plainForbid = patterns that must not appear in the plain-words restatement at either level; types = claim types that must be present. Patterns are case-insensitive regular expressions. Two checks apply to every passage case: the card text (In plain words, A fair reading, What follows) at both levels must not narrate how the reading was made (a concern raised, kept or withdrawn; the fair reading as a step; context rules), and every claim's plain restatement must name its speaker or report the claim as theirs. A case with intake: true goes in the way a paste does (a web page's controls and timestamps separated; the speakers worked out from the words at the start of the reading), and its 'speakers' expectations are checked on the labelled text: chromeGone = no page control or timestamp left; label = [phrase, label pattern], the turn holding the phrase has such a label; differ and same = [phrase, phrase], held in different (or the same) speakers' turns, neither unlabelled; claim = [claim phrase, turn phrase], every ready claim holding the first is credited to the speaker of the turn holding the second; absent = labels no turn may have. Every intake case also checks that every spoken word was kept, in order. The mechanical checks are an aid to the person scoring, not the score.",
   "cases": [
     {
       "id": "sound-library",
@@ -260,6 +260,39 @@
         "keep": [["intensive care|\\bICU\\b|sickest patients|very sick patients"], ["half|50|fifty"], ["our hospital|their hospital|her hospital|his hospital|one hospital|the nurse's hospital|this hospital|the hospital where|own hospital"]],
         "types": ["claim"],
         "forbid": ["\\bhospitals (have|saw|cut|can|should)\\b", "\\bin hospitals\\b"]
+      }
+    },
+    {
+      "id": "clip-and-return",
+      "intake": true,
+      "tests": "Attribution at intake (0.13): a podcast page's transcript with \"Copy link\" and a timestamp before every paragraph and no speaker names. The host introduces a clip, plays it, and comes back. The clip's claims must be its speaker's, not the host's; the page's controls and times must not reach the passages.",
+      "text": "Copy link\n00:00:00\nTwo years ago the committee's largest donor turned out to run a betting site. He denied it, but the filings are public.\n\nCopy link\n00:00:13\nAnd you have to ask why someone in that business gives this much money to a campaign about foreign policy.\n\nCopy link\n00:00:26\nHere, for example, is a telling clip from Lee Grant's podcast last week. Watch this.\n\nCopy link\n00:00:39\nIn my opinion, the agreement was counterproductive. It signaled weakness, and the odds of reopening the strait are now above forty percent.\n\nCopy link\n00:00:52\nSo that's a pretty amazing clip. That's Lee Grant arguing for more troops while quoting betting odds from his own sponsor.",
+      "expect": {
+        "meaning": "The host says the committee's largest donor ran a betting site and asks why such a donor funds a foreign-policy campaign. The host plays a clip in which Lee Grant says the agreement was counterproductive, that it signaled weakness, and that the odds of reopening the strait are above forty percent. Back from the clip, the host calls it telling and says Grant is arguing for more troops while quoting odds from his own sponsor. Grant's claims are Grant's; the commentary is the host's.",
+        "speakers": {"chromeGone": true, "label": [["the agreement was counterproductive", "^(CLIP|QUOTE) \\d+$"]], "differ": [["the agreement was counterproductive", "So that's a pretty amazing clip"]], "claim": [["counterproductive", "the agreement was counterproductive"]]},
+        "forbid": ["\\b(host|speaker)\\b[^.]{0,60}\\b(says|said|claims|argues|thinks|believes)\\b[^.]{0,30}\\b(agreement|deal) was counterproductive"]
+      }
+    },
+    {
+      "id": "unlabeled-monologue",
+      "intake": true,
+      "tests": "Attribution at intake (0.13): one person speaking across four paragraphs with no labels, including a question they answer themselves. Paragraph breaks and a rhetorical question are not changes of speaker: no second speaker may be invented.",
+      "text": "Let me tell you about the library budget. The council cut evening hours last spring, and the branch on Elm Street now closes at six.\n\nWhy does that matter? Because most of the people who used the evening hours were students and shift workers, and they cannot come before six.\n\nNow, the council says usage was falling. Maybe it was. But the numbers they cite are from the year the branch was closed for repairs, so of course usage fell.\n\nSo my point is simple. Before cutting hours again, look at a normal year.",
+      "expect": {
+        "meaning": "One speaker throughout: the council cut evening hours at the Elm Street branch; most evening users were students and shift workers who cannot come before six; the council's figures for falling usage come from a year the branch was closed for repairs; so look at a normal year before cutting hours again. The question and its answer are the same person's.",
+        "speakers": {"absent": ["SPEAKER 1", "SPEAKER 2"]},
+        "keep": [["student|shift"], ["repair|closed"]]
+      }
+    },
+    {
+      "id": "interview-interruptions",
+      "intake": true,
+      "tests": "Attribution at intake (0.13): an unlabeled interview with an introduction, a question answered, a one-word reply, and an interruption with the first speaker finishing their sentence. The guest's figures must stay the guest's, the host's question the host's.",
+      "text": "Welcome back. My guest today studies transit ridership at the university. Dana, thanks for coming on.\n\nThanks for having me.\n\nSo the city says ridership is up twenty percent since the new bus lanes opened. Is that right?\n\nIt is right for two routes. Citywide, ridership is up four percent, and the twenty percent figure only counts the two routes that got new lanes.\n\nRight.\n\nAnd those two routes were already growing before the lanes —\n\nWait, they were growing before?\n\n— before the lanes opened, yes. So some of that twenty percent would have happened anyway.",
+      "expect": {
+        "meaning": "The host introduces Dana, who studies transit ridership. Asked whether ridership is up twenty percent since the bus lanes opened, Dana says that figure counts only the two routes that got lanes, that citywide ridership is up four percent, and that those routes were already growing before the lanes, so some of the rise would have happened anyway. The question and the interruption are the host's; the figures and the caveat are Dana's.",
+        "speakers": {"differ": [["Dana, thanks for coming on", "Thanks for having me"], ["Is that right?", "Citywide, ridership is up four percent"], ["Wait, they were growing before?", "before the lanes opened, yes"]], "same": [["Citywide, ridership is up four percent", "before the lanes opened, yes"], ["Dana, thanks for coming on", "Wait, they were growing before?"]], "claim": [["four percent", "Thanks for having me"]]},
+        "keep": [["four|\\b4\\b"], ["two routes|2 routes|routes that got|only the routes"]]
       }
     },
     {

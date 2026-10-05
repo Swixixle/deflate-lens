@@ -83,7 +83,7 @@ test("full workflow with mock model, persistence across restart, staleness, expo
 
     // exports
     const ej = await s.api("GET", "/api/runs/" + id + "/export.json");
-    assert.equal(ej.status, 200); assert.equal(ej.data.schema, "deflate-lens/claims@0.6"); assert.ok(ej.data.statusMeaning.receipt.includes("not verification")); assert.equal(ej.data.claims.length, 2, "mock emits one unscorable and one empirical claim per passage"); assert.equal(ej.data.run.source.url, "https://example.org/ep1");
+    assert.equal(ej.status, 200); assert.equal(ej.data.schema, "deflate-lens/claims@0.7"); assert.ok(ej.data.statusMeaning.receipt.includes("not verification")); assert.equal(ej.data.claims.length, 2, "mock emits one unscorable and one empirical claim per passage"); assert.equal(ej.data.run.source.url, "https://example.org/ep1");
     assert.match(ej.headers.get("content-disposition"), /attachment/);
     const em = await s.api("GET", "/api/runs/" + id + "/export.md");
     assert.equal(em.status, 200); assert.match(String(em.data), /^# Test run\n/);
@@ -304,6 +304,6 @@ test("quotes: the server checks every quote on every read against the transcript
     assert.equal(b.run.provenanceHistory.length, 1); assert.equal(b.run.provenanceHistory[0].keptInPlace, true);
     // markdown at the fifth-grade level
     const md = await s.api("GET", "/api/runs/" + id + "/export.md?level=g5");
-    assert.match(String(md.data), /fifth-grade reading level/); assert.match(String(md.data), /Reading held/); assert.doesNotMatch(String(md.data), /— not found word for word/);
+    assert.match(String(md.data), /fifth-grade reading level/); assert.match(String(md.data), /\*\*Out of date, not shown\.\*\* Why: transcript changed since this analysis/); assert.doesNotMatch(String(md.data), /— not found word for word/);
   } finally { await s.close(); fs.rmSync(dataDir, { recursive: true, force: true }); }
 });
