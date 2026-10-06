@@ -11,6 +11,7 @@
    expect: { KEY: "Name" | null | { not: "Name" } | { oneOf: [...] } }: what a careful human concludes from the words
    and the listing. */
 const { pad } = require("./identify-pad");
+const { opens, unnamed, plus } = require("./identify-answers");
 
 const HOST = "Dale Whitcomb", SHOW = "The Dale Whitcomb Show", PUB = "Dale Whitcomb Network", GUEST = "Marcus Delacroix", PRIEST = "Tomas Varga";
 const H_ = { oneOf: [HOST, null] };
@@ -312,14 +313,14 @@ add({ id: "A31", title: "Model: a sentence that only mentions him passes as an i
   "SPEAKER 2: Thank you for having me." + pad(1),
   "SPEAKER 1: What was a normal day like?",
   "SPEAKER 2: Long. Nobody left before nine." + pad(2)],
-  model: () => ({ voices: [{ label: "SPEAKER 2", name: "Marcus Delacroix", evidence: [{ kind: "introduced", turn: 0, quote: "Marcus Delacroix ran the Gary Works mill for thirty years, and tonight you'll meet the woman who kept his books for twenty of them." }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 2", name: "Marcus Delacroix", evidence: [{ kind: "introduced", turn: 0, quote: "Marcus Delacroix ran the Gary Works mill for thirty years, and tonight you'll meet the woman who kept his books for twenty of them." }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Dale Whitcomb Show.")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { not: GUEST } } });
 add({ id: "A32", title: "Model: one rhetorical question to the absent subject (“Marcus, what would you have said that night?”), echoed by the model as “addressed”", L: LSUBJ, lines: PLAIN_OPEN.concat([
   "SPEAKER 1: When the union finally gave him its award, he was too sick to go. Marcus, what would you have said that night?",
   "SPEAKER 2: Probably nothing. Not a word. That was never the way at the mill." + pad(1),
   "SPEAKER 1: What was a normal shift like?",
   "SPEAKER 2: Twelve hours, if you were lucky." + pad(2)]),
-  model: () => ({ voices: [{ label: "SPEAKER 2", name: "Marcus Delacroix", evidence: [{ kind: "addressed", turn: 2, quote: "Marcus, what would you have said that night?" }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 2", name: "Marcus Delacroix", evidence: [{ kind: "addressed", turn: 2, quote: "Marcus, what would you have said that night?" }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Dale Whitcomb Show.")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { not: GUEST } } });
 
 /* ======== captions ======== */

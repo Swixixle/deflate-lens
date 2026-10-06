@@ -8,6 +8,7 @@
    expect: { KEY: "Name" | null | { not: "Name" } | { oneOf: [...] } }: what a careful human concludes from the words
    and the listing. */
 const { pad } = require("./identify-pad");
+const { opens, unnamed, plus } = require("./identify-answers");
 
 const HOST = "Dale Whitcomb", SHOW = "The Dale Whitcomb Show", PUB = "Dale Whitcomb Network", PRIEST = "Tomas Varga", GUEST = "Marcus Delacroix";
 const NOTES = "Fr. Tomas Varga is a parish priest and exorcist who trained in Rome.";
@@ -310,7 +311,7 @@ add({ id: "MP1", title: "The model calls a description an introduction: “My gu
   "SPEAKER 2: Thanks for having me." + pad(2),
   "SPEAKER 1: What was the job like?",
   "SPEAKER 2: Demanding." + pad(2)],
-  model: () => ({ voices: [{ label: "SPEAKER 2", name: "Marcus Delacroix", evidence: [{ kind: "introduced", turn: 0, quote: "My guest tonight worked for Marcus Delacroix for ten years." }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 2", name: "Marcus Delacroix", evidence: [{ kind: "introduced", turn: 0, quote: "My guest tonight worked for Marcus Delacroix for ten years." }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Dale Whitcomb Show.")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { not: GUEST } } });
 const MD2_L = { show: SHOW, showAuthor: PUB, episodeTitle: "Exorcist Fr. Tomas Varga: Demons and Doubt", description: "Fr. Tomas Varga is a parish priest and exorcist who trained in Rome and served the steel parishes of Gary for forty years." };
 const MD2_LINES = [
@@ -319,7 +320,7 @@ const MD2_LINES = [
   "SPEAKER 1: What would he say about tonight's question?",
   "SPEAKER 2: Be patient." + pad(2)];
 add({ id: "MP2", title: "A substitute priest called “Father”; the model offers a self-reference from shared words (“I trained in Rome alongside him, and I served in the steel parishes of Gary…”)", L: MD2_L, lines: MD2_LINES,
-  model: () => ({ voices: [{ label: "SPEAKER 2", name: "Fr. Tomas Varga", evidence: [{ kind: "self_reference", turn: 1, quote: "I trained in Rome alongside him, and I served in the steel parishes of Gary for a decade myself.", listingQuote: "Fr. Tomas Varga is a parish priest and exorcist who trained in Rome and served the steel parishes of Gary for forty years." }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 2", name: "Fr. Tomas Varga", evidence: [{ kind: "self_reference", turn: 1, quote: "I trained in Rome alongside him, and I served in the steel parishes of Gary for a decade myself.", listingQuote: "Fr. Tomas Varga is a parish priest and exorcist who trained in Rome and served the steel parishes of Gary for forty years." }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Dale Whitcomb Show.")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { not: PRIEST } } });
 add({ id: "MP2c", title: "Control: MP2 without the model (a title alone)", L: MD2_L, lines: MD2_LINES,
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { not: PRIEST } } });
@@ -328,7 +329,7 @@ add({ id: "MP3", title: "The host's own father, greeted “Father, thank you for
   "SPEAKER 2: Thank you for having me, son. I farmed outside Gary for forty years, and our parish was one of his." + pad(1),
   "SPEAKER 1: What happened that winter?",
   "SPEAKER 2: He came to the door in the snow." + pad(2)],
-  model: () => ({ voices: [{ label: "SPEAKER 2", name: "Fr. Tomas Varga", evidence: [{ kind: "self_reference", turn: 1, quote: "I farmed outside Gary for forty years, and our parish was one of his.", listingQuote: "Fr. Tomas Varga is a parish priest and exorcist who served the farm parishes outside Gary for forty years." }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 2", name: "Fr. Tomas Varga", evidence: [{ kind: "self_reference", turn: 1, quote: "I farmed outside Gary for forty years, and our parish was one of his.", listingQuote: "Fr. Tomas Varga is a parish priest and exorcist who served the farm parishes outside Gary for forty years." }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Dale Whitcomb Show.")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { not: PRIEST } } });
 
 /* ======== IN. introductions that are not ======== */
@@ -528,7 +529,7 @@ add({ id: "LP1", title: "A title that opens with a verb (“Remembering Marcus D
 const MD4_L = { show: SHOW, showAuthor: PUB, episodeTitle: "Marcus Delacroix: The Man Who Ran the Mill" };
 const MD4_LINES = subj("The union finally gave him its lifetime award on Saturday." + pad(1) + " Congratulations, Marcus.", "It was long overdue. I was at the dinner." + pad(1));
 add({ id: "MP4", title: "Subject named only by the title: one false call by name (“Congratulations, Marcus.”) that the model echoes as “addressed”", L: MD4_L, lines: MD4_LINES,
-  model: () => ({ voices: [{ label: "SPEAKER 2", name: "Marcus Delacroix", evidence: [{ kind: "addressed", turn: 2, quote: "Congratulations, Marcus." }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 2", name: "Marcus Delacroix", evidence: [{ kind: "addressed", turn: 2, quote: "Congratulations, Marcus." }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Dale Whitcomb Show.")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { not: GUEST } } });
 add({ id: "MP4c", title: "Control: MP4 without the model", L: MD4_L, lines: MD4_LINES,
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { not: GUEST } } });

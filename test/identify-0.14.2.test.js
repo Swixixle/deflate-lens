@@ -14,14 +14,16 @@ const { pad } = require("./fixtures/identify-pad");
 const { HOST, PRIEST, LP } = require("./fixtures/identify-scenarios-3");
 
 const listing = (show, author, title, notes, artist) => I.listingCandidates(I.listingOf({ title: "", import: { showInfo: { name: show, author, artist: artist || "", persons: [] }, episodeInfo: { title, description: notes || "", persons: [] } } }));
-/* The whole step, as preparation runs it (a fake store; the model's answer scripted when given). */
-async function identify(lines, L, model) {
+/* The whole step, as preparation runs it (a fake store; the model's answer scripted when given). With no model, the app's
+   own reading alone (appReading), which these tests of the app's rules measure; preparation never names anyone on it alone
+   (0.14.3): { production: true } runs the step as preparation does with no model. */
+async function identify(lines, L, model, opts) {
   const run = { id: "run_142", kind: "transcript", parseMode: "text", input: { sha256: "h" }, speakers: [], provenance: {}, title: "", sourceLabel: "",
     import: { showInfo: { name: L.show || "", author: L.showAuthor || "", artist: L.showArtist || "", persons: [] }, episodeInfo: { title: L.episodeTitle || "", description: L.description || "", persons: [] } } };
   const store = { bundle: async () => ({ run, transcript: lines.join("\n"), attrSig: "a0-0" }), captureCallBasis: async () => ({}), recordCall: async () => {} };
   const prompts = [];
   const ai = model ? { kind: "mock", model: "scripted", mock: true, sample: async ({ prompt }) => { prompts.push(prompt); const data = model(prompt); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
-  const out = await I.identifySpeakers({ ai, store, id: run.id });
+  const out = ai || (opts && opts.production) ? await I.identifySpeakers({ ai, store, id: run.id }) : await I.appReading({ store, id: run.id });
   const name = k => (out.record.decisions.find(d => d.key === k) || {}).name || null;
   return { out, record: out.record, name, prompts };
 }
@@ -136,14 +138,20 @@ test("the real failure's shape, with invented names: every clue the model gave h
   assert.match(prompts[0], /- Tomas Varga \(guest; title: Father; described as: exorcist, priest\): the episode's title, the episode's notes/);
   assert.match(prompts[0], /give addressee, the name or title it uses/);
   assert.match(prompts[0], /A title alone never says who someone is\./);
-  // and the app alone, with no model, reaches the same names
+  // and the app's rules alone, with no model, reach the same names
   const alone = await identify(REAL_SHAPE, LP, null);
   assert.equal(alone.name("SPEAKER 1"), HOST); assert.equal(alone.name("SPEAKER 2"), PRIEST);
+  // but preparation never names anyone on them alone (0.14.3): with no model, both voices keep their numbers, with why
+  const none = await identify(REAL_SHAPE, LP, null, { production: true });
+  assert.equal(none.name("SPEAKER 1"), null); assert.equal(none.name("SPEAKER 2"), null);
+  assert.ok(none.record.unnamed.every(u => u.why === "No model was available to read who each voice is, so this voice keeps its number; the app does not name a voice on its own reading alone."), JSON.stringify(none.record.unnamed));
 });
 
 test("a title alone never names anyone: not twice, not as the one voice left, not for no one billed; with the guest the listing bills, the guest's thanks and the model's reading it does", async () => {
   const lines = ["SPEAKER 1: Father, thanks so much for coming in.", "SPEAKER 2: Thank you for having me.", "SPEAKER 1: Father, where were you before Rome?", "SPEAKER 2: At home." + pad(3), "SPEAKER 1: Right." + pad(1), "SPEAKER 2: Yes." + pad(2)];
-  const reading = () => ({ voices: [{ label: "SPEAKER 2", name: "Fr. Tomas Varga", evidence: [{ kind: "addressed", turn: 0, quote: "Father, thanks so much for coming in." }, { kind: "addressed", turn: 2, quote: "Father, where were you before Rome?" }] }], unnamed: [] });
+  // (the host, as the model is asked to account for every voice since 0.14.3: by the show it hosts, welcoming the guest)
+  const host = { label: "SPEAKER 1", name: HOST, evidence: [{ kind: "hosts_show", turn: 0, quote: "Father, thanks so much for coming in." }] };
+  const reading = () => ({ voices: [host, { label: "SPEAKER 2", name: "Fr. Tomas Varga", evidence: [{ kind: "addressed", turn: 0, quote: "Father, thanks so much for coming in." }, { kind: "addressed", turn: 2, quote: "Father, where were you before Rome?" }] }], unnamed: [] });
   // the app alone: "Father", twice, is still a title alone (sixth review: unchanged)
   const alone = await identify(lines, LP, null);
   assert.equal(alone.name("SPEAKER 1"), HOST, "the host by the show's name and the guest's thanks");
@@ -154,16 +162,18 @@ test("a title alone never names anyone: not twice, not as the one voice left, no
   // the listing and both readers agree, and nothing in the words is against it
   const r = await identify(lines, LP, reading);
   assert.equal(r.name("SPEAKER 1"), HOST); assert.equal(r.name("SPEAKER 2"), PRIEST);
+  assert.equal(r.prompts.length, 1, "a complete answer is not asked for again");
   assert.match(r.record.decisions.find(d => d.key === "SPEAKER 2").how, /this voice answers as a guest, and the model's reading of the conversation names Tomas Varga for it/);
   // the same title a model gives as a name: it stands for the one listed person who has it, and stays a title
   assert.ok(r.record.evidence.filter(e => e.key === "SPEAKER 2" && e.kind === "addressed").every(e => e.title === "Father" && e.name === PRIEST));
   // the model leaving the voice unnamed: no name
-  const held = await identify(lines, LP, () => ({ voices: [], unnamed: [{ label: "SPEAKER 2", why: "only called Father" }] }));
-  assert.equal(held.name("SPEAKER 2"), null);
+  const held = await identify(lines, LP, () => ({ voices: [host], unnamed: [{ label: "SPEAKER 2", why: "only called Father" }] }));
+  assert.equal(held.name("SPEAKER 1"), HOST); assert.equal(held.name("SPEAKER 2"), null);
+  assert.match(held.record.unnamed.find(u => u.key === "SPEAKER 2").why, /^Only a title points to Tomas Varga/);
   // with no one listed who has the title, it stands for no one
-  const none = await identify(lines, { show: LP.show, showAuthor: LP.showAuthor, episodeTitle: "Faith and doubt" }, () => ({ voices: [{ label: "SPEAKER 2", name: "Father", evidence: [{ kind: "addressed", turn: 0, quote: "Father, thanks so much for coming in." }] }], unnamed: [] }));
+  const none = await identify(lines, { show: LP.show, showAuthor: LP.showAuthor, episodeTitle: "Faith and doubt" }, () => ({ voices: [host, { label: "SPEAKER 2", name: "Father", evidence: [{ kind: "addressed", turn: 0, quote: "Father, thanks so much for coming in." }] }], unnamed: [] }));
   assert.equal(none.name("SPEAKER 2"), null);
-  assert.match(none.record.evidence.find(e => e.source === "model").why, /a title is not a name, and no one the listing names has it/);
+  assert.match(none.record.evidence.find(e => e.source === "model" && e.key === "SPEAKER 2").why, /a title is not a name, and no one the listing names has it/);
 });
 
 test("every clue that did not hold up is explained, and “nothing names this voice” is said only when nothing was found", async () => {
@@ -175,9 +185,12 @@ test("every clue that did not hold up is explained, and “nothing names this vo
   assert.match(why["SPEAKER 1"], /^The model proposed Pat Reilly, but the clue did not hold up: “Welcome to Night Desk” \(the quoted words do not name this person/);
   assert.match(why["SPEAKER 2"], /^The model proposed Ana Ferreira, but the clues did not hold up: “Welcome to Night Desk” \(that turn is another voice's|^The model proposed Ana Ferreira, but the clues did not hold up: “Welcome to Night Desk” \(/);
   assert.doesNotMatch(why["SPEAKER 2"], /Nothing in the conversation/);
-  // with nothing found at all, it says so
-  const quiet = await identify(lines, { show: "Night Desk", showAuthor: "Ironvale Media", episodeTitle: "Mill towns" }, null);
-  assert.ok(quiet.record.unnamed.every(u => /^Nothing in the conversation or the episode's listing names this voice\.$/.test(u.why)));
+  // with nothing found at all, it says so: the model leaving both voices unnamed, and the app's rules alone
+  const L0 = { show: "Night Desk", showAuthor: "Ironvale Media", episodeTitle: "Mill towns" };
+  const quiet = await identify(lines, L0, () => ({ voices: [], unnamed: [{ label: "SPEAKER 1", why: "" }, { label: "SPEAKER 2", why: "" }] }));
+  assert.ok(quiet.record.unnamed.length === 2 && quiet.record.unnamed.every(u => /^Nothing in the conversation or the episode's listing names this voice\.$/.test(u.why)), JSON.stringify(quiet.record.unnamed));
+  const alone = await identify(lines, L0, null);
+  assert.ok(alone.record.unnamed.every(u => /^Nothing in the conversation or the episode's listing names this voice\.$/.test(u.why)));
 });
 
 test("a host the show's name and its publisher name: no host from the show's name alone, none from a publisher's brand, none against the words", async () => {

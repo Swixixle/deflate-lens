@@ -7,6 +7,7 @@
    Invented people and shows only; no real transcripts, no lyrics. expect: { KEY: "Name" | null | { not: "Name" } |
    { oneOf: [...] } } — what a careful human concludes from the words and the listing. */
 const { pad } = require("./identify-pad");
+const { opens, unnamed, plus } = require("./identify-answers");
 
 const HOST = "Dale Whitcomb", SHOW = "The Dale Whitcomb Show", PUB = "Dale Whitcomb Network", PRIEST = "Tomas Varga", GUEST = "Marcus Delacroix";
 const NOTES = "Fr. Tomas Varga is a parish priest and exorcist who trained in Rome.";
@@ -96,7 +97,7 @@ const P7_LINES = [
   "SPEAKER 3: How do you know it is real?" + pad(2),
   "SPEAKER 2: You wait." + pad(2)];
 add({ id: "P7", title: "Two voices called “Father” (the exorcist guest and a caller priest); the model echoes the caller's “I'm a parish priest” as a self-reference", L: LP, lines: P7_LINES,
-  model: () => ({ voices: [{ label: "SPEAKER 3", name: "Fr. Tomas Varga", evidence: [{ kind: "self_reference", turn: 3, quote: "I'm a parish priest in Ohio, long time listener.", listingQuote: "Fr. Tomas Varga is a parish priest and exorcist who trained in Rome." }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 3", name: "Fr. Tomas Varga", evidence: [{ kind: "self_reference", turn: 3, quote: "I'm a parish priest in Ohio, long time listener.", listingQuote: "Fr. Tomas Varga is a parish priest and exorcist who trained in Rome." }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Dale Whitcomb Show.")], [unnamed("SPEAKER 2", "two voices are priests; the words do not settle which one is the billed guest")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { oneOf: [PRIEST, null] }, "SPEAKER 3": { not: PRIEST } } });
 add({ id: "P7c", title: "P7 without the model (control)", L: LP, lines: P7_LINES,
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { oneOf: [PRIEST, null] }, "SPEAKER 3": { not: PRIEST } } });

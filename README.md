@@ -59,7 +59,7 @@ The [User guide](docs/guide.md) is short: starting a reading, reading the result
 - **The review is a second pass of the same model**, not an independent check. The original is always one click away so you can judge.
 - **The speaker is never graded.** Only the argument and each claim.
 - **It can be wrong.** When a reading still fails its checks after the app corrects the parts found wrong, the card says it couldn't be completed and its Evidence says why.
-- **Who is speaking is worked out, not proven.** By voice from the recording (Deepgram, your key: by itself when a podcast link's transcript has no speaker names), or from the words where they show a change of speaker. Names come from what was said and the episode's listing, read twice (by the app's checks and by the model's reading of the whole conversation); a speaker nothing identifies keeps a number, and Evidence says why, including any clue that was found and not used.
+- **Who is speaking is worked out, not proven.** By voice from the recording (Deepgram, your key: by itself when a podcast link's transcript has no speaker names), or from the words where they show a change of speaker. Names come from what was said and the episode's listing, read twice (by the model's reading of the whole conversation and by the app's checks of the words it quotes); a name is given only when the model names that person and the words hold it up. A speaker nothing identifies keeps a number, and so does one the model's answer leaves undecided even after it is asked again; Evidence says why, including any clue that was found and not used.
 
 ## Settings
 

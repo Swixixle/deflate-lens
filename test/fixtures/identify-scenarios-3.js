@@ -6,6 +6,7 @@
    named "… Network"), with invented people, shows and words throughout; no real transcript, no lyrics.
    expect: { KEY: "Name" | null | { not: "Name" } | { oneOf: [...] } } — what a careful human concludes. */
 const { pad } = require("./identify-pad");
+const { opens, unnamed, plus } = require("./identify-answers");
 
 const HOST = "Dale Whitcomb", SHOW = "The Dale Whitcomb Show", PUB = "Dale Whitcomb Network", PRIEST = "Tomas Varga", GUEST = "Marcus Delacroix";
 const NOTES = "Father Tomas Varga has spent twenty years as an exorcist. Fr. Tomas Varga is a parish priest and exorcist who trained in Rome. Use code DALE for 20% off at example.test.";
@@ -44,7 +45,7 @@ add({ id: "R3", title: "Role-only greeting and the guest's thanks, but the guest
 // host's welcome as the guest, and the model's reading of the whole conversation names him: the listing and both
 // readers agree, and nothing in the words is against it. R3 itself, with no model, still names no one.)
 add({ id: "R3m", title: "R3 with the model's reading: the title the listing gives its billed guest, the guest's thanks and the model's reading together name him", L: LP, lines: S[S.length - 1].lines,
-  model: () => ({ voices: [{ label: "SPEAKER 2", name: "Fr. Tomas Varga", evidence: [{ kind: "addressed", turn: 0, quote: "Father, thanks so much for coming in." }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 2", name: "Fr. Tomas Varga", evidence: [{ kind: "addressed", turn: 0, quote: "Father, thanks so much for coming in." }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Father, thanks so much for coming in.")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": "Tomas Varga" } });
 
 /* ======== T. two priests ======== */

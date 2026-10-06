@@ -34,7 +34,9 @@ async function identify(sc, recorded) {
   // (the scenario's own scripted model first; else a model's recorded answer to the exact prompt, when the set has one)
   const answer = sc.model ? sc.model : recorded ? () => JSON.parse(JSON.stringify(recorded)) : null;
   const ai = answer ? { kind: "mock", model: "scripted", mock: true, sample: async () => { const data = answer(); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
-  const out = await I.identifySpeakers({ ai, store, id: run.id });
+  // (with a model's answer, the step as a reading runs it; with none, the app's own reading alone, which in a reading only
+  // checks and supports the model's and never names anyone by itself, 0.14.3)
+  const out = ai ? await I.identifySpeakers({ ai, store, id: run.id }) : await I.appReading({ store, id: run.id });
   const names = {};
   for (const s of out.speakers) names[s.key] = (out.record.decisions.find(d => d.key === s.key) || {}).name || null;
   return names;

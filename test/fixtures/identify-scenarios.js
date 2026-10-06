@@ -6,6 +6,7 @@
      { not: X }    any outcome except the name X is acceptable (X would be wrong)
      { oneOf: [] } any of these outcomes (null allowed if listed) is acceptable */
 const { pad } = require("./identify-pad");
+const { opens, unnamed, plus } = require("./identify-answers");
 
 const SHOW = "Walt Brannigan’s Straight Talk Hour", HOST = "Walt Brannigan", GUEST = "Marcus Delacroix";
 const EP = "We’ll Do It LIVE! — Marcus Delacroix";
@@ -232,7 +233,7 @@ add({ id: "E3", title: "Two listed guests share a first name; the model picks on
   "SPEAKER 3: Glad to be here." + pad(3),
   "SPEAKER 2: The mill is coming back." + pad(2),
   "SPEAKER 3: I am not so sure." + pad(2)],
-  model: () => ({ voices: [{ label: "SPEAKER 2", name: "Marcus Webb", evidence: [{ kind: "self_identification", turn: 1, quote: "Hi, I'm Marcus, and I worked the mill for twenty years" }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 2", name: "Marcus Webb", evidence: [{ kind: "self_identification", turn: 1, quote: "Hi, I'm Marcus, and I worked the mill for twenty years" }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Straight Talk Hour.")], [unnamed("SPEAKER 3", "this guest only says they are glad to be here; no one names them")]),
   // the words give "Marcus" and two listed people share it: the first name alone is what the words establish
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": { oneOf: ["Marcus", null] }, "SPEAKER 3": null } });
 add({ id: "E4", title: "Substitute: “I'm Dana Reyes, in for Walt tonight”; the unnamed guest gets the absent host's name", L: { show: SHOW, showAuthor: HOST, episodeTitle: "Steel Town Stories" }, lines: [
@@ -473,28 +474,30 @@ add({ id: "L1", title: "Model self_reference: a caller who also worked the Gary 
   "SPEAKER 3: Hi, long time listener. I worked at the Gary steel mill for thirty years myself, and I can tell you the numbers are real." + pad(2),
   "SPEAKER 1: Thanks for the call." + pad(2),
   "SPEAKER 3: Thank you." + pad(2)],
-  model: () => ({ voices: [{ label: "SPEAKER 3", name: "Marcus Delacroix", evidence: [{ kind: "self_reference", turn: 1, quote: "I worked at the Gary steel mill for thirty years myself", listingQuote: "Marcus Delacroix worked at the Gary steel mill for thirty years" }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 3", name: "Marcus Delacroix", evidence: [{ kind: "self_reference", turn: 1, quote: "I worked at the Gary steel mill for thirty years myself", listingQuote: "Marcus Delacroix worked at the Gary steel mill for thirty years" }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Straight Talk Hour.")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 3": null } });
 add({ id: "L2", title: "Model self_identification from a possessive: “I'm Marcus Delacroix's biggest critic”", L: L0, lines: [
   "SPEAKER 1: Welcome to the Straight Talk Hour." + pad(2) + " Let's go to the phones.",
   "SPEAKER 2: Hi, long time listener. I'm Marcus Delacroix's biggest critic, and I want to say why." + pad(3),
   "SPEAKER 1: Go ahead." + pad(2),
   "SPEAKER 2: The mills did not reopen." + pad(3)],
-  model: () => ({ voices: [{ label: "SPEAKER 2", name: "Marcus Delacroix", evidence: [{ kind: "self_identification", turn: 1, quote: "I'm Marcus Delacroix's biggest critic" }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 2", name: "Marcus Delacroix", evidence: [{ kind: "self_identification", turn: 1, quote: "I'm Marcus Delacroix's biggest critic" }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Straight Talk Hour.")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": null } });
 add({ id: "L3", title: "Model self_identification from “This is Marcus Delacroix's plan” (host's words)", L: L0, lines: [
   "SPEAKER 1: Welcome to the Straight Talk Hour." + pad(2) + " This is Marcus Delacroix's plan, and it is a bad one.",
   "SPEAKER 2: I agree it is bad." + pad(3),
   "SPEAKER 1: Why?" + pad(2),
   "SPEAKER 2: The numbers." + pad(3)],
-  model: () => ({ voices: [{ label: "SPEAKER 1", name: "Marcus Delacroix", evidence: [{ kind: "self_identification", turn: 0, quote: "This is Marcus Delacroix's plan" }] }], unnamed: [] }),
-  expect: { "SPEAKER 1": HOST, "SPEAKER 2": null } });
+  model: () => plus({ voices: [{ label: "SPEAKER 1", name: "Marcus Delacroix", evidence: [{ kind: "self_identification", turn: 0, quote: "This is Marcus Delacroix's plan" }] }], unnamed: [] }, [], [unnamed("SPEAKER 2")]),
+  // (0.14.3: the model's own decision for the host, refuted by the words, keeps the voice numbered; the app's reading,
+  // which would say the host, never stands in for the model's. Before 0.14.3 the refuted reading counted as silence.)
+  expect: { "SPEAKER 1": { not: GUEST }, "SPEAKER 2": null } });
 add({ id: "L4", title: "Model self_identification for a word that is not a name: “I am Catholic” → name “Catholic”", L: LH, lines: [
   "SPEAKER 1: Welcome to the Straight Talk Hour." + pad(2) + " Let's go to the phones.",
   "SPEAKER 2: Hi. I am Catholic, and I think the bishops got this one wrong." + pad(3),
   "SPEAKER 1: Go ahead." + pad(2),
   "SPEAKER 2: Thanks." + pad(3)],
-  model: () => ({ voices: [{ label: "SPEAKER 2", name: "Catholic", evidence: [{ kind: "self_identification", turn: 1, quote: "I am Catholic, and I think" }] }], unnamed: [] }),
+  model: () => plus({ voices: [{ label: "SPEAKER 2", name: "Catholic", evidence: [{ kind: "self_identification", turn: 1, quote: "I am Catholic, and I think" }] }], unnamed: [] }, [opens("SPEAKER 1", HOST, "Welcome to the Straight Talk Hour.")]),
   expect: { "SPEAKER 1": HOST, "SPEAKER 2": null } });
 
 /* ---------------- N. who opens the show ---------------- */
@@ -916,15 +919,15 @@ const intro = (key, name, turn, quote) => ({ voices: [{ label: key, name, eviden
 const selfId = (key, name, turn, quote) => ({ voices: [{ label: key, name, evidence: [{ kind: "self_identification", turn, quote }] }], unnamed: [] });
 const byId = id => S.find(s => s.id === id);
 for (const [id, model] of [
-  ["K6", selfId("SPEAKER 2", GUEST, 1, "Hi Walt, this is Marcus Delacroix")],
+  ["K6", plus(selfId("SPEAKER 2", GUEST, 1, "Hi Walt, this is Marcus Delacroix"), [opens("SPEAKER 1", HOST, "Welcome to the Straight Talk Hour.")])],
   ["G2", selfId("SPEAKER 2", "Anne-Marie Duval", 1, "Hi, I'm Anne-Marie Duval, and I run the lab")],
   ["G3", selfId("SPEAKER 2", "Émile Durand", 1, "Hello, I'm Émile Durand, and I make wine in Burgundy")],
   ["G3c", selfId("SPEAKER 2", "Łukasz Nowak", 1, "Hi, I'm Łukasz Nowak, and I build bridges")],
   ["G4", selfId("SPEAKER 2", "R. J. Okafor", 1, "My name is R. J. Okafor, and I teach economics")],
-  ["G5", selfId("SPEAKER 3", "Jane Holloway", 3, "Hello, I'm Senator Jane Holloway, and I chair the committee")],
-  ["G6", intro("SPEAKER 2", GUEST, 0, "JOINING US NOW, MARCUS DELACROIX")],
+  ["G5", plus(selfId("SPEAKER 3", "Jane Holloway", 3, "Hello, I'm Senator Jane Holloway, and I chair the committee"), [{ label: "SPEAKER 2", name: "Ruth Okonkwo", evidence: [{ kind: "introduced", turn: 0, quote: "Joining us now, Dr. Ruth Okonkwo." }] }], [unnamed("SPEAKER 1", "the host never says a name")])],
+  ["G6", plus(intro("SPEAKER 2", GUEST, 0, "JOINING US NOW, MARCUS DELACROIX"), [opens("SPEAKER 1", HOST, "WELCOME TO THE STRAIGHT TALK HOUR.")])],
   ["D3", intro("SPEAKER 2", "Dana Reyes", 0, "Joining me now from New York, Dana Reyes")],
-  ["B6", intro("SPEAKER 2", GUEST, 0, "Marcus Delacroix joins us now")],
+  ["B6", plus(intro("SPEAKER 2", GUEST, 0, "Marcus Delacroix joins us now"), [opens("SPEAKER 1", HOST, "Welcome to the Straight Talk Hour.")])],
   ["K4", selfId("SPEAKER 1", "Dana Reyes", 0, "Hey everybody, it's Dana Reyes")],
 ]) { const b = byId(id); add(Object.assign({}, b, { id: id + "m", title: b.title + " — WITH a correct model clue", model: () => model })); }
 

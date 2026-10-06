@@ -94,9 +94,10 @@ function createMockAI() {
         const n = ((p.split("\nSegments:\n")[1] || "").match(/^\[\d+\]/gm) || []).length;
         data = { verdicts: Array.from({ length: n }, (_, i) => ({ segment: i, agree: true, reason: "MOCK" })), names: [] };
       } else if (p.startsWith("Who is each voice in this conversation?")) {
-        // fixture: no clues of its own; the app's own reading of the words and the listing decides. The real model quotes
-        // the words that show who each voice is, and every quotation is checked before it counts.
-        data = { voices: [], unnamed: [] };
+        // fixture: the mock reads nothing and says so ("mock": "app"); identify.js then lets the app's own reading of the
+        // words and the listing stand in for a model's, for the tests and the pictures only (0.14.3). A real model must
+        // account for every voice itself, and an answer that does not is asked for again and never filled in by the app.
+        data = { voices: [], unnamed: [], mock: "app" };
       } else if (p.startsWith("Correct a reading.")) {
         // fixture: each named field gets " (MOCK corrected)" appended; nothing else changes
         let reading = {}; try { reading = JSON.parse((p.split("\n\nREADING:\n")[1] || "").split("\n\nPROBLEMS:\n")[0]); } catch (e) {}

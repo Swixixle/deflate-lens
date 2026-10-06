@@ -255,27 +255,37 @@ test("a recording that never identifies anyone keeps consistent numbered labels,
 /* ---------- the model's clues ---------- */
 test("the model's clues count only after the same checks; an invented name, a misplaced quote and an unreadable answer change nothing they should not", async t => {
   const caller = SAID.slice(0, 10).concat([[1, "Let's go to the phones. Ruth is calling from Dayton. Ruth, go ahead."], [4, "Hi Walt. I work at one of those mills, and we did hire again this year, but the overtime is gone."], [1, "Thank you, Ruth."]]).concat(SAID.slice(12));
+  // (every voice accounted for, as the model is asked to since 0.14.3: the host by the show it opens, and the flawed clues
+  // this test is about)
   const ai = scriptedAI({ identify: p => ({ voices: [
+    { label: "SPEAKER 2", name: HOST, evidence: [{ kind: "hosts_show", turn: Number(/\[(\d+)\] SPEAKER 2: Good evening and welcome/.exec(p)[1]), quote: "Good evening and welcome to the Straight Talk Hour." }] },
     { label: "SPEAKER 5", name: "Ruth", evidence: [{ kind: "addressed", turn: Number(/\[(\d+)\] SPEAKER 2: Let's go to the phones/.exec(p)[1]), quote: "Ruth, go ahead." }] },
     { label: "SPEAKER 1", name: "Roberta Sandoval", evidence: [{ kind: "self_identification", turn: 0, quote: "this is the Straight Talk Hour" }] },
     { label: "SPEAKER 3", name: "Marcus Delacroix Jr", evidence: [{ kind: "introduced", turn: 2, quote: "Joining us now from Washington, Marcus Delacroix, former trade adviser" }] },
-  ], unnamed: [{ label: "SPEAKER 1", why: "an announcer reads the show's opening" }] }) });
+  ], unnamed: [{ label: "SPEAKER 4", why: "reads an advertisement" }] }) });
   const f = await server(t, { ai, fetch: chainFetch(caller), env: { DEEPGRAM_API_KEY: KEY, TRANSCRIBE_PREFER: "cloud" } });
   const b = await fromLink(f, APPLE_LINK);
   const id = b.run.provenance.identification, ev = id.evidence.filter(e => e.source === "model");
   assert.equal(nameOf(b, "SPEAKER 3"), GUEST, "“Jr” is not in the words or the listing: only the part the words give is used");
+  assert.equal(nameOf(b, "SPEAKER 2"), HOST);
   assert.equal(nameOf(b, "SPEAKER 1"), "Speaker 1", "an invented name with a quote that names no one is refused");
   assert.match(ev.find(e => e.key === "SPEAKER 1").why, /do not name this person/);
   assert.match(id.unnamed.find(u => u.key === "SPEAKER 1").why, /speaks only briefly/);
   // one call by first name, supporting only: not enough for a name on its own
   assert.equal(nameOf(b, "SPEAKER 5"), "Speaker 5");
   assert.match(id.unnamed.find(u => u.key === "SPEAKER 5").why, /^Only one weak clue points to a name \(Ruth: called by name once just before answering\), which is not enough on its own\.$/);
-  // an unreadable answer: the app's own reading of the words decides, and the reading goes on
-  const g = await server(t, { ai: scriptedAI({ identify: () => ({ throw: true }) }), fetch: chainFetch(SAID), env: { DEEPGRAM_API_KEY: KEY, TRANSCRIBE_PREFER: "cloud" } });
+  // an answer that cannot be read, twice (0.14.3): asked once more, then every voice keeps its number with the reason, the
+  // app's own reading never stands in for the model's, and the reading goes on
+  const unreadableAI = scriptedAI({ identify: () => ({ throw: true }) });
+  const g = await server(t, { ai: unreadableAI, fetch: chainFetch(SAID), env: { DEEPGRAM_API_KEY: KEY, TRANSCRIBE_PREFER: "cloud" } });
   const gb = await fromLink(g, APPLE_LINK);
-  assert.equal(nameOf(gb, "SPEAKER 2"), HOST); assert.equal(nameOf(gb, "SPEAKER 3"), GUEST);
-  assert.match(gb.run.provenance.identification.method, /could not be read/);
-  assert.ok(gb.passages.every(p => p.readingGate.status === "ready"));
+  assert.equal(unreadableAI.prompts.filter(x => x.startsWith("Who is each voice in this conversation?")).length, 2, "one repair, no more");
+  assert.equal(nameOf(gb, "SPEAKER 2"), "Speaker 2"); assert.equal(nameOf(gb, "SPEAKER 3"), "Speaker 3");
+  const gid = gb.run.provenance.identification;
+  assert.match(gid.method, /could not be read/);
+  assert.equal(gid.unnamed.find(u => u.key === "SPEAKER 3").why, "Asked twice, the model gave no usable decision for this voice: its answers could not be read. It keeps its number; the app does not name a voice on its own reading alone.");
+  assert.deepEqual(gid.answerChecks.map(c => c.attempt), [1, 2]);
+  assert.ok(gb.passages.length && gb.passages.every(p => p.readingGate.status === "ready"));
 });
 
 /* ---------- a person's names ---------- */
@@ -467,7 +477,8 @@ async function identifyFully(lines, listing, model) {
     import: { showInfo: { name: listing.show || "", author: listing.showAuthor || "", persons: [] }, episodeInfo: { title: listing.episodeTitle || "", description: "", persons: [] } } };
   const store = { bundle: async () => ({ run, transcript, attrSig: "a0-0" }), captureCallBasis: async () => ({}), recordCall: async () => {} };
   const ai = model ? { kind: "mock", model: "scripted", mock: true, sample: async () => { const data = model(); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
-  const out = await I.identifySpeakers({ ai, store, id: run.id });
+  // (with no model's answer, the app's own reading alone: in a reading it only checks and supports the model's, 0.14.3)
+  const out = ai ? await I.identifySpeakers({ ai, store, id: run.id }) : await I.appReading({ store, id: run.id });
   return { names: Object.fromEntries(out.speakers.map(s => [s.key, (out.record.decisions.find(d => d.key === s.key) || {}).name || null])), record: out.record };
 }
 test("adversarial: what is said about someone is not who is speaking (a quoted ad, a teaser, last week's guest, a host away, a rhetorical call, a dropped line)", () => {
