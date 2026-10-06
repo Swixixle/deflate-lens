@@ -19,6 +19,7 @@ const { APPLE_LINK, KEY, chainFetch, scriptedAI, server, fromLink, nameOf } = re
 const set7 = require("./fixtures/identify-scenarios-7"), set9 = require("./fixtures/identify-scenarios-9");
 const answers9 = require("./fixtures/identify-answers-9.json");
 const { HOST, PRIEST, LP } = require("./fixtures/identify-scenarios-3");
+const { isConfirm, confirmAll } = require("./fixtures/confirm");
 
 const KEEPS = ". It keeps its number; the app does not name a voice on its own reading alone.";
 const twice = problem => "Asked twice, the model gave no usable decision for this voice: " + problem + KEEPS;
@@ -57,7 +58,7 @@ test("the review's case: the stand-in named as the absent host on an invented qu
   assert.equal(asked.length, 2);
   assert.ok(asked[1].includes("\n- It named SPEAKER 1 (Dale Whitcomb), but none of the words it quoted for that is where it says: turn 0, “I'm Dale Whitcomb.”: the quoted words are not in that turn. Quote the exact words, from the turn they are in, that show who this voice is, or leave it unnamed.\n"), asked[1].slice(asked[0].length));
   const id = b.run.provenance.identification;
-  assert.equal(id.version, 4);
+  assert.equal(id.version, I.IDENTIFY_VERSION);
   assert.deepEqual(id.answerChecks.map(c => c.attempt), [1, 2]);
   assert.equal(nameOf(b, "SPEAKER 1"), "Speaker 1"); assert.equal(nameOf(b, "SPEAKER 2"), "Speaker 2");
   assert.deepEqual(id.decisions, []);
@@ -90,7 +91,8 @@ async function step(lines, L, answers) {
     import: { showInfo: { name: L.show || "", author: L.showAuthor || "", artist: L.showArtist || "", persons: L.showPersons || [] }, episodeInfo: { title: L.episodeTitle || "", description: L.description || "", persons: L.episodePersons || [] } } };
   const store = { bundle: async () => ({ run, transcript: lines.join("\n"), attrSig: "a0-0" }), captureCallBasis: async () => ({}), recordCall: async () => {} };
   const prompts = [];
-  const ai = { kind: "anthropic", model: "scripted", mock: false, async sample({ prompt }) { prompts.push(prompt); const a = answers[Math.min(prompts.length - 1, answers.length - 1)]; const data = typeof a === "function" ? a(prompt) : a; return { data: JSON.parse(JSON.stringify(data)), text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } };
+  // (the second reading, 0.14.5, by a test stand-in that confirms every name: these tests are about the first reading)
+  const ai = { kind: "anthropic", model: "scripted", mock: false, async sample({ prompt }) { if (isConfirm(prompt)) { const c = confirmAll(prompt); return { data: c, text: JSON.stringify(c), model: "scripted", requestId: "c", stopReason: "end_turn", usage: null }; } prompts.push(prompt); const a = answers[Math.min(prompts.length - 1, answers.length - 1)]; const data = typeof a === "function" ? a(prompt) : a; return { data: JSON.parse(JSON.stringify(data)), text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } };
   const out = await I.identifySpeakers({ ai, store, id: run.id });
   return { record: out.record, prompts, name: k => (out.record.decisions.find(d => d.key === k) || {}).name || null, why: k => (out.record.unnamed.find(u => u.key === k) || {}).why };
 }
@@ -176,8 +178,10 @@ test("a saved identification from 0.14.3 whose name was carried by the app's rea
   const b = r => ({ run: r, transcript: "SPEAKER 1: Hello there, friends.\nSPEAKER 2: Hello to you.", attrSig: "a1" });
   const base = { inputHash: "h1", attrSig: "a1", version: 3, decisions: [{ key: "SPEAKER 1", name: DALE, kinds: ["hosts_show"] }], unnamed: [{ key: "SPEAKER 2", why: "x" }] };
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { evidence: [{ key: "SPEAKER 1", source: "model", kind: "self_identification", ok: false }, { key: "SPEAKER 1", source: "app", kind: "hosts_show", ok: true }] })))), true, "the model's words failed; the app's clue carried the name");
-  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { evidence: [{ key: "SPEAKER 1", source: "app+model", kind: "hosts_show", ok: true }] })))), false, "the model's own clue held up");
+  // (the model's own clue held up: not identified again by 0.14.4; since 0.14.5 it is, once, since no second reading
+  // confirmed the name)
+  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { evidence: [{ key: "SPEAKER 1", source: "app+model", kind: "hosts_show", ok: true }] })))), true, "no second reading confirmed the name");
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { decisions: [], unnamed: [{ key: "SPEAKER 1", why: "x" }, { key: "SPEAKER 2", why: "x" }], evidence: [] }), [{ key: "SPEAKER 1", name: "Speaker 1" }, { key: "SPEAKER 2", name: "Speaker 2" }]))), false, "a voice 0.14.3 left numbered stays so");
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: I.IDENTIFY_VERSION, evidence: [{ key: "SPEAKER 1", source: "app", ok: true }] })))), false, "this version's record: once per text and labels");
-  assert.equal(I.IDENTIFY_VERSION, 4);
+  assert.ok(I.IDENTIFY_VERSION >= 4);
 });

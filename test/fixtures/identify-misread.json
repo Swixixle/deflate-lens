@@ -1,0 +1,1625 @@
+[
+ {
+  "case": "7-A3-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A3",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 2,
+       "quote": "You'd have hated every minute of it, Marcus."
+      },
+      {
+       "kind": "addressed",
+       "turn": 4,
+       "quote": "You saw all of it coming before anybody else did, Marcus."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "host's opening welcome"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "Tonight we look back at thirty years of the Gary Works mill and the man who ran it. My guest tonight worked the east line for twenty of those years.",
+     "why": "guest is a line worker, not the man who ran the mill; Marcus is a shared first name"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A4-SPEAKER1-misread",
+  "set": 7,
+  "scenario": "A4",
+  "voice": "SPEAKER 1",
+  "wrongName": "Dale Whitcomb",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show."
+      }
+     ]
+    }
+   ],
+   "unnamed": [
+    {
+     "label": "SPEAKER 2",
+     "why": "Runs the union hall in Gary, but neither the listing nor the words give a name."
+    }
+   ]
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "The man whose name is on the door is at his daughter's wedding in Ohio this week, so I'm minding things until Monday.",
+     "why": "a stand-in minding the show while the man the show is named for is away"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A5-HOST-misread",
+  "set": 7,
+  "scenario": "A5",
+  "voice": "HOST",
+  "wrongName": "Dale Whitcomb",
+  "answer": {
+   "voices": [
+    {
+     "label": "HOST",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "role_label",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show."
+      }
+     ]
+    }
+   ],
+   "unnamed": [
+    {
+     "label": "GUEST",
+     "why": "Runs the union hall in Gary, but neither the listing nor the words give a name."
+    }
+   ]
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "HOST",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "Dale's in Ohio for his daughter's wedding, so I'm driving the show this week.",
+     "why": "stand-in host; Dale is away"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A6-GUEST-misread",
+  "set": 7,
+  "scenario": "A6",
+  "voice": "GUEST",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "HOST",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "role_label",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      },
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "GUEST",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "role_label",
+       "turn": 1,
+       "quote": "Thanks for having me."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "HOST",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as host"
+    },
+    {
+     "label": "GUEST",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "Marcus Delacroix got called to Washington this morning, so we've got his deputy instead.",
+     "why": "Marcus is away; his deputy is sitting in"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A7-SPEAKER1-misread",
+  "set": 7,
+  "scenario": "A7",
+  "voice": "SPEAKER 1",
+  "wrongName": "Dana Reyes",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 2",
+     "name": "Dana Reyes",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 2,
+       "quote": "Thanks for having me, Dana.",
+       "listingQuote": "",
+       "addressee": ""
+      },
+      {
+       "kind": "hosts_show",
+       "turn": 1,
+       "quote": "My guest tonight runs the tenants' union in Gary. Thanks for coming in.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 1",
+     "name": "Dana Reyes",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to Kitchen Table, everybody."
+      }
+     ]
+    }
+   ],
+   "unnamed": [
+    {
+     "label": "SPEAKER 3",
+     "why": "The guest is not named in the listing or the words; only described as running the tenants' union in Gary."
+    }
+   ]
+  },
+  "namedBy0144": false
+ },
+ {
+  "case": "7-A8-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A8",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 4,
+       "quote": "Marcus, did you already know the mill was finished when you said that?"
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show and hosts"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "My guest tonight worked the east line for twenty years.",
+     "why": "live guest is a worker; Marcus is the voice on the 1998 tape"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A9-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A9",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": []
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": false,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as host welcoming a guest"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A10-SPEAKER3-misread",
+  "set": 7,
+  "scenario": "A10",
+  "voice": "SPEAKER 3",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 3",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 0,
+       "quote": "Our guest, Marcus Delacroix, is still looking for a parking spot, so let's start with the news."
+      }
+     ]
+    }
+   ],
+   "unnamed": [
+    {
+     "label": "SPEAKER 2",
+     "why": "Arrives late, but nobody says this voice's name; the host's 'You made it!' names no one, and the turn 0 mention of Marcus Delacroix was of someone who had not arrived."
+    }
+   ]
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as host and nothing says otherwise"
+    },
+    {
+     "label": "SPEAKER 3",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "Our guest, Marcus Delacroix, is still looking for a parking spot, so let's start with the news.",
+     "why": "the guest has not arrived while SPEAKER 3 talks; SPEAKER 2 arrives later saying sorry I'm late"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A11-SPEAKER1-misread",
+  "set": 7,
+  "scenario": "A11",
+  "voice": "SPEAKER 1",
+  "wrongName": "Dale Whitcomb",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show."
+      }
+     ]
+    }
+   ],
+   "unnamed": [
+    {
+     "label": "SPEAKER 2",
+     "why": "The guest is only described as running the union hall in Gary; nobody names the guest and the listing names none."
+    }
+   ]
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "Dale's Buick finally died outside Toledo, so it's me in the chair tonight.",
+     "why": "someone else is filling in for Dale"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A12-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A12",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 2,
+       "quote": "You'd have hated every second of it, Marcus."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as host"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "This was supposed to be Marcus's night. His oldest friend is sitting in that chair instead.",
+     "why": "Marcus is absent; this voice is his oldest friend"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A13-SPEAKER3-misread",
+  "set": 7,
+  "scenario": "A13",
+  "voice": "SPEAKER 3",
+  "wrongName": "Tomas Varga",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      },
+      {
+       "kind": "addressed",
+       "turn": 1,
+       "quote": "Thanks, Dale.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 3",
+     "name": "Tomas Varga",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 0,
+       "quote": "Good to see you back, Father."
+      },
+      {
+       "kind": "addressed",
+       "turn": 4,
+       "quote": "Father, have you ever seen anything like what he describes?"
+      },
+      {
+       "kind": "self_reference",
+       "turn": 5,
+       "quote": "As a priest, I've seen frightened families, but never a rite like that."
+      }
+     ]
+    }
+   ],
+   "unnamed": [
+    {
+     "label": "SPEAKER 2",
+     "why": "Answers the host's welcome to tonight's guest, but nobody says this voice's name or calls it Father, so nothing quoted ties it to the listing's name."
+    }
+   ]
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 1,
+     "quote": "Thanks, Dale.",
+     "why": "next voice calls host Dale after welcome"
+    },
+    {
+     "label": "SPEAKER 3",
+     "verdict": "is_not",
+     "turn": 4,
+     "quote": "Father, have you ever seen anything like what he describes?",
+     "why": "a different priest asked about the guest, who is SPEAKER 2"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A14-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A14",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "self_identification",
+       "turn": 1,
+       "quote": "four and sticks out his hand: I'm Marcus Delacroix, welcome to the mill."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as host"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 1,
+     "quote": "My first morning, this big man in a white hard hat walks right up to me at gate four and sticks out his hand: I'm Marcus Delacroix, welcome to the mill.",
+     "why": "Marcus is the man he met, quoted; speaker is a new hire"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A15-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A15",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "welcome to the Dale Whitcomb show",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "self_identification",
+       "turn": 1,
+       "quote": "gate and sticks out his hand i'm marcus delacroix welcome to the mill and the numbers moved again this month which surprised almost everyone who follows the market"
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "welcome to the Dale Whitcomb show",
+     "why": "Opens the show as host"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 1,
+     "quote": "I'm Marcus Delacroix welcome to the mill",
+     "why": "Quoted greeting from the big man in the hard hat; guest is the new hire recounting it"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A16-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A16",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 4,
+       "quote": "Marcus, how did you do it?"
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show and hosts"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "I'm joined by a woman who worked under him for twenty years.",
+     "why": "the guest is a woman who worked under him; Marcus is only on tape later and spoken of as him"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A18-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A18",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 2,
+       "quote": "You'd have hated every minute of it, Marcus."
+      },
+      {
+       "kind": "addressed",
+       "turn": 4,
+       "quote": "You saw all of it coming before anybody else did, Marcus."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as host"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "His old foreman is here with me tonight.",
+     "why": "introduced as the old foreman of the man who ran the mill; Marcus is the absent subject"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A19-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A19",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 2,
+       "quote": "Thank you, Marcus."
+      },
+      {
+       "kind": "addressed",
+       "turn": 4,
+       "quote": "Thank you for all of it, Marcus."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as host"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "Tonight's guest worked under him for twenty years.",
+     "why": "guest worked under him; the 'he' thanked as Marcus is a third person, the man who ran the mill"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A21-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A21",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 2,
+       "quote": "Marcus is here too — in every brick of it."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as host and nothing says otherwise"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 2,
+     "quote": "Marcus is here too",
+     "why": "Marcus is the man who ran the local, spoken of; the guest is a woman who worked under him"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A23-SPEAKER3-misread",
+  "set": 7,
+  "scenario": "A23",
+  "voice": "SPEAKER 3",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "welcome to the Dale Whitcomb show",
+       "listingQuote": "",
+       "addressee": ""
+      },
+      {
+       "kind": "addressed",
+       "turn": 1,
+       "quote": "thank you dale",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 0,
+       "quote": "joining me now Marcus Delacroix",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 3",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 0,
+       "quote": "welcome to the dale whitcomb show and the numbers moved again this month which surprised almost everyone who follows the market closely joining me now marcus delacroix"
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": false,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 1,
+     "quote": "thank you dale",
+     "why": "next voice thanks Dale right after this voice's welcome"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A24-SPEAKER3-misread",
+  "set": 7,
+  "scenario": "A24",
+  "voice": "SPEAKER 3",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      },
+      {
+       "kind": "addressed",
+       "turn": 1,
+       "quote": "Thanks, Dale.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 0,
+       "quote": "Joining me now, Marcus Delacroix",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 3",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 0,
+       "quote": "Joining me now, Marcus Delacroix, right after the headlines."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": false,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 1,
+     "quote": "Thanks, Dale.",
+     "why": "next voice calls host Dale"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A25-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A25",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      },
+      {
+       "kind": "addressed",
+       "turn": 3,
+       "quote": "Thank you, Dale.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 2,
+       "quote": "This is Marcus Delacroix."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 3,
+     "quote": "Thank you, Dale.",
+     "why": "called Dale by the next voice"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 3,
+     "quote": "We hung it the week he retired, and the whole local came out.",
+     "why": "Marcus is the portrait's subject, spoken of as he"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A28-SPEAKER3-misread",
+  "set": 7,
+  "scenario": "A28",
+  "voice": "SPEAKER 3",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 2,
+       "quote": "Marcus, can you believe nobody died?",
+       "listingQuote": "",
+       "addressee": ""
+      },
+      {
+       "kind": "addressed",
+       "turn": 5,
+       "quote": "Marcus, how did the families get by?",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 3",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 2,
+       "quote": "Marcus, can you believe nobody died?"
+      },
+      {
+       "kind": "addressed",
+       "turn": 5,
+       "quote": "Marcus, how did the families get by?"
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": false,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show and hosts; the co-host is a separate voice"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A29-SPEAKER3-misread",
+  "set": 7,
+  "scenario": "A29",
+  "voice": "SPEAKER 3",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      },
+      {
+       "kind": "addresses_other",
+       "turn": 2,
+       "quote": "Marcus, what did the closing do to the east side?",
+       "listingQuote": "",
+       "addressee": "Marcus"
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 2,
+       "quote": "Marcus, what did the closing do to the east side?",
+       "listingQuote": "",
+       "addressee": ""
+      },
+      {
+       "kind": "addressed",
+       "turn": 5,
+       "quote": "Marcus, who bought the land?",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 3",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 2,
+       "quote": "Marcus, what did the closing do to the east side?"
+      },
+      {
+       "kind": "addressed",
+       "turn": 5,
+       "quote": "Marcus, who bought the land?"
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": false,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as host; the co-host is spoken of as someone else"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A35-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A35",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 4,
+       "quote": "Marcus, you owed those men more than that, didn't you?"
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as its host; nothing says otherwise"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 2,
+     "quote": "Here's the man who ran the place, the night it closed.",
+     "why": "Marcus is the voice on the tape; the live guest is someone else"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A36-SPEAKER2-misread",
+  "set": 7,
+  "scenario": "A36",
+  "voice": "SPEAKER 2",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to the Dale Whitcomb Show.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 2,
+       "quote": "Marcus Delacroix is here with us tonight — on tape, from 1998."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to the Dale Whitcomb Show.",
+     "why": "opens the show as host"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is_not",
+     "turn": 2,
+     "quote": "Marcus Delacroix is here with us tonight — on tape, from 1998.",
+     "why": "Marcus is the voice on the 1998 tape; Speaker 2 is the reporter guest who thanks them for playing it"
+    }
+   ]
+  }
+ },
+ {
+  "case": "7-A37-SPEAKER3-misread",
+  "set": 7,
+  "scenario": "A37",
+  "voice": "SPEAKER 3",
+  "wrongName": "Marcus Delacroix",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Dale Whitcomb",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "welcome to the Dale Whitcomb show",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 3",
+     "name": "Marcus Delacroix",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 0,
+       "quote": "everyone who follows the market closely our guest marcus delacroix is still looking for a parking spot so let's start with the news"
+      }
+     ]
+    }
+   ],
+   "unnamed": [
+    {
+     "label": "SPEAKER 2",
+     "why": "Arrives late, but nobody says this voice's name; the host's 'you made it' names no one, and the earlier mention of Marcus Delacroix was of someone who had not arrived."
+    }
+   ]
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "welcome to the Dale Whitcomb show",
+     "why": "opens the show as host"
+    },
+    {
+     "label": "SPEAKER 3",
+     "verdict": "is_not",
+     "turn": 0,
+     "quote": "our guest Marcus Delacroix is still looking for a parking spot so let's start with the news",
+     "why": "Marcus has not arrived yet; he comes in later as another voice saying 'sorry I'm late'"
+    }
+   ]
+  }
+ },
+ {
+  "case": "8-R9-SPEAKER3-misread",
+  "set": 8,
+  "scenario": "R9",
+  "voice": "SPEAKER 3",
+  "wrongName": "Odette",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Priya Raman",
+     "evidence": [
+      {
+       "kind": "self_identification",
+       "turn": 0,
+       "quote": "I'm Priya Raman",
+       "listingQuote": "",
+       "addressee": ""
+      },
+      {
+       "kind": "addresses_other",
+       "turn": 6,
+       "quote": "Jonah, that is literally what you did last weekend.",
+       "listingQuote": "",
+       "addressee": "Jonah"
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Jonah Feld",
+     "evidence": [
+      {
+       "kind": "addressed",
+       "turn": 6,
+       "quote": "Jonah, that is literally what you did last weekend.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 3",
+     "name": "Odette",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 2,
+       "quote": "Odette, welcome."
+      },
+      {
+       "kind": "addressed",
+       "turn": 2,
+       "quote": "Odette, welcome."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "I'm Priya Raman, here as always with Jonah Feld.",
+     "why": "names itself"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is",
+     "turn": 6,
+     "quote": "Jonah, that is literally what you did last weekend.",
+     "why": "addressed as Jonah and SPEAKER 2 answers; SPEAKER 1 named Jonah as the other host"
+    },
+    {
+     "label": "SPEAKER 3",
+     "verdict": "is",
+     "turn": 2,
+     "quote": "Odette, welcome.",
+     "why": "welcomed by name just before answering as the guest"
+    }
+   ]
+  }
+ },
+ {
+  "case": "10-K10-SPEAKER2-misread",
+  "set": 10,
+  "scenario": "K10",
+  "voice": "SPEAKER 2",
+  "wrongName": "Magdalena Robel",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Ezekiel Brannigan",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Welcome to The Glass Hour. My guest left a career in accounting at fifty to restore stained glass windows. Please welcome Magdalena Robel.",
+       "listingQuote": "",
+       "addressee": ""
+      }
+     ]
+    },
+    {
+     "label": "SPEAKER 2",
+     "name": "Magdalena Robel",
+     "evidence": [
+      {
+       "kind": "introduced",
+       "turn": 0,
+       "quote": "Please welcome Magdalena Robel."
+      }
+     ]
+    }
+   ],
+   "unnamed": []
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is",
+     "turn": 0,
+     "quote": "Welcome to The Glass Hour.",
+     "why": "Opens the show as host; listing names Ezekiel as author and host"
+    },
+    {
+     "label": "SPEAKER 2",
+     "verdict": "is",
+     "turn": 1,
+     "quote": "Thank you. And it's Vroo-bel, actually. The W sounds like a V.",
+     "why": "The welcomed guest answers and owns the name; given spelling Robel is a mis-transcription of Wrobel"
+    }
+   ]
+  }
+ },
+ {
+  "case": "10-L17-SPEAKER1-misread",
+  "set": 10,
+  "scenario": "L17",
+  "voice": "SPEAKER 1",
+  "wrongName": "Harlan Ellsworth",
+  "answer": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "name": "Harlan Ellsworth",
+     "evidence": [
+      {
+       "kind": "hosts_show",
+       "turn": 0,
+       "quote": "Good morning, this is The Ellsworth Almanac."
+      }
+     ]
+    }
+   ],
+   "unnamed": [
+    {
+     "label": "SPEAKER 2",
+     "why": "Guest is described only as a woman who has grown persimmons for thirty years; neither the listing ('a local grower') nor the words give her name, and she speaks of Harlan in the third person."
+    }
+   ]
+  },
+  "namedBy0144": true,
+  "confirm": {
+   "voices": [
+    {
+     "label": "SPEAKER 1",
+     "verdict": "is_not",
+     "turn": 3,
+     "quote": "Harlan has been arguing with me about it at the feed store since before you were born, June.",
+     "why": "Harlan is the father who handed over the show; this voice is June"
+    }
+   ]
+  }
+ }
+]

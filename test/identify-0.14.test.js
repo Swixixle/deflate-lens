@@ -15,6 +15,7 @@ const Q = require("../server/quality");
 const I = require("../server/identify");
 const S = require("../server/structure");
 const { page, visible } = require("./page-harness");
+const { isConfirm, confirmAll } = require("./fixtures/confirm");
 
 /* the invented show, as the chain finds it, and the helpers the 0.14 tests share (test/fixtures/straight-talk.js) */
 const { SHOW, HOST, GUEST, EPISODE, AUDIO, APPLE_LINK, FEED, SAID, DEEPGRAM, KEY, chainFetch, noYtdlp, scriptedAI, server, fromLink, nameOf, assertNamed } = require("./fixtures/straight-talk");
@@ -490,7 +491,8 @@ async function identifyFully(lines, listing, model) {
   const run = { id: "run_adv", kind: "transcript", parseMode: "text", input: { sha256: "h" }, speakers: [], provenance: {}, title: "", sourceLabel: "",
     import: { showInfo: { name: listing.show || "", author: listing.showAuthor || "", persons: [] }, episodeInfo: { title: listing.episodeTitle || "", description: "", persons: [] } } };
   const store = { bundle: async () => ({ run, transcript, attrSig: "a0-0" }), captureCallBasis: async () => ({}), recordCall: async () => {} };
-  const ai = model ? { kind: "mock", model: "scripted", mock: true, sample: async () => { const data = model(); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
+  // (the second reading, 0.14.5, by a test stand-in that confirms every name: these tests are about the first)
+  const ai = model ? { kind: "mock", model: "scripted", mock: true, sample: async ({ prompt }) => { const data = isConfirm(prompt) ? confirmAll(prompt) : model(); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
   // (with no model's answer, the app's own reading alone: in a reading it only checks and supports the model's, 0.14.3)
   const out = ai ? await I.identifySpeakers({ ai, store, id: run.id }) : await I.appReading({ store, id: run.id });
   return { names: Object.fromEntries(out.speakers.map(s => [s.key, (out.record.decisions.find(d => d.key === s.key) || {}).name || null])), record: out.record };

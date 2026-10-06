@@ -75,6 +75,8 @@ function scriptedAI(opts) {
       return answer({ clips: [], ads });
     }
     if (opts && opts.identify && p.startsWith("Who is each voice in this conversation?")) { const out = opts.identify(p); if (out && out.throw) { const e = new Error("bad json"); e.code = "invalid_json"; throw e; } return answer(out); }
+    // (the second reading, 0.14.5: scripted when a test gives one; else the mock's, which the record labels as such)
+    if (opts && opts.confirm && p.startsWith("Check the names given to the voices.")) return answer(opts.confirm(p));
     return mock.sample(args);
   } });
 }

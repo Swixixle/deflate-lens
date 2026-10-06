@@ -98,6 +98,10 @@ function createMockAI() {
         // words and the listing stand in for a model's, for the tests and the pictures only (0.14.3). A real model must
         // account for every voice itself, and an answer that does not is asked for again and never filled in by the app.
         data = { voices: [], unnamed: [], mock: "app" };
+      } else if (p.startsWith("Check the names given to the voices.")) {
+        // fixture: the mock reads nothing and says so ("mock": "confirm"); identify.js lets that stand for a confirmation
+        // for the mock provider only, and the record says so (0.14.5). A real model must answer for each voice itself.
+        data = { voices: [], mock: "confirm" };
       } else if (p.startsWith("Correct a reading.")) {
         // fixture: each named field gets " (MOCK corrected)" appended; nothing else changes
         let reading = {}; try { reading = JSON.parse((p.split("\n\nREADING:\n")[1] || "").split("\n\nPROBLEMS:\n")[0]); } catch (e) {}

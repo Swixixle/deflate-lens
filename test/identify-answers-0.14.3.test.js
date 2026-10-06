@@ -12,6 +12,7 @@ const assert = require("node:assert/strict");
 const I = require("../server/identify");
 const { pad } = require("./fixtures/identify-pad");
 const { HOST, GUEST, APPLE_LINK, SAID, KEY, chainFetch, scriptedAI, server, fromLink, nameOf, assertNamed } = require("./fixtures/straight-talk");
+const { isConfirm, confirmAll } = require("./fixtures/confirm");
 
 const KEEPS = ". It keeps its number; the app does not name a voice on its own reading alone.";
 const twice = problem => "Asked twice, the model gave no usable decision for this voice: " + problem + KEEPS;
@@ -88,6 +89,8 @@ async function step(answers, opts) {
   const store = { bundle: async () => ({ run, transcript: lines.join("\n"), attrSig: "a0-0" }), captureCallBasis: async () => ({}), recordCall: async (id, c) => { calls.push(c); } };
   const prompts = [];
   const ai = { kind: opts.kind || "anthropic", model: "scripted", mock: !!opts.mock, async sample({ prompt }) {
+    // (the second reading, 0.14.5: scripted where a test is about it, else a test stand-in that confirms every name)
+    if (isConfirm(prompt)) { const c = opts.confirm ? opts.confirm(prompt) : confirmAll(prompt); return { data: JSON.parse(JSON.stringify(c)), text: JSON.stringify(c), model: "scripted", requestId: "c", stopReason: "end_turn", usage: null }; }
     prompts.push(prompt);
     const a = answers[Math.min(prompts.length - 1, answers.length - 1)], data = typeof a === "function" ? a(prompt) : a;
     if (data && data.fail) throw Object.assign(new Error("scripted " + data.fail), { code: data.fail });
@@ -278,9 +281,14 @@ test("a saved identification whose names came from the app's reading alone is id
   // 0.14.2: names with no clue of the model's behind them, or an answer that could not be read twice
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: [{ key: "SPEAKER 1", source: "app", ok: true }, { key: "SPEAKER 2", source: "model", ok: true }] })))), true, "one name from the app alone");
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: modelEv, modelWhy: "The model's answer could not be read…" })))), true);
-  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: modelEv })))), false, "every name with the model's clue behind it");
-  // a guest the listing names, paired by both readers, and a name from the words when the speakers were worked out
-  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: [], decisions: [{ key: "SPEAKER 1", name: "Ana Ferreira", kinds: ["listing"] }, { key: "SPEAKER 2", name: "Dana Reyes", kinds: ["words"] }] })))), false);
+  // (every name with the model's clue behind it: not identified again by 0.14.3 or 0.14.4; since 0.14.5 it is, once, since
+  // no second reading confirmed its names; a record whose names a second reading confirmed is not)
+  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: modelEv })))), true, "no second reading confirmed these names");
+  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: I.IDENTIFY_VERSION, evidence: modelEv, decisions: base.decisions.map(d => Object.assign({ confirmed: { turn: 0, quote: "x" } }, d)) })))), false);
+  // a guest the listing names, paired by both readers: not identified again by 0.14.3 or 0.14.4; since 0.14.5 it is, never
+  // confirmed by a second reading. A name from the words when the speakers were worked out (two readings of its own) is not
+  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: [], decisions: [{ key: "SPEAKER 1", name: "Ana Ferreira", kinds: ["listing"] }, { key: "SPEAKER 2", name: "Dana Reyes", kinds: ["words"] }] })))), true);
+  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: [], decisions: [{ key: "SPEAKER 2", name: "Dana Reyes", kinds: ["words"] }] }), [{ key: "SPEAKER 1", name: "Speaker 1" }, { key: "SPEAKER 2", name: "Dana Reyes" }]))), false);
   // 0.14.0 and 0.14.1 (no version): names the app gave on its own are identified again too
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { evidence: [{ key: "SPEAKER 1", source: "app", ok: true }, { key: "SPEAKER 2", source: "app", ok: true }] })))), true);
   // this version's record: once per text and labels, even with voices left numbered

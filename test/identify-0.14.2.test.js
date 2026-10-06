@@ -12,6 +12,7 @@ const assert = require("node:assert/strict");
 const I = require("../server/identify");
 const { pad } = require("./fixtures/identify-pad");
 const { HOST, PRIEST, LP } = require("./fixtures/identify-scenarios-3");
+const { isConfirm, confirmAll } = require("./fixtures/confirm");
 
 const listing = (show, author, title, notes, artist) => I.listingCandidates(I.listingOf({ title: "", import: { showInfo: { name: show, author, artist: artist || "", persons: [] }, episodeInfo: { title, description: notes || "", persons: [] } } }));
 /* The whole step, as preparation runs it (a fake store; the model's answer scripted when given). With no model, the app's
@@ -22,7 +23,8 @@ async function identify(lines, L, model, opts) {
     import: { showInfo: { name: L.show || "", author: L.showAuthor || "", artist: L.showArtist || "", persons: [] }, episodeInfo: { title: L.episodeTitle || "", description: L.description || "", persons: [] } } };
   const store = { bundle: async () => ({ run, transcript: lines.join("\n"), attrSig: "a0-0" }), captureCallBasis: async () => ({}), recordCall: async () => {} };
   const prompts = [];
-  const ai = model ? { kind: "mock", model: "scripted", mock: true, sample: async ({ prompt }) => { prompts.push(prompt); const data = model(prompt); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
+  // (the second reading, 0.14.5, by a test stand-in that confirms every name: these tests are about the first reading)
+  const ai = model ? { kind: "mock", model: "scripted", mock: true, sample: async ({ prompt }) => { if (isConfirm(prompt)) { const c = confirmAll(prompt); return { data: c, text: JSON.stringify(c), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } prompts.push(prompt); const data = model(prompt); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
   const out = ai || (opts && opts.production) ? await I.identifySpeakers({ ai, store, id: run.id }) : await I.appReading({ store, id: run.id });
   const name = k => (out.record.decisions.find(d => d.key === k) || {}).name || null;
   return { out, record: out.record, name, prompts };

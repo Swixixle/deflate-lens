@@ -17,6 +17,10 @@ const seventh = require("./fixtures/identify-scenarios-7");
 const seventhAnswers = require("./fixtures/identify-answers-7.json");
 // (three black-box reviews written without reading the implementation, each with a model's recorded answers)
 const blind = [8, 9, 10].map(n => ({ n, set: require("./fixtures/identify-scenarios-" + n), answers: require("./fixtures/identify-answers-" + n + ".json") }));
+// (0.14.5: every name a reading settles is put to a second reading; its answer for each scenario, recorded once from the
+// same kind of stand-in model, given each exact prompt blind: identify-confirm.json, keyed "<set>-<scenario>")
+const confirmations = require("./fixtures/identify-confirm.json");
+const { isConfirm } = require("./fixtures/confirm");
 
 /* Misses the app accepts, because the words do not settle them. */
 const ACCEPTED = {
@@ -25,7 +29,7 @@ const ACCEPTED = {
 };
 const BLANK = { show: "", showAuthor: "", showArtist: "", showPersons: [], channel: false, episodeTitle: "", description: "", episodeAuthor: "", episodePersons: [], runTitle: "", sourceLabel: "" };
 
-async function identify(sc, recorded) {
+async function identify(sc, recorded, confirm) {
   const L = Object.assign({}, BLANK, sc.L);
   const transcript = sc.lines.join("\n");
   const run = { id: "run_adv", kind: "transcript", parseMode: "text", input: { sha256: "h" }, speakers: [], provenance: {}, title: L.runTitle, sourceLabel: L.sourceLabel,
@@ -33,7 +37,7 @@ async function identify(sc, recorded) {
   const store = { bundle: async () => ({ run, transcript, attrSig: "a0-0" }), captureCallBasis: async () => ({}), recordCall: async () => {} };
   // (the scenario's own scripted model first; else a model's recorded answer to the exact prompt, when the set has one)
   const answer = sc.model ? sc.model : recorded ? () => JSON.parse(JSON.stringify(recorded)) : null;
-  const ai = answer ? { kind: "mock", model: "scripted", mock: true, sample: async () => { const data = answer(); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
+  const ai = answer ? { kind: "mock", model: "scripted", mock: true, sample: async ({ prompt }) => { const data = isConfirm(prompt) ? JSON.parse(JSON.stringify(confirm || {})) : answer(); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
   // (with a model's answer, the step as a reading runs it; with none, the app's own reading alone, which in a reading only
   // checks and supports the model's and never names anyone by itself, 0.14.3)
   const out = ai ? await I.identifySpeakers({ ai, store, id: run.id }) : await I.appReading({ store, id: run.id });
@@ -48,11 +52,11 @@ function judge(exp, got) {
   if (exp.oneOf) return exp.oneOf.includes(got) ? "ok" : got === null ? "MISSED" : "WRONG";
   throw new Error("unknown expectation " + JSON.stringify(exp));
 }
-async function runAll(set, answers, only) {
+async function runAll(set, answers, only, n) {
   const wrong = [], missed = [];
   for (const sc of set.S) {
     if (only && !only(sc)) continue;
-    const names = await identify(sc, answers ? answers[sc.id] : null);
+    const names = await identify(sc, answers ? answers[sc.id] : null, n ? confirmations[n + "-" + sc.id] : null);
     for (const [key, exp] of Object.entries(sc.expect)) {
       const v = judge(exp, names[key] === undefined ? null : names[key]);
       const line = sc.id + " " + key + ": got " + JSON.stringify(names[key]) + ", expected " + JSON.stringify(exp) + " — " + sc.title;
@@ -63,37 +67,37 @@ async function runAll(set, answers, only) {
   return { wrong, missed, count: set.S.length };
 }
 test("adversarial scenarios, first set: no wrong name, and no miss beyond the accepted ones", async () => {
-  const r = await runAll(first);
+  const r = await runAll(first, null, null, 1);
   assert.ok(r.count >= 140, "the whole set ran: " + r.count);
   assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
   assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
 });
 test("adversarial scenarios, second set (teasers, descriptions, callers, captions, all capitals, model clues, listings): no wrong name, and no miss beyond the accepted ones", async () => {
-  const r = await runAll(second);
+  const r = await runAll(second, null, null, 2);
   assert.ok(r.count >= 70, "the whole set ran: " + r.count);
   assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
   assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
 });
 test("adversarial scenarios, third set (0.14.2: titles and callings, hosts named by the show and its publisher, a host away, two priests, advertisements and clips, captions): no wrong name, and no miss beyond the accepted ones", async () => {
-  const r = await runAll(third);
+  const r = await runAll(third, null, null, 3);
   assert.ok(r.count >= 20, "the whole set ran: " + r.count);
   assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
   assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
 });
 test("adversarial scenarios, fourth set (0.14.2, from an independent review: shared titles, callings not the speaker's own, the dead, the absent and the late, callers, names that are not people, openers who do not host): no wrong name, and no miss beyond the accepted ones", async () => {
-  const r = await runAll(fourth);
+  const r = await runAll(fourth, null, null, 4);
   assert.ok(r.count >= 70, "the whole set ran: " + r.count);
   assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
   assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
 });
 test("adversarial scenarios, fifth set (0.14.2, a second independent review: absent subjects, reported speech, prayers, hand-overs, odd callings, co-hosts, the model pushing a mention, voices taken for the host, absence words, captions): no wrong name, and no miss beyond the accepted ones", async () => {
-  const r = await runAll(fifth);
+  const r = await runAll(fifth, null, null, 5);
   assert.ok(r.count >= 80, "the whole set ran: " + r.count);
   assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
   assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
 });
 test("adversarial scenarios, sixth set (0.14.2, a third independent review: rewordings of the fifth set's traps, and 28 ordinary openings that must keep their names): no wrong name, and no miss beyond the accepted ones", async () => {
-  const r = await runAll(sixth);
+  const r = await runAll(sixth, null, null, 6);
   assert.ok(r.count >= 72, "the whole set ran: " + r.count);
   assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
   assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
@@ -103,7 +107,7 @@ test("adversarial scenarios, seventh set (0.14.2, a fourth independent review), 
   // the attacks reworded to slip past the app's lists of words (the people a listing names who are not in the
   // conversation, stand-ins, stories told, callers and co-hosts who share a guest's first name)
   assert.equal(Object.keys(seventhAnswers).length, seventh.S.length, "an answer for every scenario");
-  const r = await runAll(seventh, seventhAnswers);
+  const r = await runAll(seventh, seventhAnswers, null, 7);
   assert.ok(r.count >= 70, "the whole set ran: " + r.count);
   assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
   assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
@@ -120,13 +124,19 @@ const BLIND_ACCEPTED = {
   "8 T20": "a rebroadcast of a founder who has died: the listing says so, and the dead are placed only by a voice naming itself",
   "10 L14": "a host who jokes that he is not himself (“I'm not Bob, … it's me, it's Bob”): the denial and the joke speak against the name",
   "10 L15": "the model's reading leaves the voice unnamed (the other listed guest is said to be stuck in traffic; only elimination would name her)",
+  // (0.14.5: hosts the listing gives only as a publisher named after them, whom nobody names: the second reading cannot tell)
+  "9 G8 SPEAKER 1": "the host is known only from the publisher's name (\u201c… Media\u201d), and the second reading cannot tell whether the voice that opens the show is that person",
+  "10 K5 SPEAKER 1": "the host is known only from the publisher's name, and the second reading cannot tell",
+  "10 K16 HOST": "the host is known only from the publisher's name (\u201c… Studios\u201d), and the second reading cannot tell",
+  "10 K18 SPEAKER 1": "the host is known only from the publisher's name (\u201c… Network\u201d), and the second reading cannot tell",
 };
 for (const { n, set, answers } of blind) {
   test("black-box review " + n + " (" + set.S.length + " scenarios), read by both readers with a model's recorded answers: no wrong name, and no miss beyond the accepted ones", async () => {
     assert.equal(Object.keys(answers).length, set.S.length, "an answer for every scenario");
-    const r = await runAll(set, answers);
+    const r = await runAll(set, answers, null, n);
     assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
-    const missed = r.missed.filter(l => !BLIND_ACCEPTED[n + " " + l.split(" ")[0]]);
+    // (an acceptance names a scenario, or one voice of it)
+    const missed = r.missed.filter(l => { const head = l.split(":")[0]; return !BLIND_ACCEPTED[n + " " + head] && !BLIND_ACCEPTED[n + " " + head.split(" ")[0]]; });
     assert.deepEqual(missed, [], "misses:\n" + missed.join("\n"));
   });
 }
