@@ -1,0 +1,2667 @@
+{
+ "A1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 2,
+      "quote": "Tonight, the man who bought the mill last month is sitting across from us. Welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "Welcomed only as the man who bought the mill; nobody names this voice, and 'Marcus' was said to another voice."
+   },
+   {
+    "label": "SPEAKER 3",
+    "why": "Addressed only as 'Marcus' right after the host says his co-host is away; may be a stand-in sharing the guest's first name, so not tied to Marcus Delacroix."
+   }
+  ]
+ },
+ "A10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "Arrives late, but nobody says this voice's name; the host's 'You made it!' names no one, and the turn 0 mention of Marcus Delacroix was of someone who had not arrived."
+   },
+   {
+    "label": "SPEAKER 3",
+    "why": "A news and traffic voice that nobody names; the turn 0 mention of Marcus Delacroix says he has not arrived yet."
+   }
+  ]
+ },
+ "A11": {
+  "voices": [],
+  "unnamed": [
+   {
+    "label": "SPEAKER 1",
+    "why": "Dale is away (his Buick died outside Toledo) and this voice is filling in as host; nobody names the fill-in."
+   },
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is only described as running the union hall in Gary; nobody names the guest and the listing names none."
+   }
+  ]
+ },
+ "A12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "Marcus Delacroix is absent (the notes say 'We lost him'); this voice is his oldest friend, and nobody names the friend."
+   }
+  ]
+ },
+ "A13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "Answers the host's welcome to tonight's guest, but nobody says this voice's name or calls it Father, so nothing quoted ties it to the listing's name."
+   },
+   {
+    "label": "SPEAKER 3",
+    "why": "Called Father and says 'As a priest', but a title alone names no one, and the host's welcome to tonight's guest is answered by SPEAKER 2, not this voice."
+   }
+  ]
+ },
+ "A14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "\"I'm Marcus Delacroix\" is a big man's greeting inside the guest's story, not self-identification, and the guest speaks of him as someone else; the listing names no other guest."
+   }
+  ]
+ },
+ "A15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "welcome to the Dale Whitcomb show",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "\"I'm Marcus Delacroix\" is the big man's greeting inside the guest's story of a first morning, not self-identification; the guest is the one greeted, and the listing names no other guest."
+   }
+  ]
+ },
+ "A16": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The host introduces this guest as a woman who worked under Marcus; Marcus is only on tape and joining later, so words to him are not words to this voice, and nothing names her."
+   }
+  ]
+ },
+ "A17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 7,
+      "quote": "Ann, you worked the payroll office for twenty years.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me tonight are Ann Kowalski and Marcus Delacroix's son, Ray.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Ray Delacroix",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me tonight are Ann Kowalski and Marcus Delacroix's son, Ray.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "Mr. Delacroix, what was your father like at home?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 5,
+      "quote": "Mr. Delacroix, did you ever work at the mill yourself?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "A18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is introduced only as the old foreman of the man who ran the mill; the 'Marcus' lines are to that man, who is not in the conversation, and nobody names this voice."
+   }
+  ]
+ },
+ "A19": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The host says tonight's guest worked under 'him', so the guest is not the title's Marcus Delacroix, the subject; 'Marcus' is thanked beside 'he', and nobody names the guest."
+   }
+  ]
+ },
+ "A2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is described only as someone who worked the east line for twenty years, apart from the man who ran the mill, who is spoken of as 'he' and 'never missed a shift in thirty years'; the 'Marcus' questions may be to that absent man, and nobody names this voice."
+   }
+  ]
+ },
+ "A20": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The host introduces the guest as a woman who was on his crew, so not Marcus Delacroix, the subject; 'Marcus' is said beside 'he' and nobody names her."
+   }
+  ]
+ },
+ "A21": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is a woman who worked under Marcus; Marcus is only spoken of as 'he' and is not in the conversation, and nobody names her."
+   }
+  ]
+ },
+ "A22": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thank you, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Marcus Delacroix",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me now, Marcus Delacroix.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 3",
+    "why": "Speaks of Marcus in the third person (\"Marcus and I go back to the third grade\"), so it is not Marcus; the listing names no one else."
+   }
+  ]
+ },
+ "A23": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "welcome to the Dale Whitcomb show",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "thank you dale",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Marcus Delacroix",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "joining me now Marcus Delacroix",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 3",
+    "why": "Speaks of the man just introduced as \"him\" (\"I've known him since the third grade\"), so it is not Marcus; the listing names no one else."
+   }
+  ]
+ },
+ "A24": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Marcus Delacroix",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me now, Marcus Delacroix",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 3",
+    "why": "Reads the headlines and thanks Dale; the host puts Marcus after the headlines, and nothing gives this voice a name."
+   }
+  ]
+ },
+ "A25": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "Thank you, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "'This is Marcus Delacroix' points at a portrait, and this voice speaks of him as 'he'; Marcus is not in the conversation and nobody names this voice."
+   }
+  ]
+ },
+ "A26": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "name": "Ray Dunn",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 1,
+      "quote": "This is Ray Dunn, everybody.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "Ray, where were you the morning it started?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 1",
+    "why": "In turn 1 it introduces Ray Dunn rather than naming itself; the listing names no host and nobody names this voice."
+   }
+  ]
+ },
+ "A27": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Okay, we're rolling. My guest tonight ran the union hall in Gary for thirty years. Thanks for coming in.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest who ran the union hall in Gary; neither the listing nor the words give a name."
+   }
+  ]
+ },
+ "A28": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Marcus Delacroix",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Marcus, can you believe nobody died?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 5,
+      "quote": "Marcus, how did the families get by?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 3",
+    "why": "Only short reactions and one remark; no one names this voice and the listing names no co-host."
+   }
+  ]
+ },
+ "A29": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Marcus, what did the closing do to the east side?",
+      "listingQuote": "",
+      "addressee": "Marcus"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Marcus Delacroix",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Marcus, what did the closing do to the east side?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 5,
+      "quote": "Marcus, who bought the land?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 3",
+    "why": "Cuts in twice with its own figures instead of answering the host's questions to Marcus; the host mentions an unnamed co-host, but nothing gives this voice a name."
+   }
+  ]
+ },
+ "A3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest who worked the east line, set apart from \"the man who ran it\"; the host's \"Marcus\" lines speak to a remembered subject (\"You'd have hated every minute of it\"), and the listing names no other guest."
+   }
+  ]
+ },
+ "A30": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Hey Dale",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 5,
+      "quote": "Thanks, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "A caller known only as Marcus in Hobart; guest Marcus Delacroix has not arrived yet, so this is not him, and nothing else names the caller."
+   }
+  ]
+ },
+ "A31": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is the woman who kept Marcus Delacroix's books, so she is not him; nobody names her."
+   }
+  ]
+ },
+ "A32": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is described only as someone who worked the east line, apart from the man who ran the mill, who is spoken of as 'he'; the 'Marcus' question may be to that absent man, and nobody names this voice."
+   }
+  ]
+ },
+ "A33": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "welcome to the Dale Whitcomb show",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "Guest is described as an east-line worker, not the man who ran the mill (the title's Marcus Delacroix, the subject); 'marcus' is spoken beside 'he', so no one names the guest."
+   }
+  ]
+ },
+ "A34": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Good evening, everybody.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "My guest tonight runs the union hall in Gary, and my co-host Pat is here as always.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is only described as running the union hall in Gary; no one names the guest and the listing names none."
+   },
+   {
+    "label": "SPEAKER 3",
+    "why": "Co-host Pat is mentioned in turn 0, but nothing ties this voice to that name, and the listing names no co-host."
+   }
+  ]
+ },
+ "A35": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is the retired pipefitter, whom nobody names; Marcus Delacroix is only on tape from 1985, so the 'Marcus' line is to the recording."
+   }
+  ]
+ },
+ "A36": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is a reporter who covered the mill; Marcus Delacroix is only on tape (CLIP 1), and nobody names this voice."
+   }
+  ]
+ },
+ "A37": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "welcome to the Dale Whitcomb show",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "Arrives late, but nobody says this voice's name; the host's 'you made it' names no one, and the earlier mention of Marcus Delacroix was of someone who had not arrived."
+   },
+   {
+    "label": "SPEAKER 3",
+    "why": "A news and traffic voice that nobody names; the turn 0 mention of Marcus Delacroix says he has not arrived yet."
+   }
+  ]
+ },
+ "A38": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having us, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Dana Reyes",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me now, Dana Reyes, with her deputy, Marcus Webb.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Marcus Webb",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me now, Dana Reyes, with her deputy, Marcus Webb.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "A39": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Ann, what was that first semester like?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Ann, where did you find the nerve?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "A4": {
+  "voices": [],
+  "unnamed": [
+   {
+    "label": "SPEAKER 1",
+    "why": "Says the man whose name is on the door is away at a wedding and that they are minding things until Monday, so this is a stand-in whose name is never given."
+   },
+   {
+    "label": "SPEAKER 2",
+    "why": "Runs the union hall in Gary, but neither the listing nor the words give a name."
+   }
+  ]
+ },
+ "A40": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Ray, where were you the morning it started?",
+      "listingQuote": "",
+      "addressee": "Ray"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ray Dunn",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Ray, good to see you, old friend.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Ray, where were you the morning it started?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "A41": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Good to see you too, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Ray, how cold did it get?",
+      "listingQuote": "",
+      "addressee": "Ray"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ray Dunn",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Ray, good to see you.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Ray, how cold did it get?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Good to see you too, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "A42": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thank you, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Ann, how long did it take?",
+      "listingQuote": "",
+      "addressee": "Ann"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Congratulations, Ann.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Ann, how long did it take?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thank you, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "A43": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "Ann, how did the band start?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 7,
+      "quote": "Ann, what was the best night?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Ray Dunn",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 5,
+      "quote": "Ray, who wrote the songs?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 9,
+      "quote": "Ray, do you agree?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "A44": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Dana Reyes",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Dana, how bad are the pipes?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 4,
+      "quote": "Dana, who pays to replace them?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Pat",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Pat, good to see you.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "A45": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ruth Okonkwo",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me now is Ruth Okonkwo, professor of Economics and Public Policy at Purdue Northwest.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "A5": {
+  "voices": [],
+  "unnamed": [
+   {
+    "label": "HOST",
+    "why": "Says Dale is in Ohio and that they are driving the show this week, so this is a stand-in whose name is never given."
+   },
+   {
+    "label": "GUEST",
+    "why": "Runs the union hall in Gary, but neither the listing nor the words give a name."
+   }
+  ]
+ },
+ "A6": {
+  "voices": [
+   {
+    "label": "HOST",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "GUEST",
+    "why": "Marcus Delacroix is away in Washington; this guest is his deputy, and nobody names the deputy."
+   }
+  ]
+ },
+ "A7": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "name": "Dana Reyes",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Thanks for having me, Dana.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 1,
+      "quote": "My guest tonight runs the tenants' union in Gary. Thanks for coming in.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 1",
+    "why": "Opens the show, but the guest answers the other voice as Dana; nothing names this voice."
+   },
+   {
+    "label": "SPEAKER 3",
+    "why": "The guest is not named in the listing or the words; only described as running the tenants' union in Gary."
+   }
+  ]
+ },
+ "A8": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is the man who worked under Marcus, whom nobody names; Marcus Delacroix is only on tape from 1998, so the 'Marcus' line is to the recording."
+   }
+  ]
+ },
+ "A9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is the Post-Tribune mill reporter, whom nobody names; Marcus Delacroix is the 1998 interview's subject and is not in the conversation."
+   }
+  ]
+ },
+ "R1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Marcus Delacroix",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining us now on the line from Washington, Marcus Delacroix.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Marcus, you're on the air.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Senator, where does the money for the bridge come from?",
+      "listingQuote": "",
+      "addressee": "Senator"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Mara Quill",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me now, State Senator Mara Quill.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Senator, where does the money for the bridge come from?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 4,
+      "quote": "Dana, how old are the mains?",
+      "listingQuote": "",
+      "addressee": "Dana"
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 6,
+      "quote": "Marcus, why weren't they replaced on your watch?",
+      "listingQuote": "",
+      "addressee": "Marcus"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Dana Reyes",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me first, Dana Reyes, who runs the Gary water department.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 4,
+      "quote": "Dana, how old are the mains?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Marcus Webb",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 2,
+      "quote": "And with us as well, Marcus Webb, who ran the department before her.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Marcus, why weren't they replaced on your watch?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ana Ruiz",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Judge, thank you for coming in.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 1,
+      "quote": "As a judge, I sent a lot of young men to prison, and I think about every one of them.",
+      "listingQuote": "Judge Ana Ruiz is a retired Lake County judge who served on the bench for twenty years.",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Doctor, welcome to the show.",
+      "listingQuote": "",
+      "addressee": "Doctor"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Lena Brandt",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Doctor, welcome to the show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 1,
+      "quote": "In my twenty years as an emergency physician, I've never seen a winter like this one.",
+      "listingQuote": "Dr. Lena Brandt is an emergency physician at Methodist Hospital in Gary.",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Dale Whitcomb",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "welcome to the Dale Whitcomb show",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "thanks for having me dale",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Lena Brandt",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "joining me tonight is dr Lena Brandt",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "lena thanks for coming in",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "thanks for having me dale",
+      "listingQuote": "",
+      "addressee": "dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me now, Ann Kowalski, who has written the first full history of the 1919 steel strike.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R16": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Pat Quinn",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Pat Quinn",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having me, Pat.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me now, Ann Kowalski.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks for having me, Pat.",
+      "listingQuote": "",
+      "addressee": "Pat"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Hi Dale, longtime listener.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 5,
+      "quote": "Dale, I drive that road every day, and we need that bridge.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Linda",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Linda in Hobart, you're on the air.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 4,
+      "quote": "Thanks, Linda.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Hi Dale, longtime listener.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Ray",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 4,
+      "quote": "Ray in Merrillville, go ahead.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 5,
+      "quote": "Dale, I drive that road every day, and we need that bridge.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Ann, why 1919?",
+      "listingQuote": "",
+      "addressee": "Ann"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me now is the author of a new history of the 1919 steel strike, Ann Kowalski.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Ann, why 1919?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R19": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "My guest tonight needs no introduction in this town — Ann Kowalski.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks for having me, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Dana Reyes",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Dana, were you surprised by the state report?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Dana, is the water safe to drink today?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R20": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Dale, glad to be here.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Ann, why eleven years?",
+      "listingQuote": "",
+      "addressee": "Ann"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Ann, welcome aboard.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Ann, why eleven years?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks, Dale, glad to be here.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R21": {
+  "voices": [
+   {
+    "label": "HOST",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "GUEST",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 1,
+      "quote": "Thanks for having me.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R22": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ray Dunn",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining us now, Ray Dunn.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Ray, what was the picket line like that first morning?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 3",
+    "why": "Asks Ray a question (so it is not Ray), but the listing names no co-host or other person and no one says this voice's name."
+   }
+  ]
+ },
+ "R23": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Hi Dale",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 1,
+      "quote": "this is Ann Kowalski calling from Bloomington",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Hi Dale",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R24": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Good to be back, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Marcus Delacroix",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Welcome back to the show, Marcus.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Marcus, what's changed since then?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Good to be back, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R25": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Dale, it's great to be here.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalski",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "It's great to have Ann Kowalski with us tonight.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "It's an honor, Dale.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Marcus, why buy a steel mill in this economy?",
+      "listingQuote": "",
+      "addressee": "Marcus"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Marcus Delacroix",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Marcus, great to have you here.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Marcus, why buy a steel mill in this economy?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "It's an honor, Dale.",
+      "listingQuote": "",
+      "addressee": "Dale"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Dana, where does the money come from?",
+      "listingQuote": "",
+      "addressee": "Dana"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Dana Reyes",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Dana, how's the foundation doing?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Dana, where does the money come from?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R5": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 1,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest answering the host's welcome; the listing names no guest and no one says this voice's name."
+   }
+  ]
+ },
+ "R6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is only described as running the Lake County taxpayers' league; Linda is an emailer read out in turn 0, not this voice, and nobody names the guest."
+   }
+  ]
+ },
+ "R7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest who ran the food pantry; the listing names no guest and no one says this voice's name."
+   }
+  ]
+ },
+ "R8": {
+  "voices": [
+   {
+    "label": "HOST",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "GUEST",
+    "name": "Ruth Okonkwo",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 1,
+      "quote": "Thanks for having me.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R9": {
+  "voices": [
+   {
+    "label": "HOST",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the Dale Whitcomb Show.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "GUEST",
+    "name": "Dana Reyes",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 1,
+      "quote": "Thanks for having me.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ }
+}

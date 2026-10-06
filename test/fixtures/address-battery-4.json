@@ -1,0 +1,2914 @@
+{
+ "vocative": [
+  {
+   "s": "Noor, how'd the council vote shake out in the end?",
+   "name": "Noor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Silas, are you still on the line with us?",
+   "name": "Silas",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Bettina, what would you tell a family that's just arriving in town?",
+   "name": "Bettina",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "That's a really fair point, Jun.",
+   "name": "Jun",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Always good to hear your voice, Augustin.",
+   "name": "Augustin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You cannot be serious, Paz.",
+   "name": "Paz",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "And the reason, Cormac, is that nobody actually read the contract.",
+   "name": "Cormac",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'll be honest with you, Imani, I never thought we'd get this far.",
+   "name": "Imani",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "And that — Ferris — is exactly why we don't let you near the grill.",
+   "name": "Ferris",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "The truth is — and Lupe, stop laughing — I've never actually been on a plane.",
+   "name": "Lupe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Well, Noor, I think the numbers speak for themselves.",
+   "name": "Noor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Look, Silas, nobody in this room is blaming you.",
+   "name": "Silas",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Okay, so, Bettina, walk me through the timeline one more time.",
+   "name": "Bettina",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Listen, Jun, you don't have to decide anything tonight.",
+   "name": "Jun",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I mean, Augustin, come on, it's a parking ticket.",
+   "name": "Augustin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You know what, Paz? You were right all along.",
+   "name": "Paz",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Honestly, Cormac, I'd have done the exact same thing.",
+   "name": "Cormac",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Anyway, Imani, enough about me — how's the new place?",
+   "name": "Imani",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I could be wrong here, Ferris, but didn't the plant close back in the nineties?",
+   "name": "Ferris",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Correct me if I'm wrong, Lupe, but you grew up on that street.",
+   "name": "Lupe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Oh, Granny, you didn't have to bake all this.",
+   "name": "Granny",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Whoa, whoa, Jun, slow down, you're losing me.",
+   "name": "Jun",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Ugh, Silas, you always do this to me.",
+   "name": "Silas",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Wow, Imani, that's a huge accomplishment.",
+   "name": "Imani",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Sorry, Noor, I talked right over you there.",
+   "name": "Noor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My apologies, Professor, I misread your question.",
+   "name": "Professor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks, Augustin, that was really moving.",
+   "name": "Augustin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thank you so much for your time this morning, Mayor.",
+   "name": "Mayor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Good morning, Sheriff, and thanks for coming in.",
+   "name": "Sheriff",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hey, Cormac, long time no see!",
+   "name": "Cormac",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Drive safe, Bettina, and text me when you get home.",
+   "name": "Bettina",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Night, Granny, love you.",
+   "name": "Granny",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Cheers, Ferris — you earned this one.",
+   "name": "Ferris",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Here's to you, Lupe, and to forty more years behind that counter.",
+   "name": "Lupe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Beautifully put, Deacon.",
+   "name": "Deacon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You look fantastic, Paz.",
+   "name": "Paz",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Exactly, Professor, and that's what the survey shows too.",
+   "name": "Professor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Fair enough, Silas, I'll give you that one.",
+   "name": "Silas",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Augustin, the soup's getting cold.",
+   "name": "Augustin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Imani, your mother's on line two.",
+   "name": "Imani",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Jun, they've moved the hearing to Thursday.",
+   "name": "Jun",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You're not actually going to eat that, are you, Cormac?",
+   "name": "Cormac",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Coffee or tea, Bettina?",
+   "name": "Bettina",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Lupe, you've lived on this block how long now?",
+   "name": "Lupe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Mayor, will you commit tonight to releasing the full audit?",
+   "name": "Mayor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Sheriff, how many deputies are working nights right now?",
+   "name": "Sheriff",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Where were you the night the river came up, Noor?",
+   "name": "Noor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Ferris, grab the other end of this table.",
+   "name": "Ferris",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hand me that ladle, Granny.",
+   "name": "Granny",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Don't you dare touch that thermostat, Silas.",
+   "name": "Silas",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Please, Professor, take all the time you need.",
+   "name": "Professor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Jun! Over here!",
+   "name": "Jun",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Paz? Paz, can you hear me?",
+   "name": "Paz",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hi, Noor, longtime listener, first time calling in.",
+   "name": "Noor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Yeah, good evening, Deacon, thanks for taking my call.",
+   "name": "Deacon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hey, Augustin, I've got a question about my gutters.",
+   "name": "Augustin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Bettina, over to you for the weekend forecast.",
+   "name": "Bettina",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "That's all from the newsroom — back to you, Cormac.",
+   "name": "Cormac",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Imani, take it away.",
+   "name": "Imani",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Nice try, Ferris.",
+   "name": "Ferris",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You're a menace, Lupe, you know that?",
+   "name": "Lupe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Oh, you big softie, Sheriff.",
+   "name": "Sheriff",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Deacon, would you open us with a word of prayer?",
+   "name": "Deacon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Granny, will you say grace tonight?",
+   "name": "Granny",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Mayor, with respect, your own budget says otherwise.",
+   "name": "Mayor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Professor, welcome to the program.",
+   "name": "Professor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Madam Mayor, thank you for joining us.",
+   "name": "Mayor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Yes sir, Sheriff, right away.",
+   "name": "Sheriff",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Amen, Deacon.",
+   "name": "Deacon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Can you honestly say, Silas, that you read the whole report?",
+   "name": "Silas",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You, Cormac, are an absolute genius.",
+   "name": "Cormac",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Why don't you tell them, Imani?",
+   "name": "Imani",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks, Imani. Now let's check in with Cormac on the traffic.",
+   "name": "Imani",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Jun, this is my sister Imani.",
+   "name": "Jun",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Shh, Granny, the baby's finally asleep.",
+   "name": "Granny",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "God bless you, Augustin.",
+   "name": "Augustin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Lord have mercy, Bettina, look at this mess.",
+   "name": "Bettina",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Dear God, Noor, what did you do to your hair?",
+   "name": "Noor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Easy, Ferris, it's just a game.",
+   "name": "Ferris",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Psst, Paz, your tag's sticking out.",
+   "name": "Paz",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Imani!",
+   "name": "Imani",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Ferris? You up?",
+   "name": "Ferris",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You did what, Jun?",
+   "name": "Jun",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Isn't that right, Professor?",
+   "name": "Professor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Who even does that, Ferris?",
+   "name": "Ferris",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Noor is the one who found the leak in the first place.",
+   "name": "Noor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Bettina, as most of you know, ran the food pantry for twelve years.",
+   "name": "Bettina",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Honestly, Jun never told me a thing about it.",
+   "name": "Jun",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Yesterday Paz finally got the boiler working again.",
+   "name": "Paz",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Cormac — and I say this with love — cannot parallel park.",
+   "name": "Cormac",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Imani (who I adore) still owes me twenty bucks.",
+   "name": "Imani",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Even Augustin thought the speech went on too long.",
+   "name": "Augustin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Of course Silas showed up late again.",
+   "name": "Silas",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I texted Ferris about the rehearsal last night.",
+   "name": "Ferris",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We hired Lupe straight out of nursing school.",
+   "name": "Lupe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Somebody get the Sheriff on the phone.",
+   "name": "Sheriff",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Don't wake Granny, she just dozed off.",
+   "name": "Granny",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Call Silas and tell him we're running late.",
+   "name": "Silas",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Give the extra plate to Noor.",
+   "name": "Noor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Thank Jun for me when you see him.",
+   "name": "Jun",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Go ask the Professor, she'll know.",
+   "name": "Professor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Say hi to Paz for me.",
+   "name": "Paz",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ask Cormac, he was there.",
+   "name": "Cormac",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I was talking with Augustin about the fence line.",
+   "name": "Augustin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "This next song goes out to Imani and the whole night crew.",
+   "name": "Imani",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm so proud of Bettina, I really am.",
+   "name": "Bettina",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Everybody, raise a glass to Ferris.",
+   "name": "Ferris",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Noor's car is blocking the driveway again.",
+   "name": "Noor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "That's Silas's coat on the back of the chair.",
+   "name": "Silas",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We're going to Granny's for Thanksgiving this year.",
+   "name": "Granny",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The Mayor's office still hasn't called us back.",
+   "name": "Mayor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My nephew Jun fixed it in about five minutes.",
+   "name": "Jun",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Lupe, my sister-in-law, makes the best tamales in the county.",
+   "name": "Lupe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Big thanks to our producer, Paz, for staying late again.",
+   "name": "Paz",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Our engineer, Cormac, says we're already over time.",
+   "name": "Cormac",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I want to give a shout-out to my old coach, Augustin, who taught me everything I know.",
+   "name": "Augustin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "A kid named Imani scored twice in the second half.",
+   "name": "Imani",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Anyone named Ferris gets in free tonight.",
+   "name": "Ferris",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The guy sitting next to Noor kept checking his phone.",
+   "name": "Noor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Noor and Silas are both on the panel tonight.",
+   "name": "Silas",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We invited Jun and Bettina and the whole choir.",
+   "name": "Bettina",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "It was just me and Augustin and the dog out there all night.",
+   "name": "Augustin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You and Cormac should really sit down and talk.",
+   "name": "Cormac",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "And Lupe, well, Lupe never could keep a secret.",
+   "name": "Lupe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ferris, bless him, he tried his best.",
+   "name": "Ferris",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "That Imani, she could talk her way out of anything.",
+   "name": "Imani",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Joining me in the studio today is Paz.",
+   "name": "Paz",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Coming up after the break, Jun tells us how he lost his sister's car.",
+   "name": "Jun",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Folks, this is Bettina, our new morning producer.",
+   "name": "Bettina",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Please give a warm welcome to the Professor.",
+   "name": "Professor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Meet Silas, the newest member of our crew.",
+   "name": "Silas",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Still to come: Noor on how one church kitchen feeds four hundred people a week.",
+   "name": "Noor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My boss goes, \"Paz, my office, now.\"",
+   "name": "Paz",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My mom would yell out the window, Bettina, get inside, and I'd pretend not to hear.",
+   "name": "Bettina",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "He texted me, \"Jun, where are you?\" and I didn't see it till midnight.",
+   "name": "Jun",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I told him, Cormac, you can't keep doing this, and he just stared at me.",
+   "name": "Cormac",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "This one's from Ferris in Dayton: \"Love the show, keep it up.\"",
+   "name": "Ferris",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Noor writes in: \"Silas, you were dead wrong about the bridge.\"",
+   "name": "Silas",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Got a text here that says, \"Cormac, settle a bet for us.\"",
+   "name": "Cormac",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I got these boots at Augustin's Outfitters downtown.",
+   "name": "Augustin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Take a left on Cormac Street and it's the second house.",
+   "name": "Cormac",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Imani Prep beat us by thirty on Friday.",
+   "name": "Imani",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Our dog Paz ate the remote control.",
+   "name": "Paz",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Have you been listening to Noor After Dark?",
+   "name": "Noor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The kids watch Granny Goes Camping every single morning.",
+   "name": "Granny",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "If you know Silas, you know he's never once been on time.",
+   "name": "Silas",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Have you met Bettina yet?",
+   "name": "Bettina",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Did Augustin ever pay you back?",
+   "name": "Augustin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Is Jun coming tonight or not?",
+   "name": "Jun",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "How's Granny holding up?",
+   "name": "Granny",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You laugh exactly like Ferris.",
+   "name": "Ferris",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You're as stubborn as Lupe, I swear.",
+   "name": "Lupe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks, Imani. Now let's check in with Cormac on the traffic.",
+   "name": "Cormac",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Jun, this is my sister Imani.",
+   "name": "Imani",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Why don't you tell Imani?",
+   "name": "Imani",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Good to see Augustin back on his feet.",
+   "name": "Augustin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Look at Granny go!",
+   "name": "Granny",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Shh, Granny's sleeping.",
+   "name": "Granny",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Sheriff says the road's closed till Monday.",
+   "name": "Sheriff",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Professor gave us an extension, thank goodness.",
+   "name": "Professor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Deacon's going to lead us in prayer now.",
+   "name": "Deacon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Mayor won't return a single one of our calls.",
+   "name": "Mayor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Please, call me Silas.",
+   "name": "Silas",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "They named the baby Noor, after her great-grandmother.",
+   "name": "Noor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We call him Sheriff because he's always telling everybody where to park.",
+   "name": "Sheriff",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Lord, we lift up Jun tonight as he starts his new job.",
+   "name": "Jun",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Now here's Bettina with your weekend forecast.",
+   "name": "Bettina",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Let's go live to Lupe at the courthouse.",
+   "name": "Lupe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Rest in peace, Augustin; we'll keep the bakery open for you.",
+   "name": "Augustin",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Granny, I wish you were here to see this.",
+   "name": "Granny",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Cormac, wherever you are up there, this one's for you.",
+   "name": "Cormac",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Happy birthday in heaven, Noor.",
+   "name": "Noor",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Paz, if you're out there listening, please just call your mother.",
+   "name": "Paz",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Noor, she's the one who found it.",
+   "name": "Noor",
+   "expect": false,
+   "form": "punct",
+   "note": "ambiguous"
+  },
+  {
+   "s": "Text Ferris.",
+   "name": "Ferris",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Go wake Granny.",
+   "name": "Granny",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The Cormac Rovers lost again last night.",
+   "name": "Cormac",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "okay noor walk us through what happened next",
+   "name": "noor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "silas you've been quiet what do you think",
+   "name": "silas",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "bettina can you hear me okay",
+   "name": "bettina",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "so what's the plan jun",
+   "name": "jun",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "no no augustin that's not what i meant",
+   "name": "augustin",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thanks for having me paz",
+   "name": "paz",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "cormac you're a genius",
+   "name": "cormac",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "honestly imani i didn't see that coming",
+   "name": "imani",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "ferris buddy you gotta stop doing that",
+   "name": "ferris",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "lupe you're breaking up a little",
+   "name": "lupe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "deacon would you bless the food for us",
+   "name": "deacon",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "go get em sheriff",
+   "name": "sheriff",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "professor can you say a little more about that",
+   "name": "professor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "mayor how do you respond to the folks on the east side",
+   "name": "mayor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "love you granny",
+   "name": "granny",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i hear you noor but the numbers don't lie",
+   "name": "noor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "so paz what brought you to radio in the first place",
+   "name": "paz",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "real quick jun before we wrap up",
+   "name": "jun",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "well silas i have to disagree with you there",
+   "name": "silas",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "yeah no imani you're totally right",
+   "name": "imani",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "dude ferris look at this",
+   "name": "ferris",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "sorry bettina go ahead",
+   "name": "bettina",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "good morning augustin thanks for calling in",
+   "name": "augustin",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "hi lupe long time listener first time caller",
+   "name": "lupe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "back to you noor",
+   "name": "noor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "take it away jun",
+   "name": "jun",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "cheers imani you earned it",
+   "name": "imani",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "happy birthday paz",
+   "name": "paz",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "welcome to the show professor",
+   "name": "professor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "excuse me mayor you didn't answer the question",
+   "name": "mayor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "yes sir sheriff",
+   "name": "sheriff",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "granny you can't say that on a podcast",
+   "name": "granny",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "wait wait cormac say that again",
+   "name": "cormac",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "and you know what silas you were right",
+   "name": "silas",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i think augustin you're missing the point",
+   "name": "augustin",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "look bettina i'm doing my best here",
+   "name": "bettina",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "jun jun come here a sec",
+   "name": "jun",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "ferris if you touch that thermostat one more time",
+   "name": "ferris",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "lupe my friend it's been way too long",
+   "name": "lupe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "noor thank you so much for your time",
+   "name": "noor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "as always paz a pleasure",
+   "name": "paz",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "you're killing me silas",
+   "name": "silas",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "careful imani that pan's hot",
+   "name": "imani",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "help me out here jun",
+   "name": "jun",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "deacon thank you for that word",
+   "name": "deacon",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "sheriff what do you say to folks who don't trust the department",
+   "name": "sheriff",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "so augustin how long have you been doing this",
+   "name": "augustin",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm sorry noor",
+   "name": "noor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thank you jun for coming in on your day off",
+   "name": "jun",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "good to see you augustin",
+   "name": "augustin",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "welcome back to the show paz",
+   "name": "paz",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "congratulations cormac",
+   "name": "cormac",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "you know what lupe",
+   "name": "lupe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "is that you cormac",
+   "name": "cormac",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "look silas we're back on the air",
+   "name": "silas",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "shh granny the baby's asleep",
+   "name": "granny",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "ferris what are you doing up there",
+   "name": "ferris",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "okay bettina your turn",
+   "name": "bettina",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "professor quick question before you go",
+   "name": "professor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "look at you granny all dressed up",
+   "name": "granny",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "lupe tell them about the time the cow got loose",
+   "name": "lupe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "be honest with me paz",
+   "name": "paz",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "imani i'm so proud of you",
+   "name": "imani",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i texted noor this morning and she still hasn't answered",
+   "name": "noor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "silas is gonna hate this",
+   "name": "silas",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "so bettina finally retired and moved down to florida",
+   "name": "bettina",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my nephew jun fixed it in like five minutes",
+   "name": "jun",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "paz and i go way back",
+   "name": "paz",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "we hired cormac right out of school",
+   "name": "cormac",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "imani's mom makes the best tamales",
+   "name": "imani",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "give it to ferris he'll know what to do",
+   "name": "ferris",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "tell lupe i said hi",
+   "name": "lupe",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the deacon's gonna lead us in prayer",
+   "name": "deacon",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the sheriff wouldn't comment",
+   "name": "sheriff",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the professor gave everybody an extension",
+   "name": "professor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the mayor never even showed up",
+   "name": "mayor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "we always end up at granny's on sundays",
+   "name": "granny",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you sound like noor right now",
+   "name": "noor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "if you know augustin you know he's always early",
+   "name": "augustin",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "have you met bettina",
+   "name": "bettina",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "did jun ever call you back",
+   "name": "jun",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my boss goes augustin my office now",
+   "name": "augustin",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and she's like paz are you serious",
+   "name": "paz",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "this one goes out to cormac and his crew",
+   "name": "cormac",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "everybody give it up for imani",
+   "name": "imani",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "coming up after the break ferris tells us about his trip",
+   "name": "ferris",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "our dog lupe ate my headphones",
+   "name": "lupe",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "thanks to jun we made it on time",
+   "name": "jun",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "congratulations to noor on the new baby",
+   "name": "noor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "say hi to granny for me",
+   "name": "granny",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you know what lupe did",
+   "name": "lupe",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "honestly jun never told me",
+   "name": "jun",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "even augustin thought it was too much",
+   "name": "augustin",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "poor bettina had no idea",
+   "name": "bettina",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "people like cormac make this town work",
+   "name": "cormac",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "so the mayor and the sheriff are both on tonight",
+   "name": "mayor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "so the mayor and the sheriff are both on tonight",
+   "name": "sheriff",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "let's go to paz at the courthouse",
+   "name": "paz",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "here's bettina with the weather",
+   "name": "bettina",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "noor writes in silas you're wrong about the bridge",
+   "name": "silas",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "so my mom yells imani get down from there",
+   "name": "imani",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and the teacher's like ferris spit out the gum",
+   "name": "ferris",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "we named the baby noor after my grandmother",
+   "name": "noor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my daughter goes to augustin high",
+   "name": "augustin",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "turn left on lupe street and you'll see it",
+   "name": "lupe",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "ask the professor she'll know",
+   "name": "professor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "look at granny go",
+   "name": "granny",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "good to see silas back on his feet",
+   "name": "silas",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "somebody call ferris and tell him we're running late",
+   "name": "ferris",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "that's jun's truck out front",
+   "name": "jun",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i'm sorry noor had to go through that",
+   "name": "noor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "thank jun for me",
+   "name": "jun",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "hey silas is here",
+   "name": "silas",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "was that cormac on the phone",
+   "name": "cormac",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "everybody this is imani she's our new sound engineer",
+   "name": "imani",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "shh granny's sleeping",
+   "name": "granny",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "deacon's running a little late tonight",
+   "name": "deacon",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "cormac's the one who told me",
+   "name": "cormac",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "rest in peace granny we miss you every day",
+   "name": "granny",
+   "expect": false,
+   "form": "caption",
+   "note": "absent"
+  },
+  {
+   "s": "silas if you're up there watching this one's for you",
+   "name": "silas",
+   "expect": false,
+   "form": "caption",
+   "note": "absent"
+  },
+  {
+   "s": "paz our producer says we're out of time",
+   "name": "paz",
+   "expect": false,
+   "form": "caption",
+   "note": "ambiguous"
+  }
+ ],
+ "role": [
+  {
+   "s": "I've been a plumber for twenty-six years, so trust me on this one.",
+   "role": "plumber",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a pharmacist, and that combination would worry me.",
+   "role": "pharmacist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was an umpire in the minor leagues for eleven seasons.",
+   "role": "umpire",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Electrician by trade, but I've done a little of everything.",
+   "role": "electrician",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I work as a translator for the county courts.",
+   "role": "translator",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Retired firefighter here, thirty-one years on the job.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I worked as an architect in Chicago for fifteen years before I moved back home.",
+   "role": "architect",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As a rabbi, I get that exact question every Passover.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I served as sheriff of this county for two terms.",
+   "role": "sheriff",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a deacon at St. Brigid's, going on eleven years now.",
+   "role": "deacon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Me? I'm the pharmacist at the drugstore on Fifth Street.",
+   "role": "pharmacist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Before I got into radio, I was an electrician.",
+   "role": "electrician",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a third-generation plumber; my grandfather started the business.",
+   "role": "plumber",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Speaking as a former umpire, that strike zone was all over the place.",
+   "role": "umpire",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Twenty years a firefighter, and I've never seen a fire move that fast.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I happen to be a translator, so let me jump in on that one.",
+   "role": "translator",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My day job? Architect. Mostly schools and libraries.",
+   "role": "architect",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was ordained a rabbi in 2008, and I still get nervous before the High Holidays.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "The county elected me sheriff in 2004, and I held the job for twelve years.",
+   "role": "sheriff",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm one of the deacons at our parish, so I do a lot of the baptisms.",
+   "role": "deacon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a licensed electrician, and I would never wire a panel like that.",
+   "role": "electrician",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I make my living as a translator, mostly medical records.",
+   "role": "translator",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a rabbi, not a therapist, but I'll do my best.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a plumber, then an electrician, and now I mostly fix boats.",
+   "role": "plumber",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a plumber, then an electrician, and now I mostly fix boats.",
+   "role": "electrician",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Yes, I'm the architect on the new library, and no, the roof isn't going to leak.",
+   "role": "architect",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I spent nine years as a firefighter before I ever picked up a microphone.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a volunteer firefighter out in Brown County.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a welder — nights, mostly pipeline work.",
+   "role": "welder",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I've been the umpire for this league since your parents were playing in it.",
+   "role": "umpire",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My years as a rabbi taught me to listen more than I talk.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I retired as a pharmacist last spring, and I don't miss the phone calls one bit.",
+   "role": "pharmacist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Look, I'm an architect — I walk into a building and I can't help redesigning it.",
+   "role": "architect",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was ordained a deacon three Easters ago.",
+   "role": "deacon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was the only woman electrician on that crew for a long time.",
+   "role": "electrician",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a translator at the embassy for six years.",
+   "role": "translator",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "People are always surprised when I tell them I'm a plumber.",
+   "role": "plumber",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I am, believe it or not, a deacon.",
+   "role": "deacon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hi, yeah, I'm a firefighter out of Muncie, first-time caller.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Pharmacist here — please don't split those tablets.",
+   "role": "pharmacist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a rabbi in a small congregation in Ohio for twenty years.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the plumber you called this morning, ma'am.",
+   "role": "plumber",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a carpenter, so I notice crooked trim everywhere I go.",
+   "role": "carpenter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a midwife; I've delivered over a thousand babies.",
+   "role": "midwife",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a teacher for thirty years before I retired.",
+   "role": "teacher",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a chaplain at the county hospital, mostly overnights.",
+   "role": "chaplain",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I wasn't always a plumber — I was a line cook first.",
+   "role": "plumber",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Had I not been a firefighter, I'd never have met my wife.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "They call me Sheriff because I was the sheriff here for twelve years.",
+   "role": "sheriff",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not just a plumber, I'm also a dad of three.",
+   "role": "plumber",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Never thought I'd end up an architect, but here I am.",
+   "role": "architect",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a translator — or I was, until the software got good.",
+   "role": "translator",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the only pharmacist in a forty-mile radius.",
+   "role": "pharmacist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the umpire for this game, and what I say goes.",
+   "role": "umpire",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "When I was sheriff, we didn't have half the equipment they've got now.",
+   "role": "sheriff",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My dad and I are both electricians.",
+   "role": "electrician",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I've been a pastor in this town since before the highway went in.",
+   "role": "pastor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a farmer, have been my whole life.",
+   "role": "farmer",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My brother's the plumber in the family business; I'm the electrician.",
+   "role": "electrician",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Firefighter by day, drummer by night — that's me.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Was I a good sheriff? I'd like to think so.",
+   "role": "sheriff",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Not to brag, but I'm a pretty decent electrician.",
+   "role": "electrician",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a rabbi, so yes, I've heard every rabbi joke there is.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the electrician in the family, so guess who gets called every Christmas.",
+   "role": "electrician",
+   "expect": true,
+   "form": "punct",
+   "note": "ambiguous"
+  },
+  {
+   "s": "I'm a paramedic — have been since I was twenty-two.",
+   "role": "paramedic",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a mechanic; engines are the only thing that make sense to me.",
+   "role": "mechanic",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the pastor here, so the coffee's on me.",
+   "role": "pastor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My brother's a plumber, so I just call him.",
+   "role": "plumber",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "She was a pharmacist for thirty years before she retired.",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The umpire blew that call and everybody in the park knew it.",
+   "role": "umpire",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We need an electrician out here by Friday.",
+   "role": "electrician",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Is there a translator in the room?",
+   "role": "translator",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My dad was a firefighter for thirty years.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The architect quit halfway through the job.",
+   "role": "architect",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Our rabbi gave a beautiful talk on Saturday morning.",
+   "role": "rabbi",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The sheriff wouldn't comment on the investigation.",
+   "role": "sheriff",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My wife's a deacon at our church.",
+   "role": "deacon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not a plumber, but even I can see that pipe's cracked.",
+   "role": "plumber",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm no electrician, but that outlet shouldn't be smoking.",
+   "role": "electrician",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I always wanted to be a firefighter when I was little.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I wish I'd become an architect instead of going into sales.",
+   "role": "architect",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "If I were a rabbi, I'd keep the sermons to ten minutes.",
+   "role": "rabbi",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Imagine me as a sheriff — I can't even get my kids to bed.",
+   "role": "sheriff",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Last night I dreamed I was an umpire at the World Series.",
+   "role": "umpire",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "He goes, \"Trust me, I'm a pharmacist,\" and then he gets the dose wrong.",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The guy says, I'm an electrician, I know what I'm doing, and then the lights go out.",
+   "role": "electrician",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "In the school play I was the sheriff, and I forgot every single line.",
+   "role": "sheriff",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "On game night I always play the architect, because she gets the best cards.",
+   "role": "architect",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My character in our campaign is a translator for the elves.",
+   "role": "translator",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Are you a plumber, or do you just play one on TV?",
+   "role": "plumber",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You're a pharmacist, right? What do you make of this?",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Weren't you an umpire for a while?",
+   "role": "umpire",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Around the office they call me the sheriff of the break room.",
+   "role": "sheriff",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the unofficial plumber of my whole apartment building, just because I own a plunger.",
+   "role": "plumber",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the architect of my own misfortune, as my mother likes to say.",
+   "role": "architect",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Some days I feel less like a manager and more like a firefighter.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm basically the family translator whenever the landlord calls.",
+   "role": "translator",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I was almost a rabbi — two years of seminary before I dropped out.",
+   "role": "rabbi",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm studying to be a pharmacist.",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm applying to be a firefighter next spring.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm married to an electrician, so the house is never finished.",
+   "role": "electrician",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a plumber's daughter, so I grew up under sinks.",
+   "role": "plumber",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a sheriff's deputy out in Hendricks County.",
+   "role": "sheriff",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My wife says I'm the household pharmacist because I keep track of everyone's pills.",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm no architect, but that staircase is a lawsuit waiting to happen.",
+   "role": "architect",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Every umpire I know hates that rule.",
+   "role": "umpire",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "If I'd been the umpire, I'd have tossed him in the first inning.",
+   "role": "umpire",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I play a firefighter on a cable drama, and strangers keep asking me about smoke detectors.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The kids at church call me the deacon because I'm always the last one to leave.",
+   "role": "deacon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Would you ever want to be a rabbi?",
+   "role": "rabbi",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My grandfather was the sheriff in this town for thirty years.",
+   "role": "sheriff",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The translator they sent us didn't even speak the right dialect.",
+   "role": "translator",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Thank God for the electrician who came out on Christmas Eve.",
+   "role": "electrician",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not the architect, I'm just the guy who signs the checks.",
+   "role": "architect",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm going to be a plumber like my dad, I've decided.",
+   "role": "plumber",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "People keep asking if I'm a pharmacist because of the white coat.",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Do I look like an electrician to you?",
+   "role": "electrician",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a rabbi in the play, but in real life I sell insurance.",
+   "role": "rabbi",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I went as a firefighter for Halloween, helmet and all.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm basically the umpire whenever my kids fight over the remote.",
+   "role": "umpire",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I could've been an architect if I'd stuck with math.",
+   "role": "architect",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a rabbi, not a therapist, but I'll do my best.",
+   "role": "therapist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not a pharmacist, I'm a pharmacy tech.",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the deacon's daughter, so I practically grew up in that building.",
+   "role": "deacon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a pharmacist's nightmare — I take nine supplements a day.",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Pretend I'm the architect and pitch me the design.",
+   "role": "architect",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Let's say I'm the umpire — was he safe or out?",
+   "role": "umpire",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My dad used to say, \"I'm a plumber, not a magician.\"",
+   "role": "plumber",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "So what made you want to be a firefighter?",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a big fan of the sheriff, for the record.",
+   "role": "sheriff",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My brother's the plumber in the family business; I'm the electrician.",
+   "role": "plumber",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My mom was a midwife up in the hills for forty years.",
+   "role": "midwife",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "What we need is a carpenter, not another consultant.",
+   "role": "carpenter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Is there a chaplain on call tonight?",
+   "role": "chaplain",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm no farmer, but even I know you don't plant in this mud.",
+   "role": "farmer",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "i'm a plumber by trade so this stuff drives me crazy",
+   "role": "plumber",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was a firefighter for twenty two years",
+   "role": "firefighter",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "ive been a pharmacist since two thousand eleven",
+   "role": "pharmacist",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "as an electrician i can tell you that's a fire hazard",
+   "role": "electrician",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i work as a translator for the courts mostly spanish",
+   "role": "translator",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was the sheriff here for two terms",
+   "role": "sheriff",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm a rabbi so people assume i have all the answers",
+   "role": "rabbi",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "so i'm an architect and i can't stand that building",
+   "role": "architect",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm a deacon at our church so i do a lot of funerals",
+   "role": "deacon",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was an umpire for little league for like ten years",
+   "role": "umpire",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "yeah i'm a retired firefighter",
+   "role": "firefighter",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i've been an electrician my whole adult life",
+   "role": "electrician",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "before i was a rabbi i was a lawyer",
+   "role": "rabbi",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "before i was a rabbi i was a lawyer",
+   "role": "lawyer",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm a plumber and a dad of three",
+   "role": "plumber",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was a pharmacist for a long time before this",
+   "role": "pharmacist",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "im an architect and honestly the permits are the worst part",
+   "role": "architect",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i got ordained as a deacon last year",
+   "role": "deacon",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm a welder so my hands are kind of wrecked",
+   "role": "welder",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm a teacher i've got thirty two kids in my class this year",
+   "role": "teacher",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i wasn't always a plumber i used to drive a truck",
+   "role": "plumber",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm not just an electrician i run the whole business now",
+   "role": "electrician",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "translator here and that subtitle is completely wrong",
+   "role": "translator",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "my uncle was a firefighter for thirty years",
+   "role": "firefighter",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "are you a pharmacist or just a tech",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "they call me the sheriff of the cul de sac",
+   "role": "sheriff",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i'm no plumber but that pipe is definitely leaking",
+   "role": "plumber",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the umpire was terrible tonight",
+   "role": "umpire",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "we had to hire a translator for the whole trip",
+   "role": "translator",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i always wanted to be an architect",
+   "role": "architect",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my rabbi says that all the time",
+   "role": "rabbi",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "in the game i'm the electrician so i fix the generators",
+   "role": "electrician",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and he's like i'm a pharmacist i know what i'm doing",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i dreamed i was a firefighter and woke up sweating",
+   "role": "firefighter",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "if i was the sheriff i'd fix that intersection first",
+   "role": "sheriff",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my sister's a deacon over at saint mark's",
+   "role": "deacon",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you're an electrician right",
+   "role": "electrician",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i'm basically the umpire at every family game night",
+   "role": "umpire",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "no i'm not the pharmacist i just work the register",
+   "role": "pharmacist",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i'm studying to be an electrician",
+   "role": "electrician",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my dad's an architect so i grew up around blueprints",
+   "role": "architect",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i'm married to a firefighter so i never sleep when he's on shift",
+   "role": "firefighter",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i played the sheriff in our high school musical",
+   "role": "sheriff",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i was almost a deacon but life got in the way",
+   "role": "deacon",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "do i look like a plumber to you",
+   "role": "plumber",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the architect of this whole mess is sitting right there",
+   "role": "architect",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you know the one where a rabbi and a priest walk into a bar",
+   "role": "rabbi",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my grandpa used to tell everybody he was the best plumber in the county",
+   "role": "plumber",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "thirty years an umpire and i still get yelled at every saturday",
+   "role": "umpire",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "speaking as a former umpire that was a terrible call",
+   "role": "umpire",
+   "expect": true,
+   "form": "caption"
+  }
+ ]
+}

@@ -1,0 +1,2247 @@
+{
+ "vocative": [
+  {
+   "s": "Lena, what happened after you got off the bus?",
+   "name": "Lena",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "What an honor to finally shake your hand, Gus.",
+   "name": "Gus",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Theo, where were you when the lights went out?",
+   "name": "Theo",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks for coming on the show, Otis.",
+   "name": "Otis",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "That's a fair point, Fatou, but the numbers say otherwise.",
+   "name": "Fatou",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I think, Gus, that you're underselling the defense.",
+   "name": "Gus",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "And what I really want to know, Lena, is who paid for the boat.",
+   "name": "Lena",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Look — and Shirin, correct me if I'm wrong — the vote was never close.",
+   "name": "Shirin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "The secret — Marguerite, you'll love this — is a splash of vinegar at the very end.",
+   "name": "Marguerite",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Well, Dex, I hate to say it, but you called it.",
+   "name": "Dex",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Okay, Rosalind, walk me through the morning of the flood.",
+   "name": "Rosalind",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Oh, Kit, that's the sweetest thing anyone's ever said to me.",
+   "name": "Kit",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Sorry, Theo, go ahead — I cut you off.",
+   "name": "Theo",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thank you so much, Shirin, for driving all this way.",
+   "name": "Shirin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hi, Otis, you're on the air.",
+   "name": "Otis",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Cheers, Gus — to another season of bad decisions!",
+   "name": "Gus",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Here's to you, Marguerite, and to forty years of Sunday dinners.",
+   "name": "Marguerite",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Yes, Fatou, exactly — that's the whole point.",
+   "name": "Fatou",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Gus, the thing nobody tells you is that the oven runs hot.",
+   "name": "Gus",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Fatou, the crowd is going absolutely wild out there.",
+   "name": "Fatou",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Kit, are you serious right now?",
+   "name": "Kit",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Where did you grow up, Shirin?",
+   "name": "Shirin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You were at that game, weren't you, Dex?",
+   "name": "Dex",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Rosalind, butter or oil?",
+   "name": "Rosalind",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "How many years has it been now, Otis?",
+   "name": "Otis",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Isn't that what your father always used to say, Theo?",
+   "name": "Theo",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Gus, pass me the salt, would you?",
+   "name": "Gus",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hand me that whisk, Theo.",
+   "name": "Theo",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Stop stirring it, Kit, or you'll break the eggs.",
+   "name": "Kit",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Please, Lena, take all the time you need.",
+   "name": "Lena",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Would you mind, Rosalind, reading that last line again?",
+   "name": "Rosalind",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Shirin! Over here — we saved you a seat.",
+   "name": "Shirin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Gus? Gus, can you hear me now?",
+   "name": "Gus",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Theo in Dayton, you're on the air.",
+   "name": "Theo",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Let's go to the phones — Marguerite, go ahead.",
+   "name": "Marguerite",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Next up is Rosalind from the east side — Rosalind, welcome to the show.",
+   "name": "Rosalind",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Come on, Dex, that was a clean tackle and you know it.",
+   "name": "Dex",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Otis, buddy, the shortstop can't hit a curveball to save his life.",
+   "name": "Otis",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Over to you, Marguerite — what's the verdict?",
+   "name": "Marguerite",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "And with that, Shirin, the floor is yours.",
+   "name": "Shirin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Back to you in the studio, Lena.",
+   "name": "Lena",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Dex, you absolute gremlin, you ate the last dumpling!",
+   "name": "Dex",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Gus the Bus, how's the knee holding up?",
+   "name": "Gus",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Fatou the Great, you've done it again!",
+   "name": "Fatou",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Chef, how long do these need in the oven?",
+   "name": "Chef",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Yes, Chef!",
+   "name": "Chef",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Doc, be honest with me — is it broken?",
+   "name": "Doc",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Pastor, would you say grace before we eat?",
+   "name": "Pastor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "With all due respect, Sergeant, that's not how it happened.",
+   "name": "Sergeant",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Great game tonight, Coach.",
+   "name": "Coach",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Kit, honestly, you never return a phone call.",
+   "name": "Kit",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Theo, Lena says hi.",
+   "name": "Theo",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Dex and Kit, you two are trouble.",
+   "name": "Kit",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Gus, Lena, Theo — dinner's ready!",
+   "name": "Lena",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Lena, you won't believe it — she literally said, 'Gus, put the phone down.'",
+   "name": "Lena",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Shirin, this is Otis.",
+   "name": "Shirin",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Fatou, have you met Dex?",
+   "name": "Fatou",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'll see you at the game, Otis.",
+   "name": "Otis",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "But Theo, you said you'd be here by six!",
+   "name": "Theo",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Not now, Kit, I'm on the phone.",
+   "name": "Kit",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You, Gus, are the reason we lost that game.",
+   "name": "Gus",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Theo, my friend, you could not be more wrong.",
+   "name": "Theo",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Tell me, Fatou, what happened next?",
+   "name": "Fatou",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Let me finish, Dex.",
+   "name": "Dex",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Coach, the fans want answers about that fourth-down call.",
+   "name": "Coach",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Doc, I've had this cough for three weeks now.",
+   "name": "Doc",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Good morning, Pastor!",
+   "name": "Pastor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Sergeant, permission to speak freely?",
+   "name": "Sergeant",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Okay, Marguerite, your turn.",
+   "name": "Marguerite",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I might be wrong, Lena, but I think kickoff's at seven.",
+   "name": "Lena",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Kit, honey, go wash your hands before dinner.",
+   "name": "Kit",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Ladies and gentlemen — and you too, Otis — the bar is now open.",
+   "name": "Otis",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You know, Theo, I never thought of it that way.",
+   "name": "Theo",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I don't think anyone in this building saw that coming, least of all you, Rosalind.",
+   "name": "Rosalind",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "lena what time did the fire trucks finally show up",
+   "name": "lena",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "its been way too long gus how are you",
+   "name": "gus",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "so shirin how long were you in the band",
+   "name": "shirin",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "dex you cant be serious",
+   "name": "dex",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "come on otis that was a foul all day",
+   "name": "otis",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "fatou youre on the air go ahead",
+   "name": "fatou",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "kit pass me the tongs real quick",
+   "name": "kit",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "chef how much salt goes in the water",
+   "name": "chef",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "doc i have a question about my knee",
+   "name": "doc",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "pastor thank you for having us tonight",
+   "name": "pastor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "sergeant can i tell you something off the record",
+   "name": "sergeant",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "coach whos starting at quarterback on sunday",
+   "name": "coach",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i hear you theo but the numbers dont lie",
+   "name": "theo",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "sorry gus go ahead",
+   "name": "gus",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "hey kit welcome back to the show",
+   "name": "kit",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "well marguerite that is the best gumbo ive ever had",
+   "name": "marguerite",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "listen otis i need you to hear this",
+   "name": "otis",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "and what i want to know lena is who paid for it",
+   "name": "lena",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "you know fatou i never thought id see the day",
+   "name": "fatou",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "no no no gus listen to me",
+   "name": "gus",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "oh rosalind you shouldnt have",
+   "name": "rosalind",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thanks for holding rosalind whats on your mind",
+   "name": "rosalind",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "marguerite in toledo youre on the air",
+   "name": "marguerite",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "lets go to the phones theo youre on the air",
+   "name": "theo",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "back to you lena",
+   "name": "lena",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "over to you dex",
+   "name": "dex",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "happy birthday fatou make a wish",
+   "name": "fatou",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "welcome to the show marguerite",
+   "name": "marguerite",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "the problem gus is that nobody wants to pay for it",
+   "name": "gus",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "what im saying theo is the defense was gassed",
+   "name": "theo",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "yes chef",
+   "name": "chef",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "great game coach",
+   "name": "coach",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "tell me gus what happened next",
+   "name": "gus",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "let me finish kit",
+   "name": "kit",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "give me the ball otis",
+   "name": "otis",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "watch this shirin",
+   "name": "shirin",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "please lena sit down",
+   "name": "lena",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "but theo you said youd be here",
+   "name": "theo",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "oh gus you didnt",
+   "name": "gus",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "well dex thats the ballgame",
+   "name": "dex",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "okay marguerite your turn",
+   "name": "marguerite",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i mean kit come on",
+   "name": "kit",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "proud of you otis",
+   "name": "otis",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "theo my friend you are dead wrong",
+   "name": "theo",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thanks fatou for the cookies",
+   "name": "fatou",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "big dex my guy whats good",
+   "name": "dex",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "lena the legend welcome back to the pod",
+   "name": "lena",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "rosalind you little weasel that was my seat",
+   "name": "rosalind",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "shirin shirin over here we saved you a seat",
+   "name": "shirin",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "cheers rosalind",
+   "name": "rosalind",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i dont think you understand how big this is fatou",
+   "name": "fatou",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "You know Theo's going to say no.",
+   "name": "Theo",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Theo, frankly, was the best player on that field.",
+   "name": "Theo",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Lena, to her credit, apologized the very next morning.",
+   "name": "Lena",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Dex, as usual, had the last word.",
+   "name": "Dex",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Shirin — bless her — made enough soup for an army.",
+   "name": "Shirin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Coach benched him for the entire fourth quarter.",
+   "name": "Coach",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Doc says I can't run for six weeks.",
+   "name": "Doc",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Chef wants every plate out in five minutes.",
+   "name": "Chef",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Pastor always ends the service with that same hymn.",
+   "name": "Pastor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Sergeant made us run laps until midnight.",
+   "name": "Sergeant",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Don't trust Dex with the grill.",
+   "name": "Dex",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Tell Kit I said hello.",
+   "name": "Kit",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ask Marguerite — she knows everything about bread.",
+   "name": "Marguerite",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Give Kit a big round of applause, everybody!",
+   "name": "Kit",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Lena's lasagna won the county fair three years running.",
+   "name": "Lena",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My sister Lena moved to Tucson in the spring.",
+   "name": "Lena",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Gus the mechanic swore the brakes were fine.",
+   "name": "Gus",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Dex, the guy who runs the taco truck, gave us free food.",
+   "name": "Dex",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Rosalind, my oldest friend, flew in for the wedding.",
+   "name": "Rosalind",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Fatou, a retired firefighter from the north side, called in last week.",
+   "name": "Fatou",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Shirin, sitting in the front row, started crying.",
+   "name": "Shirin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Marguerite, known all over town for her sourdough, opened a second shop.",
+   "name": "Marguerite",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Lena and Theo are getting married in June.",
+   "name": "Lena",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We had Gus, Otis and Kit over for dinner.",
+   "name": "Otis",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Shirin, Fatou, and I split the bill three ways.",
+   "name": "Shirin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "And Gus, he never shows up on time, not once.",
+   "name": "Gus",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Otis? Otis is fine, he's just tired.",
+   "name": "Otis",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Theo — now there's a guy who can cook.",
+   "name": "Theo",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My aunt Marguerite, you would have loved her.",
+   "name": "Marguerite",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Coming up after the break, Shirin tells us how she lost the farm.",
+   "name": "Shirin",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My next guest is Fatou, a chef from the coast.",
+   "name": "Fatou",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Please welcome to the stage, Rosalind!",
+   "name": "Rosalind",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Everybody, this is Kit.",
+   "name": "Kit",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My dad yelled, 'Theo, get off the roof!'",
+   "name": "Theo",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "And the ref goes, 'Dex, that's your last warning.'",
+   "name": "Dex",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Then my mother turns around and says Lena, you're grounded.",
+   "name": "Lena",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "And I'm like, Kit, what are you even doing?",
+   "name": "Kit",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Here's a text from a listener: 'Otis, love the show, but you're wrong about the draft.'",
+   "name": "Otis",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The letter opens, 'Dear Rosalind, my husband won't eat anything green.'",
+   "name": "Rosalind",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Somebody in the chat says, 'Dex, your mic is way too loud.'",
+   "name": "Dex",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We're broadcasting live from the corner of Otis and Fifth.",
+   "name": "Otis",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Have you been watching The Rosalind Hour?",
+   "name": "Rosalind",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We ordered from Fatou's Kitchen again last night.",
+   "name": "Fatou",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "If you know Gus, you know he hates losing.",
+   "name": "Gus",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Have you met Theo?",
+   "name": "Theo",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Kit, honestly, never returns a phone call.",
+   "name": "Kit",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Theo, my friend, was wrong about everything.",
+   "name": "Theo",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Tell Fatou what happened next.",
+   "name": "Fatou",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Shirin, this is Otis.",
+   "name": "Otis",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Fatou, have you met Dex?",
+   "name": "Dex",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Theo, Lena says hi.",
+   "name": "Lena",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "But Theo said he'd be here by six!",
+   "name": "Theo",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Oh, Gus already left.",
+   "name": "Gus",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Okay, Marguerite's turn.",
+   "name": "Marguerite",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Sorry, Otis couldn't make it tonight — he's working a double.",
+   "name": "Otis",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "To Marguerite, who made all of this possible!",
+   "name": "Marguerite",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Big shout-out to Fatou, who did all the editing this week.",
+   "name": "Fatou",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "They call him Doc around here.",
+   "name": "Doc",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I coach my daughter's soccer team on weekends.",
+   "name": "coach",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Can you send me the doc before the meeting?",
+   "name": "doc",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The chef came out and shook everybody's hand.",
+   "name": "chef",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Did Coach say anything to you after the game?",
+   "name": "Coach",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Lena, you won't believe it — she literally said, 'Gus, put the phone down.'",
+   "name": "Gus",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The Theo I knew would never have done that.",
+   "name": "Theo",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Hi, this is Gus, I'm a first-time caller.",
+   "name": "Gus",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Lena here, reporting live from the county fair.",
+   "name": "Lena",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Team Kit takes the first round by a single point.",
+   "name": "Kit",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You know Otis, right? The guy with the boat?",
+   "name": "Otis",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The best cook in this family has always been Rosalind.",
+   "name": "Rosalind",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Gus, wherever you are, buddy, this touchdown's for you.",
+   "name": "Gus",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Rest easy, Otis — we'll keep the porch light on for you.",
+   "name": "Otis",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Lena, if you're listening up there, the garden finally bloomed.",
+   "name": "Lena",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Shirin, if you're hearing this at home, call your mother right now.",
+   "name": "Shirin",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Pastor, I wish you had lived to see this day.",
+   "name": "Pastor",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "i ran into rosalind at the grocery store",
+   "name": "rosalind",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "gus was the best coach we ever had",
+   "name": "gus",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my cousin dex moved to florida last year",
+   "name": "dex",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "otis and i go way back",
+   "name": "otis",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "we had dinner with marguerite last night",
+   "name": "marguerite",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the guy who fixed our sink was named kit",
+   "name": "kit",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "rosalind's pie is the best thing at the fair",
+   "name": "rosalind",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "dex honestly never calls anybody back",
+   "name": "dex",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "theo bless his heart tried his best",
+   "name": "theo",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "shirin who ive known since kindergarten just had twins",
+   "name": "shirin",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "otis sitting there in the front row started crying",
+   "name": "otis",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "if you know theo you know hes never on time",
+   "name": "theo",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you know fatou is gonna say no",
+   "name": "fatou",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "did you see what lena posted",
+   "name": "lena",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "this episode is brought to you by gus's hardware",
+   "name": "gus",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the rosalind cup is this weekend",
+   "name": "rosalind",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and she goes lena you cant park there",
+   "name": "lena",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "so the ref looks at him and goes dex one more word and youre gone",
+   "name": "dex",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "a listener wrote in and said dear otis please stop talking about your boat",
+   "name": "otis",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "say hi to lena for me",
+   "name": "lena",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "give it up for otis everybody",
+   "name": "otis",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "coming up after the break dex tells us about his time in the minors",
+   "name": "dex",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my next guest is a chef from portland please welcome shirin",
+   "name": "shirin",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and gus he never ever shows up on time",
+   "name": "gus",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my cousin lena i havent seen her since high school",
+   "name": "lena",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "marguerite i think was the one who started it",
+   "name": "marguerite",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "chef says we need more butter",
+   "name": "chef",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "doc told me to stay off it for a month",
+   "name": "doc",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "coach benched him in the second half",
+   "name": "coach",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the pastor married us in that little church",
+   "name": "pastor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the sergeant was yelling at everybody",
+   "name": "sergeant",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i coach little league on weekends",
+   "name": "coach",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "grab the first aid kit from the truck",
+   "name": "kit",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "let kit finish",
+   "name": "kit",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "watch shirin do this",
+   "name": "shirin",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "but theo said hed be here",
+   "name": "theo",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "oh gus already left",
+   "name": "gus",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "well gus did warn us",
+   "name": "gus",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "okay marguerite's turn",
+   "name": "marguerite",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "so proud of otis",
+   "name": "otis",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "theo my friend from college was wrong about everything",
+   "name": "theo",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "thanks to fatou for the cookies",
+   "name": "fatou",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "did coach say anything after the game",
+   "name": "coach",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "team lena takes the first round",
+   "name": "lena",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "hey its theo calling back about the truck",
+   "name": "theo",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "tell me about gus",
+   "name": "gus",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the one who taught me to cook was marguerite",
+   "name": "marguerite",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "dex wherever you are i hope youre proud of us",
+   "name": "dex",
+   "expect": false,
+   "form": "caption",
+   "note": "absent"
+  },
+  {
+   "s": "rest in peace fatou we love you",
+   "name": "fatou",
+   "expect": false,
+   "form": "caption",
+   "note": "absent"
+  },
+  {
+   "s": "happy heavenly birthday theo",
+   "name": "theo",
+   "expect": false,
+   "form": "caption",
+   "note": "absent"
+  },
+  {
+   "s": "marguerite if youre watching this at home turn the oven off",
+   "name": "marguerite",
+   "expect": false,
+   "form": "caption",
+   "note": "absent"
+  },
+  {
+   "s": "coach i know youre not with us anymore but we did this for you",
+   "name": "coach",
+   "expect": false,
+   "form": "caption",
+   "note": "absent"
+  },
+  {
+   "s": "Mom always told me, Fatou, never trust a man who doesn't cook.",
+   "name": "Fatou",
+   "expect": false,
+   "form": "punct",
+   "note": "ambiguous"
+  },
+  {
+   "s": "welcome rosalind",
+   "name": "rosalind",
+   "expect": true,
+   "form": "caption",
+   "note": "ambiguous"
+  },
+  {
+   "s": "you remember marguerite right",
+   "name": "marguerite",
+   "expect": false,
+   "form": "caption",
+   "note": "ambiguous"
+  },
+  {
+   "s": "theo ive known him twenty years",
+   "name": "theo",
+   "expect": false,
+   "form": "caption",
+   "note": "ambiguous"
+  }
+ ],
+ "role": [
+  {
+   "s": "I'm a welder by trade — have been since I was nineteen.",
+   "role": "welder",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a pastor for twenty-two years before I retired.",
+   "role": "pastor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I used to be a referee in the youth leagues.",
+   "role": "referee",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I spent eleven years as a lineman for the power company.",
+   "role": "lineman",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I trained as a sommelier in my twenties.",
+   "role": "sommelier",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My first job was as a teacher in a one-room schoolhouse.",
+   "role": "teacher",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Speaking as a surgeon, I would never eat that.",
+   "role": "surgeon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As a welder, I can tell you that joint won't hold.",
+   "role": "welder",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Being a pastor myself, I understand that kind of pressure.",
+   "role": "pastor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "We're both surgeons, so dinner conversation gets pretty gross.",
+   "role": "surgeon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was one of four detectives assigned to the case.",
+   "role": "detective",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm an ex-referee, so I notice every missed call.",
+   "role": "referee",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You're a teacher? So am I!",
+   "role": "teacher",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As a former lineman, the cold never really bothered me.",
+   "role": "lineman",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Having worked as a sommelier for a decade, wine lists don't scare me.",
+   "role": "sommelier",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Retired veterinarian here — that dog needs to be seen today.",
+   "role": "veterinarian",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Before I opened the restaurant, I was a sommelier in Napa.",
+   "role": "sommelier",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I became a pastor at forty, after the factory closed.",
+   "role": "pastor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Me? I'm a veterinarian — mostly cows and horses.",
+   "role": "veterinarian",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My husband and I are both teachers, so summers are chaos.",
+   "role": "teacher",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "He's a welder, and so was I, for about six years.",
+   "role": "welder",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "She's a surgeon — me too, actually.",
+   "role": "surgeon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I retired as a detective after thirty-one years on the force.",
+   "role": "detective",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Back when I was a referee, the coaches screamed at me every night.",
+   "role": "referee",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "People think I'm a surgeon because of the scrubs, but I'm a nurse.",
+   "role": "nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not the referee, I'm the coach.",
+   "role": "coach",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a surgeon — or I was, until my hands started shaking.",
+   "role": "surgeon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Twenty years a detective, and I've never seen anything like it.",
+   "role": "detective",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As a teacher for twenty years, kids can't fool me anymore.",
+   "role": "teacher",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a full-time teacher and a part-time referee.",
+   "role": "referee",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm still technically a pastor, even though I don't preach anymore.",
+   "role": "pastor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a lineman in college, so I know what a sack feels like.",
+   "role": "lineman",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Former surgeon, current baker — that's my story.",
+   "role": "surgeon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a judge in family court for twelve years.",
+   "role": "judge",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a butcher, and that's not how you cut a brisket.",
+   "role": "butcher",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My first job out of school was as a sommelier's assistant, and then I became a sommelier myself.",
+   "role": "sommelier",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I've been a detective, a bartender, and a dog groomer, in that order.",
+   "role": "detective",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Speaking as a former detective, I'd want to see the receipts first.",
+   "role": "detective",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "im a welder so i know a bad weld when i see one",
+   "role": "welder",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was a referee for fifteen years",
+   "role": "referee",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i used to be a teacher before all this",
+   "role": "teacher",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "speaking as a surgeon thats not how it works",
+   "role": "surgeon",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i spent ten years as a detective in the robbery unit",
+   "role": "detective",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "as a pastor i get asked that question a lot",
+   "role": "pastor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i trained as a sommelier in france",
+   "role": "sommelier",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "my first job was as a lineman for the county",
+   "role": "lineman",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "being a veterinarian myself i see this all the time",
+   "role": "veterinarian",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "we were both teachers at the same school",
+   "role": "teacher",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "im a retired detective so i notice things",
+   "role": "detective",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "as a former referee i can tell you that was a terrible call",
+   "role": "referee",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "ive been a pastor for almost thirty years",
+   "role": "pastor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was one of three surgeons on call that night",
+   "role": "surgeon",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "im an ex lineman and my knees are shot",
+   "role": "lineman",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "back when i was a sommelier i tasted forty wines a day",
+   "role": "sommelier",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "my wife is a teacher and so am i",
+   "role": "teacher",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "as a veterinarian for thirty years dogs just trust me",
+   "role": "veterinarian",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i worked as a welder on the pipeline for six years",
+   "role": "welder",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "My brother is a welder at the shipyard.",
+   "role": "welder",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You're a detective? So was my father.",
+   "role": "detective",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My son's the veterinarian; I just hold the dogs still.",
+   "role": "veterinarian",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My best friend and I both married surgeons.",
+   "role": "surgeon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I come from a long line of pastors.",
+   "role": "pastor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I drove her to every exam until she became a veterinarian.",
+   "role": "veterinarian",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a pretty good judge of character.",
+   "role": "judge",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm basically the referee in this family.",
+   "role": "referee",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I had to play detective to figure out who ate the pie.",
+   "role": "detective",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm basically a detective when it comes to finding the TV remote.",
+   "role": "detective",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the sommelier of gas-station coffee.",
+   "role": "sommelier",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a referee's worst nightmare when I'm in the stands.",
+   "role": "referee",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm no surgeon, but that cut definitely needs stitches.",
+   "role": "surgeon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not a sommelier or anything, but this wine tastes like vinegar.",
+   "role": "sommelier",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "He's not a pastor, and neither am I.",
+   "role": "pastor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I was never a lineman — I was the kicker.",
+   "role": "lineman",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I always wanted to be a veterinarian.",
+   "role": "veterinarian",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I dreamed last night that I was a surgeon and forgot where the heart goes.",
+   "role": "surgeon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm going to be a teacher when I grow up!",
+   "role": "teacher",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I wish I'd been a teacher instead of an accountant.",
+   "role": "teacher",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I played a detective in a student film back in college.",
+   "role": "detective",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "In the community theater show, I was a pastor with a secret.",
+   "role": "pastor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the detective in our murder-mystery game tonight.",
+   "role": "detective",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "If I were a referee, I'd have thrown him out in the first minute.",
+   "role": "referee",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Imagine me as a sommelier — I can't tell red from white.",
+   "role": "sommelier",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'd make a terrible surgeon — I faint at paper cuts.",
+   "role": "surgeon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I almost became a pastor, but I met my wife instead.",
+   "role": "pastor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Are you a teacher?",
+   "role": "teacher",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Weren't you a lineman in college?",
+   "role": "lineman",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My mom always said, 'I'm a teacher, not a babysitter.'",
+   "role": "teacher",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "'I'm a surgeon,' the man said, and then he fainted at the sight of blood.",
+   "role": "surgeon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I was such a teacher's pet in fourth grade.",
+   "role": "teacher",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I actually read the surgeon general's warning on the pack.",
+   "role": "surgeon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a welder's daughter, so I grew up around sparks.",
+   "role": "welder",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the pastor's wife, so I hear everything.",
+   "role": "pastor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I bought a welder at the hardware store for my garage.",
+   "role": "welder",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I keep a pair of lineman's pliers in my truck.",
+   "role": "lineman",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I wear a welder's mask when I chop onions.",
+   "role": "welder",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "People think I'm a surgeon because of the scrubs, but I'm a nurse.",
+   "role": "surgeon",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not the referee, I'm the coach.",
+   "role": "referee",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "As a welder's son, I learned early to respect the torch.",
+   "role": "welder",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "my dad was a welder for forty years",
+   "role": "welder",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i always wanted to be a surgeon",
+   "role": "surgeon",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "im no detective but something is off here",
+   "role": "detective",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "were you ever a teacher",
+   "role": "teacher",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i played a referee in a commercial once",
+   "role": "referee",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "im the referee in this house",
+   "role": "referee",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i was a total teacher's pet",
+   "role": "teacher",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "imagine me as a lineman i weigh like a hundred and forty pounds",
+   "role": "lineman",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and he goes im a detective lady",
+   "role": "detective",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i dreamed i was a veterinarian on a big farm",
+   "role": "veterinarian",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i could never be a pastor",
+   "role": "pastor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "if i was a referee id have tossed him",
+   "role": "referee",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i bought a welder off a guy online",
+   "role": "welder",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "she says shes a surgeon but i dont believe her",
+   "role": "surgeon",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "im a terrible judge of character",
+   "role": "judge",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "our veterinarian said the dog is fine",
+   "role": "veterinarian",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my wife is a teacher and so is her sister",
+   "role": "teacher",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "I'm a teacher at heart, even though I sell insurance now.",
+   "role": "teacher",
+   "expect": false,
+   "form": "punct",
+   "note": "ambiguous"
+  }
+ ]
+}

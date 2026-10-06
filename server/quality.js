@@ -41,7 +41,7 @@ function attributionGate(b) {
   return { status: "held", method: "Speaker labels have not finished preparation." };
 }
 
-const { isNeutral, SPEAKER_CHECKED, AD_CHECKED } = require("../shared/prompts");
+const { isNeutral, SPEAKER_CHECKED, AD_CHECKED, PLAIN_CHECKED, PLAIN_WORDS } = require("../shared/prompts");
 const OLD_EMPIRICAL = ["fact", "contested", "unsupported"];
 /* `contract` is the reading contract the analysis was written under (recorded on its model call). Records written
    before 0.12 have none and keep the rules they were accepted under; the consistency rules below apply to reading-2 and
@@ -99,9 +99,16 @@ function contentIssues(a, p, turns, overrides, kind, contract) {
     a.claims.forEach((c, i) => { if (/^AD \d+$/.test(String(c.speaker || "").toUpperCase())) issues.push("claims[" + i + "]: taken from an advertisement (" + c.speaker + "), which is not part of the conversation"); });
     if (a.asSaid.some(q => /^AD \d+$/.test(String(q.speaker || "").toUpperCase()) || (turns[q.turn] && /^AD \d+$/.test(shared.effSpeaker(turns[q.turn], overrides))))) issues.push("asSaid: a quotation is taken from an advertisement, which is not part of the conversation");
   }
+  // reading-6: "In plain words" is the card's gist, held to its length (a correction is asked for; length alone never
+  // holds a reading: isLengthIssue, preparation.reviewedReading)
+  if (kind !== "claim" && PLAIN_CHECKED.includes(contract)) {
+    for (const lv of ["hs", "g5"]) { const n = shared.wordsOf(a.deflated[lv] || "").split(" ").filter(Boolean).length; if (n > PLAIN_WORDS[lv].limit) issues.push("deflated." + lv + ": In plain words runs to " + n + " words; the card asks for at most " + PLAIN_WORDS[lv].ask + ": two or three short sentences with the main claim and its main reason, attributed, keeping the speaker's certainty and scope. The claims carry the rest."); }
+  }
   if (oversized || a.truncated.asSaid || a.truncated.claims) issues.push("the model output exceeded the card limits");
   return [...new Set(issues)];
 }
+/* A problem of length alone ("In plain words runs to …"): corrected when it can be, never a reason to hold a reading. */
+const isLengthIssue = s => /^deflated\.(?:hs|g5): In plain words runs to \d+ words; the card asks for at most \d+/.test(String(s));
 
 // Only corrections determined from the transcript itself are applied here. The provider's original answer stays
 // in its hashed call record; these adjustments are documented on the checked call, before any card is saved.
@@ -136,9 +143,10 @@ function readingGate(b, p) {
     p.analysis.judgments.evidence === "n/a" && p.analysis.judgments.inference === "n/a";
   if (personOnly) return { status: reasons.length ? "held" : "ready", reasons, method: "Your typed claim, ready to search; not an AI explanation." };
   const turns = shared.parseTranscript(b.transcript, { mode: b.run.parseMode || "transcript" });
-  reasons.push(...contentIssues(p.analysis, p, turns, b.run.provenance && b.run.provenance.overrides || {}, b.run.kind, p.provenance && p.provenance.contract));
+  // (a reading shown although its plain words run long keeps being shown: length alone never holds one, reading-6)
+  reasons.push(...contentIssues(p.analysis, p, turns, b.run.provenance && b.run.provenance.overrides || {}, b.run.kind, p.provenance && p.provenance.contract).filter(x => !isLengthIssue(x)));
   const review = p.provenance && p.provenance.review;
   if (!review || !review.approved || review.analysisHash !== analysisHash(p.analysis)) reasons.push("This reading has not passed the preparation review.");
   return { status: reasons.length ? "held" : "ready", reasons: [...new Set(reasons)], method: "Quotes, reading levels and a separate model review checked before display; empirical sources remain separate." };
 }
-module.exports = { analysisHash, summaryHash, summaryIssues, attributionGate, contentIssues, repairQuotes, readingGate };
+module.exports = { analysisHash, summaryHash, summaryIssues, attributionGate, contentIssues, repairQuotes, readingGate, isLengthIssue };

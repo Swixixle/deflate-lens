@@ -9,6 +9,14 @@ const assert = require("node:assert/strict");
 const I = require("../server/identify");
 const first = require("./fixtures/identify-scenarios");
 const second = require("./fixtures/identify-scenarios-2");
+const third = require("./fixtures/identify-scenarios-3");
+const fourth = require("./fixtures/identify-scenarios-4");
+const fifth = require("./fixtures/identify-scenarios-5");
+const sixth = require("./fixtures/identify-scenarios-6");
+const seventh = require("./fixtures/identify-scenarios-7");
+const seventhAnswers = require("./fixtures/identify-answers-7.json");
+// (three black-box reviews written without reading the implementation, each with a model's recorded answers)
+const blind = [8, 9, 10].map(n => ({ n, set: require("./fixtures/identify-scenarios-" + n), answers: require("./fixtures/identify-answers-" + n + ".json") }));
 
 /* Misses the app accepts, because the words do not settle them. */
 const ACCEPTED = {
@@ -17,13 +25,15 @@ const ACCEPTED = {
 };
 const BLANK = { show: "", showAuthor: "", showArtist: "", showPersons: [], channel: false, episodeTitle: "", description: "", episodeAuthor: "", episodePersons: [], runTitle: "", sourceLabel: "" };
 
-async function identify(sc) {
+async function identify(sc, recorded) {
   const L = Object.assign({}, BLANK, sc.L);
   const transcript = sc.lines.join("\n");
   const run = { id: "run_adv", kind: "transcript", parseMode: "text", input: { sha256: "h" }, speakers: [], provenance: {}, title: L.runTitle, sourceLabel: L.sourceLabel,
     import: { showInfo: { name: L.show, author: L.showAuthor, artist: L.showArtist, persons: L.showPersons, channel: L.channel }, episodeInfo: { title: L.episodeTitle, description: L.description, author: L.episodeAuthor, persons: L.episodePersons } } };
   const store = { bundle: async () => ({ run, transcript, attrSig: "a0-0" }), captureCallBasis: async () => ({}), recordCall: async () => {} };
-  const ai = sc.model ? { kind: "mock", model: "scripted", mock: true, sample: async () => { const data = sc.model(); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
+  // (the scenario's own scripted model first; else a model's recorded answer to the exact prompt, when the set has one)
+  const answer = sc.model ? sc.model : recorded ? () => JSON.parse(JSON.stringify(recorded)) : null;
+  const ai = answer ? { kind: "mock", model: "scripted", mock: true, sample: async () => { const data = answer(); return { data, text: JSON.stringify(data), model: "scripted", requestId: "r", stopReason: "end_turn", usage: null }; } } : null;
   const out = await I.identifySpeakers({ ai, store, id: run.id });
   const names = {};
   for (const s of out.speakers) names[s.key] = (out.record.decisions.find(d => d.key === s.key) || {}).name || null;
@@ -36,10 +46,11 @@ function judge(exp, got) {
   if (exp.oneOf) return exp.oneOf.includes(got) ? "ok" : got === null ? "MISSED" : "WRONG";
   throw new Error("unknown expectation " + JSON.stringify(exp));
 }
-async function runAll(set) {
+async function runAll(set, answers, only) {
   const wrong = [], missed = [];
   for (const sc of set.S) {
-    const names = await identify(sc);
+    if (only && !only(sc)) continue;
+    const names = await identify(sc, answers ? answers[sc.id] : null);
     for (const [key, exp] of Object.entries(sc.expect)) {
       const v = judge(exp, names[key] === undefined ? null : names[key]);
       const line = sc.id + " " + key + ": got " + JSON.stringify(names[key]) + ", expected " + JSON.stringify(exp) + " — " + sc.title;
@@ -61,6 +72,62 @@ test("adversarial scenarios, second set (teasers, descriptions, callers, caption
   assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
   assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
 });
+test("adversarial scenarios, third set (0.14.2: titles and callings, hosts named by the show and its publisher, a host away, two priests, advertisements and clips, captions): no wrong name, and no miss beyond the accepted ones", async () => {
+  const r = await runAll(third);
+  assert.ok(r.count >= 20, "the whole set ran: " + r.count);
+  assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
+  assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
+});
+test("adversarial scenarios, fourth set (0.14.2, from an independent review: shared titles, callings not the speaker's own, the dead, the absent and the late, callers, names that are not people, openers who do not host): no wrong name, and no miss beyond the accepted ones", async () => {
+  const r = await runAll(fourth);
+  assert.ok(r.count >= 70, "the whole set ran: " + r.count);
+  assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
+  assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
+});
+test("adversarial scenarios, fifth set (0.14.2, a second independent review: absent subjects, reported speech, prayers, hand-overs, odd callings, co-hosts, the model pushing a mention, voices taken for the host, absence words, captions): no wrong name, and no miss beyond the accepted ones", async () => {
+  const r = await runAll(fifth);
+  assert.ok(r.count >= 80, "the whole set ran: " + r.count);
+  assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
+  assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
+});
+test("adversarial scenarios, sixth set (0.14.2, a third independent review: rewordings of the fifth set's traps, and 28 ordinary openings that must keep their names): no wrong name, and no miss beyond the accepted ones", async () => {
+  const r = await runAll(sixth);
+  assert.ok(r.count >= 72, "the whole set ran: " + r.count);
+  assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
+  assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
+});
+test("adversarial scenarios, seventh set (0.14.2, a fourth independent review), read by both readers: with a model's recorded answer to each prompt, no wrong name and no miss", async () => {
+  // the two readers together: the app's checks of every clue, and the model's reading of the conversation, which meets
+  // the attacks reworded to slip past the app's lists of words (the people a listing names who are not in the
+  // conversation, stand-ins, stories told, callers and co-hosts who share a guest's first name)
+  assert.equal(Object.keys(seventhAnswers).length, seventh.S.length, "an answer for every scenario");
+  const r = await runAll(seventh, seventhAnswers);
+  assert.ok(r.count >= 70, "the whole set ran: " + r.count);
+  assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
+  assert.deepEqual(r.missed, [], "misses:\n" + r.missed.join("\n"));
+});
+test("adversarial scenarios, seventh set, the app's reading alone: the ordinary openings keep their names (a guest only the episode's title names, under a GUEST label, waits for the model)", async () => {
+  // (alone, the app still gives wrong names on many of the set's reworded attacks; that is why the model's reading is
+  // asked for, and why its answer can hold a name back)
+  const r = await runAll(seventh, null, sc => /^R\d/.test(sc.id));
+  assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
+  assert.deepEqual(r.missed, ["R9 GUEST: got null, expected \"Dana Reyes\" — " + seventh.S.find(sc => sc.id === "R9").title], "misses");
+});
+/* Misses the two readers accept on the black-box sets, each with its reason: the safe failures left. */
+const BLIND_ACCEPTED = {
+  "8 T20": "a rebroadcast of a founder who has died: the listing says so, and the dead are placed only by a voice naming itself",
+  "10 L14": "a host who jokes that he is not himself (“I'm not Bob, … it's me, it's Bob”): the denial and the joke speak against the name",
+  "10 L15": "the model's reading leaves the voice unnamed (the other listed guest is said to be stuck in traffic; only elimination would name her)",
+};
+for (const { n, set, answers } of blind) {
+  test("black-box review " + n + " (" + set.S.length + " scenarios), read by both readers with a model's recorded answers: no wrong name, and no miss beyond the accepted ones", async () => {
+    assert.equal(Object.keys(answers).length, set.S.length, "an answer for every scenario");
+    const r = await runAll(set, answers);
+    assert.deepEqual(r.wrong, [], "wrong names:\n" + r.wrong.join("\n"));
+    const missed = r.missed.filter(l => !BLIND_ACCEPTED[n + " " + l.split(" ")[0]]);
+    assert.deepEqual(missed, [], "misses:\n" + missed.join("\n"));
+  });
+}
 test("long input stays fast: a caption turn of 30,000 words and 5,000 short turns are each identified in seconds", async () => {
   const fill = "the numbers moved again ".repeat(3);
   const t0 = Date.now();

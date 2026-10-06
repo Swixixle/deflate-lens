@@ -1,0 +1,2252 @@
+{
+ "vocative": [
+  {
+   "s": "Ines, where were you the night the power went out?",
+   "name": "Ines",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "It's good to have you back in the studio, Abe.",
+   "name": "Abe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I think, Wendell, that you're missing the bigger picture.",
+   "name": "Wendell",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Well, Colette, I just don't buy that explanation.",
+   "name": "Colette",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Look, Bram, nobody here is blaming you.",
+   "name": "Bram",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "So, Odile, what happened after the trucks left?",
+   "name": "Odile",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Okay, Hank, let's take a quick break and come right back.",
+   "name": "Hank",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Listen, Yusuf, I hear what you're saying, I really do.",
+   "name": "Yusuf",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Honestly, Abe, I never saw it coming.",
+   "name": "Abe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I don't know, Ines, it sounds like a lot of risk for not much money.",
+   "name": "Ines",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "To be fair, Wendell, you did warn us about the bridge.",
+   "name": "Wendell",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Colette, the numbers just don't add up.",
+   "name": "Colette",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Bram, my dad would have loved hearing you tell that story.",
+   "name": "Bram",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks so much for coming in today, Odile.",
+   "name": "Odile",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Morning, Hank, how was the drive in?",
+   "name": "Hank",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Sorry, Yusuf, I cut you off there.",
+   "name": "Yusuf",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You're absolutely right about that, Abe.",
+   "name": "Abe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "No, Ines, that's not what I said at all.",
+   "name": "Ines",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I have to push back on that, Wendell.",
+   "name": "Wendell",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "What do you make of all this, Colette?",
+   "name": "Colette",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Bram, how long were you out on the ice before anybody found you?",
+   "name": "Bram",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Tell us what you saw that morning, Odile.",
+   "name": "Odile",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hank, grab that other mic for me, would you?",
+   "name": "Hank",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I owe you, Yusuf, big time.",
+   "name": "Yusuf",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm telling you, Abe, that dog can sing.",
+   "name": "Abe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Let me ask you this, Ines: did you ever go back to the house?",
+   "name": "Ines",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Wendell! Get in here, you have to see this.",
+   "name": "Wendell",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Colette in Dayton, you're on the air.",
+   "name": "Colette",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Go ahead, Bram, you're live.",
+   "name": "Bram",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Odile from Spokane, what's on your mind tonight?",
+   "name": "Odile",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Let's go to the phones: Hank in Boise, you're on.",
+   "name": "Hank",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Captain, we've lost the signal from the second boat.",
+   "name": "Captain",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "With all due respect, Judge, that is not what happened.",
+   "name": "Judge",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thank you, Officer, I'll get that taillight fixed this week.",
+   "name": "Officer",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Reverend, would you open us with a short prayer?",
+   "name": "Reverend",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Nurse, I think he's waking up.",
+   "name": "Nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Abe, as usual, you're the last one to know.",
+   "name": "Abe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Ines, to your credit, you never once complained.",
+   "name": "Ines",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hank, bless your heart, you really tried.",
+   "name": "Hank",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thank you, Colette and Odile, for sitting down with us.",
+   "name": "Colette",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thank you, Colette and Odile, for sitting down with us.",
+   "name": "Odile",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Abe and Ines, you two really need to talk this out.",
+   "name": "Ines",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Is that you, Yusuf? I barely recognized your voice.",
+   "name": "Yusuf",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Happy birthday, Wendell!",
+   "name": "Wendell",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Oh, Bram, you didn't.",
+   "name": "Bram",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hey, Odile, you're up next.",
+   "name": "Odile",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Come on, Hank, you know that's not fair.",
+   "name": "Hank",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Yusuf, buddy, it's three in the morning, why are you calling my show?",
+   "name": "Yusuf",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Judge, may we approach the bench?",
+   "name": "Judge",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Aye, Captain.",
+   "name": "Captain",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm sorry, Reverend, but I was never much of a singer.",
+   "name": "Reverend",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Officer, am I free to go?",
+   "name": "Officer",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Can I get some more ice chips, Nurse?",
+   "name": "Nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Exactly, Colette, that's the whole point.",
+   "name": "Colette",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Abe? You still with us?",
+   "name": "Abe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Before we go, Ines, where can people find your book?",
+   "name": "Ines",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "And you, Wendell, what would you have done?",
+   "name": "Wendell",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Frankly, Bram, I think you got lucky.",
+   "name": "Bram",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Welcome to the program, Reverend.",
+   "name": "Reverend",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Yusuf, the whole town knew about the leak.",
+   "name": "Yusuf",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Lord, Odile, what did you do to your hair?",
+   "name": "Odile",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You've got it all wrong, my dear Abe.",
+   "name": "Abe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I want to thank you, Colette, for coming in on your day off.",
+   "name": "Colette",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Odile! Your car's being towed!",
+   "name": "Odile",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I guess, Wendell, but it still bugs me.",
+   "name": "Wendell",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Sort of, Yusuf, yeah.",
+   "name": "Yusuf",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You and me, Bram, we should start our own show.",
+   "name": "Bram",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Hank, you're here! We thought you got lost.",
+   "name": "Hank",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Abe, Ines, dinner's ready, come on!",
+   "name": "Ines",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Yes, Judge, I understand.",
+   "name": "Judge",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Abe, tell Ines what you told me.",
+   "name": "Abe",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Colette, have you met Bram?",
+   "name": "Colette",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I ran into Ines at the hardware store on Tuesday.",
+   "name": "Ines",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You know Colette is right about the levee.",
+   "name": "Colette",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Abe never lies, not even to be polite.",
+   "name": "Abe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ines basically ran the front office for a decade.",
+   "name": "Ines",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Honestly, Hank just gave up after the second season.",
+   "name": "Hank",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Well, Bram wasn't going to let that slide.",
+   "name": "Bram",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We hired Wendell the spring after the flood.",
+   "name": "Wendell",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I was on the phone with Yusuf about this just yesterday.",
+   "name": "Yusuf",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Colette's mother ran the diner on Fourth Street.",
+   "name": "Colette",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Is that Bram's coat on the chair?",
+   "name": "Bram",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My cousin Abe fixed the truck for nothing.",
+   "name": "Abe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Hank, the guy who runs the bait shop, swears by those lures.",
+   "name": "Hank",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Our producer, Odile, is going to kill me for saying that.",
+   "name": "Odile",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The man Wendell hired never even showed up.",
+   "name": "Wendell",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Abe and I drove up together that morning.",
+   "name": "Abe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ines, Bram, and Colette all quit the same week.",
+   "name": "Ines",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Now Hank, he was a different story; he'd fight anybody.",
+   "name": "Hank",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Joining us after the break: Odile, who ran the night desk at the paper for twenty years.",
+   "name": "Odile",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Coming up after the news, Bram tells us about the night the river came over the road.",
+   "name": "Bram",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Please give a warm welcome to Yusuf.",
+   "name": "Yusuf",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Give it up for Hank, everybody!",
+   "name": "Hank",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My boss looked right at me and said, 'Abe, you're done here.'",
+   "name": "Abe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "And he goes, Colette, you're late again.",
+   "name": "Colette",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My grandmother used to say, 'Ines, you'll catch your death out there.'",
+   "name": "Ines",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Our next email says, 'Dear Yusuf, I've listened since the very first episode.'",
+   "name": "Yusuf",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ines writes: 'Wendell, you're wrong about the dam.'",
+   "name": "Wendell",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The letter starts, Dear Bram, I don't know how to say this.",
+   "name": "Bram",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Turn left on Wendell Avenue and the clinic's on your right.",
+   "name": "Wendell",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Use code HANK at checkout for ten percent off your first box.",
+   "name": "HANK",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Every pan in my kitchen is Odile cookware, and no, they don't sponsor us.",
+   "name": "Odile",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks for tuning in to Hello Colette, the only call-in show about houseplants.",
+   "name": "Colette",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You're listening to Ask Bram, and the lines are open.",
+   "name": "Bram",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "If you know Abe, you know he hates mornings.",
+   "name": "Abe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Did you ever actually meet Yusuf?",
+   "name": "Yusuf",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Have you heard from Odile since the funeral?",
+   "name": "Odile",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Tell Wendell I said hello.",
+   "name": "Wendell",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ask Colette, she'd know.",
+   "name": "Colette",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks to Bram for setting all this up.",
+   "name": "Bram",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Happy birthday to Wendell, who turns sixty today.",
+   "name": "Wendell",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Hi, Yusuf here, long-time listener, first-time caller.",
+   "name": "Yusuf",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My name's Wendell, and I've been a lineman for thirty years.",
+   "name": "Wendell",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Abe, as usual, was the last one to know.",
+   "name": "Abe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ines, to her credit, never once complained.",
+   "name": "Ines",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Hank, bless his heart, really tried.",
+   "name": "Hank",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Colette, God rest her soul, made the best pie in the county.",
+   "name": "Colette",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Odile, who I've known since kindergarten, called me out of the blue last night.",
+   "name": "Odile",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I told Hank you'd be here by noon.",
+   "name": "Hank",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Abe, tell Ines what you told me.",
+   "name": "Ines",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Colette, have you met Bram?",
+   "name": "Bram",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Did you and Ines ever patch things up?",
+   "name": "Ines",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The captain says we'll be on the ground in twenty minutes.",
+   "name": "captain",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Judge says we can't talk about the case until it's over.",
+   "name": "Judge",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The Reverend preached for two solid hours.",
+   "name": "Reverend",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Reverend said the roof fund is almost there.",
+   "name": "Reverend",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "An officer knocked on our door around midnight.",
+   "name": "officer",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "He looked at me and said, 'Officer, I didn't do anything.'",
+   "name": "Officer",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I asked the nurse for another blanket, and she never came back.",
+   "name": "nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Nurse says you can go home tomorrow.",
+   "name": "Nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The Captain wants to see you in his cabin.",
+   "name": "Captain",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Where's Bram with the coffee?",
+   "name": "Bram",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "A big shout-out to Odile for driving the van all night.",
+   "name": "Odile",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Please, call me Hank; everybody does.",
+   "name": "Hank",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Yusuf the electrician wired the whole place for free.",
+   "name": "Yusuf",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The house Odile grew up in is a parking lot now.",
+   "name": "Odile",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Abe, he never listens to a word anybody says.",
+   "name": "Abe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I said to Wendell, you can't keep doing this.",
+   "name": "Wendell",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I want to thank Colette for coming in on her day off.",
+   "name": "Colette",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Let's go to the phones; next up is Hank in Boise.",
+   "name": "Hank",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Joining me in the studio today is Wendell, who spent forty years fixing church organs.",
+   "name": "Wendell",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Did you see Abe's face when they called his name?",
+   "name": "Abe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Lord, please watch over Abe on that rig tonight.",
+   "name": "Abe",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Wendell, rest easy up there; this one's for you.",
+   "name": "Wendell",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Miss you every day, Colette, and I wish you could have seen this.",
+   "name": "Colette",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Happy birthday in heaven, Abe.",
+   "name": "Abe",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Yusuf, if you're out there somewhere listening to this, please call your mother.",
+   "name": "Yusuf",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Rest in peace, Captain. You were the best of us.",
+   "name": "Captain",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "Bram, buddy, I hope they've got good fishing in heaven.",
+   "name": "Bram",
+   "expect": false,
+   "form": "punct",
+   "note": "absent"
+  },
+  {
+   "s": "I told him, Hank, you're crazy.",
+   "name": "Hank",
+   "expect": false,
+   "form": "punct",
+   "note": "ambiguous"
+  },
+  {
+   "s": "This one goes out to you, Colette.",
+   "name": "Colette",
+   "expect": true,
+   "form": "punct",
+   "note": "ambiguous"
+  },
+  {
+   "s": "you know hank i've been doing this thirty years and i've never seen that",
+   "name": "hank",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "abe you never told me that part",
+   "name": "abe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "where were you when the call came in ines",
+   "name": "ines",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "so odile what did your dad say when he found out",
+   "name": "odile",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "honestly wendell i never saw it coming",
+   "name": "wendell",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "look bram nobody's saying you did it on purpose",
+   "name": "bram",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "okay colette let's take a quick break",
+   "name": "colette",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thanks for the call yusuf",
+   "name": "yusuf",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "good morning hank you sound tired",
+   "name": "hank",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "sorry ines go ahead finish your thought",
+   "name": "ines",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "colette you're dead right about that",
+   "name": "colette",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "no abe you've got it backwards",
+   "name": "abe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "what do you think odile",
+   "name": "odile",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "bram how old were you when you started driving trucks",
+   "name": "bram",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "hank turn your mic up a little",
+   "name": "hank",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'll tell you wendell that was the worst winter of my life",
+   "name": "wendell",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "colette get in here you have to see this",
+   "name": "colette",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "wendell in el paso you're on the air",
+   "name": "wendell",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "go ahead ines you're live",
+   "name": "ines",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "bram from fresno what's on your mind",
+   "name": "bram",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "judge we'd ask for a short recess",
+   "name": "judge",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thank you officer have a good night",
+   "name": "officer",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "captain the engine's making that noise again",
+   "name": "captain",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "reverend would you say a few words before we eat",
+   "name": "reverend",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "nurse can we get another blanket in here",
+   "name": "nurse",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "abe as always you've got the best seat in the house",
+   "name": "abe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thank you colette and odile for coming in",
+   "name": "odile",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "you know ines the whole thing was my fault",
+   "name": "ines",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "hey odile your mic's off",
+   "name": "odile",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "with respect judge my client never saw the letter",
+   "name": "judge",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "yusuf is that you i can barely hear you",
+   "name": "yusuf",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "well hank i don't buy it",
+   "name": "hank",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "officer i swear i didn't see the sign",
+   "name": "officer",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "frankly colette i'd have quit on the spot",
+   "name": "colette",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "abe and ines you two need to sit down and talk",
+   "name": "abe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "before we wrap up ines tell people where they can find you",
+   "name": "ines",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "bless you reverend",
+   "name": "reverend",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "and you bram where were you when it hit",
+   "name": "bram",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "listen captain i'm doing the best i can",
+   "name": "captain",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "um odile can you say that again",
+   "name": "odile",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "uh hank we've got a caller on line two",
+   "name": "hank",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "man yusuf that's rough",
+   "name": "yusuf",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "right abe but here's the thing",
+   "name": "abe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "yeah no wendell that's not how it works",
+   "name": "wendell",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "my man hank what's going on",
+   "name": "hank",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "sure thing captain",
+   "name": "captain",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i agree with you colette",
+   "name": "colette",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "good to see you judge",
+   "name": "judge",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "nurse he's asking for you again",
+   "name": "nurse",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "odile the whole street was under water by noon",
+   "name": "odile",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "sit down abe you're making me nervous",
+   "name": "abe",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i ran into ines at the market last week",
+   "name": "ines",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you know odile is right about that",
+   "name": "odile",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "honestly wendell never saw it coming",
+   "name": "wendell",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "me and hank go way back",
+   "name": "hank",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my cousin yusuf fixed the truck for free",
+   "name": "yusuf",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the guy bram hired never showed up",
+   "name": "bram",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "that was hank's idea not mine",
+   "name": "hank",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "so my dad turns around and goes hank sit down",
+   "name": "hank",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and my boss goes wendell you're late again",
+   "name": "wendell",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my grandma used to say odile you'll catch your death out there",
+   "name": "odile",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "use code hank at checkout for ten percent off",
+   "name": "hank",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "turn left on wendell avenue and it's on your right",
+   "name": "wendell",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "if you know bram you know he's never on time",
+   "name": "bram",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "have you talked to ines since the funeral",
+   "name": "ines",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "did odile ever call you back",
+   "name": "odile",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and colette she just kept on working like nothing happened",
+   "name": "colette",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "coming up after the break yusuf tells us about the flood",
+   "name": "yusuf",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "tell abe i said hi",
+   "name": "abe",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "ask wendell he'd know",
+   "name": "wendell",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "thanks to odile for setting this up",
+   "name": "odile",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "hi this is colette calling from dayton",
+   "name": "colette",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my name's yusuf and i drive a tow truck",
+   "name": "yusuf",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i told ines you'd be here by noon",
+   "name": "ines",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "hank thinks you're wrong about the bridge",
+   "name": "hank",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "colette odile and hank all quit the same week",
+   "name": "colette",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "now yusuf he was a different story he'd fight anybody",
+   "name": "yusuf",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "our producer bram is going to kill me",
+   "name": "bram",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the car ines bought off me broke down in a week",
+   "name": "ines",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you sound just like colette",
+   "name": "colette",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "did you and abe ever patch things up",
+   "name": "abe",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the judge said no to every single motion",
+   "name": "judge",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "captain says we land in twenty minutes",
+   "name": "captain",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the reverend married my parents in that same church",
+   "name": "reverend",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the officer who took my statement was really kind",
+   "name": "officer",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the nurse said he's waking up",
+   "name": "nurse",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "abe as always got the best seat in the house",
+   "name": "abe",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "wendell to his credit owned up to it right away",
+   "name": "wendell",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "odile tell bram what you told me",
+   "name": "bram",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and the judge says officer approach the bench",
+   "name": "officer",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and the judge says officer approach the bench",
+   "name": "judge",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "honestly bram just gave up after that",
+   "name": "bram",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "well hank wasn't going to let that slide",
+   "name": "hank",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "shout out to yusuf in the control room",
+   "name": "yusuf",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "next up is bram from fresno",
+   "name": "bram",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my man hank fixed the whole thing in an hour",
+   "name": "hank",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you and hank should start a podcast",
+   "name": "hank",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "this next email says dear wendell i've listened since episode one",
+   "name": "wendell",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my guest today is odile she ran the county morgue for thirty years",
+   "name": "odile",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "oh good bram's here now we can start",
+   "name": "bram",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "yusuf never takes a day off",
+   "name": "yusuf",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "lord keep odile safe out there",
+   "name": "odile",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "rest in peace colette we love you",
+   "name": "colette",
+   "expect": false,
+   "form": "caption",
+   "note": "absent"
+  },
+  {
+   "s": "hank if you're listening up there this one's for you",
+   "name": "hank",
+   "expect": false,
+   "form": "caption",
+   "note": "absent"
+  },
+  {
+   "s": "miss you every day ines i wish you could have been here for this",
+   "name": "ines",
+   "expect": false,
+   "form": "caption",
+   "note": "absent"
+  },
+  {
+   "s": "i don't know bram it sounds risky",
+   "name": "bram",
+   "expect": true,
+   "form": "caption",
+   "note": "ambiguous"
+  }
+ ],
+ "role": [
+  {
+   "s": "I'm a midwife, so believe me, I've seen every kind of nervous dad.",
+   "role": "midwife",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a pilot for twenty-two years before I ever touched a microphone.",
+   "role": "pilot",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a former geologist; these days I mostly argue with people about rocks online.",
+   "role": "geologist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I used to be a chaplain at a children's hospital.",
+   "role": "chaplain",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I spent eleven years as a paramedic out in the county.",
+   "role": "paramedic",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I trained as a midwife in Leeds, but I work in a bookshop now.",
+   "role": "midwife",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Speaking as a paramedic, please don't drive yourself to the ER with chest pain.",
+   "role": "paramedic",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As a midwife, I've watched more grown men faint than I can count.",
+   "role": "midwife",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As a pilot, that kind of crosswind genuinely scares me.",
+   "role": "pilot",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Being a judge myself, I know how lonely that bench can get.",
+   "role": "judge",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My wife and I are both paramedics, so date night is mostly naps.",
+   "role": "paramedic",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I've been the imam at our little mosque for nine years.",
+   "role": "imam",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a high school wrestling coach, and kids haven't changed as much as people think.",
+   "role": "coach",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a judge, not a cop, and I wish people would remember that.",
+   "role": "judge",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a retired geologist, and that cliff in your photo is limestone.",
+   "role": "geologist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Before I was a teacher, I was a pilot in the Navy.",
+   "role": "pilot",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Before I was a teacher, I was a pilot in the Navy.",
+   "role": "teacher",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My wife's a midwife and I'm a paramedic.",
+   "role": "paramedic",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Twenty years a chaplain, and I still don't have good answers for grieving parents.",
+   "role": "chaplain",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I've been a lineman since I was nineteen, so storms don't scare me much.",
+   "role": "lineman",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm one of three chaplains at the state prison.",
+   "role": "chaplain",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Not every paramedic is a hero, and I was a paramedic for nine years, so I'd know.",
+   "role": "paramedic",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a judge, but tonight I'm speaking as a mother.",
+   "role": "judge",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As a former imam, I still get calls at two in the morning.",
+   "role": "imam",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm an ex-pilot, and I still look up every time a plane goes over.",
+   "role": "pilot",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "We were both pilots in the Air Force, my brother and I.",
+   "role": "pilot",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm still technically a firefighter; I'm just on desk duty for now.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My first career was as a midwife in a rural clinic.",
+   "role": "midwife",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Speaking as a rabbi, I'd say that's a fair question.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As a coach myself, I thought he handled that timeout perfectly.",
+   "role": "coach",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My father was a pilot, and so am I.",
+   "role": "pilot",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My mother was a midwife, and I became one too.",
+   "role": "midwife",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a second-generation paramedic; my dad drove the ambulance before me.",
+   "role": "paramedic",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm no longer a chaplain, but I still visit the ward on Sundays.",
+   "role": "chaplain",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As a surgeon, I hate how that show gets the operating room wrong.",
+   "role": "surgeon",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Me? I'm a geologist. Rocks are literally my job.",
+   "role": "geologist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I work as a translator for the county courts.",
+   "role": "translator",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Speaking as a former coach, I'd have benched him for the whole second half.",
+   "role": "coach",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My mother was a midwife for forty years.",
+   "role": "midwife",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm no geologist, but that rock looks volcanic to me.",
+   "role": "geologist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not a paramedic, but I did take a CPR class once.",
+   "role": "paramedic",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Are you a pilot, or do you just really like airplanes?",
+   "role": "pilot",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Weren't you a chaplain in the army before all this?",
+   "role": "chaplain",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My dad always said, 'I'm a judge, not a babysitter.'",
+   "role": "judge",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "If I were the coach, I'd bench him for a week.",
+   "role": "coach",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I always wanted to be a firefighter, but I'm scared of ladders.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "In the show I play an imam who solves crimes, which my uncle finds hilarious.",
+   "role": "imam",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm basically the office chaplain; everybody brings me their problems.",
+   "role": "chaplain",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a pretty good judge of character, and he gave me the creeps.",
+   "role": "judge",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Please don't judge me, but I've never seen the ocean.",
+   "role": "judge",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We took the overnight coach from Glasgow to London.",
+   "role": "coach",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I wrote the pilot for a cooking show that never got picked up.",
+   "role": "pilot",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "As a paramedic, he saw things nobody should ever have to see.",
+   "role": "paramedic",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "As a chaplain's daughter, I grew up in hospital waiting rooms.",
+   "role": "chaplain",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a pilot's kid, so we moved every two years.",
+   "role": "pilot",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My wife's a midwife and I'm a paramedic.",
+   "role": "midwife",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "No, I'm not a pilot; I just fix the planes.",
+   "role": "pilot",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Coach, can I go in now?",
+   "role": "coach",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I almost became a geologist, but I failed field camp.",
+   "role": "geologist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I should have been a midwife instead of an accountant.",
+   "role": "midwife",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Picture me as a judge, robe and gavel and all.",
+   "role": "judge",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My brother and his wife are both paramedics.",
+   "role": "paramedic",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Someday I'd love to be a chaplain.",
+   "role": "chaplain",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I had a dream I was a pilot and the plane had no floor.",
+   "role": "pilot",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I clerked for a judge right out of law school.",
+   "role": "judge",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a chaplain's assistant, which mostly means I make the coffee.",
+   "role": "chaplain",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "She stood up and said, 'I'm a midwife, give her some room.'",
+   "role": "midwife",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "They called me Coach in college even though I never coached a day in my life.",
+   "role": "coach",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm married to an imam, so our phone rings at all hours.",
+   "role": "imam",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I found a midwife toad under the porch last night.",
+   "role": "midwife",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "So you're a geologist? What's the coolest rock you've ever found?",
+   "role": "geologist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "In our house I'm judge, jury and executioner when it comes to the remote.",
+   "role": "judge",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the pilot light around here; if I go out, the whole place goes cold.",
+   "role": "pilot",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Like any good chaplain, she listened more than she talked.",
+   "role": "chaplain",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a dentist's worst nightmare; I eat candy for breakfast.",
+   "role": "dentist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Both my parents were judges, and I'm the first one in the family who isn't.",
+   "role": "judge",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I come from a long line of chaplains, but I sell cars.",
+   "role": "chaplain",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm studying to be a midwife, so ask me again in two years.",
+   "role": "midwife",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "At the airport, a guy mistook me for a pilot because of my jacket.",
+   "role": "pilot",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a coach's wife, so football season is basically a second job.",
+   "role": "coach",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "As a pilot, you learn to trust your instruments over your gut.",
+   "role": "pilot",
+   "expect": true,
+   "form": "punct",
+   "note": "ambiguous"
+  },
+  {
+   "s": "The coach in me wants to scream at the TV right now.",
+   "role": "coach",
+   "expect": true,
+   "form": "punct",
+   "note": "ambiguous"
+  },
+  {
+   "s": "i'm a midwife so trust me i've heard it all",
+   "role": "midwife",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was a pilot for twenty years and i still hate turbulence",
+   "role": "pilot",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i used to be a geologist before i got into radio",
+   "role": "geologist",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i spent eleven years as a hospital chaplain",
+   "role": "chaplain",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "speaking as a paramedic those little scooters terrify me",
+   "role": "paramedic",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "as a judge i can't comment on an open case",
+   "role": "judge",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "as a pilot that kind of weather scares me",
+   "role": "pilot",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "being a coach myself i'd have called that timeout way earlier",
+   "role": "coach",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "we're both paramedics so we never see each other",
+   "role": "paramedic",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i trained as an imam in cairo and came over in ninety eight",
+   "role": "imam",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm a retired judge so i've seen my share of liars",
+   "role": "judge",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i've been a midwife for almost thirty years",
+   "role": "midwife",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "my husband and i are both pilots",
+   "role": "pilot",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was the chaplain on that ward for six years",
+   "role": "chaplain",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm a firefighter and that smoke alarm thing is real",
+   "role": "firefighter",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm a geologist so i'm the guy picking up rocks on every hike",
+   "role": "geologist",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i'm a former coach and i still yell at the tv",
+   "role": "coach",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "my sister's the midwife i just bring the snacks",
+   "role": "midwife",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i'm not a geologist or anything but that's definitely a fossil",
+   "role": "geologist",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i wanted to be a pilot so bad as a kid",
+   "role": "pilot",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "he goes i'm a paramedic let me through",
+   "role": "paramedic",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "don't judge me i had cake for breakfast",
+   "role": "judge",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i flew coach the whole way to denver",
+   "role": "coach",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "we're starting a pilot program at the clinic",
+   "role": "pilot",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i'm a terrible judge of character",
+   "role": "judge",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "are you still a paramedic or did you retire",
+   "role": "paramedic",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my dad was a coach for thirty years",
+   "role": "coach",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i played a chaplain in a war movie once",
+   "role": "chaplain",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i'm not a pilot i'm a flight attendant",
+   "role": "pilot",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my grandfather was an imam back in the village",
+   "role": "imam",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i'd make a terrible midwife i faint at the sight of blood",
+   "role": "midwife",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "everybody calls me judge because i settle the bets",
+   "role": "judge",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "if i were a geologist i could tell you how old that is",
+   "role": "geologist",
+   "expect": false,
+   "form": "caption"
+  }
+ ]
+}

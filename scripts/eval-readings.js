@@ -75,6 +75,8 @@ function mechanical(c, a, known) {
     const hit = c.kind === "claim" ? null : card.map(([n, x]) => [n + "." + L, x && x[L] || ""]).find(([, t]) => NARRATION.test(t));
     if (c.kind !== "claim") res.push(["card text (" + L + ") states the substance, not the process", !hit, hit ? hit[0] + ": “" + (hit[1].match(NARRATION) || [""])[0] + "” in " + hit[1] : ""]);
     res.push(["plain words (" + L + ") say whose claim it is", attributed(a.deflated[L], labels), a.deflated[L] || ""]);
+    // reading-6: the card's gist is short (two or three sentences; the claims carry the rest)
+    if (c.kind !== "claim" && P.PLAIN_WORDS) { const n = shared.wordsOf(a.deflated[L] || "").split(" ").filter(Boolean).length; res.push(["plain words (" + L + ") are a short gist (at most " + P.PLAIN_WORDS[L].ask + " words asked)", n <= P.PLAIN_WORDS[L].ask, n <= P.PLAIN_WORDS[L].ask ? "" : n + " words: " + (a.deflated[L] || "")]); }
     if (c.kind !== "claim") (a.claims || []).forEach((cl, i) => { const t = cl.plain && cl.plain[L] || ""; if (t && !attributed(t, [cl.speaker].concat(labels))) res.push(["claim " + (i + 1) + " plain (" + L + ") says whose claim it is", false, t]); });
   }
   if (e.sound) { const survives = a.jump.present && ["yes", "partly"].includes(a.revision.jumpSurvives); res.push(["sound: no concern survives", !survives && a.judgments.inference !== "gap", survives ? "concern survives (" + a.revision.jumpSurvives + "): " + a.jump.hs : a.judgments.inference === "gap" ? "inference recorded as gap" : ""]); }

@@ -233,6 +233,21 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
     const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
     return !labels.length && shared.wordsOf(b.transcript).split(" ").length >= 12;
   }
+  /* Why the recording was not tried, for new input from a link or a file that came without speaker labels, where trying
+     it would have been the first step (0.14.2): no recording known, audio kept on this computer, or no Deepgram key.
+     Recorded once per text with status "skipped", so Controls, the exports and the record tell a skipped attempt from a
+     failed one. Null when the recording was not relevant (labels came with the text, or the text came from it). */
+  function voicesSkipped(b) {
+    const r = b.run, pr = r.provenance || {}, imp = r.import || {}, src = imp.source || {};
+    if (r.kind !== "transcript" || r.example || !(r.intake && r.intake.speakers === "auto") || b.passages.some(p => p.analysis)) return null;
+    if (!src.kind || src.kind === "audio-transcription" || pr.voices || pr.voicesAttempt && pr.voicesAttempt.inputHash === r.input.sha256) return null;
+    const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
+    if (labels.length || shared.wordsOf(b.transcript).split(" ").length < 12) return null;
+    if (!recordingOf(r)) return { code: "no_recording", why: "No recording was found for this text, so the voices were not separated from one; the words are used to find the speakers instead." };
+    if (keepsAudioLocal()) return { code: "audio_kept_local", why: "Audio is set to stay on this computer, so the recording was not sent to Deepgram to separate the voices; the words are used to find the speakers instead." };
+    if (!cloud()) return { code: "no_deepgram_key", why: "No Deepgram key is set, so the recording was not sent to Deepgram to separate the voices; the words are used to find the speakers instead." };
+    return null;
+  }
   async function execute(id, job) {
     let b = await check(id, job), ai = getAI();
     if (!ai) {
@@ -254,9 +269,12 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
         job.inputHash = nb.run.input.sha256; job.attrSig = nb.attrSig;
         await store.saveProcessing(id, { inputHash: job.inputHash }, job.id);
       } else {
-        await store.recordVoicesAttempt(id, { at: nowISO(), auto: true, code: String(failed.code || ""), why: String(failed.message || failed).replace(/\s+/g, " ").slice(0, 300) });
+        await store.recordVoicesAttempt(id, { at: nowISO(), auto: true, status: "failed", code: String(failed.code || ""), why: String(failed.message || failed).replace(/\s+/g, " ").slice(0, 300) });
       }
       b = await check(id, job);
+    } else {
+      const skip = voicesSkipped(b);
+      if (skip) { await store.recordVoicesAttempt(id, Object.assign({ at: nowISO(), auto: true, status: "skipped" }, skip)); b = await check(id, job); }
     }
     // new input: work out from the words who is speaking and where a clip or quotation is played, before anything is
     // read (structure.js). The labelled text replaces the unlabelled one (kept in versions/); the job follows it.

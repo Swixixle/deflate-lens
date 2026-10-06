@@ -1,6 +1,6 @@
 # Deflate Lens
 
-Understand what was said, what supports it, and what remains uncertain. Paste a transcript, a claim, or a podcast, video or page link, or upload a recording. Deflate Lens reads each passage in three short parts: **In plain words** (what was claimed and the reasons given), **A fair reading** (the strongest reasonable interpretation), and **What follows** (the assessment after that). Choose **High school** or **Fifth grade** on any card.
+Understand what was said, what supports it, and what remains uncertain. Paste a transcript, a claim, or a podcast, video or page link, or upload a recording. Deflate Lens reads each passage in three short parts: **In plain words** (the gist: what was claimed and the main reason given), **A fair reading** (the strongest reasonable interpretation), and **What follows** (the assessment after that). Choose **High school** or **Fifth grade** on any card.
 
 It runs on your own computer. Your work stays there. Only the text being read is sent to the AI model you set up.
 
@@ -59,7 +59,7 @@ The [User guide](docs/guide.md) is short: starting a reading, reading the result
 - **The review is a second pass of the same model**, not an independent check. The original is always one click away so you can judge.
 - **The speaker is never graded.** Only the argument and each claim.
 - **It can be wrong.** When a reading still fails its checks after the app corrects the parts found wrong, the card says it couldn't be completed and its Evidence says why.
-- **Who is speaking is worked out, not proven.** By voice from the recording (Deepgram, your key: by itself when a podcast link's transcript has no speaker names), or from the words where they show a change of speaker. Names come from what was said and the episode's listing; a speaker nothing identifies keeps a number, and Evidence says why.
+- **Who is speaking is worked out, not proven.** By voice from the recording (Deepgram, your key: by itself when a podcast link's transcript has no speaker names), or from the words where they show a change of speaker. Names come from what was said and the episode's listing, read twice (by the app's checks and by the model's reading of the whole conversation); a speaker nothing identifies keeps a number, and Evidence says why, including any clue that was found and not used.
 
 ## Settings
 

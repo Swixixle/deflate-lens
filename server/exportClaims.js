@@ -30,8 +30,11 @@ function allUnlabeled(b) { const l = shared.speakerLabels(shared.parseTranscript
 function speakerNote(b) {
   const pr = b.run.provenance || {};
   if (pr.labelsOrigin === "voices") return "_Speakers were separated by voice from the recording" + (pr.voices && pr.voices.via === "transcription" ? " as Deepgram transcribed it" : "") + "._";
-  if (pr.labelsOrigin === "words") return "_Speakers were worked out from the words._";
-  return allUnlabeled(b) ? "_This text has no speaker labels._" : "";
+  // the recording, when it was not used: skipped (no recording, audio kept on this computer, no Deepgram key) or failed,
+  // with the reason (0.14.2)
+  const at = pr.voicesAttempt, voicesNote = at && at.why ? " " + (at.status === "skipped" ? at.why : "The recording was tried first and could not be used: " + at.why).replace(/\s*$/, "").replace(/([^.!?])$/, "$1.") : "";
+  if (pr.labelsOrigin === "words") return "_Speakers were worked out from the words." + voicesNote + "_";
+  return allUnlabeled(b) ? "_This text has no speaker labels." + voicesNote + "_" : "";
 }
 /* The labels the text uses (and any a correction moved a turn to), in order of first appearance. */
 function labelsUsed(b) {
@@ -89,7 +92,7 @@ function buildExport(b) {
       sourceIdentity: b.sourceIdentity || sourceIdentity(r), sourceConfirmationHistory: r.sourceConfirmationHistory || [], attributionGate: b.attributionGate || Q.attributionGate(b),
       source: { url: r.sourceUrl || "", label: r.sourceLabel || "", date: r.sourceDate || "" },
       transcript: { updatedAt: r.transcriptUpdatedAt || "", characters: (b.transcript || "").length, sha256: r.input && r.input.sha256 || "", bytes: r.input && r.input.bytes || null, parseMode: r.input && r.input.parseMode || r.parseMode || "transcript", earlierVersions: (r.inputHistory || []).map(x => ({ sha256: x.sha256, chars: x.chars, transcriptUpdatedAt: x.transcriptUpdatedAt, replacedAt: x.replacedAt })) },
-      provenance: { confirmedAt: pr.confirmedAt || "", confirmedBy: pr.confirmedBy || "", notApplicable: !!pr.notApplicable, labelsOrigin: pr.labelsOrigin || "source", assignment: pr.assignment || null, structure: pr.structure || null, voices: pr.voices || null, identification: pr.identification || null, namesByPerson: pr.namesByPerson || {}, namesConfirmedAt: pr.namesConfirmedAt || "", namesChangedAt: pr.namesChangedAt || "", method: pr.method || "", attrSig: b.attrSig, transcriptNote: pr.transcriptNote || "",
+      provenance: { confirmedAt: pr.confirmedAt || "", confirmedBy: pr.confirmedBy || "", notApplicable: !!pr.notApplicable, labelsOrigin: pr.labelsOrigin || "source", assignment: pr.assignment || null, structure: pr.structure || null, voices: pr.voices || null, voicesAttempt: pr.voicesAttempt || null, identification: pr.identification || null, namesByPerson: pr.namesByPerson || {}, namesConfirmedAt: pr.namesConfirmedAt || "", namesChangedAt: pr.namesChangedAt || "", method: pr.method || "", attrSig: b.attrSig, transcriptNote: pr.transcriptNote || "",
         preparation: r.preparation || null,
         corrected: Object.keys(pr.overrides || {}).map(i => ({ turn: Number(i), speaker: pr.overrides[i] })), flagged: (pr.flags || []).map(f => f.turn), earlierDecisions: (r.provenanceHistory || []).length },
       speakersMeaning: "name is what the app shows for the label (key). namedBy: identification (the app connected the name to the voice from the conversation and the episode's listing; how says with which words), person (a person gave it), transcript (the label is the name), words (named when the speakers were worked out from the words), unnamed (no name was found; how says why), set_apart (a clip, a quotation read aloud or an advertisement), earlier (named before names were recorded with their evidence).",

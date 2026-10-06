@@ -72,6 +72,7 @@ Saved runs are parsed under the rules they were saved with, so an update never s
 ## Checks you can run
 
 - `npm test` — the regression tests, no external network or key; uses local HTTP servers.
+- `DEFLATE_PRIVATE_REPLAY=<folder> node --test test/private-replay.test.js` — replays saved identification answers (each case a folder with `run.json`, `transcript.txt`, `model-answer.json` and `expected.json`) through the current code with no model call. Keep such folders outside the repository: they hold someone's real transcript. Skipped without the variable.
 - `npm run doctor` — prints what is configured without printing secrets.
 - `npm run transcript-smoke` — hits Apple's catalogue, two podcast feeds and YouTube for the transcript chain (needs network; `-- --local` also transcribes a five-minute episode with the local engine).
 - `npm run research-smoke` — hits the live Crossref and PubMed services for two example claims (needs network).

@@ -1,0 +1,1750 @@
+{
+ "vocative": [
+  {
+   "s": "Dale, what do you think?",
+   "name": "Dale",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks for having me, Dale.",
+   "name": "Dale",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Marisol, none of us saw this coming.",
+   "name": "Marisol",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Ruth, walk us through it.",
+   "name": "Ruth",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I think you're wrong about that, Tobias.",
+   "name": "Tobias",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "That's right, Ken.",
+   "name": "Ken",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Fair enough, Ruth, but the numbers changed.",
+   "name": "Ruth",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You know, Dale, most people never read the fine print.",
+   "name": "Dale",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I mean, Ken, the numbers don't lie.",
+   "name": "Ken",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Look, Priya, nobody is asking you to apologize.",
+   "name": "Priya",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Listen, Tobias, I hear what you're saying.",
+   "name": "Tobias",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "So, Ruth, what happened next?",
+   "name": "Ruth",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Well, Marisol, that's the million-dollar question.",
+   "name": "Marisol",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Honestly, Ken, I was terrified.",
+   "name": "Ken",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Trust me, Priya, it gets easier.",
+   "name": "Priya",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm telling you, Dale, this is the year it turns.",
+   "name": "Dale",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "To be fair, Tobias, you did warn us.",
+   "name": "Tobias",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "The thing is, Dale, nobody saw it coming.",
+   "name": "Dale",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "The problem, Ken, is the budget.",
+   "name": "Ken",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I have to ask you, Priya, about the merger.",
+   "name": "Priya",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Let me ask you this, Ruth.",
+   "name": "Ruth",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I told you, Dale, this would happen.",
+   "name": "Dale",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Good morning, Marisol.",
+   "name": "Marisol",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Welcome to the show, Priya.",
+   "name": "Priya",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Tobias, how did you get into this line of work?",
+   "name": "Tobias",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Can you walk us through that night, Ken?",
+   "name": "Ken",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You were there, weren't you, Ruth?",
+   "name": "Ruth",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "And that, Marisol, is exactly why we started.",
+   "name": "Marisol",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Ruth, I told Ken the same thing.",
+   "name": "Ruth",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Ken, does Priya know about this?",
+   "name": "Ken",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Father, can I ask you something personal?",
+   "name": "Father",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thank you, Doctor.",
+   "name": "Doctor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Coach, what did you tell them at halftime?",
+   "name": "Coach",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Senator, with respect, that isn't what the bill says.",
+   "name": "Senator",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Professor, you've written that cities are getting lonelier.",
+   "name": "Professor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks, coach, I appreciate the time.",
+   "name": "coach",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I just want to say, Marisol, how much this means to me.",
+   "name": "Marisol",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Dale, if you're watching this, call your mother.",
+   "name": "Dale",
+   "expect": true,
+   "form": "punct",
+   "note": "addressee absent"
+  },
+  {
+   "s": "Rest easy, Tobias; we miss you every day.",
+   "name": "Tobias",
+   "expect": true,
+   "form": "punct",
+   "note": "addressee deceased"
+  },
+  {
+   "s": "God, give me the patience for this.",
+   "name": "God",
+   "expect": true,
+   "form": "punct",
+   "note": "addressed to God"
+  },
+  {
+   "s": "Hold on, hold on, Ken, back up a second.",
+   "name": "Ken",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Priya, the honest answer is that nobody knows.",
+   "name": "Priya",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Sorry, Tobias, go ahead.",
+   "name": "Tobias",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "You're absolutely right, Marisol.",
+   "name": "Marisol",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Remember, Dale, this whole thing was your idea.",
+   "name": "Dale",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "No offense, Ruth, but that sounds like a sales pitch.",
+   "name": "Ruth",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "With all due respect, Doctor, the data says otherwise.",
+   "name": "Doctor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Okay, Professor, explain it to me like I'm five.",
+   "name": "Professor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks Dale for coming in.",
+   "name": "Dale",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Good question Ruth.",
+   "name": "Ruth",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Ken! Great to see you.",
+   "name": "Ken",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "What was that like, Priya?",
+   "name": "Priya",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Is that fair, Senator?",
+   "name": "Senator",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I told Dale about it.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You know Dale is right.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "He said, 'Dale, you're wrong.'",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I saw Ken yesterday at the hardware store.",
+   "name": "Ken",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Dale's book came out in March.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My old boss Dale used to open the shop at five.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The guy Dale hired lasted two weeks.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Dale and I worked nights together for years.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Dale, he never listens to anybody.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Coming up after the break, Dale Whitcomb.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Joining us now, Marisol Vega.",
+   "name": "Marisol",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Use the code DALE at checkout for fifteen percent off.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Welcome to the Dale Whitcomb Show.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "If you know Dale, you know he never gives up.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You know Ken from the plant, right?",
+   "name": "Ken",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You know Dale, the man who ran the mill?",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "She told me, 'Ruth, don't sign anything.'",
+   "name": "Ruth",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Then she turns to me and goes, Ruth, you're fired.",
+   "name": "Ruth",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I said to him, 'Tobias, this is your last chance.'",
+   "name": "Tobias",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ruth runs the night desk now.",
+   "name": "Ruth",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "How did Ruth get into this?",
+   "name": "Ruth",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Have Tobias walk us through it.",
+   "name": "Tobias",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I disagree with Tobias on that.",
+   "name": "Tobias",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We'll be right back with Ruth after this.",
+   "name": "Ruth",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks to Ruth for coming on today.",
+   "name": "Ruth",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Tell Marisol I said hello.",
+   "name": "Marisol",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ruth, I told Ken the same thing.",
+   "name": "Ken",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ken, does Priya know about this?",
+   "name": "Priya",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My father worked the line at the plant for thirty years.",
+   "name": "father",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The doctor said I'd be fine in a week.",
+   "name": "doctor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Coach told us to run it again.",
+   "name": "Coach",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The senator didn't return our calls.",
+   "name": "senator",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My professor used to say that every map lies.",
+   "name": "professor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Father Ellis said the early mass for forty years.",
+   "name": "Father",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Senator Halvorsen voted against the bill twice.",
+   "name": "Senator",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You and Dale should start your own podcast.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Marisol is absolutely right.",
+   "name": "Marisol",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You're right about Marisol.",
+   "name": "Marisol",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm telling Dale about it tomorrow.",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Trust Priya on this one.",
+   "name": "Priya",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Listen to Tobias; he knows this stuff cold.",
+   "name": "Tobias",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "We had dinner at Priya's on Fifth Street.",
+   "name": "Priya",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Everybody calls him Ken, but his name is Kenneth.",
+   "name": "Ken",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I prayed to God every night that year.",
+   "name": "God",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Priya and her team found the leak in March.",
+   "name": "Priya",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Marisol, she was the one who called it first.",
+   "name": "Marisol",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "What did Dale say when you told him?",
+   "name": "Dale",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ask Ruth, she was there.",
+   "name": "Ruth",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Doctor Okafor will be with us after the news.",
+   "name": "Doctor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "The whole team owes Ken a beer.",
+   "name": "Ken",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I named my dog Tobias.",
+   "name": "Tobias",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Thanks for coming on, Kendra.",
+   "name": "Ken",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "you know dale as a rule people are slow to change",
+   "name": "dale",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "you know dale people never change",
+   "name": "dale",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "so ruth what happened next",
+   "name": "ruth",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i mean ken the numbers dont lie",
+   "name": "ken",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "marisol none of us saw it coming",
+   "name": "marisol",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thanks for having me dale",
+   "name": "dale",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thats a great question ruth",
+   "name": "ruth",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "fair enough ken",
+   "name": "ken",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "honestly priya i was terrified",
+   "name": "priya",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "listen tobias nobody is blaming you",
+   "name": "tobias",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "look marisol nobody wants a strike",
+   "name": "marisol",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "well ruth thats the million dollar question",
+   "name": "ruth",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "trust me ken you dont want that job",
+   "name": "ken",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "im telling you tobias the market is going to turn",
+   "name": "tobias",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "to be fair ruth you did warn us",
+   "name": "ruth",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "the thing is dale nobody saw it coming",
+   "name": "dale",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "you know what ken i think youre onto something",
+   "name": "ken",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i told you dale this would happen",
+   "name": "dale",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "remember dale this whole thing was your idea",
+   "name": "dale",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "priya did ken ever tell you about the fire",
+   "name": "priya",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "ruth i told ken the same thing",
+   "name": "ruth",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "walk us through it ruth",
+   "name": "ruth",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i think youre wrong on that one tobias",
+   "name": "tobias",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thanks ruth for coming on",
+   "name": "ruth",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "you know marisol it took me ten years to figure that out",
+   "name": "marisol",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "ken how long were you at the plant",
+   "name": "ken",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "thank you father its been a real pleasure",
+   "name": "father",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "doctor what should people watch for",
+   "name": "doctor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "coach what did you tell them at halftime",
+   "name": "coach",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "senator do you regret that vote",
+   "name": "senator",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "professor walk us through the research",
+   "name": "professor",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "rest easy tobias we miss you buddy",
+   "name": "tobias",
+   "expect": true,
+   "form": "caption",
+   "note": "addressee deceased"
+  },
+  {
+   "s": "lord give me strength",
+   "name": "lord",
+   "expect": true,
+   "form": "caption",
+   "note": "addressed to God"
+  },
+  {
+   "s": "and that marisol is exactly why we started",
+   "name": "marisol",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "the problem ken is the budget",
+   "name": "ken",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i have to ask you priya about the merger",
+   "name": "priya",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "and then she goes dale youre fired",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you know dale always says that",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "so dale went home",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you know ken from the plant",
+   "name": "ken",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you know dale the man who ran the mill",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "dale he never listens",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "coming up after the break dale whitcomb",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "joining us now marisol vega",
+   "name": "marisol",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "use code dale for fifteen percent off your first order",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "welcome back to the dale whitcomb show",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "if you know dale you know hes stubborn",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "dale's book is still on my nightstand",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my old boss dale used to open the shop at five",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the guy dale hired lasted two weeks",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "me and dale worked nights together for years",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i saw ken at the hardware store yesterday",
+   "name": "ken",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the thing is dale saw it coming",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "honestly priya was terrified",
+   "name": "priya",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "well ruth thought it was a joke",
+   "name": "ruth",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "trust me ken doesnt want that job",
+   "name": "ken",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "im telling you tobias is going to be a star",
+   "name": "tobias",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "to be fair ruth did warn us",
+   "name": "ruth",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you know what ken did",
+   "name": "ken",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i told dale this would happen",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "remember dale from the first season",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "priya did ken ever tell you about the fire",
+   "name": "ken",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "ruth i told ken the same thing",
+   "name": "ken",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "so he turns around and goes tobias get in the truck",
+   "name": "tobias",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and my mom looks at me and says priya you cant quit now",
+   "name": "priya",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you know priya's husband from the bowling league",
+   "name": "priya",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "you know marisol is right",
+   "name": "marisol",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i mean ken was the one who signed it",
+   "name": "ken",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "thanks to ruth for coming on",
+   "name": "ruth",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the doctor told me to rest",
+   "name": "doctor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "coach kept us late every night",
+   "name": "coach",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my brother tobias he never calls",
+   "name": "tobias",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "dale you know is the best welder in the county",
+   "name": "dale",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "honestly thats beyond my ken",
+   "name": "ken",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i dont know ruth",
+   "name": "ruth",
+   "expect": true,
+   "form": "caption",
+   "note": "ambiguous"
+  },
+  {
+   "s": "call me ken",
+   "name": "ken",
+   "expect": false,
+   "form": "caption",
+   "note": "ambiguous"
+  },
+  {
+   "s": "you know tobias",
+   "name": "tobias",
+   "expect": false,
+   "form": "caption",
+   "note": "ambiguous"
+  },
+  {
+   "s": "you know priya better than i do",
+   "name": "priya",
+   "expect": false,
+   "form": "caption",
+   "note": "ambiguous"
+  }
+ ],
+ "role": [
+  {
+   "s": "As a priest, I've sat with a lot of dying people.",
+   "role": "priest",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "When I was a young nurse, we didn't have any of these machines.",
+   "role": "nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "In my years as an economist, I've never seen a labor market this tight.",
+   "role": "economist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "The town couldn't afford a crew, so for six years I ended up being their firefighter.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As an exorcist, it gives me peace to know the rite still works.",
+   "role": "exorcist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I've been a firefighter for twenty-two years.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Before I got into radio, I was a nurse.",
+   "role": "nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was a rabbi in a small congregation before I went into teaching.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Speaking as an economist, I think those numbers are soft.",
+   "role": "economist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the diocesan exorcist, which surprises people at parties.",
+   "role": "exorcist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I used to be a nurse.",
+   "role": "nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I wasn't always a priest; I sold cars for ten years.",
+   "role": "priest",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not just a rabbi, I'm also a dad of four.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm no longer a nurse, but I still dream about the ward.",
+   "role": "nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the last person you'd expect to be an exorcist, but here I am.",
+   "role": "exorcist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Was I a good nurse? I like to think so.",
+   "role": "nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm an economist by training, but these days I mostly write novels.",
+   "role": "economist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My wife and I are both nurses.",
+   "role": "nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "People ask if I'm an exorcist; I'm just a parish priest.",
+   "role": "priest",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As a rabbi, it's my job to show up when nobody else will.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a retired firefighter.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm the first nurse in my family.",
+   "role": "nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a doctor, so people ask me about every rash at the barbecue.",
+   "role": "doctor",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I spent fifteen years as a firefighter before my back gave out.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Back when I was a priest in the city, the parish ran a soup kitchen.",
+   "role": "priest",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I loved working as a nurse, even the night shifts.",
+   "role": "nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Nobody expected me to become a rabbi, least of all me, but here we are.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a volunteer firefighter on weekends.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My job as an economist is to be the skunk at the party.",
+   "role": "economist",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I was ordained a priest in the spring of 1998.",
+   "role": "priest",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Being a rabbi myself, I get that question a lot.",
+   "role": "rabbi",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "Thirty years a nurse, and I'd do it all again.",
+   "role": "nurse",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "I'm an Episcopal priest, and yes, I'm married.",
+   "role": "priest",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "My dad was a firefighter, and so am I.",
+   "role": "firefighter",
+   "expect": true,
+   "form": "punct"
+  },
+  {
+   "s": "As an exorcist once told me, the devil is patient.",
+   "role": "exorcist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My father was a priest.",
+   "role": "priest",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I can't imagine being a nurse.",
+   "role": "nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "If I were a rabbi, I'd tell him to forgive his brother.",
+   "role": "rabbi",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "She's a firefighter in the next county over.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a big fan of exorcist movies.",
+   "role": "exorcist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "In the film I play a priest who loses his faith.",
+   "role": "priest",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Pretend I'm a doctor for a second.",
+   "role": "doctor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not a priest.",
+   "role": "priest",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm no economist, but that deal looks terrible.",
+   "role": "economist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My mother always said, 'I'm a nurse, not a magician.'",
+   "role": "nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I used to want to be a nurse.",
+   "role": "nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Everyone in my family is a nurse except me.",
+   "role": "nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm a priest's kid, so church was every single day.",
+   "role": "priest",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I was a nurse's aide for two summers in college.",
+   "role": "nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I went as a firefighter for Halloween.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "You were a rabbi before this, right?",
+   "role": "rabbi",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I interviewed an exorcist for the book.",
+   "role": "exorcist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I almost became a priest, but then I met my wife.",
+   "role": "priest",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "When I was diving, I swam right past a nurse shark.",
+   "role": "nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I had to nurse my dad back to health that winter.",
+   "role": "nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "People ask if I'm an exorcist; I'm just a parish priest.",
+   "role": "exorcist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "At work I'm basically the office firefighter, putting out everyone's little crises.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Some critic once called me the high priest of bad taste.",
+   "role": "priest",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Do I look like an economist to you?",
+   "role": "economist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm studying to become a nurse.",
+   "role": "nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm married to a firefighter.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "My doctor told me to slow down.",
+   "role": "doctor",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Would I make a good rabbi? Probably not.",
+   "role": "rabbi",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "Ask any economist and they'll tell you the same thing.",
+   "role": "economist",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "As a nurse explained to me, the first hour matters most.",
+   "role": "nurse",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "I'm not a rabbi, I'm a cantor.",
+   "role": "rabbi",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "In my dreams I'm a firefighter, but in real life I'm an accountant.",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "He told me, 'I was a firefighter for thirty years.'",
+   "role": "firefighter",
+   "expect": false,
+   "form": "punct"
+  },
+  {
+   "s": "as a nurse it breaks my heart every time",
+   "role": "nurse",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "when i was a firefighter we didnt have thermal cameras",
+   "role": "firefighter",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "im a priest so people tell me things they wont tell their spouse",
+   "role": "priest",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was a rabbi for eleven years before i retired",
+   "role": "rabbi",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "speaking as an economist the numbers just dont add up",
+   "role": "economist",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i worked as a nurse in the er for nine years",
+   "role": "nurse",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "as an exorcist it gives me peace",
+   "role": "exorcist",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "as a rabbi i get asked that a lot",
+   "role": "rabbi",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i spent my whole career as an economist at the treasury",
+   "role": "economist",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "im a nurse so i see this every single night",
+   "role": "nurse",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was a firefighter for thirty years",
+   "role": "firefighter",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "in my years as a priest ive buried a lot of young people",
+   "role": "priest",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "im a retired firefighter and i still wake up at the sound of a siren",
+   "role": "firefighter",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i became a nurse at forty",
+   "role": "nurse",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "ive been the exorcist for this diocese since twenty eleven",
+   "role": "exorcist",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "when i was a young priest i thought i had all the answers",
+   "role": "priest",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "the village had no fire department so i ended up being their firefighter",
+   "role": "firefighter",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "im not just a nurse im a mom too",
+   "role": "nurse",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "i was a nurse before i was a mom",
+   "role": "nurse",
+   "expect": true,
+   "form": "caption"
+  },
+  {
+   "s": "as an exorcist once told me the devil is patient",
+   "role": "exorcist",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my dad was a firefighter for thirty years",
+   "role": "firefighter",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my wife is a nurse so she gets it",
+   "role": "nurse",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "if i were a rabbi id say the same thing",
+   "role": "rabbi",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "we brought in an exorcist from rome",
+   "role": "exorcist",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i never wanted to be a nurse",
+   "role": "nurse",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "the economist on the panel said rates would fall",
+   "role": "economist",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "and she goes im a nurse not a miracle worker",
+   "role": "nurse",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i love exorcist movies",
+   "role": "exorcist",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "in the movie i play a priest who loses his faith",
+   "role": "priest",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "im not a priest",
+   "role": "priest",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "pretend im a doctor for a second",
+   "role": "doctor",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i cant imagine being a firefighter",
+   "role": "firefighter",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "my grandfather was a rabbi in the old country",
+   "role": "rabbi",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "im no economist but that deal looks terrible",
+   "role": "economist",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i used to want to be a priest",
+   "role": "priest",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "youre an economist so tell me whats going on",
+   "role": "economist",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "i dressed up as a firefighter for halloween",
+   "role": "firefighter",
+   "expect": false,
+   "form": "caption"
+  },
+  {
+   "s": "being a nurse you learn to eat lunch in about four minutes",
+   "role": "nurse",
+   "expect": true,
+   "form": "caption",
+   "note": "ambiguous"
+  }
+ ]
+}

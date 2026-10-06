@@ -343,7 +343,7 @@ test("reading-5: nothing in a reading is taken from an advertisement (checked), 
   assert.ok(issues.includes("claims[0]: taken from an advertisement (AD 1), which is not part of the conversation"), issues.join(" | "));
   assert.ok(issues.includes("asSaid: a quotation is taken from an advertisement, which is not part of the conversation"));
   assert.ok(!Q.contentIssues(a, { turnStart: 0, turnEnd: 2 }, turns, {}, "transcript", "reading-4").some(x => /advertisement/.test(x)), "records under reading-4 keep their rules");
-  assert.equal(P.CONTRACT, "reading-5");
+  assert.ok(P.AD_CHECKED.includes(P.CONTRACT), "the current contract keeps the advertisement rule (" + P.CONTRACT + ")");
   assert.match(P.deflate({ speakers: [] }, { title: "", stake: "", turnStart: 0, turnEnd: 0 }, "", {}), /A turn labelled AD n is an advertisement in the recording, not part of the conversation: take no claim or quotation from it/);
   assert.match(P.segment({}, ""), /turns labelled AD n are advertisements, never a passage of their own/);
 });
@@ -424,13 +424,24 @@ test("the recording is not sent anywhere when audio is set to stay on this compu
   { const fetchFn = txFetch(), f = await server(t, { ai: scriptedAI(), fetch: fetchFn, env: { DEEPGRAM_API_KEY: KEY, TRANSCRIBE_PREFER: "local" } });
     const b = await fromLink(f, APPLE_LINK);
     assert.equal(fetchFn.calls.filter(c => /api\.deepgram\.com/.test(c.url)).length, 0);
-    assert.equal(b.run.provenance.voices, undefined); assert.equal(b.run.provenance.voicesAttempt, undefined);
+    assert.equal(b.run.provenance.voices, undefined);
+    // nothing was tried, so nothing failed: the skip and its reason are recorded as a skip (0.14.2), for Controls and the exports
+    const sk = b.run.provenance.voicesAttempt;
+    assert.deepEqual([sk.status, sk.code, sk.auto], ["skipped", "audio_kept_local", true]); assert.match(sk.why, /^Audio is set to stay on this computer, so the recording was not sent to Deepgram/);
     assert.ok(b.run.provenance.structure, "the words were tried"); assert.equal(b.run.processing.status, "complete"); }
   // no key: nothing is sent, and a reading held for its speakers says what would settle it
   { const fetchFn = txFetch(), f = await server(t, { ai: scriptedAI(), fetch: fetchFn, env: {} });
     const b = await fromLink(f, APPLE_LINK);
     assert.equal(fetchFn.calls.filter(c => /api\.deepgram\.com/.test(c.url)).length, 0);
-    assert.equal(b.run.provenance.voicesAttempt, undefined, "nothing was tried, so nothing failed"); assert.equal(b.run.processing.status, "complete"); }
+    const sk = b.run.provenance.voicesAttempt;
+    assert.deepEqual([sk.status, sk.code], ["skipped", "no_deepgram_key"], "nothing was tried, so nothing failed: a skip, with why"); assert.equal(b.run.processing.status, "complete");
+    // the exports carry the skip and its reason, so a skipped attempt is told from a failed one (0.14.2)
+    const ex = (await f.api("GET", "/api/runs/" + b.run.id + "/export.json")).data, md = (await f.api("GET", "/api/runs/" + b.run.id + "/export.md?level=hs")).data;
+    assert.deepEqual([ex.run.provenance.voicesAttempt.status, ex.run.provenance.voicesAttempt.code], ["skipped", "no_deepgram_key"]);
+    assert.match(md, /_(?:Speakers were worked out from the words|This text has no speaker labels)\. No Deepgram key is set, so the recording was not sent to Deepgram to separate the voices; the words are used to find the speakers instead\._/); }
+  // the page says the same under Controls, without calling it a failure
+  { const { speakers } = await viaPage(t, txFetch(), {});
+    assert.match(speakers, /No Deepgram key is set, so the recording was not sent to Deepgram to separate the voices/); assert.doesNotMatch(speakers, /could not be separated/); }
   // a recording of something else: the voices do not line up, the reason is kept, the words are tried, and a second
   // Read this does not ask Deepgram again for the same text
   { const other = diarized([[0, "Completely different words about gardening and the weather in the spring, nothing like the show at all, said slowly."], [1, "Tomatoes, peppers and beans grow well when the soil is warm and the nights are short."]]);
@@ -438,7 +449,7 @@ test("the recording is not sent anywhere when audio is set to stay on this compu
     const { f, b, speakers } = await viaPage(t, fetchFn, { DEEPGRAM_API_KEY: KEY });
     assert.equal(fetchFn.calls.filter(c => /api\.deepgram\.com/.test(c.url)).length, 1);
     const at = b.run.provenance.voicesAttempt;
-    assert.ok(at && at.auto, JSON.stringify(b.run.provenance)); assert.equal(at.code, "voices_not_aligned");
+    assert.ok(at && at.auto, JSON.stringify(b.run.provenance)); assert.equal(at.code, "voices_not_aligned"); assert.equal(at.status, "failed");
     assert.match(at.why, /^The recording's voices could not be lined up with this text: /);
     assert.equal(b.run.provenance.voices, undefined);
     assert.ok(b.run.provenance.structure, "the words were tried instead");

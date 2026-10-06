@@ -1286,8 +1286,8 @@ function ctlSpeakers(r, ro, k){
   else if (origin === "model" && pr.assignment) sp.append(h("p",{text:"Names suggested by AI from the words: " + pr.assignment.named + " of " + pr.assignment.turns + " turns named, " + pr.assignment.unknown + " left without a name. They are not labels from the source. A person's correction under Who said what wins."}));
   else if (fromSource) sp.append(h("p",{text:"The speaker labels came with the text." + setApartNote(st)}));
   else if (allUnlabeled()) sp.append(h("p",{text:"No speaker labels came with this text." + (st && st.established === false ? " The words alone don't show where the speaker changes, so the text is read as it is." : "")}));
-  // the recording was tried first and could not be used: why (the words were used instead)
-  if (pr.voicesAttempt && origin !== "voices") sp.append(h("p",{class:"hint",text:"The voices could not be separated from the recording automatically: " + pr.voicesAttempt.why}));
+  // the recording was not used: skipped, with why (no recording, audio kept here, no Deepgram key), or tried and failed
+  if (pr.voicesAttempt && origin !== "voices") sp.append(h("p",{class:"hint",text: pr.voicesAttempt.status === "skipped" ? pr.voicesAttempt.why : "The voices could not be separated from the recording automatically: " + pr.voicesAttempt.why}));
   // names: every label the text uses, with how its name was found or why it has none; correcting one is optional
   var shownKeys = labels.filter(function(x){ return x !== "UNLABELED"; });
   if (shownKeys.length) sp.append(speakerNames(r, ro, k, shownKeys, fromSource));
