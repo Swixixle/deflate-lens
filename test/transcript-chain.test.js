@@ -217,7 +217,7 @@ test("over HTTP: a resolve job runs, is polled, persists its result, can be stop
     for (const n of ["constructor", "__proto__", "toString", "hasOwnProperty"]) assert.equal((await api("POST", "/api/settings/key", { name: n, key: "x" })).status, 400, n);
     assert.equal((await api("PUT", "/api/transcript/prefer", { engine: "cloud" })).data.prefer, "cloud"); assert.equal((await api("PUT", "/api/transcript/prefer", { engine: "x" })).status, 400);
     assert.equal((await api("GET", "/api/transcript/engines")).data.prefer, "cloud");
-    assert.deepEqual(Object.keys(SETTABLE), ["ANTHROPIC_API_KEY", "DEEPGRAM_API_KEY", "TRANSCRIBE_PREFER"]);
+    assert.deepEqual(Object.keys(SETTABLE), ["ANTHROPIC_API_KEY", "DEEPGRAM_API_KEY", "TRANSCRIBE_PREFER", "ANTHROPIC_MODEL", "MODEL_PROVIDER", "OPENAI_BASE_URL", "OPENAI_API_KEY", "OPENAI_MODEL"]);
     // the run created from a fetched transcript keeps where it came from
     const b = (await api("POST", "/api/runs", { run: { import: { url: "https://show.test/feed.xml", title: "Ep 2", fetchedAt: "2026-10-03T00:00:00Z", chars: 10, method: "transcript: feed-transcript", source: { kind: "feed-transcript", url: "https://show.test/ep2.vtt", note: "the transcript the show publishes", format: "vtt" }, show: "The Test Show", episode: "Ep 2", matchedBy: "feed by guid", speakers: ["HOST", "GUEST"] } }, transcript: "HOST: Hello there.\nGUEST: Hi." })).data;
     assert.equal(b.run.import.source.kind, "feed-transcript"); assert.equal(b.run.import.source.show, "The Test Show"); assert.deepEqual(b.run.import.source.speakers, ["HOST", "GUEST"]);

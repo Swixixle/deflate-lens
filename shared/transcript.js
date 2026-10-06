@@ -13,11 +13,16 @@
      opts.mode: "transcript" (default; the heading heuristics below, as every run saved before 0.6.0 was parsed)
                 "text"       (no heading heuristics: every paragraph or labelled line is a turn; a short line with
                               no final punctuation is content, not a heading)
-                "prose"      (an article or other prose, 0.14.6: every line is its own turn and NOTHING is a speaker
-                              label, so "Results:" or "Methods:" at a line's start stays part of the text as a section
-                              heading). New runs record their mode; a saved run is never re-read under another one. */
+                "article"    (an article or other prose, 0.14.7: every non-empty line is its own turn, NOTHING is a
+                              speaker label — "Results:" at a line's start stays part of the text as a section heading —
+                              and no line is dropped: a line that is only a number is the text's own)
+                "prose"      (runs saved by 0.14.6 only: as "article", except that lines shaped like caption cue numbers
+                              or timings were dropped, which lost a prose line that was only a number. Kept as it was so
+                              those runs' turns are never renumbered.) New runs record their mode; a saved run is never
+                              re-read under another one. */
   function parseTranscript(text, opts) {
     var mode = (opts && opts.mode) || "transcript";
+    if (mode === "article") return parseArticle(text);
     if (mode === "prose") return parseProse(text);
     if (mode === "text") return parseText(text);
     var raw = String(text || "").replace(/\r/g, "");
@@ -83,6 +88,13 @@
     return turns;
   }
 
+  function parseArticle(text) {
+    var turns = [];
+    String(text || "").replace(/\r/g, "").split("\n").forEach(function (line) { var t = line.replace(/\s+/g, " ").trim(); if (t) turns.push({ label: "UNLABELED", text: t, heading: false }); });
+    turns.forEach(function (t, i) { t.i = i; });
+    return turns;
+  }
+
   function parseProse(text) {
     var raw = String(text || "").replace(/\r/g, "");
     var lines = raw.split("\n").filter(function (l) { return !/^\s*\d+\s*$/.test(l) && !/^\s*\d{2}:\d{2}:\d{2}[.,]\d{3}\s*-->/.test(l) && !/^WEBVTT/.test(l); });
@@ -91,6 +103,9 @@
     turns.forEach(function (t, i) { t.text = t.text.replace(/\s+/g, " ").trim(); t.i = i; });
     return turns;
   }
+
+  /* A run read as prose (an article): no speaker step, no labels, every word kept. */
+  function isProse(mode) { return mode === "article" || mode === "prose"; }
 
   /* What a pasted text looks like: a link, a claim (one short paragraph, no speaker labels), or a transcript. */
   function detectKind(text) {
@@ -317,11 +332,15 @@
     return o[String(turn.i)] || turn.label;
   }
 
-  function fmtTurns(turns, overrides, from, to) {
-    var out = [];
+  /* A heading line (a section title, a short note or qualification on a line of its own, "Adults only") is the text's
+     own words, spoken by no one. Since context-2 (0.14.7) it reaches the model in source order, marked "(heading)";
+     context-1 left it out of everything the model read, so a qualification on a short line of its own was never seen. */
+  function turnLine(t, overrides) { return t.heading ? "[" + t.i + "] (heading): " + t.text : "[" + t.i + "] " + effSpeaker(t, overrides) + ": " + t.text; }
+  function fmtTurns(turns, overrides, from, to, opts) {
+    var out = [], headings = !!(opts && opts.headings);
     for (var i = from; i <= to && i < turns.length; i++) {
-      var t = turns[i]; if (!t || t.heading) continue;
-      out.push("[" + t.i + "] " + effSpeaker(t, overrides) + ": " + t.text);
+      var t = turns[i]; if (!t || t.heading && !headings) continue;
+      out.push(turnLine(t, overrides));
     }
     return out.join("\n");
   }
@@ -331,10 +350,13 @@
      omitted rather than cut mid-sentence. Context is for interpretation only: quotes and claims come from the target.
      Returns the text blocks and a record (turn ids, speakers, omissions, size, version) for the passage's provenance;
      the text itself is bound to the transcript hash the reading records, so it is not stored twice. */
-  var CONTEXT_VERSION = "context-1";
+  var CONTEXT_VERSION = "context-2";
+  /* opts.headings (context-2): the heading lines among the neighbouring turns, and those before a passage at the start
+     of the text, come too (within the same character limit); context-1 (opts.headings false) is kept as it was, so a
+     reading made under it is rebuilt exactly. */
   function readingContext(turns, overrides, from, to, opts) {
-    var limit = (opts && opts.chars) || 4000, per = (opts && opts.turns) || 2;
-    var line = function (t) { return "[" + t.i + "] " + effSpeaker(t, overrides) + ": " + t.text; };
+    var limit = (opts && opts.chars) || 4000, per = (opts && opts.turns) || 2, headings = !!(opts && opts.headings);
+    var line = function (t) { return turnLine(t, overrides); };
     var before = [], after = [], omitted = [], used = 0;
     var b = from - 1, a = to + 1, nb = 0, na = 0;
     var nextB = function () { while (b >= 0 && turns[b] && turns[b].heading) b--; return b >= 0 && turns[b] ? turns[b] : null; };
@@ -345,10 +367,21 @@
       if (na < per) { var ta = nextA(); if (ta) { var la = line(ta); if (used + la.length + 1 <= limit) { after.push(ta); used += la.length + 1; } else omitted.push({ turn: ta.i, side: "after", chars: la.length }); a++; na++; progressed = true; } else na = per; }
       if (!progressed) break;
     }
+    if (headings) {
+      // the heading lines between the passage and its farthest context turn on each side (to the text's start or end
+      // when the walk reached it), nearest first, within what is left of the limit
+      var lo = before.length ? before[0].i : (b < 0 ? 0 : from), hi = after.length ? after[after.length - 1].i : (a >= turns.length ? turns.length - 1 : to);
+      var hb = [], ha = [];
+      for (var x = from - 1; x >= lo; x--) if (turns[x] && turns[x].heading) hb.push(turns[x]);
+      for (var y = to + 1; y <= hi; y++) if (turns[y] && turns[y].heading) ha.push(turns[y]);
+      hb.forEach(function (t) { var l = line(t); if (used + l.length + 1 <= limit) { before.push(t); used += l.length + 1; } else omitted.push({ turn: t.i, side: "before", chars: l.length }); });
+      ha.forEach(function (t) { var l = line(t); if (used + l.length + 1 <= limit) { after.push(t); used += l.length + 1; } else omitted.push({ turn: t.i, side: "after", chars: l.length }); });
+      before.sort(function (p, q) { return p.i - q.i; }); after.sort(function (p, q) { return p.i - q.i; });
+    }
     var beforeText = before.map(line).join("\n"), afterText = after.map(line).join("\n");
     return {
       beforeText: beforeText, afterText: afterText,
-      record: { version: CONTEXT_VERSION, before: before.map(function (t) { return { turn: t.i, speaker: effSpeaker(t, overrides) }; }), after: after.map(function (t) { return { turn: t.i, speaker: effSpeaker(t, overrides) }; }), omitted: omitted, chars: used, limit: limit }
+      record: { version: headings ? "context-2" : "context-1", before: before.map(function (t) { return { turn: t.i, speaker: effSpeaker(t, overrides) }; }), after: after.map(function (t) { return { turn: t.i, speaker: effSpeaker(t, overrides) }; }), omitted: omitted, chars: used, limit: limit }
     };
   }
 
@@ -499,5 +532,5 @@
     if (name === label) return out("unnamed", "Not identified yet: the speakers' names are found when the reading is prepared.");
     return out("earlier", "Named before names were recorded with their evidence.");
   }
-  return { issueText: issueText, claimTypeLabel: claimTypeLabel, nameable: nameable, labelName: labelName, speakerAccount: speakerAccount, SET_APART_KEY: SET_APART, historicalType: historicalType, EMPIRICAL_TYPES: EMPIRICAL, parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, refNumber: refNumber, parseProse: parseProse, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, readingContext: readingContext, CONTEXT_VERSION: CONTEXT_VERSION, chunkRanges: chunkRanges, carryOver: carryOver };
+  return { issueText: issueText, claimTypeLabel: claimTypeLabel, nameable: nameable, labelName: labelName, speakerAccount: speakerAccount, SET_APART_KEY: SET_APART, historicalType: historicalType, EMPIRICAL_TYPES: EMPIRICAL, parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, refNumber: refNumber, parseProse: parseProse, parseArticle: parseArticle, isProse: isProse, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, readingContext: readingContext, CONTEXT_VERSION: CONTEXT_VERSION, chunkRanges: chunkRanges, carryOver: carryOver };
 });

@@ -42,7 +42,7 @@ function sha256(s) { return crypto.createHash("sha256").update(String(s == null 
 /* The server-owned record of the exact input a run holds: a SHA-256 of the transcript text as stored (UTF-8, no
    normalisation, so a changed line ending is a changed input), its size, the parse mode it is read under, and when the
    record was made. Readings are bound to this hash; the export carries it; scripts/verify-export.js recomputes it. */
-function inputRecord(text, parseMode, at) { const t = String(text == null ? "" : text); return { sha256: sha256(t), chars: t.length, bytes: Buffer.byteLength(t, "utf8"), parseMode: ["text", "prose"].includes(parseMode) ? parseMode : "transcript", recordedAt: at || nowISO() }; }
+function inputRecord(text, parseMode, at) { const t = String(text == null ? "" : text); return { sha256: sha256(t), chars: t.length, bytes: Buffer.byteLength(t, "utf8"), parseMode: ["text", "prose", "article"].includes(parseMode) ? parseMode : "transcript", recordedAt: at || nowISO() }; }
 /* The fields of a call record a reading keeps. */
 function provenanceOf(call) { const keep = {}; ["callId", "at", "purpose", "runId", "provider", "modelRequested", "modelReturned", "requestId", "stopReason", "usage", "latencyMs", "promptHash", "promptChars", "outputHash", "images", "mock", "error", "basedOn", "review", "contract", "context"].forEach(k => { if (call[k] !== undefined) keep[k] = call[k]; }); keep.recorded = true; return keep; }
 
@@ -253,7 +253,7 @@ class Store {
     return next;
   }
   /* Turns for a run, parsed under the rules the run was saved with (never changed silently for an existing run). */
-  parseFor(run, transcript) { return shared.parseTranscript(transcript, { mode: run && ["text", "prose"].includes(run.parseMode) ? run.parseMode : "transcript" }); }
+  parseFor(run, transcript) { return shared.parseTranscript(transcript, { mode: run && ["text", "prose", "article"].includes(run.parseMode) ? run.parseMode : "transcript" }); }
   async touchRun(id, patch) {
     const cur = await this.getRun(id); if (!cur) return;
     const next = Object.assign({}, cur, patch || {}, { updatedAt: nowISO() }); delete next.id;
@@ -385,11 +385,16 @@ class Store {
   async commitPreparation(id, basis, preparation) { return this.withLock(id, async () => {
     const run = await this.getRun(id), transcript = await this.getTranscript(id);
     if (!run || run.example) throw Object.assign(new Error("This run cannot be prepared."), { status: run ? 403 : 404 });
+    // the names too (0.14.7): preparation's checks were made under the names it was asked with; a name changed
+    // meanwhile makes them stale, exactly as a changed text or label does
+    if (basis.namesSig && namesSigFor(run, this.parseFor(run, transcript)) !== basis.namesSig) throw Object.assign(new Error("The speaker names changed during preparation; try again on the current text."), { status: 409, code: "input_changed" });
     if (sha256(transcript) !== basis.inputHash || shared.attrSig(run.provenance.overrides) !== basis.attrSig) throw Object.assign(new Error("The input changed during preparation; try again on the current text."), { status: 409, code: "input_changed" });
     run.provenance = Object.assign({}, run.provenance, { overrides: preparation.overrides });
     run.preparation = Object.assign({}, preparation, { inputHash: basis.inputHash, attrSig: shared.attrSig(preparation.overrides) });
     run.updatedAt = nowISO(); delete run.id;
     await writeAtomic(path.join(this.runDir(id), "run.json"), JSON.stringify(run, null, 2));
+    // the exact run this commit wrote, so the caller follows its own change and never a later edit (0.14.7)
+    return Object.assign({ id }, run);
   }); }
 
   // Intake and processing records are owned by the server. Generic page saves cannot set them.

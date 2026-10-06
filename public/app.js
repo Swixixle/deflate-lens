@@ -142,6 +142,8 @@ var API = {
   setSetting(name, key){ return API.req("POST","/api/settings/key", {name:name, key:key}); },
   preferEngine(engine){ return API.req("PUT","/api/transcript/prefer", {engine:engine}); },
   setKey(key){ return API.req("POST","/api/settings/anthropic-key", {key:key}); },
+  setModel(choice){ return API.req("PUT","/api/settings/model", choice); },
+  listModels(q){ return API.req("POST","/api/settings/model/list", q); },
   listTrash(){ return API.req("GET","/api/trash"); },
   restoreRun(name){ return API.req("POST","/api/trash/" + name + "/restore"); }
 };
@@ -359,7 +361,7 @@ async function reload(bundle){
   if (S.runId !== selectedId || !loaded || !loaded.run || loaded.run.id !== selectedId) return false;
   var textChanged = !S.b || S.b.transcript !== loaded.transcript || S.b.run.parseMode !== loaded.run.parseMode;
   S.b = loaded;
-  if (textChanged) S.turns = parseTranscript(S.b.transcript || "", {mode: S.b.run && ["text", "prose"].indexOf(S.b.run.parseMode) !== -1 ? S.b.run.parseMode : "transcript"});
+  if (textChanged) S.turns = parseTranscript(S.b.transcript || "", {mode: S.b.run && ["text", "prose", "article"].indexOf(S.b.run.parseMode) !== -1 ? S.b.run.parseMode : "transcript"});
   if (S.view === "guide") return true;
   S.view = "run";
   if (S.rendered === selectedId) updateRunView(); else renderRun();
@@ -1379,12 +1381,48 @@ function pictures(r, ta, k){
 function ctlApp(){
   var s = h("section",{class:"ctl-group", id:"ctl-app", tabindex:"-1", "aria-labelledby":"ctl-app-h"}, h("h2",{id:"ctl-app-h", text:"App and files"}));
   var r = run();
-  // model key
-  var m = ctlItem(h("h3",{text:"Model"}), h("p",{text: S.ai ? (S.ai.mock ? "Test responder (mock). Readings are placeholders, not a model's work." : "Anthropic key set. Readings use " + S.ai.model + "; each reading and review is billed to that key.") : "No model key yet. The app asks for it the first time a reading needs it."}));
-  if (!S.ai || !S.ai.mock) {
+  // which model writes new readings (0.14.7): Claude (a listed model, Sonnet the default, or any Claude model by its id),
+  // or any service that speaks the OpenAI-compatible chat API (OpenRouter, OpenAI, Groq, Together, Ollama here). Keys
+  // stay in .env on this computer: the page sends them once and never gets them back.
+  var models = S.health && S.health.models, mock = !!(S.ai && S.ai.mock), claudeBox = null;
+  var nameOf = function(id){ var c = models && models.choices.filter(function(x){ return x.id === id; })[0]; return c ? c.name : id; };
+  var other = !!(models && models.provider === "openai-compatible");
+  var status = mock ? "Test responder (mock). Readings are placeholders, not a model's work."
+    : S.ai && S.ai.kind === "openai-compatible" ? "Readings use " + S.ai.model + " through " + S.ai.host + "; each reading and review is billed by that service."
+    : S.ai ? "Anthropic key set. Readings use " + nameOf(S.ai.model) + "; each reading and review is billed to that key."
+    : other ? "The other service is not fully set up: give its address and model below."
+    : "No model key yet. The app asks for it the first time a reading needs it.";
+  var m = ctlItem(h("h3",{text:"Model"}), h("p",{text:status}));
+  var saved = function(out, what){ S.ai = out.ai; S.health.models = out.models; say("Saved. New readings use " + what + "."); renderControls(true); };
+  if (models && !mock) {
+    var prov = h("select",{"aria-label":"Who provides the model"}, h("option",{value:"anthropic", text:"Claude (Anthropic)", selected:other ? null : "selected"}), h("option",{value:"openai-compatible", text:"Another service (OpenAI-compatible)", selected:other ? "selected" : null}));
+    m.append(field("Model from", prov));
+    claudeBox = h("div",{hidden:other}); var otherBox = h("div",{hidden:!other});
+    prov.addEventListener("change", function(){ claudeBox.hidden = prov.value !== "anthropic"; otherBox.hidden = prov.value === "anthropic"; });
+    // Claude: the listed models, or any other Claude model by its id
+    var listed = models.choices.some(function(c){ return c.id === models.claude; });
+    var pick = h("select",{"aria-label":"Claude model"}, models.choices.map(function(c){ return h("option",{value:c.id, text:c.name + " — " + c.note, selected:c.id === models.claude ? "selected" : null}); }).concat([h("option",{value:"", text:"Another Claude model…", selected:listed ? null : "selected"})]));
+    var cid = h("input",{type:"text", autocomplete:"off", spellcheck:"false", placeholder:"claude-…", "aria-label":"Claude model id", value:listed ? "" : models.claude, hidden:listed});
+    pick.addEventListener("change", function(){ cid.hidden = pick.value !== ""; });
+    var csv = h("button",{class:"btn quiet", type:"button", text:"Use this model", onclick:async function(){ var id = pick.value || cid.value.trim(); csv.disabled = true; try { saved(await API.setModel({provider:"anthropic", model:id}), nameOf(id)); } catch(err){ csv.disabled = false; say(errCopy(err)); } }});
+    claudeBox.append(field("Claude model", pick), cid, h("div",{class:"row"}, csv));
+    // another service: its address, its key (none for Ollama on this computer), and a model it offers
+    var addr = h("input",{type:"url", autocomplete:"off", spellcheck:"false", placeholder:"https://openrouter.ai/api/v1", "aria-label":"Service address", value:models.other.baseUrl || ""});
+    var okey = h("input",{type:"password", autocomplete:"off", placeholder:models.other.keySet ? "Key saved — leave empty to keep it" : "Key (none for Ollama on this computer)", "aria-label":"Service key"});
+    var omod = h("input",{type:"text", autocomplete:"off", spellcheck:"false", placeholder:"A model the service offers (List its models)", "aria-label":"Model id", value:models.other.model || "", list:"svc-models"});
+    var olist = h("datalist",{id:"svc-models"}), onote = h("p",{class:"hint"});
+    var load = h("button",{class:"btn quiet", type:"button", text:"List its models", onclick:async function(){ load.disabled = true; onote.textContent = "Asking " + addr.value + "…"; try { var out = await API.listModels({baseUrl:addr.value, apiKey:okey.value}); clear(olist); out.models.forEach(function(id){ olist.append(h("option",{value:id})); }); onote.textContent = out.models.length + " models offered. Type to search them in the model field."; } catch(err){ onote.textContent = errCopy(err); } load.disabled = false; }});
+    var osv = h("button",{class:"btn quiet", type:"button", text:"Use this service", onclick:async function(){ osv.disabled = true; try { saved(await API.setModel({provider:"openai-compatible", baseUrl:addr.value, apiKey:okey.value, model:omod.value}), omod.value.trim()); } catch(err){ osv.disabled = false; say(errCopy(err)); } }});
+    otherBox.append(field("Service address", addr), field("Service key", okey), field("Model", omod), olist, h("div",{class:"row"}, load, osv), onote,
+      h("p",{class:"hint",text:"OpenRouter reaches models from many companies with one key; Ollama runs models on this computer (http://localhost:11434/v1, no key). The app's checks were built with Claude: another model may have more readings held or asked again."}));
+    m.append(claudeBox, otherBox, h("p",{class:"hint",text:"Applies from the next reading; a reading in progress finishes with the model it started with. Each card records which model wrote it."}));
+  }
+  if (!mock) {
+    // the Anthropic key belongs with the Claude choice: shown when Claude is chosen, hidden with the other service
     var key = h("input",{type:"password", autocomplete:"off", placeholder:"sk-ant-…", "aria-label":"Anthropic API key"});
-    var sv = h("button",{class:"btn quiet", type:"button", text: S.ai ? "Replace key" : "Save key", onclick:async function(){ sv.disabled = true; try { var out = await API.setKey(key.value); key.value = ""; S.ai = out.ai; say("Key saved."); renderControls(true); } catch(e){ sv.disabled = false; say(errCopy(e)); } }});
-    m.append(h("div",{class:"row"}, key, sv), h("p",{class:"hint",text:"The key is written to .env on this computer. It is never shown here or sent anywhere except Anthropic."}));
+    var sv = h("button",{class:"btn quiet", type:"button", text: S.ai && S.ai.kind === "anthropic" ? "Replace key" : "Save key", onclick:async function(){ sv.disabled = true; try { var out = await API.setKey(key.value); key.value = ""; S.ai = out.ai; say("Key saved."); renderControls(true); } catch(e){ sv.disabled = false; say(errCopy(e)); } }});
+    var keyRow = [h("div",{class:"row"}, key, sv), h("p",{class:"hint",text:"The key is written to .env on this computer. It is never shown here or sent anywhere except Anthropic."})];
+    if (claudeBox) claudeBox.append.apply(claudeBox, keyRow); else m.append.apply(m, keyRow);
   }
   s.append(m);
   // transcription

@@ -25,14 +25,17 @@ function requestedBasis(b, patterns) {
    (shared.readingContext), the same text for the generation and its review. The context record (turn ids, speakers,
    omissions, size, version, and a hash of the exact text sent) goes on the model call and from there onto the passage.
    The automatic reading and a reread from a card both use this one function. */
-function readingMaterial(b, p) {
+function readingMaterial(b, p, version) {
   if (b.run.kind === "claim") {
     const text = b.transcript;
     return { purpose: "claim", prompt: P.claim(b.run, text), source: "CLAIM (typed by a person):\n" + text, context: null };
   }
+  // (heading lines — a section title, a qualification on a line of its own — reach the model since context-2, 0.14.7;
+  // a reading made under context-1 is rebuilt as it was, without them: materialAsRead passes its version)
+  const headings = (version || shared.CONTEXT_VERSION) !== "context-1";
   const turns = shared.parseTranscript(b.transcript, { mode: b.run.parseMode }), ov = b.run.provenance.overrides;
-  const target = shared.fmtTurns(turns, ov, p.turnStart, p.turnEnd);
-  const ctx = shared.readingContext(turns, ov, p.turnStart, p.turnEnd, { turns: 2, chars: 4000 });
+  const target = shared.fmtTurns(turns, ov, p.turnStart, p.turnEnd, { headings });
+  const ctx = shared.readingContext(turns, ov, p.turnStart, p.turnEnd, { turns: 2, chars: 4000, headings });
   const source = (ctx.beforeText ? "CONTEXT BEFORE (for interpretation only):\n" + ctx.beforeText + "\n\n" : "") + "PASSAGE (turns " + p.turnStart + "–" + p.turnEnd + "):\n" + target +
     (ctx.afterText ? "\n\nCONTEXT AFTER (for interpretation only):\n" + ctx.afterText : "") +
     (ctx.record.omitted.length ? "\n\nNot shown (too long): " + ctx.record.omitted.map(o => "turn " + o.turn).join(", ") : "");
@@ -57,7 +60,7 @@ async function materialAsRead(store, b, p) {
   if (text == null) return { available: false, why: "The text this reading was made from was replaced before earlier versions were kept (0.12.1); only its fingerprint remains." };
   const ov = Object.assign({}, b.run.provenance && b.run.provenance.overrides);
   [].concat(ctx.before || [], ctx.target || [], ctx.after || []).forEach(x => { ov[String(x.turn)] = x.speaker; });
-  const m = readingMaterial({ run: Object.assign({}, b.run, { provenance: Object.assign({}, b.run.provenance, { overrides: ov }) }), transcript: text }, p);
+  const m = readingMaterial({ run: Object.assign({}, b.run, { provenance: Object.assign({}, b.run.provenance, { overrides: ov }) }), transcript: text }, p, ctx.version || "context-1");
   return { available: true, source: m.source, matches: m.context.hash === ctx.hash, contextVersion: ctx.version, readFrom: basis, current: basis === b.run.input.sha256 };
 }
 /* What is ready, what is held, and the first held reason in plain words: enough to decide whether to retry. */
@@ -103,7 +106,7 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
       if (!b || b.run.example) throw Object.assign(new Error(b ? "Copy this example to prepare it." : "Reading not found."), { status: b ? 403 : 404 });
       // a run read as prose keeps its text exactly: the cleanup that trims page chrome around a dialogue must not
       // re-read an article's section headings as one (the run's parseMode carries that decision, 0.14.6)
-      const prose = b.run.parseMode === "prose";
+      const prose = shared.isProse(b.run.parseMode);
       const c = cleanText(b.transcript, { captions: false, web: false, article: prose }), doc = {};
       const imp = b.run.import;
       if (imp && imp.url) {
@@ -173,7 +176,7 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
     const ranges = shared.chunkRanges(turns, 22000), found = [], calls = [];
     for (const [index, [a, z]] of ranges.entries()) {
       await update(id, job, { phase: "organizing", message: "Organizing the interview (" + (index + 1) + " of " + ranges.length + ")…" });
-      const prompt = P.segment(b.run, shared.fmtTurns(turns, b.run.provenance.overrides, a, z));
+      const prompt = P.segment(b.run, shared.fmtTurns(turns, b.run.provenance.overrides, a, z, { headings: true }));
       const basis = await store.captureCallBasis(id, requestedBasis(b), "segment");
       let items = [], problem = "";
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -222,7 +225,7 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
   function needsStructure(b) {
     const r = b.run, pr = r.provenance || {};
     // prose (an article, 0.14.6) is nobody's conversation: no speakers are worked out for it
-    if (r.kind !== "transcript" || r.example || r.parseMode === "prose" || !(r.intake && r.intake.speakers === "auto")) return false;
+    if (r.kind !== "transcript" || r.example || shared.isProse(r.parseMode) || !(r.intake && r.intake.speakers === "auto")) return false;
     if (pr.structure || pr.voices && pr.voices.clipsChecked !== false || b.passages.some(p => p.analysis)) return false;
     const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
     return labels.length ? CUE.test(b.transcript) || AD_CUE.test(b.transcript) : !pr.voices && shared.wordsOf(b.transcript).split(" ").length >= 12;
@@ -236,7 +239,7 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
   const recordingOf = r => { const imp = r.import || {}, info = imp.episodeInfo || {}; return !!(info.audioUrl || imp.url && info.guid); };
   function needsVoices(b) {
     const r = b.run, pr = r.provenance || {}, src = (r.import || {}).source || {};
-    if (r.kind !== "transcript" || r.example || r.parseMode === "prose" || !(r.intake && r.intake.speakers === "auto") || b.passages.some(p => p.analysis)) return false;
+    if (r.kind !== "transcript" || r.example || shared.isProse(r.parseMode) || !(r.intake && r.intake.speakers === "auto") || b.passages.some(p => p.analysis)) return false;
     if (pr.voices || pr.voicesAttempt && pr.voicesAttempt.inputHash === r.input.sha256) return false;
     if (src.kind === "audio-transcription" || !recordingOf(r) || !cloud() || keepsAudioLocal()) return false;
     const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
@@ -248,7 +251,7 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
      failed one. Null when the recording was not relevant (labels came with the text, or the text came from it). */
   function voicesSkipped(b) {
     const r = b.run, pr = r.provenance || {}, imp = r.import || {}, src = imp.source || {};
-    if (r.kind !== "transcript" || r.example || r.parseMode === "prose" || !(r.intake && r.intake.speakers === "auto") || b.passages.some(p => p.analysis)) return null;
+    if (r.kind !== "transcript" || r.example || shared.isProse(r.parseMode) || !(r.intake && r.intake.speakers === "auto") || b.passages.some(p => p.analysis)) return null;
     if (!src.kind || src.kind === "audio-transcription" || pr.voices || pr.voicesAttempt && pr.voicesAttempt.inputHash === r.input.sha256) return null;
     const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
     if (labels.length || shared.wordsOf(b.transcript).split(" ").length < 12) return null;
@@ -305,8 +308,14 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
       await update(id, job, { phase: "speakers", message: "Checking who said what…" });
       b = await prepareSpeakers({ ai, store, id, signal: job.controller.signal });
       if (job.controller.signal.aborted) throw stopped();
-      job.attrSig = b.attrSig;
-      job.namesSig = namesSigFor(b.run, shared.parseTranscript(b.transcript, { mode: b.run.parseMode }));
+      // the job follows preparation's own commit — the attribution it wrote, from the snapshot it returned — and
+      // never a later read: a person's rename in that moment is not absorbed, it stops the job at the check below.
+      // Preparation changes labels, not names; the name basis moves only as far as its own corrections move it (0.14.7)
+      const committed = b.committedRun;
+      if (committed) {
+        job.attrSig = shared.attrSig(committed.provenance && committed.provenance.overrides);
+        job.namesSig = namesSigFor(committed, shared.parseTranscript(b.transcript, { mode: committed.parseMode }));
+      }
       await check(id, job);
       if (b.attributionGate.status !== "ready") {
         await update(id, job, { status: "held", phase: "speakers", message: "The text leaves some speakers uncertain, so the reading is held back. A transcript with reliable speaker labels or the recording is needed.", finishedAt: nowISO() });
@@ -370,6 +379,11 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
     // a held or stale card means the reading is not ready, whatever was caught along the way (0.14.6)
     const final = await check(id, job);
     const ready = final.passages.filter(p => p.readingGate.status === "ready").length;
+    // the closing overview, where the reading has one (several passages of a conversation): its gate as it stands
+    // now counts too, so an overview replaced or gone stale during the source searches is never called ready (0.14.7)
+    const overviewNeeded = final.run.kind !== "claim" && final.passages.length >= 2;
+    if (overviewNeeded && !issues.length && ready === final.passages.length && !(final.summary && final.summary.readingGate.status === "ready"))
+      issues.push({ code: "overview_not_current", message: "The closing overview is missing or out of date.", reasons: final.summary ? (final.summary.stale || []).slice(0, 5) : ["no closing overview was written"] });
     const finished = !issues.length && ready === final.passages.length;
     await store.saveRun(id, { status: finished ? "complete" : "analyzed" });
     await update(id, job, { status: finished ? "complete" : "partial", phase: "finished", done: ready, total: final.passages.length, issues,

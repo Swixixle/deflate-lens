@@ -52,7 +52,7 @@ async function articleRun(t, input, fetchHtml) {
   return { f, b, prompts, id: r.data.run.id };
 }
 function checkArticle(b, prompts, what) {
-  assert.equal(b.run.parseMode, "prose", what);
+  assert.equal(b.run.parseMode, "article", what, "(0.14.7: \"article\"; 0.14.6 recorded \"prose\")");
   assert.equal(b.run.intake.removedBefore, 0); assert.equal(b.run.intake.prose, true);
   const gen = prompts.filter(p => p.startsWith("Help a reader understand this passage")).join("\n");
   for (const words of KEPT) {
@@ -75,7 +75,7 @@ test("an article pasted as prose keeps its opening qualification and its heading
   // reading again does not undo it: the saved text and mode survive the reader's own start-up cleanup
   await f.api("POST", "/api/runs/" + id + "/read", {});
   const again = await f.finish(id);
-  assert.equal(again.transcript, b.transcript); assert.equal(again.run.parseMode, "prose");
+  assert.equal(again.transcript, b.transcript); assert.equal(again.run.parseMode, "article");
 });
 
 test("the same article through the link route (a page read as an article), and with headings used once each (Background, Findings, Limitations)", async t => {
@@ -84,18 +84,19 @@ test("the same article through the link route (a page read as an article), and w
   checkArticle(one.b, one.prompts, "link");
   const once = [STUDY[0], "Background: The clinic asked for volunteers for six weeks.", "Findings: Average symptoms improved in this group.", "Limitations: Follow-up lasted four weeks, so long-term effects remain unknown."];
   const two = await articleRun(t, once.join("\n\n"));
-  assert.equal(two.b.run.parseMode, "prose");
+  assert.equal(two.b.run.parseMode, "article");
   for (const words of ["do not establish effects in children", "Background:", "Findings:", "Limitations: Follow-up lasted four weeks"]) assert.ok(two.b.transcript.includes(words), words);
   assert.ok(!two.b.run.speakers.some(s => /BACKGROUND|FINDINGS|LIMITATIONS/.test(s.key)));
   assert.equal(two.b.run.processing.status, "complete");
 });
 
 const INTERVIEW = Array.from({ length: 18 }, (_, i) => (i % 2 ? "GUEST" : "HOST") + ": We are discussing an argument with enough quoted words to test the reading " + i + ".").join("\n");
-test("a genuine labelled interview still reads as one: page chrome before it is removed, and an opening prose paragraph is kept as part of the text, never deleted", async t => {
-  // chrome before the dialogue: short lines that end no sentence
+test("a genuine labelled interview still reads as one: lines before it and an opening prose paragraph are kept as part of the text, never deleted", async t => {
+  // (0.14.7) short lines before the dialogue are kept too: their shape does not show they are disposable; only what
+  // follows the explicit end marker is left out
   let { b } = await articleRun(t, "Listen LIVE\nPage controls\n" + INTERVIEW + "\nEnd of interview.\nNewsletter signup\n");
-  assert.equal(b.run.parseMode, "transcript"); assert.equal(b.transcript, INTERVIEW);
-  assert.equal(b.run.intake.removedBefore, 2); assert.deepEqual(b.run.speakers.map(s => s.key), ["HOST", "GUEST"]);
+  assert.equal(b.run.parseMode, "transcript"); assert.equal(b.transcript, "Listen LIVE\nPage controls\n" + INTERVIEW);
+  assert.equal(b.run.intake.removedBefore, 0); assert.deepEqual(b.run.speakers.map(s => s.key), ["HOST", "GUEST"]);
   assert.equal(b.run.processing.status, "complete");
   // a substantive opening sentence is the text's own prose: kept, with the conversation read as a conversation
   const intro = "In this episode the host and a county planner talk through the bridge budget for about an hour.";
@@ -107,9 +108,9 @@ test("a genuine labelled interview still reads as one: page chrome before it is 
   assert.equal(b.run.processing.status, "complete", JSON.stringify(b.run.processing));
 });
 
-test("cleanText alone: chrome is trimmed, prose is not, and repeated colon headings alone are read as prose; captions and saved-run cleanup are unchanged", () => {
+test("cleanText alone: nothing before the first label is removed, and repeated colon headings alone are read as prose; captions and saved-run cleanup are unchanged", () => {
   const c1 = cleanText("Page title\n" + INTERVIEW);
-  assert.equal(c1.record.removedBefore, 1); assert.equal(c1.record.prose, undefined);
+  assert.equal(c1.record.removedBefore, 0); assert.equal(c1.record.prose, undefined); assert.equal(c1.text, "Page title\n" + INTERVIEW);
   const c2 = cleanText(STUDY.join("\n"));
   assert.equal(c2.record.prose, true); assert.equal(c2.record.removedBefore, 0); assert.equal(c2.text, STUDY.join("\n"));
   assert.match(c2.record.method, /Read as prose: every word is kept/);

@@ -1,12 +1,13 @@
 "use strict";
 const shared = require("../shared/transcript");
 const Q = require("./quality");
-const { newId, sha256, canonicalClaimText, provenanceOf } = require("./store");
+const { newId, sha256, canonicalClaimText, provenanceOf, namesSigFor } = require("./store");
 const V = require("./validate");
 
 async function callModel(ai, store, id, purpose, basis, prompt, signal, extra) {
+  // (which service answered, for a model reached through an OpenAI-compatible address: OpenRouter, Ollama…, 0.14.7)
   const call = Object.assign({ callId: newId("call"), at: new Date().toISOString(), purpose, runId: id,
-    provider: ai.kind, modelRequested: ai.model, mock: !!ai.mock, basedOn: basis, promptHash: sha256(prompt), promptChars: prompt.length, json: true }, extra);
+    provider: ai.kind, modelRequested: ai.model, mock: !!ai.mock, basedOn: basis }, ai.host ? { providerHost: ai.host } : {}, { promptHash: sha256(prompt), promptChars: prompt.length, json: true }, extra);
   const t0 = Date.now();
   try {
     const out = await ai.sample({ prompt, json: true, signal });
@@ -69,11 +70,16 @@ async function prepareSpeakers({ ai, store, id, signal }) {
   if (b.run.example) throw Object.assign(new Error("Copy the supplied example before preparing it."), { status: 403 });
   if (Q.attributionGate(b).status === "ready") return b;
   if (!ai) throw Object.assign(new Error("Add the model key to prepare the speakers."), { status: 503, code: "no_ai" });
-  const basis = await store.captureCallBasis(id, { transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig }, "prepare_speakers");
   const all = shared.parseTranscript(b.transcript, { mode: b.run.parseMode || "transcript" });
+  // (the names it is asked with are part of what it rests on, and checked again when it commits, 0.14.7)
+  const basis = await store.captureCallBasis(id, { transcriptUpdatedAt: b.run.transcriptUpdatedAt, attrSig: b.attrSig, namesSig: namesSigFor(b.run, all) }, "prepare_speakers");
   // a clip, a quotation read aloud or an advertisement was set apart by the structure pass, with its evidence checked;
   // it is not a label to audit
-  const speaking = all.filter(t => !t.heading && !/^(CLIP|QUOTE|AD) \d+$/.test(shared.effSpeaker(t, b.run.provenance.overrides))), keys = new Set(shared.speakerLabels(all));
+  // words before the first labelled turn are the text's own (a title, a qualification, a page's lines), kept since
+  // 0.14.7 rather than cut, and attributed to no one: they are not a label to audit, and cannot hold the reading
+  const firstLabelled = all.findIndex(t => !t.heading && shared.effSpeaker(t, b.run.provenance.overrides) !== "UNLABELED");
+  const leading = all.filter(t => !t.heading && t.i < firstLabelled && shared.effSpeaker(t, b.run.provenance.overrides) === "UNLABELED").map(t => t.i);
+  const speaking = all.filter(t => !t.heading && !leading.includes(t.i) && !/^(CLIP|QUOTE|AD) \d+$/.test(shared.effSpeaker(t, b.run.provenance.overrides))), keys = new Set(shared.speakerLabels(all));
   const contested = new Set((b.run.provenance.flags || []).map(f => f.turn));
   const overrides = Object.assign({}, b.run.provenance.overrides), corrections = [], unresolved = [], record = [], calls = [];
   const ranges = shared.chunkRanges(speaking, 16000).flatMap(([from, to]) => {
@@ -98,9 +104,9 @@ async function prepareSpeakers({ ai, store, id, signal }) {
       if (a.speaker !== current) { overrides[String(t.i)] = a.speaker; corrections.push({ turn: t.i, from: current, to: a.speaker, evidenceQuote: z.evidenceQuote, reason: z.reason }); }
     }
   }
-  await store.commitPreparation(id, basis, { overrides, corrections, unresolved, record, calls,
+  const committed = await store.commitPreparation(id, basis, { overrides, corrections, unresolved, record, calls, notAttributed: leading,
     status: unresolved.length ? "held" : "ready", at: new Date().toISOString(), method: (b.run.provenance.labelsOrigin === "model" ? "Speaker names were assigned by a model from the words alone (not from the source), then checked by " : "") + "Two text-only attribution passes; identity corrections require matching quotations. No audio or factual-source verification is claimed." });
-  return store.bundle(id);
+  const after = await store.bundle(id); after.committedRun = committed; return after;
 }
 
 const P = require("../shared/prompts");

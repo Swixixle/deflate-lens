@@ -1,10 +1,35 @@
 "use strict";
-/* The one place the app talks to a model. The browser never sees the API key: the page posts a prompt
-   to /api/sample and this module forwards it to Anthropic's Messages API with the key from .env.
+/* The one place the app talks to a model. The browser never sees an API key: the server forwards each prompt to the
+   provider chosen under Controls → App and files (0.14.7) — Anthropic's Messages API (the default, Claude), or any
+   service that speaks the OpenAI-compatible chat API (OpenRouter, OpenAI, Groq, Together, or Ollama on this computer) —
+   with the key from .env.
    DEFLATE_MOCK_AI=1 swaps in a canned responder so the whole workflow can be exercised (and tested)
    without a key or a bill. Mock output is labelled MOCK everywhere it appears. */
 
 const DEFAULT_MODEL = "claude-sonnet-5-5";
+/* The models a person can choose under Controls → App and files (0.14.7), Sonnet first as the default. The choice is
+   written to .env (ANTHROPIC_MODEL) and applies from the next reading; a reading in progress finishes with the model it
+   started with, since the reader holds the model it was given. Notes say price relative to Sonnet, as Anthropic listed
+   it in October 2026 (Sonnet $2/$10, Opus $4/$20, Fable $10/$50 per million tokens in/out); check current prices in
+   Anthropic's console. Any other Claude model can be typed by its id; any OpenAI-compatible service can be used instead. */
+const MODEL_CHOICES = [
+  { id: "claude-sonnet-5-5", name: "Sonnet 5.5", note: "the default" },
+  { id: "claude-opus-5-5", name: "Opus 5.5", note: "about twice Sonnet's price" },
+  { id: "claude-fable-5-1", name: "Fable 5.1", note: "about five times Sonnet's price" },
+];
+const modelName = id => (MODEL_CHOICES.find(c => c.id === id) || { name: String(id || "") }).name;
+// any Claude model by its API id ("claude-haiku-4-5-20251001", an older or newer model): typed under Controls
+const CLAUDE_ID = /^claude-[a-z0-9][a-z0-9.\-]{1,60}$/;
+// a model id as another provider writes it ("openai/gpt-5", "meta-llama/llama-3.3-70b-instruct", "llama3.1:8b")
+const OTHER_ID = /^[A-Za-z0-9][A-Za-z0-9._:\/@+\-]{0,119}$/;
+/* The address of an OpenAI-compatible service: https, or plain http only on this computer (Ollama), so a key is never
+   sent in the clear. Returns the address without a trailing slash, or "" when it is not one. */
+function serviceAddress(u) {
+  let url; try { url = new URL(String(u || "").trim()); } catch (e) { return ""; }
+  const local = ["localhost", "127.0.0.1", "[::1]", "::1"].includes(url.hostname);
+  if (!(url.protocol === "https:" || url.protocol === "http:" && local) || url.username || url.password) return "";
+  return url.href.replace(/\/+$/, "");
+}
 /* A ceiling, not a target: a reading of a long passage at two levels can exceed 8,000 output tokens, and an answer cut
    off at the limit is billed and unusable. Override with ANTHROPIC_MAX_TOKENS. */
 const DEFAULT_MAX_TOKENS = 16000;
@@ -38,6 +63,8 @@ function createAnthropicAI({ apiKey, model, maxTokens }) {
   const mdl = model || DEFAULT_MODEL;
   return {
     kind: "anthropic", model: mdl, mock: false,
+    // the same key with another model, as a NEW object: a reading already running keeps the one it holds (0.14.7)
+    withModel(other) { return createAnthropicAI({ apiKey, model: other, maxTokens }); },
     async sample({ prompt, json, images, signal }) {
       const content = [];
       (images || []).forEach(im => content.push({ type: "image", source: { type: "base64", media_type: im.mediaType, data: im.data } }));
@@ -65,7 +92,8 @@ function createMockAI() {
   function turnsFrom(prompt) {
     const out = [];
     const re = /^\[(\d+)\] ([^:]+): (.*)$/gm; let m;
-    while ((m = re.exec(prompt))) out.push({ i: +m[1], label: m[2].trim(), text: m[3] });
+    // (a "(heading)" line is the text's own words, spoken by no one: never a turn to quote, 0.14.7)
+    while ((m = re.exec(prompt))) if (m[2].trim() !== "(heading)") out.push({ i: +m[1], label: m[2].trim(), text: m[3] });
     return out;
   }
   return {
@@ -193,11 +221,75 @@ function createMockAI() {
   };
 }
 
-function createAI(env) {
-  if (env.DEFLATE_MOCK_AI === "1" || env.DEFLATE_MOCK_AI === "true") return createMockAI();
-  // a placeholder such as sk-ant-... is not a key; the page then asks for one instead of failing on first use
-  if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(String(env.ANTHROPIC_API_KEY || "").trim())) return null;
-  return createAnthropicAI({ apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL, maxTokens: env.ANTHROPIC_MAX_TOKENS ? Number(env.ANTHROPIC_MAX_TOKENS) : undefined });
+/* Any service that speaks the OpenAI-compatible chat API (0.14.7): POST {address}/chat/completions with one user
+   message, the key (if any) as a bearer token. No provider-specific options are sent, so one adapter serves OpenRouter,
+   OpenAI, Groq, Together and Ollama alike; the answer is read as the Anthropic one is (JSON loosely, "length" as cut off),
+   and its id, model, usage and stop reason go on the call record. */
+function createOpenAICompatibleAI({ baseUrl, apiKey, model, maxTokens, fetch }) {
+  const address = serviceAddress(baseUrl), doFetch = fetch || globalThis.fetch;
+  if (!address) throw Object.assign(new Error("That is not a usable address for a model service (https, or http on this computer)."), { code: "bad_address" });
+  const host = new URL(address).host;
+  return {
+    kind: "openai-compatible", model, host, mock: false,
+    withModel(other) { return createOpenAICompatibleAI({ baseUrl: address, apiKey, model: other, maxTokens, fetch: doFetch }); },
+    async sample({ prompt, json, images, signal }) {
+      const content = (images || []).length
+        ? images.map(im => ({ type: "image_url", image_url: { url: "data:" + im.mediaType + ";base64," + im.data } })).concat([{ type: "text", text: String(prompt || "") }])
+        : String(prompt || "");
+      let res, body;
+      try {
+        res = await doFetch(address + "/chat/completions", { method: "POST", signal,
+          headers: Object.assign({ "Content-Type": "application/json" }, apiKey ? { Authorization: "Bearer " + apiKey } : {}),
+          body: JSON.stringify({ model, max_tokens: maxTokens || DEFAULT_MAX_TOKENS, messages: [{ role: "user", content }] }) });
+        body = await res.json().catch(() => null);
+      } catch (e) {
+        const err = new Error(e && e.name === "AbortError" ? "Stopped" : "Could not reach " + host + " (" + String(e && e.message || e).slice(0, 120) + ").");
+        err.code = e && e.name === "AbortError" ? "cancelled" : "upstream_error"; throw err;
+      }
+      if (!res.ok) {
+        const msg = body && body.error && (body.error.message || body.error) || ("HTTP " + res.status);
+        const err = new Error(host + ": " + String(msg).slice(0, 300));
+        err.code = res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : "upstream_error"; err.status = res.status; throw err;
+      }
+      const choice = body && Array.isArray(body.choices) && body.choices[0] || {};
+      const msg = choice.message || {};
+      const text = typeof msg.content === "string" ? msg.content : Array.isArray(msg.content) ? msg.content.map(c => c && c.text || "").join("\n") : "";
+      const usage = body && body.usage ? { input: body.usage.prompt_tokens, output: body.usage.completion_tokens } : null;
+      const meta = { usage, model: body && body.model || model, requestId: body && body.id || "", stopReason: choice.finish_reason === "length" ? "max_tokens" : String(choice.finish_reason || "") };
+      return parseReply(text, meta, json);
+    }
+  };
+}
+/* The models an OpenAI-compatible service lists (GET {address}/models: free on OpenRouter, OpenAI and Ollama), for the
+   list under Controls. Ids only; never the key. */
+async function listServiceModels({ baseUrl, apiKey, fetch, timeoutMs }) {
+  const address = serviceAddress(baseUrl);
+  if (!address) throw Object.assign(new Error("That is not a usable address for a model service (https, or http on this computer)."), { status: 400, code: "bad_address" });
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), timeoutMs || 10000);
+  try {
+    const res = await (fetch || globalThis.fetch)(address + "/models", { headers: apiKey ? { Authorization: "Bearer " + apiKey } : {}, signal: ctl.signal });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) throw Object.assign(new Error(new URL(address).host + " answered HTTP " + res.status + (res.status === 401 || res.status === 403 ? ": the key was not accepted" : "")), { status: 502, code: res.status === 401 || res.status === 403 ? "bad_key" : "upstream_error" });
+    const ids = (body && Array.isArray(body.data) ? body.data : Array.isArray(body && body.models) ? body.models : []).map(m => String(m && (m.id || m.name) || "")).filter(id => OTHER_ID.test(id));
+    return [...new Set(ids)].sort().slice(0, 1000);
+  } catch (e) {
+    if (e.status) throw e;
+    throw Object.assign(new Error("Could not reach " + address + (e.name === "AbortError" ? " (no answer within 10 seconds)" : "") + "."), { status: 502, code: "upstream_error" });
+  } finally { clearTimeout(timer); }
 }
 
-module.exports = { createAI, createMockAI, createAnthropicAI, parseJSONLoose, parseReply, DEFAULT_MODEL, DEFAULT_MAX_TOKENS };
+/* The model the server uses, from .env: the mock (DEFLATE_MOCK_AI), an OpenAI-compatible service when MODEL_PROVIDER says
+   so and its address and model are set, or Claude when an Anthropic key is set. Null when what is chosen is not set up. */
+function createAI(env, opts) {
+  if (env.DEFLATE_MOCK_AI === "1" || env.DEFLATE_MOCK_AI === "true") return createMockAI();
+  const maxTokens = env.ANTHROPIC_MAX_TOKENS ? Number(env.ANTHROPIC_MAX_TOKENS) : undefined;
+  if (env.MODEL_PROVIDER === "openai-compatible") {
+    if (!serviceAddress(env.OPENAI_BASE_URL) || !OTHER_ID.test(String(env.OPENAI_MODEL || ""))) return null;
+    return createOpenAICompatibleAI({ baseUrl: env.OPENAI_BASE_URL, apiKey: String(env.OPENAI_API_KEY || "").trim(), model: env.OPENAI_MODEL, maxTokens, fetch: opts && opts.fetch });
+  }
+  // a placeholder such as sk-ant-... is not a key; the page then asks for one instead of failing on first use
+  if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(String(env.ANTHROPIC_API_KEY || "").trim())) return null;
+  return createAnthropicAI({ apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL, maxTokens });
+}
+
+module.exports = { createAI, createMockAI, createAnthropicAI, createOpenAICompatibleAI, listServiceModels, serviceAddress, parseJSONLoose, parseReply, DEFAULT_MODEL, DEFAULT_MAX_TOKENS, MODEL_CHOICES, modelName, CLAUDE_ID, OTHER_ID };

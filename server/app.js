@@ -8,7 +8,7 @@ const { buildExport, buildMarkdown, buildObligations } = require("./exportClaims
 const { REJECTION_REASONS } = require("./research/types");
 const { createImporter, htmlToText } = require("./importer");
 const { createSettings } = require("./settings");
-const { createAI } = require("./ai");
+const { createAI, DEFAULT_MODEL, MODEL_CHOICES, CLAUDE_ID, OTHER_ID, serviceAddress, listServiceModels } = require("./ai");
 const { createJobs } = require("./jobs");
 const { createResolver, pickEngine } = require("./podcast/resolve");
 const AF = require("./podcast/audiofile");
@@ -100,7 +100,13 @@ function createApp(opts) {
     next();
   });
 
-  app.get("/api/health", (req, res) => { const ai = state.ai; res.json({ ok: true, app: "deflate-lens", ai: ai ? { kind: ai.kind, model: ai.model, mock: !!ai.mock } : null, keyConfigurable: true, research: research ? research.config : null, transcript: { local: engines.local.installed(), cloud: engines.cloud.configured(), prefer: env.TRANSCRIBE_PREFER || "" }, dataDir: store.dataDir, version: require("../package.json").version }); });
+  // the model for new readings (0.14.7): the provider and model in use, the listed Claude choices and the default, and
+  // the OpenAI-compatible connection as saved (its address and model; whether a key is set, never the key)
+  const aiInfo = ai => ai ? Object.assign({ kind: ai.kind, model: ai.model, mock: !!ai.mock }, ai.host ? { host: ai.host } : {}) : null;
+  const modelInfo = () => ({ provider: process.env.MODEL_PROVIDER === "openai-compatible" ? "openai-compatible" : "anthropic",
+    claude: process.env.ANTHROPIC_MODEL || DEFAULT_MODEL, default: DEFAULT_MODEL, choices: MODEL_CHOICES,
+    other: { baseUrl: serviceAddress(process.env.OPENAI_BASE_URL) || "", model: process.env.OPENAI_MODEL || "", keySet: !!String(process.env.OPENAI_API_KEY || "").trim() } });
+  app.get("/api/health", (req, res) => { const ai = state.ai; res.json({ ok: true, app: "deflate-lens", ai: aiInfo(ai), models: modelInfo(), keyConfigurable: true, research: research ? research.config : null, transcript: { local: engines.local.installed(), cloud: engines.cloud.configured(), prefer: env.TRANSCRIBE_PREFER || "" }, dataDir: store.dataDir, version: require("../package.json").version }); });
 
   /* One-time local configuration of the model key. Body: {key}. The key is written to .env and used at once; the
      response carries only the model name. Mock mode is never switched on here. */
@@ -108,8 +114,47 @@ function createApp(opts) {
     const key = String(req.body && req.body.key || "");
     const r = settings.setAnthropicKey(key);
     process.env.ANTHROPIC_API_KEY = key.trim();
-    if (!(process.env.DEFLATE_MOCK_AI === "1" || process.env.DEFLATE_MOCK_AI === "true")) state.ai = createAI(process.env);
-    res.json({ ok: true, file: r.file, ai: state.ai ? { kind: state.ai.kind, model: state.ai.model, mock: !!state.ai.mock } : null });
+    if (!(process.env.DEFLATE_MOCK_AI === "1" || process.env.DEFLATE_MOCK_AI === "true")) state.ai = createAI(process.env, { fetch: opts.modelFetch });
+    res.json({ ok: true, file: r.file, ai: aiInfo(state.ai) });
+  }));
+
+  /* Which model writes new readings (0.14.7). Body: {provider: "anthropic", model} with any Claude model id, or
+     {provider: "openai-compatible", baseUrl, apiKey?, model} for any service that speaks the OpenAI-compatible chat API
+     (an empty apiKey keeps the saved one; clearKey removes it, for Ollama). Every value is checked before anything is
+     written; then .env is updated and the server's model replaced by a new one, so a reading already running finishes
+     with the model it started with. The mock responder stays the mock. The key never comes back. */
+  app.put("/api/settings/model", wrap(async (req, res) => {
+    const q = req.body || {}, provider = q.provider === "openai-compatible" ? "openai-compatible" : "anthropic";
+    const bad = msg => Object.assign(new Error(msg), { status: 400, code: "bad_setting" });
+    const model = String(q.model || "").trim();
+    if (provider === "anthropic") {
+      if (!CLAUDE_ID.test(model)) throw bad("That does not look like a Claude model id (they start with claude-). Nothing was saved.");
+      settings.set("ANTHROPIC_MODEL", model); settings.set("MODEL_PROVIDER", "anthropic");
+      process.env.ANTHROPIC_MODEL = model; process.env.MODEL_PROVIDER = "anthropic";
+    } else {
+      const baseUrl = serviceAddress(q.baseUrl), key = String(q.apiKey || "").trim();
+      if (!baseUrl) throw bad("That is not a usable address for a model service (https, or http on this computer). Nothing was saved.");
+      if (!OTHER_ID.test(model)) throw bad("That does not look like a model id. Nothing was saved.");
+      if (key && !/^[\x21-\x7e]{8,400}$/.test(key)) throw bad("That does not look like an API key. Nothing was saved.");
+      settings.set("OPENAI_BASE_URL", baseUrl); settings.set("OPENAI_MODEL", model);
+      if (key) settings.set("OPENAI_API_KEY", key); else if (q.clearKey) settings.clear("OPENAI_API_KEY");
+      settings.set("MODEL_PROVIDER", "openai-compatible");
+      Object.assign(process.env, { OPENAI_BASE_URL: baseUrl, OPENAI_MODEL: model, MODEL_PROVIDER: "openai-compatible" });
+      if (key) process.env.OPENAI_API_KEY = key; else if (q.clearKey) process.env.OPENAI_API_KEY = "";
+    }
+    // (Claude to another Claude model: the same key with the new model, as a new object; anything else is built afresh
+    // from .env, where the choice was just written)
+    if (state.ai && state.ai.mock) { /* the mock stays the mock */ }
+    else if (provider === "anthropic" && state.ai && state.ai.kind === "anthropic" && typeof state.ai.withModel === "function") state.ai = state.ai.withModel(model);
+    else state.ai = createAI(process.env, { fetch: opts.modelFetch });
+    res.json({ ok: true, ai: aiInfo(state.ai), models: modelInfo() });
+  }));
+  /* The models an OpenAI-compatible service lists, for the list under Controls. Body: {baseUrl, apiKey?}; with no key
+     given, the saved key is used for the saved address only. Returns ids; nothing is saved and no key comes back. */
+  app.post("/api/settings/model/list", wrap(async (req, res) => {
+    const q = req.body || {}, baseUrl = serviceAddress(q.baseUrl);
+    const key = String(q.apiKey || "").trim() || (baseUrl && baseUrl === serviceAddress(process.env.OPENAI_BASE_URL) ? String(process.env.OPENAI_API_KEY || "").trim() : "");
+    res.json({ ok: true, models: await listServiceModels({ baseUrl: q.baseUrl, apiKey: key, fetch: opts.modelFetch }) });
   }));
 
   /* Link importer: readable text or a plain reason it could not be read. Stores nothing. */
@@ -274,8 +319,10 @@ function createApp(opts) {
   /* A named key, set once from the page. Only the names in settings.SETTABLE are accepted; nothing is echoed back. */
   app.post("/api/settings/key", wrap(async (req, res) => {
     const name = String(req.body && req.body.name || ""); const key = String(req.body && req.body.key || "");
+    // (the model and its connection are set together through /api/settings/model, which checks them as one, 0.14.7)
+    if (["ANTHROPIC_MODEL", "MODEL_PROVIDER", "OPENAI_BASE_URL", "OPENAI_API_KEY", "OPENAI_MODEL"].includes(name)) throw Object.assign(new Error("Choose the model under Controls → App and files."), { status: 400, code: "not_settable" });
     const r = settings.set(name, key);
-    if (name === "ANTHROPIC_API_KEY") { process.env.ANTHROPIC_API_KEY = key.trim(); if (!(process.env.DEFLATE_MOCK_AI === "1" || process.env.DEFLATE_MOCK_AI === "true")) state.ai = createAI(process.env); }
+    if (name === "ANTHROPIC_API_KEY") { process.env.ANTHROPIC_API_KEY = key.trim(); if (!(process.env.DEFLATE_MOCK_AI === "1" || process.env.DEFLATE_MOCK_AI === "true")) state.ai = createAI(process.env, { fetch: opts.modelFetch }); }
     if (name === "DEEPGRAM_API_KEY") { env.DEEPGRAM_API_KEY = key.trim(); engines.cloud = opts.cloudEngine || deepgramEngine({ apiKey: key.trim(), fetch: opts.fetch || globalThis.fetch, env }); }
     res.json({ ok: true, name: r.name, ai: state.ai ? { kind: state.ai.kind, model: state.ai.model, mock: !!state.ai.mock } : null, cloud: { configured: engines.cloud.configured() } });
   }));

@@ -32,8 +32,9 @@ test("one upload request prepares all readings, an independently reviewed overvi
   const response = await s.api("POST", "/api/intake", { input: uploaded });
   assert.equal(response.status, 202);
   const id = response.data.run.id, b = await s.finish(id);
-  assert.equal(b.transcript, transcript);
-  assert.ok(!b.run.title.includes("Listen LIVE"));
+  // (0.14.7) the lines before the first speaker label are kept as the text's own words — nothing establishes that they
+  // are disposable — attributed to no one; only what follows the explicit end marker is left out
+  assert.equal(b.transcript, "Listen LIVE\nPage controls\n" + transcript);
   assert.deepEqual(b.run.speakers.map(s => s.key), ["HOST", "GUEST"]);
   assert.equal(b.attributionGate.status, "ready");
   assert.equal(b.run.provenance.confirmedAt, undefined, "automatic checks must not forge a person's confirmation");
@@ -57,13 +58,14 @@ test("a readable link uses its article, real title and current URL, even if the 
   const response = await s.api("POST", "/api/intake", { input: url, context: { sourceUrl: "https://example.org/wrong-story" } });
   const b = await s.finish(response.data.run.id);
   assert.equal(b.run.title, title); assert.equal(b.run.sourceUrl, url); assert.equal(b.run.sourceLabel, title);
-  assert.equal(b.transcript, transcript); assert.equal(b.run.processing.status, "complete");
-  assert.ok(!b.transcript.includes("Newsletter")); assert.ok(!b.transcript.includes("Other stories"));
+  // (0.14.7) the article's own heading stays as its first line; the page's menus and other stories never reached the text
+  assert.equal(b.transcript, title + "\n" + transcript); assert.equal(b.run.processing.status, "complete");
+  assert.ok(!b.transcript.includes("Newsletter")); assert.ok(!b.transcript.includes("Other stories")); assert.ok(!b.transcript.includes("Old menus"));
 });
 
 test("cleanup keeps continuation paragraphs and every word inside the dialogue, and never truncates the last turn without an end marker", () => {
   const dialogue = "HOST: The first statement is here.\nMore information follows.\n\nGUEST: A second speaker answers.\nHOST: The last speech starts here.\nAnd continues on this final line.";
-  assert.equal(cleanText("Page title\n" + dialogue).text, dialogue);
+  assert.equal(cleanText("Page title\n" + dialogue).text, "Page title\n" + dialogue, "0.14.7: a leading line is kept");
   assert.equal(cleanText(dialogue + "\nEnd of interview.\nPage controls").text, dialogue);
   const article = htmlToText("<title>Article</title><main><p>An article without labelled speakers remains readable.</p><p>This paragraph must stay.</p></main><div>Outside menu</div>");
   assert.ok(article.text.includes("This paragraph must stay.")); assert.ok(!article.text.includes("Outside menu"));
@@ -162,7 +164,8 @@ test("existing imports with menu titles and a leftover source are repaired and t
   const id = await s.store.createRun({ title: "Listen LIVE", sourceUrl: "https://example.org/old", import: { url: "https://example.org/current", title: "Current interview", method: "html-text" } }, original);
   await s.api("POST", "/api/runs/" + id + "/read", {}); const b = await s.finish(id);
   assert.equal(b.run.title, "Current interview"); assert.equal(b.run.sourceUrl, "https://example.org/current");
-  assert.equal(b.transcript, transcript); assert.equal(b.run.processing.status, "complete");
+  // (0.14.7) the saved text's own first line stays; what followed its explicit end marker is still left out
+  assert.equal(b.transcript, "Listen LIVE\n" + transcript); assert.equal(b.run.processing.status, "complete");
   assert.equal((await s.api("GET", "/api/runs/" + id + "/original-input.txt")).data, original);
 });
 

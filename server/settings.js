@@ -1,7 +1,7 @@
 "use strict";
 /* Local configuration written by the app itself: the .env file next to the project. The page can set a few named
    settings, each once, when first needed: the Anthropic API key (real analysis), the Deepgram key (cloud
-   transcription), and which transcription engine to prefer. A key is written to .env on this computer, kept in the
+   transcription), which transcription engine to prefer, and which listed model writes the readings. A key is written to .env on this computer, kept in the
    server's memory, and never returned to the browser, logged, or echoed. Existing lines in .env are preserved; only
    the one line is added or replaced. */
 const fs = require("fs");
@@ -25,6 +25,13 @@ const SETTABLE = {
   ANTHROPIC_API_KEY: { test: looksLikeAnthropicKey, secret: true, bad: "That does not look like an Anthropic API key (they start with sk-ant-). Nothing was saved." },
   DEEPGRAM_API_KEY: { test: k => /^[A-Za-z0-9]{32,64}$/.test(k), secret: true, bad: "That does not look like a Deepgram API key (a long run of letters and digits). Nothing was saved." },
   TRANSCRIBE_PREFER: { test: k => k === "local" || k === "cloud", secret: false, bad: "The preferred engine must be local or cloud." },
+  // which model writes the readings (0.14.7): any Claude model by its id, or an OpenAI-compatible service's address,
+  // key (optional: Ollama needs none) and model
+  ANTHROPIC_MODEL: { test: k => require("./ai").CLAUDE_ID.test(k), secret: false, bad: "That does not look like a Claude model id (they start with claude-). Nothing was saved." },
+  MODEL_PROVIDER: { test: k => k === "anthropic" || k === "openai-compatible", secret: false, bad: "The provider must be anthropic or openai-compatible." },
+  OPENAI_BASE_URL: { test: k => !!require("./ai").serviceAddress(k), secret: false, bad: "That is not a usable address for a model service (https, or http on this computer). Nothing was saved." },
+  OPENAI_API_KEY: { test: k => /^[\x21-\x7e]{8,400}$/.test(k), secret: true, bad: "That does not look like an API key. Nothing was saved." },
+  OPENAI_MODEL: { test: k => require("./ai").OTHER_ID.test(k), secret: false, bad: "That does not look like a model id. Nothing was saved." },
 };
 
 function createSettings({ envPath, examplePath }) {
@@ -51,6 +58,14 @@ function createSettings({ envPath, examplePath }) {
       fs.writeFileSync(envPath, upsertEnvLine(text, name, v), { mode: 0o600 });
       try { fs.chmodSync(envPath, 0o600); } catch (e) {}
       return { saved: true, name, secret: spec.secret, file: envPath, value: spec.secret ? undefined : v };
+    },
+    /* Empty one setting from the closed list (an OpenAI-compatible service that needs no key, 0.14.7). */
+    clear(name) {
+      if (!Object.prototype.hasOwnProperty.call(SETTABLE, name)) { const e = new Error("that setting cannot be changed from the page"); e.status = 400; e.code = "not_settable"; throw e; }
+      const text = readEnvFile(envPath); if (text === null) return { cleared: false, name };
+      fs.writeFileSync(envPath, upsertEnvLine(text, name, ""), { mode: 0o600 });
+      try { fs.chmodSync(envPath, 0o600); } catch (e) {}
+      return { cleared: true, name };
     },
   };
 }

@@ -6,7 +6,7 @@ Deflate Lens helps you understand what was said, what supports it, and what rema
 
 Paste text or a link into the box, or press **Upload** to choose a transcript (.txt, .srt, .vtt, .md) or a recording (an audio or video file). Then press **Read this**. That is the only step you need.
 
-- **Text or a transcript.** Lines that start with a name and a colon (`ANN: …`) are read as speakers. An article or other prose is read as itself: section headings like "Results:" or "Methods:" stay part of the text and never become speakers, and nothing before them is cut. A transcript copied from a web page is cleaned on the way in: "Copy link" buttons and timestamps are taken out of the words (every word is kept), and names the page shows above each paragraph become speakers.
+- **Text or a transcript.** Lines that start with a name and a colon (`ANN: …`) are read as speakers. An article or other prose is read as itself: section headings like "Results:" or "Methods:" stay part of the text and never become speakers. Nothing in what you give is cut, however short — a line like "Children excluded." reaches the reading. A transcript copied from a web page is cleaned on the way in: "Copy link" buttons and timestamps are taken out of the words (every word is kept), and names the page shows above each paragraph become speakers.
 - **One claim.** A single sentence is read as a claim: the app explains it and looks for sources.
 - **A podcast, video or page link.** The app looks for a transcript the show published, then the video's captions, then the episode page. If none exists it can turn the audio into text. A link to an audio file goes straight to that step.
 - **A recording on your computer.** MP3, M4A, MP4, WAV and other audio or video files, up to 2 GB. The line under the box names the file, and **Read this** turns it into text (with Deepgram, which also tells the voices apart, or on your computer for an MP3), then reads it. The file's own details, such as its title and artist, help name the speakers. The file is not kept; the reading records its name and size.
@@ -15,7 +15,7 @@ The app stops to ask only when it cannot decide for you:
 
 - **Which episode**, when you paste a whole show.
 - **How to turn audio into text**, the first time it is needed: on your computer (free, private, slow, no speaker names) or with Deepgram (fast, paid, the audio is sent to Deepgram).
-- **Your Anthropic key**, the first time a reading needs it. Readings are billed to that key.
+- **Your Anthropic key**, the first time a reading needs it. Readings are billed to that key. (Or choose another model service under Controls → App and files; then that service's key, or none for Ollama on your computer.)
 
 After you answer, the reading continues by itself. You can close the page; the work goes on and is there when you come back.
 
@@ -62,7 +62,7 @@ Everything here is optional. Open **Controls**:
 
 - **Reading**: the default reading level; read again what is not ready; write the closing overview again; **Passage preparation** to split the conversation into passages again. Each says what it will cost before you press it.
 - **Input and speakers**: change the title or source; compare and confirm a matched source, or use a different link; edit the text; under **Speakers**, see where the speaker labels came from and how each name was found, change a name if you want to (a name you give is kept; readings that used the old name are marked out of date), and correct who said each turn. When the text came without speaker names, **Find who is speaking** offers two ways: from the words (a few model passes on your key), or **Separate voices from the recording** (the episode's audio goes to Deepgram on your Deepgram key, and only the speaker labels come from it; every word of your text stays). If the app tried the recording by itself and couldn't use it, or did not try it (no recording found, audio kept on your computer, no Deepgram key), the reason is shown here and in the downloads.
-- **App and files**: your model key, audio-to-text settings, downloads, version details, and **Move this reading to the trash**.
+- **App and files**: which model writes the readings and its key, audio-to-text settings, downloads, version details, and **Move this reading to the trash**. Claude Sonnet 5.5 is the default; you can pick Opus or Fable, type any other Claude model, or use another service that speaks the OpenAI-compatible chat API (OpenRouter for models from many companies with one key, or Ollama for models running on your own computer, with no key). A new choice applies from the next reading.
 
 Sources for a claim are handled beside the claim, under **Evidence → Sources and search**: search, attach a link, accept or reject a suggestion, say what a source does for the claim, or withdraw it.
 
@@ -71,7 +71,7 @@ Your saved readings are under **Readings**, with **New reading** at the top. **D
 ## Know where work goes
 
 - **On your computer:** everything you paste or upload, every reading, every source decision and every earlier version, as plain files in the app's `data` folder. Copy that folder to back it up. Deleted readings go to `data/trash`.
-- **Sent to Anthropic:** the text being read, when a reading, review or overview is made, and once per text to find who each speaker is (twice when the first answer can't be used), plus once more to check the names found, using your key. Each of those is a charge on your Anthropic account. A typical passage takes one reading and one review.
+- **Sent to the model service you chose** (Anthropic unless you picked another under Controls; nothing leaves your computer with Ollama): the text being read, when a reading, review or overview is made, and once per text to find who each speaker is (twice when the first answer can't be used), plus once more to check the names found, using your key. Each of those is a charge on that service's account (none with Ollama). A typical passage takes one reading and one review.
 - **Sent to Deepgram:** the audio, when you choose Deepgram for audio-to-text (for a podcast's audio or a recording you upload), when you ask it to separate voices, and by itself when a podcast link's transcript has no speaker names and a Deepgram key is set (not if you chose to keep audio on your computer). Billed to your Deepgram key.
 - **Sent to search services:** a short search query per checkable claim, to Crossref, PubMed, OpenAlex and GDELT. Free.
 - Your keys are kept in the `.env` file in the app folder. The page never shows them.

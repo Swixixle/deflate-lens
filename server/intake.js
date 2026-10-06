@@ -4,17 +4,20 @@ const { autoTitle, sha256 } = require("./store");
 const { transcriptToText } = require("./podcast/transcripts");
 const { separatePageText, paragraphTimes } = require("./webtranscript");
 
-// Trim only page chrome outside a clearly labelled dialogue. Keep every word between the first
-// speaker and an explicit end marker; the original upload is saved separately by the store.
+// Never delete the text's own words. Remove only what format evidence identifies: caption syntax (cue numbers and
+// timings, at caption conversion), a web page's controls and timestamps (webtranscript.js), and what follows an
+// explicit end marker of a dialogue ("End of interview."). The original upload is saved separately by the store.
 /* `opts.captions === false` (used when an already-saved run is read again) leaves caption syntax alone, so a run saved
    before caption conversion existed is never re-parsed, renumbered or made stale by a newer parser. `opts.article`
    (new input a page importer read as an article): colon-heading lines are headings, not speakers, unless the text is
-   clearly a conversation. A review of 0.14.5 showed what the old trim cost an article: "Results:" twice and "Methods:"
-   once read as a dialogue of three turns, the opening paragraph — "The trial included only adults who volunteered. Its
-   findings do not establish effects in children." — was cut as material before it, and Results and Methods became
-   speakers. Repeated colon headings alone no longer authorize either: prose before the first labelled line keeps the
-   whole text (only short lines that end no sentence are page chrome), and a text whose only dialogue evidence is such
-   headings is read as prose (record.prose; the run's parseMode, so no later cleanup or reading re-reads it otherwise). */
+   clearly a conversation.
+   History. Up to 0.14.5 everything before a text's first labelled line was cut as "outside the dialogue"; a review
+   showed it cut an article's opening qualification — the trial took only adults, so its findings say nothing about
+   children — because "Results:" twice and "Methods:" once read as a dialogue. 0.14.6 kept leading prose but still cut
+   leading lines it took for page chrome by their shape (fewer than eight words, no sentence end), and a review of 0.14.6
+   showed what that cost: "Children excluded." and "Adults only" were cut the same way. Shape is not evidence that words
+   are disposable. Since 0.14.7 nothing before the first labelled line is removed: it stays as words of the text
+   attributed to no one (preparation does not audit it, and it cannot hold the reading). */
 function cleanText(raw, opts) {
   const original = String(raw || "");
   let text = original.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").trim();
@@ -54,28 +57,27 @@ function cleanText(raw, opts) {
   const repeated = new Set([...counts].filter(([, n]) => n >= 2).map(([k]) => k));
   const labelledTotal = [...counts.values()].reduce((n, v) => n + v, 0);
   const firstLab = counts.size ? lines.findIndex(line => counts.has(label(line))) : -1;
-  // what stands before the first labelled line: page chrome (a short line that ends no sentence, "Listen LIVE",
-  // "Page controls"), or the text's own prose, which is never removed (0.14.6)
-  const sentence = l => /[.?!…]["”')\]]?\s*$/.test(l.trim()) && l.trim().split(/\s+/).length >= 8;
-  const proseBefore = firstLab > 0 && lines.slice(0, firstLab).some(l => l.trim() && (sentence(l) || l.trim().length >= 200));
-  // a conversation, as distinct from prose under section headings: at least two labels that each speak more than once,
-  // over at least four labelled lines. Repeated colon headings alone ("Results:" twice, "Methods:" once) are not it.
+  // anything before the first labelled line: the text's own words, whatever their length or punctuation (0.14.7)
+  const leadingWords = firstLab > 0 && lines.slice(0, firstLab).some(l => l.trim());
+  // dialogue evidence, as distinct from prose under section headings: a conversation (at least two labels that each
+  // speak more than once, over at least four labelled lines), or labels written the way transcripts write speakers —
+  // in capitals ("HOST:", "DANA REYES:"), a numbered or lettered voice ("Speaker 2:", "Q:"), or a role ("Interviewer:",
+  // "Host:"). Repeated colon headings alone ("Results:" twice, "Methods:" once) are neither.
   const conversation = [...counts.values()].filter(n => n >= 2).length >= 2 && labelledTotal >= 4;
-  const prose = firstLab >= 0 && !conversation && (proseBefore || !!(opts && opts.article));
-  let removedBefore = 0, removedAfter = 0;
+  const speakerForm = k => { const letters = k.replace(/[^A-Za-z]/g, ""); return (letters && letters === letters.toUpperCase()) || shared.nameable(k.toUpperCase()); };
+  const prose = firstLab >= 0 && !conversation && ![...counts.keys()].every(speakerForm) && (leadingWords || !!(opts && opts.article));
+  let removedAfter = 0;
   if (!prose && firstLab >= 0 && repeated.size && labelledTotal >= 3) {
-    // the dialogue starts at its first labelled line (a speaker who talks only once, first, is still part of it);
-    // prose before it stays part of the text, as words of the text whose speaker is not established
-    if (!proseBefore) removedBefore = firstLab;
+    // an explicit end marker is the source saying where the dialogue stops: what follows it is not the text's
     const ending = lines.findIndex((line, i) => i > firstLab && /^\s*End of (?:the )?(?:interview|transcript|conversation)[.!]?\s*$/i.test(line));
-    if (ending >= 0) { removedAfter = lines.length - ending; text = lines.slice(removedBefore, ending).join("\n").trim(); }
-    else if (removedBefore) text = lines.slice(removedBefore).join("\n").trim();
+    if (ending >= 0) { removedAfter = lines.length - ending; text = lines.slice(0, ending).join("\n").trim(); }
   }
+  const removedBefore = 0;
   if (!text) throw Object.assign(new Error("There is no transcript text in this file."), { status: 400 });
   const starts = web ? paragraphTimes(text, web.paragraphs) : null;
   return { text, original, record: Object.assign({ originalHash: sha256(original), cleanedHash: sha256(text), originalChars: original.length,
     cleanedChars: text.length, removedBefore, removedAfter, changed: text !== original, converted, method: (converted ? "Converted from " + converted + " to text. " : "") + (web ? web.record.method + " " : "") +
-      (prose ? "Read as prose: every word is kept, and a line like “Results:” is a section heading, not a speaker." : "Only page chrome outside the dialogue and an explicit end marker are removed; spoken words are kept."),
+      (prose ? "Read as prose: every word is kept, and a line like “Results:” is a section heading, not a speaker." : "Every word is kept; only what follows an explicit end marker is removed. Words before the first speaker label are kept as the text's own, attributed to no one."),
     web: web ? web.record : null, inlineLabelsSplit: inlineSplits, timing: starts ? { cleanedHash: sha256(text), unit: "paragraph", starts } : null }, prose ? { prose: true } : {}) };
 }
 
@@ -95,7 +97,8 @@ async function readInput(input, context, importer) {
   // however short they are; only typed or pasted input can be a single claim
   doc.kind = kind.kind === "claim" && !(doc.import && doc.import.source) ? "claim" : "transcript";
   delete doc.parseMode; delete doc.provenance; delete doc.status;
-  if (cleaned.record.prose && doc.kind === "transcript") doc.parseMode = "prose";
+  // read as an article: every line its own turn, no line dropped, nothing a speaker (0.14.7; 0.14.6 called it "prose")
+  if (cleaned.record.prose && doc.kind === "transcript") doc.parseMode = "article";
   if (imported) {
     // The fetched address is always the source of this input, including when an old form
     // still contains another interview's URL.

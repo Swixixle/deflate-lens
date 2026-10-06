@@ -12,7 +12,7 @@ else {
   if (process.env.DEFLATE_MOCK_AI === "1") console.log(".env: DEFLATE_MOCK_AI=1, so analyses will be MOCK placeholders");
   else if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(process.env.ANTHROPIC_API_KEY || "")) console.log(".env: no model key yet; source search works, and the page asks for the key once when preparation or analysis is requested");
   else console.log(".env: API key present  ok");
-  console.log("Model: " + (process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5 (default)"));
+  console.log("Model: " + (process.env.MODEL_PROVIDER === "openai-compatible" ? (process.env.OPENAI_MODEL || "(none set)") + " through " + (process.env.OPENAI_BASE_URL || "(no address set)") : (process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5 (default)")));
   if (process.env.DEFLATE_MOCK_RESEARCH === "1") console.log("Research: DEFLATE_MOCK_RESEARCH=1, so Search sources returns MOCK candidates");
   else console.log("Research: Crossref + PubMed + GDELT news (" + (process.env.NEWS_LANGUAGE === undefined ? "english" : (process.env.NEWS_LANGUAGE || "any language")) + ")" + (process.env.OPENALEX_API_KEY ? " + OpenAlex" : " (OpenAlex off: add OPENALEX_API_KEY to turn it on)") + (process.env.RESEARCH_CONTACT_EMAIL ? "; contact email set" : "; set RESEARCH_CONTACT_EMAIL so Crossref serves you from its polite pool") + (process.env.NCBI_API_KEY ? "; NCBI key set" : ""));
 }

@@ -44,7 +44,7 @@ Contents: [How a reading is made](#how-a-reading-is-made) · [Podcasts and video
 - **Resolved together.** Every clue is weighed; one name goes to one voice and one voice to one person, and a voice the clues split between two names, or a name they give to two voices, stays unnamed with that reason. The model reads the listing and the conversation and proposes clues with quotations; each proposal is checked against the words of the whole sentence it stands in, and counts only when the listing or the conversation names that person. Captions in lower case and turns in capitals are read with the listing's names (and the model's) given capitals for the analysis only; the record quotes the transcript's own letters.
 - **Read twice (0.14.2).** The model's clues are checked leniently (the quotation where it must be, the name or a title or calling the listing gives that person in it, and nothing showing the words say otherwise), and where the model's reading stands on such a clue it decides. The app's own rules hold back any name the model does not support. A guest the listing bills is named for the voice that answers as the guest when the model names that guest and nothing in the words is against it. A title alone never names anyone. A voice left numbered is explained with every clue that was found and why it was not enough (see Who each voice is, read twice, under Records).
 - **The model's answer checked first (0.14.3).** Every voice being identified must be accounted for in the model's answer: named, with quoted words that show it, or left unnamed. An answer that is empty, cannot be read, leaves a voice out or contradicts itself is asked for once more, with what was wrong. A voice still without a usable decision keeps its number with that reason, and the reading goes on. The app's own rules never name anyone by themselves (see The model's answer, checked before it is used, under Records). Since 0.14.4 a named decision needs at least one quotation of its own that is really in the turn it names, in a turn where that kind of clue belongs, and it stands only on the model's own clues that hold up: a clue the app found for the same person never carries it (see Words of the model's own that are real). Since 0.14.5 every name settled that way is put to a second reading of the conversation, one narrow request per text, and stands only where that reading says the voice is that person, quoting words of the voice's own turn or a turn next to it that are really there (see A second reading of every name). Since 0.14.6 a turn reference in either answer must be a whole number from 0 (or that number written in digits): a missing, null or malformed turn names no turn and is never read as turn 0 (see Articles kept whole, names bound to the work, strict turn references).
-- **Articles and prose (0.14.6).** A text whose only dialogue evidence is repeated colon headings ("Results:" twice, "Methods:" once) is read as prose: every word kept, the headings part of the text, nobody a speaker, and no speaker step runs (the run's `parseMode` is "prose", so no later cleanup or reading re-reads it as a dialogue). Prose before the first labelled line is never removed; only page chrome is (short lines that end no sentence, "Listen LIVE"). A conversation — at least two labels that each speak more than once, over at least four labelled lines — still reads as one, with an opening paragraph kept as part of the text.
+- **Articles and prose (0.14.6, 0.14.7).** A text whose only dialogue evidence is repeated colon headings ("Results:" twice, "Methods:" once) is read as an article: every line kept as its own turn, the headings part of the text, nobody a speaker, and no speaker step runs (the run's `parseMode` is "article"; 0.14.6 called it "prose"). Since 0.14.7 nothing before a text's first labelled line is ever removed — not prose, not a short line like "Children excluded." or "Adults only", not a page's leftover lines: shape is not evidence that words are disposable. In a labelled transcript those words stay as the text's own, attributed to no one; speaker preparation does not audit them and they cannot hold the reading. Only format evidence removes anything: caption syntax at conversion, a web page's controls and timestamps, and what follows an explicit end marker ("End of interview."). And a short line the transcript parser takes for a heading (a section title, "No control group") now reaches the model in source order, marked "(heading)", as words of no one (context-2).
 - **A reading is bound to the names it was made under (0.14.6).** A speaker's name changed while a reading runs stops the job before the prepared answer is used, with the same plain message as a changed text, and Read this resumes on the current names; the write lock refuses work prepared under other names. Whether a reading is finished is told from the cards as they stand, never from the errors caught along the way, so "Your reading is ready." is never said over a held or stale card.
 - **Everywhere, and through interruptions.** A name belongs to a label, so it follows every turn of that voice, interruptions included; clips, quotations read aloud and advertisements keep labels of their own (CLIP 1, QUOTE 1, AD 1) and are never named, and nothing in a reading is taken from an advertisement (reading-5, checked). Cards, quotations, the original passage, claims, the Markdown and both JSON exports show the names; Evidence → **Who is speaking** says for each voice how it was named, with the words that show it.
 - **When nothing names a voice.** It keeps its number ("Speaker 3"), the same everywhere, and Evidence says why in a sentence ("This voice speaks only briefly, and nothing in the conversation or the listing names it."). The reading is not held for it.
@@ -90,7 +90,7 @@ The clean-copy checks for this version ran on Linux with Node 24 (see What was v
 
 ## Costs and keys
 
-Analysis calls go to Anthropic's API on your key and are billed to that account, separately from any Claude.ai subscription. The page asks for the key once, when you first request real analysis, and writes it to `.env` on this computer with the file readable by you alone; it is not sent back to the browser, logged, or stored anywhere else, and `.env` is ignored by git. You can also put `ANTHROPIC_API_KEY=sk-ant-…` in `.env` by hand and restart. Add credit in the console under **Billing**. The default model is configured in `.env.example`. Preparation adds two speaker passes per chunk and a separate review for each reading; a rejected reading gets at most two corrections, each a short call that changes only the named parts plus a short check of them. New input without speaker labels gets two passes per 12,000 characters to work out who is speaking (labelled input only where a clip or quotation is introduced). Separating voices from a recording is billed to your Deepgram key by the minute of audio; the app does it by itself for a podcast link whose transcript has no speaker labels, unless audio is set to stay on this computer. A recording you upload and send to Deepgram is billed the same way. Finding who each voice is takes one model call per text (`identify_speakers`), and a second when the first answer cannot be used (0.14.3), plus the clip and advertisement pass on a recording's text when its words introduce one. When it settles any name, one more call checks them all (`confirm_speakers`, 0.14.5; asked again only when its answer cannot be read). A run identified by an earlier version whose names rest on the app's own reading alone, or (since 0.14.5) whose names no second reading confirmed, is identified again once, at its next reading. All of those calls use your API account. Check current prices at <https://platform.claude.com/docs/en/models/overview>.
+Analysis calls go to the model chosen under Controls → App and files (0.14.7): Claude by default (Sonnet 5.5; Opus 5.5 and Fable 5.1 are listed, at about twice and five times Sonnet's price as Anthropic listed them in October 2026, and any other Claude model can be typed by its id), billed to your Anthropic key separately from any Claude.ai subscription; or any service that speaks the OpenAI-compatible chat API (OpenRouter, OpenAI, Groq, Together, or Ollama on this computer), billed by that service, or free on your own computer with Ollama. The page asks for the key once, when you first request real analysis, and writes it to `.env` on this computer with the file readable by you alone; it is not sent back to the browser, logged, or stored anywhere else, and `.env` is ignored by git. You can also put `ANTHROPIC_API_KEY=sk-ant-…` in `.env` by hand and restart. Add credit in the console under **Billing**. The default model is configured in `.env.example`. Preparation adds two speaker passes per chunk and a separate review for each reading; a rejected reading gets at most two corrections, each a short call that changes only the named parts plus a short check of them. New input without speaker labels gets two passes per 12,000 characters to work out who is speaking (labelled input only where a clip or quotation is introduced). Separating voices from a recording is billed to your Deepgram key by the minute of audio; the app does it by itself for a podcast link whose transcript has no speaker labels, unless audio is set to stay on this computer. A recording you upload and send to Deepgram is billed the same way. Finding who each voice is takes one model call per text (`identify_speakers`), and a second when the first answer cannot be used (0.14.3), plus the clip and advertisement pass on a recording's text when its words introduce one. When it settles any name, one more call checks them all (`confirm_speakers`, 0.14.5; asked again only when its answer cannot be read). A run identified by an earlier version whose names rest on the app's own reading alone, or (since 0.14.5) whose names no second reading confirmed, is identified again once, at its next reading. All of those calls use your API account. Check current prices at <https://platform.claude.com/docs/en/models/overview>.
 
 To try the workflow with no key and no bill, set `DEFLATE_MOCK_AI=1` in `.env` yourself. Every analysis is then a labelled placeholder, not a real reading; the app never switches this on for you.
 
@@ -844,6 +844,68 @@ the interface unchanged.
   and is unaffected. A saved confirmation whose `turn` is null (the coercion's trace), whatever its version, is
   identified again once at its next reading.
 
+### Words never cut, headings read, preparation bound to names, the overview's gate (0.14.7)
+
+An independent review of 0.14.6 confirmed its three fixes and reproduced four more cases in the same preservation and
+freshness work; each was reproduced here on 0.14.6 (de58d54) before the fix.
+
+- **No leading words removed** (`server/intake.js`). 0.14.6 kept leading prose but still cut leading lines it took for
+  page chrome by their shape (fewer than eight words, no sentence end): "Children excluded." and "Adults only" before
+  section headings were deleted before the model read the text, pasted and by link. Now nothing before the first
+  labelled line is removed (`removedBefore` is always 0). Whether the text is read as an article is decided by
+  evidence: its labels are neither a conversation (two labels each speaking twice, four labelled lines) nor written as
+  transcripts write speakers (in capitals, a numbered or lettered voice, a role), and words precede them or a page
+  importer read it as an article. In a labelled transcript the leading words stay, attributed to no one: speaker
+  preparation leaves them out of what it audits (`preparation.notAttributed`), so they cannot hold the reading. Only
+  format evidence removes anything (caption syntax at conversion, a page's controls and timestamps, what follows
+  "End of interview.").
+- **Heading lines reach the model** (context-2; `shared.readingContext`, `fmtTurns`, `readingMaterial`). In a
+  labelled transcript a short line without a sentence end ("Adults only", "No control group") is parsed as a heading,
+  and headings were left out of the passage, its context and the segmentation prompt — never seen by the model. Now
+  they come in source order, marked "(heading)", within the same context limit, and the reading and segmentation
+  prompts say a heading line is the text's own words, spoken by no one, never to be quoted as anyone's. Context
+  records carry their version: a reading made under context-1 is rebuilt as it was, and still matches its hash.
+- **Numbers kept in articles** (`parseMode: "article"`, `shared.parseArticle`). 0.14.6's prose parser kept the caption
+  filters and dropped every line that is only a number ("983714265", "1987") before the model read it. New runs are
+  read as "article", which drops no line. Runs 0.14.6 saved as "prose" keep their parser, so their turns are never
+  renumbered.
+- **Preparation bound to the names** (`server/preparation.js`, `store.commitPreparation`, `server/reading.js`).
+  Preparation's checks ran under the names it was asked with, but a rename during them was absorbed: the commit did
+  not check the names and the job refreshed its name basis from a later read. Now preparation's call basis carries the
+  names signature, its commit refuses a change under the lock (`input_changed`), the commit returns the exact run it
+  wrote, and the job follows that snapshot's attribution (never a later read). A rename meanwhile stops the job once,
+  resumable with Read this; the calls stay on the record.
+- **The overview's gate counts** (`server/reading.js`). Completion counted the cards' gates but not the closing
+  overview's: a summary replaced through PUT /api/runs/:id/summary during the source searches stayed held while the
+  job said "Your reading is ready." Now, where the reading has an overview (several passages of a conversation) and
+  every card is ready, a missing, held or stale overview makes the result partial with the existing overview message
+  ("The closing overview couldn't be completed."); writing it again from Controls completes it. A one-card reading has
+  no overview and completes as before.
+
+### The model for new readings (`MODEL_PROVIDER`, `ANTHROPIC_MODEL`, `OPENAI_*` in `.env`; 0.14.7)
+
+Alex asked to choose the model: Claude by default, and any model from any service. Under Controls → App and files:
+
+- **Claude** (Anthropic): Sonnet 5.5 (the default), Opus 5.5 and Fable 5.1 listed with their price relative to
+  Sonnet, or any other Claude model typed by its id (`claude-…`; Haiku included).
+- **Another service** that speaks the OpenAI-compatible chat API: its address, its key (none for Ollama on this
+  computer), and a model it offers; **List its models** asks the service (GET /models, free on OpenRouter, OpenAI and
+  Ollama) and offers the ids as you type. The address must be https, or plain http on this computer only, so a key is
+  never sent in the clear. One adapter (`createOpenAICompatibleAI`) sends one user message to `/chat/completions` with
+  no provider-specific options, and reads the answer as the Anthropic one is read (JSON loosely; "length" as cut off;
+  401/403 as a refused key; a picture as an image part).
+
+The choice is written to `.env` (mode 600) by PUT /api/settings/model, which checks every value before writing any;
+the generic settings route refuses the model settings piecemeal. Keys go to the server once and never come back:
+responses say only whether a key is set. The server's model is replaced by a new object, so a reading already running
+finishes with the model it started with. Call records name the provider, the model requested and returned, and for
+another service its host (`providerHost`). The mock responder stays the mock. Readings made by different models are
+not marked out of date; each card records which model wrote it.
+
+Every check in the app applies to every model, but they were built and measured with Claude: the identification
+measurements and stand-in answers are Claude-class answers, and another model's answers are untested here. A model
+that writes less disciplined JSON or quotations will have more readings held or asked again, at its own cost.
+
 ### Names (`provenance.namesByPerson`, `basedOn.namesSig`; 0.14)
 
 `POST /api/runs/:id/confirm-names {names: [{key, name, bio?}]}` (Controls → Speakers, optional) sets the shown name of
@@ -1062,6 +1124,22 @@ Untimed repetition is kept. Caption deduplication requires overlapping time inte
 npm test
 ```
 
+**0.14.7:** 355 tests, one of them skipped unless a private replay folder is given. Two new files.
+
+`test/stabilization-0.14.7.test.js` (7 tests), for the four findings of the independent review of 0.14.6, each reproduced on 0.14.6 first; all seven fail there:
+- A short qualification ("Children excluded.", "Adults only") before three headings pasted and four headings by link reaches the stored text and the prompt sent to generation, as words of no one.
+- A genuine labelled interview with a short line before it: kept, not audited by preparation, the reading complete.
+- A heading line inside a labelled transcript reaches the model (context-2); the same passage as a context-1 record is rebuilt without it and still matches its hash.
+- Lines that are only a number ("983714265", "1987") stay in an article's turns and prompt; 0.14.6's "prose" parser is unchanged.
+- A rename over HTTP while preparation runs: the stale preparation is not committed, the job stops once, its calls are on record, and Read this completes under the new name; and the commit refuses it under the lock.
+- A summary replaced during the source searches: partial, with the overview message, and writing the overview again completes it; a one-card reading completes.
+
+Each safeguard was removed in turn and tests failed: heading lines in the material (3), the article parser (2), the names check in preparation's commit (2), the overview gate (1), leaving leading words out of preparation's audit (1).
+
+`test/model-choice-0.14.7.test.js` (6 tests): the Claude list and any Claude id, saved and refused with nothing written, the next reading's calls on the chosen model; a running reading keeps its model; another service through a fake OpenAI-compatible server (models listed with the key sent and never returned, saved with the key in `.env` at mode 600, a whole reading made through it with every call record naming the service, plain http allowed only on this computer, back to Claude); the adapter's handling of loose JSON, cut-off answers, refused keys and pictures; the settings' closed list; the page's controls sending the choice.
+
+Changed to the new contract (leading words kept): `test/automatic-reading.test.js` (three tests that expected leading lines cut), `test/stabilization-0.14.6.test.js` (the chrome case and parse mode "article"), `test/transcript-chain.test.js` (the settable list). The mock responder skips "(heading)" lines when it writes a stand-in reading.
+
 **0.14.6:** 342 tests, one of them skipped unless a private replay folder is given. New file `test/stabilization-0.14.6.test.js` (11 tests), for the three findings of the independent review of 0.14.5; each was reproduced on 0.14.5 first (through POST /api/intake, the actual PUT route during a paused generation, and the identification step), and all eleven tests fail on unchanged 0.14.5:
 - An article pasted as prose: the opening qualification, both limitations and the "Results:"/"Methods:" headings reach the stored text and the prompt sent to generation; the headings are not speakers; no speaker pass runs; the reading completes; reading again changes nothing.
 - The same article through the link route, and a variant whose headings (Background, Findings, Limitations) are each used once.
@@ -1257,6 +1335,36 @@ A diagnostic pilot with 5 to 8 ordinary readers, to learn whether the three-bloc
 ## Reviews
 
 Each release since 0.11.0 was reviewed by a second model working from the code, and the next release fixed what it found; 0.12 followed an external review and brief. Newest first.
+
+### 0.14.7: short qualifications, standalone numbers, preparation's names, the overview's gate
+
+An independent review of 0.14.6 checked the zip (its hash matched; 341 passing, one skipped) and confirmed the three
+fixes, then reproduced four remaining cases: short leading qualifications deleted ("Children excluded.", "Adults
+only"), pasted and by link; a prose line that is only a number dropped before generation; speaker preparation absorbing
+a rename made during it; and completion ignoring a held overview after the summary was replaced during the source
+searches. The first two silently changed the material being interpreted. The instruction: fix these four with the
+interface stable, then the bounded live evaluation; no new semantic parser, no new controls. Each was reproduced here on
+0.14.6 before the fix; the fixes are under Records. Making the first one found a wider cause: in a labelled transcript
+a short line the parser takes for a heading never reached the model at all, anywhere in the text, which is why "Adults
+only" was still missing from the prompt by link after the deletion was stopped; heading lines are now part of the
+material (context-2).
+
+Alongside the repairs, at Alex's own request, the model is now a choice (see The model for new readings, under
+Records). It is the one new control in this release, in the closed Controls panel; the reviewer's freeze on new
+controls was about the repairs, and Alex asked for this one directly.
+
+**Decisions to check.**
+
+1. Nothing before a first labelled line is removed, so a pasted page's leftover lines ("Listen LIVE", a title) stay in
+   the text, unattributed, and a pasted run's automatic title is its first line. The run can be renamed; the text is
+   never silently shortened.
+2. Heading lines are words of no one. The reading prompt says so; a reading that quotes one as someone's words fails
+   its quote check like any misquotation (one correction, then held).
+3. The four-heading article shape (two headings each used twice, with words before them) still reads as a dialogue of
+   its headings, as disclosed for 0.14.6; its words now all reach the model.
+4. The overview gate makes a run partial only when every card is ready and the overview is missing, held or stale; a
+   run with a held card reports the card, as before.
+5. Another model's answers are untested against the app's checks; the measurements on record are Claude-class answers.
 
 ### 0.14.6: an article read as a dialogue of its headings, a false "ready", a coerced turn
 
@@ -1597,12 +1705,14 @@ Upload, paste text, or paste a link and press **Read this**. Reading preparation
 
 ## Limits
 
-- Whether a text is a conversation or prose is decided by its shape at intake (0.14.6). An article whose only
-  dialogue evidence is colon headings is read as prose when prose precedes its labels or a page importer read it as
-  an article; an article with no leading prose pasted as text, or one whose repeated sections happen to meet the
-  conversation shape (two headings each used twice over four lines), would still be read as a dialogue of its
-  headings. The decision and the reason are on the intake record, the parse mode is on the run, and nothing is
-  deleted either way.
+- Whether a text is a conversation or an article is decided at intake (0.14.6, 0.14.7) from its labels: a conversation's
+  shape (two labels each speaking twice over four lines) or labels written as transcripts write speakers make it a
+  transcript; otherwise, with words before the labels or a page importer's article, it is read as an article. An
+  article whose repeated sections meet the conversation shape, or one pasted with no words before its headings, still
+  reads as a dialogue of its headings. Either way nothing is deleted, and since 0.14.7 every line, headings included,
+  reaches the model.
+- Models other than Claude (0.14.7) are reached through one OpenAI-compatible adapter and are untested against the
+  app's checks; how often their readings are held or asked again, and what they cost, is unmeasured.
 - The model cannot browse. "Unchecked" means exactly that; a receipt is a person's work. A search finds candidates; it does not find truth, and a candidate's presence says nothing about what it concludes.
 - "No retraction or correction notice found" means Crossref lists none for that DOI. It is not an endorsement, and preprints and books are thinly covered.
 - A source is never a verification. The word does not appear on a card; the claims export carries `statusMeaning` so other tools do not read "receipt" as "verified" either.
