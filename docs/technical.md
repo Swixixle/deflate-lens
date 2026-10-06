@@ -43,7 +43,7 @@ Contents: [How a reading is made](#how-a-reading-is-made) · [Podcasts and video
 - **What does not.** Words inside quotation marks, reported ("he says, I'm …", "she's like, I'm …"), imagined ("pretend I'm …") or asked ("so now I'm your host?"); introductions of another time ("last week my guest was …", "joining us after the news will be …"), although a teaser for later in the same episode does show that person will be on; a call to someone who may be listening; a voice that answers by speaking of the person in the third person ("Before he starts, …") or cuts in ahead of them ("Can I jump in first?"); organisations, places, holidays and titles that look like names ("this is Steel Country Radio", "Opening Day is here", "the author of Silent Orchard", "our newest sponsor, Comfy Pillow"); a host the words say is away ("sitting in for Walt", "Walt has the night off"). A voice that speaks to someone by name, says it is not them, or speaks of them by full name in the third person counts against that name for that voice.
 - **Resolved together.** Every clue is weighed; one name goes to one voice and one voice to one person, and a voice the clues split between two names, or a name they give to two voices, stays unnamed with that reason. The model reads the listing and the conversation and proposes clues with quotations; each proposal is checked against the words of the whole sentence it stands in, and counts only when the listing or the conversation names that person. Captions in lower case and turns in capitals are read with the listing's names (and the model's) given capitals for the analysis only; the record quotes the transcript's own letters.
 - **Read twice (0.14.2).** The model's clues are checked leniently (the quotation where it must be, the name or a title or calling the listing gives that person in it, and nothing showing the words say otherwise), and where the model's reading stands on such a clue it decides. The app's own rules hold back any name the model does not support. A guest the listing bills is named for the voice that answers as the guest when the model names that guest and nothing in the words is against it. A title alone never names anyone. A voice left numbered is explained with every clue that was found and why it was not enough (see Who each voice is, read twice, under Records).
-- **The model's answer checked first (0.14.3).** Every voice being identified must be accounted for in the model's answer: named, with quoted words that show it, or left unnamed. An answer that is empty, cannot be read, leaves a voice out or contradicts itself is asked for once more, with what was wrong. A voice still without a usable decision keeps its number with that reason, and the reading goes on. The app's own rules never name anyone by themselves (see The model's answer, checked before it is used, under Records).
+- **The model's answer checked first (0.14.3).** Every voice being identified must be accounted for in the model's answer: named, with quoted words that show it, or left unnamed. An answer that is empty, cannot be read, leaves a voice out or contradicts itself is asked for once more, with what was wrong. A voice still without a usable decision keeps its number with that reason, and the reading goes on. The app's own rules never name anyone by themselves (see The model's answer, checked before it is used, under Records). Since 0.14.4 a named decision needs at least one quotation of its own that is really in the turn it names, in a turn where that kind of clue belongs, and it stands only on the model's own clues that hold up: a clue the app found for the same person never carries it (see Words of the model's own that are real).
 - **Everywhere, and through interruptions.** A name belongs to a label, so it follows every turn of that voice, interruptions included; clips, quotations read aloud and advertisements keep labels of their own (CLIP 1, QUOTE 1, AD 1) and are never named, and nothing in a reading is taken from an advertisement (reading-5, checked). Cards, quotations, the original passage, claims, the Markdown and both JSON exports show the names; Evidence → **Who is speaking** says for each voice how it was named, with the words that show it.
 - **When nothing names a voice.** It keeps its number ("Speaker 3"), the same everywhere, and Evidence says why in a sentence ("This voice speaks only briefly, and nothing in the conversation or the listing names it."). The reading is not held for it.
 - **Changing a name** is optional, under Controls → Input and speakers → Speakers. A name you give is kept and never replaced by the app. A reading made under other names says it is out of date, since its own words name the speakers (every reading records a fingerprint of the names it was made under, `basedOn.namesSig`), and changing the name back makes it current again.
@@ -713,6 +713,49 @@ words are not counted as such. A record that says the model's answer could not b
 is one more call on the person's key per such run. Version 3 records are not identified again, even with voices left
 numbered.
 
+### Words of the model's own that are real (`provenance.identification`, version 4; 0.14.4)
+
+A review of 0.14.3 found one remaining way to a wrong name. The check asked whether a named decision quoted any words,
+not whether those words exist. In set seven's A4 the regular host is away and a stand-in opens the show. The model named
+the stand-in "Dale Whitcomb" with the invented quotation "I'm Dale Whitcomb." The app recorded that the quoted words are
+not in that turn, and named the stand-in anyway: the decision counted as usable, and the app's own clue for the same
+person (the voice opens the show named after him) made it stand. No second request was made, and the wrong name reached
+the card and the exported claims. In `server/identify.js`:
+
+- **Real words first** (`realWords`). A named decision is accepted only when at least one of the model's own clues, of a
+  kind that shows who a voice is, passes the source and turn checks every clue starts with. The quotation is in the
+  turn it names (as `checkClue` finds it). That turn is no clip, quotation, advertisement or stretch whose speaker is not
+  established. It stands where the kind needs it: the voice's own turn (naming or describing itself, the host's opening,
+  a role label's first words), or another voice's turn next to it (an introduction just before the voice speaks; words
+  to it just before it answers, or replying to it). Whether the words show what the clue says is still `checkClue`'s to
+  decide; real words are what a decision must have to be taken at all.
+- **A decision without them** is a problem with the answer, like any other. The repair request says which words did not
+  hold up and why: "It named SPEAKER 1 (Dale Whitcomb), but none of the words it quoted for that is where it says: turn
+  0, “I'm Dale Whitcomb.”: the quoted words are not in that turn." Still without them after the repair, the voice keeps
+  its number: "Asked twice, the model gave no usable decision for this voice: its answer named this voice Dale Whitcomb,
+  but none of the words it quoted for that is where it says (…)". The model's failed clues stay on the record
+  (`evidence` with `source: "model"`, `ok: false` and the reason). The words are read once for each answer and once more
+  for the decisions finally used (lower-case captions are read with the names an answer proposes); a decision that loses
+  its real words there is no decision either.
+- **No clue of the app's carries a decision.** Where the model decides, its reading stands on its own clues that hold
+  up, and not on a clue only the app found for the same person. Those clues are a voice naming itself, being introduced
+  or spoken to by name, the host's opening, a role label, or a title the listing gives together with the voice's own
+  calling. The app's reading settles a first name alone, or the one main voice left, only for a decision with such a clue
+  of the model's own. When the model's decision does not stand and the app's reading points to someone, Evidence says
+  so: "The model's answer names X for this voice, but its clue did not hold up: “…” (…); the app's reading points to X
+  too, but the app does not name a voice on its own reading alone."
+- **What stays.** The listing's pairing of a guest nobody names aloud needs a decision with real words, not words that
+  hold up as a clue. A guest who tells the story the notes tell, or who is greeted only as "Father" and speaks of a
+  calling the listing gives, is named when the listing bills them, the voice answers as the guest, and nothing in the
+  words is against it, as in 0.14.2. Nobody has to say a full name aloud.
+- **The host's opening and a role label's first words**, which the listing and the voice's part decide (`checkReading`),
+  are checked for real words too: an invented opening no longer holds up.
+
+The record's `version` is 4. A saved identification is identified again once, at its next reading, when a name it gave
+has no clue of the model's that held up behind it (`evidence` with a model source and `ok`), the listing's pairing and
+names from the words aside; for versions before 0.14.3, also when it left a voice numbered. A voice 0.14.3 left numbered
+stays so.
+
 ### Names (`provenance.namesByPerson`, `basedOn.namesSig`; 0.14)
 
 `POST /api/runs/:id/confirm-names {names: [{key, name, bio?}]}` (Controls → Speakers, optional) sets the shown name of
@@ -931,6 +974,16 @@ Untimed repetition is kept. Caption deduplication requires overlapping time inte
 npm test
 ```
 
+**0.14.4:** 321 tests, one of them skipped unless a private replay folder is given. New file `test/identify-words-0.14.4.test.js` (6 tests):
+- The review's case, set seven's A4, through an Apple link, its feed, Deepgram's voices, the readings and every export. Two requests are made, the second naming the words that did not hold up. The stand-in is numbered, with why, in the reading's prompt, the card's speakers, the quotes, the claims, the obligations and both exports, and the reading completes. On the same run the app's own reading names the stand-in as the host, and it is not used.
+- The same at the step, with a repaired answer that leaves the stand-in unnamed.
+- Real words that show no such thing (the stand-in's own words given as its self-identification, or as its calling), alone and with the guest named, so that the stand-in is the one voice left: taken, not standing, and carried neither by the app's clue nor as the one voice left.
+- One invented clue beside a real one; an invented host's opening; real words in the wrong place (another voice's turn for a voice naming itself, a voice's own turn for its introduction); real words that show nothing, for a guest the title bills, paired.
+- The priest's shape (a title the listing gives and a calling) and a guest nobody names (black-box G8, with its recorded answer), named as before with one request.
+- A 0.14.3 record whose name the app's clue carried is identified again; one whose model clue held up, or one left numbered, is not.
+
+On the 0.14.3 code the review's case names the stand-in "Dale Whitcomb" after one request, with two claims credited to him, and five of the six tests fail (the preservation test passes on both). Changed: `test/identify-0.14.test.js` (the guest's introduction quoted from its real turn for the part-of-a-name check, and from the guest's own turn: two requests, the guest numbered with why, the app's own clue for that introduction not used), `test/identify-answers-0.14.3.test.js` (a second answer that swaps the voices: the voice whose words are in its own turn keeps its number for that reason; records' evidence carries `ok`).
+
 **0.14.3:** 315 tests, one of them skipped unless a private replay folder is given. New file `test/identify-answers-0.14.3.test.js` (15 tests). The check names each problem and passes a complete answer: `{}` and empty lists, not an object, a voice left out, named and unnamed, two names, one person for two voices, a name the transcript gave another voice, no name or a name that is not text, a name with no words that show it, and entries that are not voices. Through the whole step, with a scripted provider:
 - `{}` twice: two requests, the second carrying the problems, both on the call record with the repair marked; every voice numbered with the reason and `modelWhy`; the app's rules alone would have named both voices, and do not decide. `{}` then a complete answer is used; a complete first answer is asked for once.
 - A voice left out twice, left out once and then given, and left out with an unreadable second answer.
@@ -1056,7 +1109,7 @@ Not verified:
 - **Readers.** The pilot protocol above has not been run. Nothing here shows that the three-block reading is understood better than a summary.
 - **Who is speaking, with a real model and a real recording (0.13).** The structure pass is tested with scripted model answers, which prove what the app does with an answer (cutting, checking quotations, the review, the labels), not what a model would answer; the three evaluation cases for it have not been run on a live key. Voice separation is tested on synthetic Deepgram answers; no real episode was sent to Deepgram in this build, so how well its voices line up with a real transcript (and how often its punctuation or timing differs, or it notices a change of speaker late) is unmeasured. Since 0.13.1 the settling keeps the recording's voices except in a narrow case, so the share of words under the wrong speaker on a real episode depends mostly on Deepgram (see the 0.13.1 review entry).
 - **Speaker naming with a real model.** The assignment flow (cut at the model's starts, review pass, demotion to unknown, words preserved, reading restarted) is tested with the mock responder, which rotates names by paragraph. How well a real model splits and names two hours of unlabeled conversation has not been measured; the record on the run says the names are the model's, and the correction controls are there for a reason.
-- **Who each voice is, with a real model and real episodes (0.14, 0.14.2, 0.14.3).** In 0.14.3 the answer check and its repair were tested with scripted answers, the stand-in model's recorded answers and the private replay; how often the production model's first answer needs the repair, and how often a voice is left numbered because no answer could be used, is unmeasured until paid readings are run. In 0.14.2 the two readers were replayed on one real saved answer (made with the 0.14.1 prompt) and tested with recorded answers from a stand-in model; the production model was not called with the new prompt, so whether its answers hold up as the stand-in's did, and how often a real conversation is named in full, is unmeasured until the next paid reading. reading-6 (the shorter gist) has not been run on a live key either. The identification's own reading of the words is tested on 658 invented conversations (219 in 0.14) and the flows end to end; the model's part is tested with scripted and recorded answers, which prove what the app does with an answer, not what the production model answers. No episode was identified on a live key or sent to Deepgram in this build.
+- **Who each voice is, with a real model and real episodes (0.14, 0.14.2, 0.14.3, 0.14.4).** In 0.14.3 the answer check and its repair, and in 0.14.4 the check that a decision's words are real, were tested with scripted answers, the stand-in model's recorded answers and the private replay; how often the production model's first answer needs the repair, and how often a voice is left numbered because no answer could be used, is unmeasured until paid readings are run. In 0.14.2 the two readers were replayed on one real saved answer (made with the 0.14.1 prompt) and tested with recorded answers from a stand-in model; the production model was not called with the new prompt, so whether its answers hold up as the stand-in's did, and how often a real conversation is named in full, is unmeasured until the next paid reading. reading-6 (the shorter gist) has not been run on a live key either. The identification's own reading of the words is tested on 658 invented conversations (219 in 0.14) and the flows end to end; the model's part is tested with scripted and recorded answers, which prove what the app does with an answer, not what the production model answers. No episode was identified on a live key or sent to Deepgram in this build.
 - **The spoken-number fold on real audio transcripts.** Its forms are tested on fixtures; how often a real model writes "15%" for a transcript's "fifteen percent" has not been counted.
 
 ## Evaluating the readings
@@ -1081,6 +1134,59 @@ A diagnostic pilot with 5 to 8 ordinary readers, to learn whether the three-bloc
 ## Reviews
 
 Each release since 0.11.0 was reviewed by a second model working from the code, and the next release fixed what it found; 0.12 followed an external review and brief. Newest first.
+
+### 0.14.4: an invented quotation, carried by the app's reading
+
+An independent review of 0.14.3 confirmed its two fixes. It counted 314 tests passing with the private replay skipped.
+Across all 658 scenarios, empty or unreadable answers named no one, each with exactly two requests, and the host and
+priest example still named both people, also after an empty first answer. It found one remaining way to a wrong name:
+the exception 0.14.3 listed among its decisions to check, where a decision whose quoted words are not in the turn it
+gives was not asked about again and kept its number "unless the app's own checks find a clue for the same person". The
+review reproduced it through the full reading and export with set seven's A4. A stand-in hosts while the regular host
+is away. The model names SPEAKER 1 "Dale Whitcomb" with self_identification, turn 0, "I'm Dale Whitcomb.", and leaves
+SPEAKER 2 unnamed. The app recorded that the quoted words are not in that turn, named the stand-in anyway, made no second
+request, and finished with that name on the card and in the exported claims. The answer check asked whether a quotation
+was given, not whether it exists, and the app's own clue for the same person (the voice opens the show named after him)
+made the decision stand. The instruction:
+
+- keep 0.14.3, and reverse that exception;
+- before accepting a named decision, require at least one genuine supporting model clue, using the existing source and
+  turn checks; an app clue for the same name must not rescue an answer whose required evidence fails;
+- request one repair; if it still fails, keep the speaker's number, explain why, and continue the reading;
+- keep the path that names a guest from a title, a calling and the episode's listing, without requiring anyone to say a
+  full name aloud;
+- add this regression through the complete reading and export, then rerun the naming checks; no new features.
+
+The case was reproduced first on 0.14.3, at the step and through the whole chain. It got one request, the stand-in shown
+as "Dale Whitcomb (Speaker 1): The show's host as listed…", and two claims credited to him. The repair is under Records
+(Words of the model's own that are real). Making it found two more ways to the same wrong name, closed in the same change:
+
+- An answer whose words are real but show nothing (the stand-in's own "so I'm minding things until Monday" given as its
+  self-identification) was carried by the app's opening clue when the model's decision did not stand on its own clues.
+  With the guest named it was carried by elimination instead, the stand-in being the one main voice left.
+- The host's opening (`hosts_show`) was never checked for real words, since the listing and the voice's part decide it.
+
+Measured on the final code, with the 658 scenarios run as preparation runs them:
+
+- With a scripted or recorded answer (219 scenarios): no wrong name, and no miss beyond the three accepted ones, as before.
+- With `{}` twice, and with two unreadable answers: none named, each asking twice.
+- Of the 219 answers, 15 are asked for again: 14 because a scripted answer leaves a voice out, and one because the
+  stand-in model quoted an introduction from a turn its guest does not answer (A24, where either outcome is accepted).
+- The private replay of the real interview names both voices, as before.
+
+**Decisions to check.**
+
+1. "Genuine" means real words in the right turn, not words that hold up as a clue. That keeps the listing's pairing of
+   guests nobody names, whose words the checks do not take as a clue. It also means a decision whose words are real but
+   show nothing is taken, and then does not stand.
+2. A decision stands only on the model's own clues that hold up. A right decision quoted badly, where the app's own clue
+   for the same person is correct, now keeps its number. That was not seen in the 219 answers.
+3. The app's reading still settles a first name alone, or the one voice left, beside a decision with a clue of its own
+   that holds up.
+4. A 0.14.3 record whose name the app's clue carried is identified again once: one more call on the key per such run.
+5. If the model itself reads a stand-in as the host and quotes the stand-in's real opening, its clue holds up wherever
+   the app's checks for absence miss the wording, and they miss A4's. The model's own reading decides there, as it has
+   since 0.14.2. This change does not touch that.
 
 ### 0.14.3: an empty answer, and two that could not be read
 
@@ -1286,7 +1392,7 @@ Upload, paste text, or paste a link and press **Read this**. Reading preparation
 - Context is bounded: two turns each side, 4,000 characters. A correction made much later in a long conversation is outside it. When the excerpt is not enough the reading is asked to say what is unclear; whether it does is a matter for the evaluation.
 - Saved runs from before 0.12 keep their claim types and their rules; reading them again under the new contract is a person's choice (Read this passage again), not automatic.
 - Who is speaking is worked out from the words or the recording, never proven. A change of speaker established from the words rests on quoted cues a second model pass agreed with; a voice from Deepgram rests on its diarization, which this build has not measured. A quotation read aloud by the host is in the host's voice, so only the words can set it apart. A one-word reply the recording missed stays "Speaker not established" rather than being given a neighbour's voice. A word the recording heard keeps the voice it gave that word, so a word it flickered to the wrong voice shows as a one-word turn (the app cannot tell it from a real interruption), and a one-sentence turn, or a short sentence, whose first or last words the recording gave to the neighbouring voice keeps them there.
-- Who each voice is is worked out from what the words and the listing say, never proven. A voice nothing names keeps its number with the reason; a name the words give only in part ("Hi, I'm Marcus") is shown as far as they give it unless one listed person has it and nothing says otherwise. In captions without capitals or full stops a person is found from introductions and self-identifications that use a whole listed name (or the model's proposal), not from being spoken to, since nothing marks where a sentence ends. A host who never says the show's name or introduces anyone, on a show whose listing names no host, keeps a number. Since 0.14.2 the model's reading decides where it stands on checked words, so a wrong reading resting on a clue that holds up would name a voice wrongly (not seen on the 219 scenarios with a scripted or stand-in model's answer, and the production model was not called with the current prompt). Since 0.14.3 a voice is named only on a usable decision of the model's: when its answer cannot be used, even after a second request, the voice keeps its number. That costs names when the app's own rules would have been right. On the 658 scenarios those rules alone name 613 of the 727 voices a careful reader names, and give 28 wrong names (25 of them on one set of attacks written against them); with an unusable answer none of the 727 is named. A named voice whose quoted words are not in the turn it gives is not asked about again; it keeps its number unless the app's own checks find a clue for the same person. Whom a sentence speaks to and whose calling a voice claims are read by rules measured only on invented sentences; on a set held back until the end they caught about three quarters of each before their last repair. Several people addressed at once ("Abe and Ines, you two…") never name anyone. A guest whom nobody names aloud is named only when the listing bills that person, the voice answers as the guest, and the model names them for it.
+- Who each voice is is worked out from what the words and the listing say, never proven. A voice nothing names keeps its number with the reason; a name the words give only in part ("Hi, I'm Marcus") is shown as far as they give it unless one listed person has it and nothing says otherwise. In captions without capitals or full stops a person is found from introductions and self-identifications that use a whole listed name (or the model's proposal), not from being spoken to, since nothing marks where a sentence ends. A host who never says the show's name or introduces anyone, on a show whose listing names no host, keeps a number. Since 0.14.2 the model's reading decides where it stands on checked words, so a wrong reading resting on a clue that holds up would name a voice wrongly (not seen on the 219 scenarios with a scripted or stand-in model's answer, and the production model was not called with the current prompt). Since 0.14.3 a voice is named only on a usable decision of the model's: when its answer cannot be used, even after a second request, the voice keeps its number. That costs names when the app's own rules would have been right. On the 658 scenarios those rules alone name 613 of the 727 voices a careful reader names, and give 28 wrong names (25 of them on one set of attacks written against them); with an unusable answer none of the 727 is named. Since 0.14.4 a named decision needs at least one quotation of the model's own that is really in the turn it names, where that kind of clue belongs; one without is asked about once more and then keeps its number, and a decision stands only on the model's own clues that hold up, never on a clue only the app found. If the model itself reads a stand-in as the host and quotes the stand-in's real opening, its clue holds up wherever the app's checks for absence miss the wording (they miss A4's, "the man whose name is on the door is at his daughter's wedding"): the model's own reading decides there, as since 0.14.2. Whom a sentence speaks to and whose calling a voice claims are read by rules measured only on invented sentences; on a set held back until the end they caught about three quarters of each before their last repair. Several people addressed at once ("Abe and Ines, you two…") never name anyone. A guest whom nobody names aloud is named only when the listing bills that person, the voice answers as the guest, and the model names them for it.
 - Voice separation needs the recording to be the same audio as the text: under 60% of the text's words lining up and nothing is changed. Captions without sentence marks borrow the recording's; a stretch with neither marks nor the conditions for moving a change keeps the recording's own cut, which can fall a word or two off.
 - An uploaded recording (0.14.1) is checked to be a recording by its first bytes, not checked to be what its name or tags say. Its tags are read from MP3, M4A and MP4, and WAV files only; an Ogg, FLAC, AAC or WebM file is named from its file name alone. A recording transcribed on this computer has no voices, and since the file is not kept they cannot be separated later from that reading: upload it again and choose Deepgram. A large file's trip to Deepgram (hundreds of megabytes) was not tried live, and the page shows no progress while a file is being sent. Node's own fetch gives Deepgram five minutes to answer once the file is sent; a recording that takes Deepgram longer to transcribe would fail with that error (not seen; Deepgram's transcription is usually far faster than real time). On a Node older than 20 a file is read whole before it is sent, and one over 1 GB is refused with that reason.
 - No login. Localhost only by default.

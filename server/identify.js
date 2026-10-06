@@ -76,7 +76,19 @@
    longer names anyone by itself: it holds up or holds back the model's decisions, and settles a first name alone that
    the model gives, or the one voice left, only where the model's decision names the same person. `appReading` runs the
    app's rules alone, for measuring them in the tests; the mock model (tests and the pictures only) stands in with the
-   app's reading and the record says so. */
+   app's reading and the record says so.
+
+   0.14.4: words of the model's own that are real. A review found that the check asked only whether a quotation was given:
+   with the regular host away, the model named the stand-in as him on an invented quotation ("I'm …"), the app recorded
+   that the quoted words were not in that turn, and its own reading (the voice opens the show named after him) then
+   carried the name onto the card and the exported claims. Now a named decision is accepted only when at least one of
+   the model's own clues passes the source and turn checks every clue starts with (realWords: the quotation is in the
+   turn it names; that turn is the voice's own, or another voice's just next to it, as the kind needs). One that has none
+   is asked about once more, with what did not hold up, and still without one the voice keeps its number with why. A
+   decision stands on the model's own clues that hold up (checkClue) and on nothing the app found; the app's reading
+   settles a first name alone, or the one voice left, only for a decision with such a clue; the listing's pairing of a
+   guest nobody names aloud needs only real words. The host's opening and a role label's first words, which the listing
+   and the voice's part decide, are now checked for real words too. */
 const shared = require("../shared/transcript");
 const { callModel, unreadable } = require("./preparation");
 const { supportedName, contains } = require("./structure");
@@ -1669,6 +1681,9 @@ function modelFull(ctx, part, name) {
    the transcript's own HOST or GUEST label, and the one person the listing names in that role. */
 function checkReading(item, ctx, reject) {
   const key = item.key, name = bareName(item.name); if (!ctx.keys.has(key)) return reject("no such voice"); if (!name) return reject("no name given");
+  // (the words it quotes, the voice's opening or first words, must be in that voice's own turn, as for every clue: the
+  // listing and the voice's part decide the rest, 0.14.4)
+  if (item.source === "model") { const not = realWords(item, ctx); if (not) return reject(not); }
   const st = ctx.stats.get(key), away = ctx.away || new Set();
   const ok = (who, why) => Object.assign({}, item, { ok: true, name: who.name, said: who.name, completed: false, weight: WEIGHT[item.kind], why });
   if (item.kind === "hosts_show") {
@@ -1693,6 +1708,27 @@ function checkReading(item, ctx, reject) {
   if (norm(list[0].name) !== norm(name)) return reject("the listing's " + role + " is " + list[0].name + ", not " + name);
   if (away.has(norm(list[0].name))) return reject("the words say " + list[0].name + " is away");
   return ok(list[0], "the transcript labels this voice " + key + ", and the listing names one " + role);
+}
+/* Whether the words a clue quotes are real (0.14.4): the source and turn checks every clue starts with, and nothing more.
+   The quotation must be in the turn it names (found as checkClue finds it), that turn must be no clip, quotation,
+   advertisement or stretch whose speaker is not established, and it must stand where the kind of clue requires: the
+   voice's own turn (a voice naming or describing itself, the host's opening or welcome, a role label's first words), or
+   another voice's turn next to it (an introduction just before the voice speaks; words to it just before it answers, or
+   replying to it). Whether the words show what the clue says is checkClue's to decide. A named decision of the model's
+   is accepted only with at least one clue whose words are real: a reason is returned when they are not, "" when they are. */
+function realWords(item, ctx) {
+  if (!ctx.keys.has(item.key)) return "no such voice";
+  const k = ctx.indexOfTurn.get(Number(item.turn)); if (k === undefined) return "no such turn";
+  const t = ctx.sp[k];
+  if (SET_APART.test(t.key) || t.key === "UNLABELED") return "that turn is a clip, a quotation, an advertisement or a stretch whose speaker is not established";
+  const qn = shared.wordsOf(String(item.quote || "")), info = turnInfo(ctx, k);
+  const oneWordOK = qn && qn.split(" ").length === 1 && (words(bareName(item.name)).includes(qn) || !!SPOKEN_TITLE[qn]);
+  if (!qn || qn.split(" ").length < 2 && !oneWordOK || /\.\.\.|…|\[/.test(String(item.quote)) || !info.norm.includes(" " + qn + " ")) return "the quoted words are not in that turn";
+  if (["self_identification", "self_reference", "hosts_show", "role_label"].includes(item.kind)) return t.key === item.key ? "" : "that turn is another voice's";
+  if (t.key === item.key) return item.kind === "introduced" ? "a voice cannot introduce itself" : "that turn is this voice's own";
+  if (answerers(ctx.sp, k).list.slice(0, 2).some(j => ctx.sp[j].key === item.key)) return "";
+  if (item.kind === "addressed") { for (let j = k - 1; j >= 0 && j >= k - 3; j--) { const p = ctx.sp[j]; if (SET_APART.test(p.key) || p.key === "UNLABELED") continue; if (p.key === item.key) return ""; break; } }
+  return item.kind === "introduced" ? "this voice does not speak just after that turn" : "this voice does not speak just before or after that turn";
 }
 /* `opts.lenient` (fifth review, two readers): a clue from the model's reading is checked for what the model can get wrong
    that the words settle: the quotation is in the turn it names, the turn is that voice's or the one next to it, the name
@@ -2502,6 +2538,9 @@ function resolveNames(checked, ctx) {
   // listing's host or a role label; not when every clue it gives for that person is refuted by the words, a quotation
   // not in the turn or "This is Marcus Delacroix's plan", which names no one: fourth review)
   const same = (n, name) => norm(n) === norm(name) || norm(complete(n, n, ctx.cands)) === norm(name);
+  // (one of the model's own clues for this person, on this voice, holds up: in strict mode the app's reading may settle a
+  // first name alone, or the one voice left, only for a decision that has one, 0.14.4)
+  const ownOk = (key, name) => checked.some(x => x.ok && x.key === key && (x.source === "model" || x.alsoModel) && SHOWS_NAME.includes(x.kind) && (same(x.name, name) || same(name, x.name)));
   const modelAgrees = (key, name) => { const v = ctx.modelView && ctx.modelView.get(key); if (!v || v.names.some(n => same(n, name))) return true; if (v.unnamed && !v.names.length) return false;
     const theirs = checked.filter(x => x.key === key && x.source === "model" && ["self_identification", "introduced", "addressed", "self_reference"].includes(x.kind) && !same(x.name, name));
     const alsoTheirs = checked.some(x => (x.ok || x.soft) && x.key === key && x.alsoModel && ["self_identification", "introduced", "addressed", "self_reference"].includes(x.kind) && !same(x.name, name));
@@ -2557,10 +2596,14 @@ function resolveNames(checked, ctx) {
       const forms0 = mine.map(x => x.name).concat((ctx.pool || ctx.cands).filter(c => norm(c.name) === norm(N)).map(c => c.name));
       const named = forms0.length ? forms0.sort((a, b) => words(b).length - words(a).length)[0] : N;
       // (a first name alone, of no one the listing names: the app's own rules for such names, as before)
-      if (words(named).length < 2 && !(ctx.pool || ctx.cands).some(c => norm(c.name) === norm(named))) { decidedByModel.delete(key); firstOnly.set(key, named); continue; }
-      const direct = mine.filter(x => ["self_identification", "introduced", "addressed"].includes(x.kind) && !x.title);
-      const titled = mine.filter(x => x.kind === "addressed" && x.title), roleSelf = mine.filter(x => x.kind === "self_reference");
-      const reading = mine.filter(x => x.kind === "hosts_show" || x.kind === "role_label");
+      if (words(named).length < 2 && !(ctx.pool || ctx.cands).some(c => norm(c.name) === norm(named))) { decidedByModel.delete(key); if (!ctx.strict || ownOk(key, named)) firstOnly.set(key, named); continue; }
+      // (strict, 0.14.4: the model's reading stands on its own clues that hold up and on nothing else; a clue only the app
+      // found for the same person never makes it stand, so a decision whose own words fail is not carried by the app's
+      // reading, which can be wrong in the same place: a stand-in host taken for the host the listing names)
+      const by = ctx.strict ? mine.filter(x => x.source === "model" || x.alsoModel) : mine;
+      const direct = by.filter(x => ["self_identification", "introduced", "addressed"].includes(x.kind) && !x.title);
+      const titled = by.filter(x => x.kind === "addressed" && x.title), roleSelf = by.filter(x => x.kind === "self_reference");
+      const reading = by.filter(x => x.kind === "hosts_show" || x.kind === "role_label");
       const standsM = direct.length > 0 || reading.length > 0 || titled.length > 0 && roleSelf.length > 0;
       // (what the words show and what did not hold up are explained as for any voice: only a title, a calling, or clues
       // that failed, each with its reason)
@@ -2610,7 +2653,7 @@ function resolveNames(checked, ctx) {
   const participants = ctx.cands.filter(c => !c.holderOnly && !used.has(norm(c.name)) && !absent.has(norm(c.name)) && !subject(c.name) && !dead(c.name) && !placed(c) && (c.role === "host" && c.structured || c.role === "guest" || linked(norm(c.name))));
   const namesFor = key => { const v = ctx.modelView && ctx.modelView.get(key); return v ? v.names : []; };
   if (unopposed.length === 1 && !conflicts.has(unopposed[0].key) && participants.length === 1 && !callerVoice(unopposed[0].key) && !rivalAny(unopposed[0].key, participants[0].name) &&
-    !(ctx.strict && !namesFor(unopposed[0].key).some(n => same(n, participants[0].name) || same(participants[0].name, n)))) {
+    !(ctx.strict && !(namesFor(unopposed[0].key).some(n => same(n, participants[0].name) || same(participants[0].name, n)) && ownOk(unopposed[0].key, participants[0].name)))) {
     const key = unopposed[0].key, c = participants[0];
     const own = (score.get(key) || new Map()).get(norm(c.name));
     // (spoken to by name: a title, however often, is not the name)
@@ -2772,7 +2815,8 @@ function modelClues(data, keys) {
    one person for two voices, a name the transcript or a person already gave another voice) or names a voice without
    quoting words that show it is asked for once more, told exactly what was wrong. A voice that still has no usable
    decision, or that the two answers decide differently, keeps its number, with the reason, and the reading goes on.
-   Names the transcript or a person gave are not asked about and never change. */
+   Names the transcript or a person gave are not asked about and never change. Since 0.14.4 a named decision also needs
+   at least one clue of its own whose words are real (realWords; checked in identifySpeakers, where the words are read). */
 const voiceLabel = x => String(x && x.label || "").toUpperCase().trim();
 // (the kinds of evidence that show who a voice is: speaking to someone else shows only who it is not)
 const SHOWS_NAME = ["self_identification", "introduced", "addressed", "self_reference", "hosts_show", "role_label"];
@@ -2861,8 +2905,10 @@ function noDecisionWhy(u) {
     : c === "taken" ? "its answer gave this voice the name " + u.names[0] + ", which the transcript or a person already gives another voice"
     : c === "same_person" ? "its answer gave the same person (" + u.names[0] + ") to this voice and to " + u.with.map(defaultName).join(" and ")
     : c === "changed" ? "its two answers decide this voice differently (" + u.names.join(", then ") + ")"
+    : c === "unsupported" ? "its answer named this voice " + u.names[0] + ", but none of the words it quoted for that is where it says (" + u.detail + ")"
     : "it gave no usable decision";
-  return (u && u.once ? "The model gave no usable decision for this voice: " + problem + ", and asking again " + u.once : "Asked twice, the model gave no usable decision for this voice: " + problem) + end;
+  return (u && u.once ? "The model gave no usable decision for this voice: " + problem + ", and asking again " + u.once
+    : u && u.asked === 1 ? "The model gave no usable decision for this voice: " + problem : "Asked twice, the model gave no usable decision for this voice: " + problem) + end;
 }
 /* The usable decisions as an answer of the usual shape: each voice's own entries from the answer its decision came from. */
 function usableAnswer(decisions) {
@@ -2888,21 +2934,24 @@ function replaceable(s, run) {
   if (!name || name === key || norm(name) === norm(defaultName(key))) return true;
   return appNames(run, key).some(n => norm(n) === norm(name));
 }
-/* The identification's own version (0.14.2: 2; 0.14.3: 3). A text identified by an earlier version is identified again
-   the next time it is read when that version left a voice numbered (the repairs of 0.14.2 name voices 0.14.0 and 0.14.1
-   left numbered), or when a name it gave came from the app's own reading alone, with no decision of the model's behind
-   it (0.14.3: the app no longer names anyone on its own reading). */
-const IDENTIFY_VERSION = 3;
+/* The identification's own version (0.14.2: 2; 0.14.3: 3; 0.14.4: 4). A text identified by an earlier version is
+   identified again the next time it is read when a name it gave has no clue of the model's that held up behind it
+   (0.14.3: the app no longer names anyone on its own reading; 0.14.4: nor carries a decision whose own words fail), and,
+   for versions before 0.14.3, when it left a voice numbered (the repairs of 0.14.2 name voices 0.14.0 and 0.14.1 left
+   numbered). A voice 0.14.3 left numbered stays so: nothing since names more. */
+const IDENTIFY_VERSION = 4;
 function needsIdentification(b) {
   const r = b.run, pr = r.provenance || {};
   if (r.kind !== "transcript" || r.example || pr.labelsOrigin === "model") return false;
   const id = pr.identification;
   const stillUnnamed = () => (id.unnamed || []).some(u => { const s = (r.speakers || []).find(x => x.key === u.key); return replaceable(s || { key: u.key, name: "" }, r) && (!s || !s.name || norm(s.name) === norm(defaultName(u.key))); });
-  // (a name with no clue of the model's behind it, from a version that let the app's reading stand alone: the model's
-  // answer could not be read, gave no decision for that voice, or was not asked about it; a name from the listing paired
-  // by both readers, or from the words when the speakers were worked out (a model's pass of its own), is not one)
-  const appAlone = () => !!id.modelWhy || (id.decisions || []).some(d => !(id.evidence || []).some(e => e.key === d.key && /model/.test(e.source || "")) && !(d.kinds || []).includes("listing") && !(d.kinds || []).includes("words"));
-  if (id && id.inputHash === r.input.sha256 && id.attrSig === b.attrSig && !((id.version || 1) < IDENTIFY_VERSION && (stillUnnamed() || appAlone()))) return false;
+  // (a name with no clue of the model's that held up behind it, from a version that let the app's reading stand alone or
+  // carry the model's decision: the model's answer could not be read, gave no decision for that voice, was not asked
+  // about it, or quoted words that did not hold up; a name from the listing paired by both readers, or from the words when
+  // the speakers were worked out (a model's pass of its own), is not one)
+  const appAlone = () => !!id.modelWhy || (id.decisions || []).some(d => !(id.evidence || []).some(e => e.key === d.key && /model/.test(e.source || "") && e.ok) && !(d.kinds || []).includes("listing") && !(d.kinds || []).includes("words"));
+  const v = id ? id.version || 1 : 0, again = () => v < 3 ? stillUnnamed() || appAlone() : v < IDENTIFY_VERSION && appAlone();
+  if (id && id.inputHash === r.input.sha256 && id.attrSig === b.attrSig && !again()) return false;
   const ov = pr.overrides || {}, turns = shared.parseTranscript(b.transcript, { mode: r.parseMode });
   const labels = [...new Set(turns.filter(t => !t.heading).map(t => shared.effSpeaker(t, ov)))].filter(nameable);
   return labels.some(key => replaceable((r.speakers || []).find(s => s.key === key) || { key, name: "" }, r));
@@ -2944,9 +2993,71 @@ async function identifySpeakers({ ai, store, id, signal, strict = true }) {
   let app = findEvidence(sp, cands, L, { lower: !!recase });
   for (const f of app.found) if (!cands.some(c => norm(c.name) === norm(f.name))) cands.push(f);
   const record = { by: "identification", version: IDENTIFY_VERSION, at: new Date().toISOString(), inputHash: run.input.sha256, attrSig: b.attrSig, labels: [...keys], nameable: [...nameableKeys], calls: [], model: "", candidates: [], evidence: [], decisions: [], unnamed: [] };
-  let model = { clues: [], notes: [], view: null };
+  // ---- the words, read with a set of the model's decisions ----
+  // Every check of a clue reads one context: the turns (lower-case captions read with the listing's names, and the names
+  // the decisions propose, written with capitals), the people who may be speaking, who is away. It is built for each
+  // answer the model gives and once more for the decisions finally used, and the model's clues are checked in it. For
+  // each voice the model names, its support is its own clues, of a kind that shows who a voice is, whose words are real
+  // (realWords, 0.14.4): a decision with none is not accepted, and no clue of the app's stands in for it.
+  const base = { recase, sp, talk, app, cands: cands.slice() };
+  const agreesIn = cs => (x, y) => norm(x) === norm(y) || norm(complete(x, x, cs)) === norm(y) || norm(complete(y, y, cs)) === norm(x);
+  function readWith(decisions, full) {
+    const mdl = decisions ? modelClues(usableAnswer(decisions), keys) : { clues: [], notes: [], view: null };
+    let rc = base.recase, spX = base.sp, talkX = base.talk, appX = base.app; const cs = base.cands.slice();
+    // lower-case captions: the names the model proposes are written with capitals too, and the app reads the words again
+    // (a name still counts only where the app's own patterns and checks find it)
+    if (rc && mdl.clues.length) {
+      const extra = [...new Set(mdl.clues.map(c => c.name))].filter(n => words(n).length >= 2);
+      if (extra.length) {
+        rc = recaseWith(extra); spX = plain.map(t => Object.assign({}, t, { text: rc(t.text) }));
+        talkX = spX.filter(t => !SET_APART.test(t.key)).map(t => readable(t.text)).join("\n");
+        appX = findEvidence(spX, cs, L, { lower: true });
+        for (const f of appX.found) if (!cs.some(c => norm(c.name) === norm(f.name))) cs.push(f);
+      }
+    }
+    // a person the model names counts only when the listing or the conversation names that person too
+    const allText = " " + norm(lt + "\n" + talkX) + " ";
+    const sourced = name => { const ws = words(name); return ws.length > 0 && ws.every(w => allText.includes(" " + w + " ")); };
+    // (the part of a name the model proposed that the listing or the conversation gives is the name its decision stands
+    // for: "Marcus Delacroix Jr" with only "Marcus Delacroix" in the words is a decision for Marcus Delacroix; the rest is
+    // the model's and is not used, as for its clues, 0.14.3)
+    if (mdl.view) for (const v of mdl.view.values()) v.names = v.names.map(n => { if (sourced(n)) return n; const nw = words(n);
+      const part = cs.map(c => c.name).filter(c => { const cw = words(c); if (cw.length < 2 || cw.length >= nw.length) return false; for (let i = 0; i + cw.length <= nw.length; i++) if (cw.every((w, j) => nw[i + j] === w)) return true; return false; }).sort((x, y) => words(y).length - words(x).length)[0];
+      return part || n; }).filter((n, i, all) => all.findIndex(m => norm(m) === norm(n)) === i);
+    const cx = { sp: spX, stats, keys, nameableKeys, fixed, fixedKeys: new Set(fixed.keys()), cands: cs, listing: L, listingText: lt, indexOfTurn: new Map(spX.map((t, k) => [t.i, k])), recase: rc, present: appX.present, subjects: appX.subjects, modelView: mdl.view && mdl.view.size ? mdl.view : null };
+    // (the people the conversation names with a title, who share it; who is away, and who has died: second review)
+    cx.holders = titledIn(spX, cs); cx.titleOnly = titleOnly;
+    // everyone the listing names, for checking the model's reading (listingPeople): the people the app found first
+    { const pool = cs.slice(); for (const c of listed.concat(listingPeople(L))) if (!(c.showName && !c.structured && !c.company) && !pool.some(x => norm(x.name) === norm(c.name))) pool.push(c); cx.pool = pool; }
+    const aw = awayFrom(spX, cs, L); cx.away = aw.away; cx.dead = aw.dead;
+    const check = x => {
+      const r = checkClue(x, cx, { lenient: true });
+      // the words may give part of a name the model proposed; the rest of it is the model's and is not used
+      if (r.ok && x.source === "model" && !sourced(r.name)) return Object.assign(r, { ok: false, why: "the listing and the conversation do not name " + r.name });
+      return r;
+    };
+    const fromModel = mdl.clues.map(check), support = new Map();
+    // (each named voice's support: its own clues, of a kind that shows who a voice is, whose words are real)
+    if (mdl.view) for (const [key, v] of mdl.view) {
+      if (!v.names.length) continue;
+      const theirs = mdl.clues.filter(x => x.key === key && SHOWS_NAME.includes(x.kind)).map(x => ({ x, not: realWords(x, cx) }));
+      support.set(key, { name: v.names[0], own: theirs.filter(y => !y.not).map(y => y.x), failed: theirs.filter(y => y.not).map(y => Object.assign({}, y.x, { why: y.not })) });
+    }
+    if (!full) return { support };
+    // the same clue found by the app and the model counts once, and is marked as found by both
+    const checked = appX.evidence.map(check).concat(fromModel), byClue = new Map(), unique = [];
+    for (const x of checked) { const k = [x.key, norm(x.name), x.kind, x.turn, x.ok].join("|"); const have = byClue.get(k); if (have) { if (x.source === "model" && have.source !== "model") have.alsoModel = true; continue; } byClue.set(k, x); unique.push(x); }
+    return { model: mdl, ctx: cx, unique, support, cands: cs };
+  }
+  // a named decision none of whose own words hold up, as the answer check records it and the model is told
+  const unsupportedOf = s => {
+    const parts = s.failed.slice(0, 2).map(x => (Number.isFinite(x.turn) ? "turn " + x.turn + ", " : "") + "“" + shortQuote(String(x.quote || "")).slice(0, 160) + "”: " + x.why);
+    return { code: "unsupported", names: [s.name], detail: parts.join("; ") + (s.failed.length > 2 ? "; and " + (s.failed.length - 2) + " more" : "") || "it quoted nothing" };
+  };
+  let model = { clues: [], notes: [], view: null }, decisions = null;
   // the model's answer, checked before it is used (0.14.3): every voice being identified accounted for once; one repair
-  // when it is not; a voice still without a usable decision keeps its number, with the reason (see checkAnswer)
+  // when it is not; a voice still without a usable decision keeps its number, with the reason (see checkAnswer). Since
+  // 0.14.4 a named decision is accepted only when at least one of the model's own clues for it has real words (realWords)
   const noDecision = new Map(); let mockReading = false;
   if (strict && !ai) for (const k of nameableKeys) noDecision.set(k, { code: "no_model" });
   if (ai && nameableKeys.size) {
@@ -2961,15 +3072,26 @@ async function identifySpeakers({ ai, store, id, signal, strict = true }) {
       } catch (e) { if (!unreadable(e)) throw e; record.calls.push(e.callId || ""); return { error: e }; }
     };
     const unreadableIssue = e => e && e.code === "truncated" ? "The answer was cut off at its length limit before it finished." : "The answer was not well-formed JSON.";
-    const check = got => got.data !== undefined ? checkAnswer(got.data, nameableKeys, fixed) : { issues: [unreadableIssue(got.error)], usable: new Map(), unusable: new Map([...nameableKeys].map(k => [k, { code: "unreadable" }])) };
+    // the answer's form (checkAnswer), then each named decision's own words, checked as every clue is
+    const check = got => {
+      const c = got.data !== undefined ? checkAnswer(got.data, nameableKeys, fixed) : { issues: [unreadableIssue(got.error)], usable: new Map(), unusable: new Map([...nameableKeys].map(k => [k, { code: "unreadable" }])) };
+      if (!c.usable.size) return c;
+      for (const [key, s0] of readWith(c.usable, false).support) {
+        if (s0.own.length) continue;
+        const u = Object.assign(unsupportedOf(s0), { entries: c.usable.get(key).entries });
+        c.usable.delete(key); c.unusable.set(key, u);
+        c.issues.push("It named " + key + " (" + s0.name + "), but none of the words it quoted for that is where it says: " + u.detail + ". Quote the exact words, from the turn they are in, that show who this voice is, or leave it unnamed.");
+      }
+      return c;
+    };
     const first = await ask(prompt, false);
     // (the mock model, in tests and the pictures only, stands in with the app's own reading: see mockReading below)
     if (ai.mock && first.data && first.data.mock === "app") mockReading = true;
     else {
       const c1 = check(first);
-      const told = c => c.issues.slice(0, 20).map(x => x.slice(0, 300));
+      const told = c => c.issues.slice(0, 20).map(x => x.slice(0, 400));
       record.answerChecks = [{ attempt: 1, issues: told(c1) }];
-      let decisions = c1.usable, missing = c1.unusable;
+      let missing = c1.unusable; decisions = c1.usable;
       if (c1.issues.length) {
         const second = await ask(prompt + repairNote(told(c1)), true), c2 = check(second);
         record.answerChecks.push({ attempt: 2, issues: told(c2) });
@@ -2978,46 +3100,23 @@ async function identifySpeakers({ ai, store, id, signal, strict = true }) {
           : "Asked twice, the model gave no usable decision for any voice, so every voice keeps its number; the app does not name a voice on its own reading alone.";
       }
       for (const [k, u] of missing) noDecision.set(k, u);
-      model = modelClues(usableAnswer(decisions), keys);
     }
   }
   // (the mock model's stand-in: the app's own reading decides, as a model agreeing with it would; never for a real model)
   const strictNow = strict && !mockReading;
   if (mockReading) record.mockReading = true;
-  // lower-case captions: the names the model proposes are written with capitals too, and the app reads the words again
-  // (a name still counts only where the app's own patterns and checks find it)
-  if (recase && model.clues.length) {
-    const extra = [...new Set(model.clues.map(c => c.name))].filter(n => words(n).length >= 2);
-    if (extra.length) {
-      recase = recaseWith(extra); sp = recased(); talk = talkOf();
-      app = findEvidence(sp, cands, L, { lower: true });
-      for (const f of app.found) if (!cands.some(c => norm(c.name) === norm(f.name))) cands.push(f);
-    }
+  // the words read with the decisions finally used; a decision whose own words do not hold up there either is none. The
+  // clues of a decision refused for that reason are read too, so the record shows why each did not hold up
+  const shown = decisions ? new Map(decisions) : null;
+  if (shown) for (const [k, u] of noDecision) if (u.code === "unsupported" && u.entries && !shown.has(k)) shown.set(k, { name: u.names[0], entries: u.entries });
+  const R = readWith(shown, true);
+  model = R.model; cands.splice(0, cands.length, ...R.cands);
+  const ctx = R.ctx, unique = R.unique;
+  if (strictNow && ctx.modelView) {
+    for (const [key, s0] of R.support) if (!s0.own.length) { if (!noDecision.has(key)) noDecision.set(key, Object.assign(unsupportedOf(s0), (record.answerChecks || []).length > 1 ? {} : { asked: 1 })); ctx.modelView.delete(key); }
+    if (!ctx.modelView.size) ctx.modelView = null;
   }
-  // a person the model names counts only when the listing or the conversation names that person too
-  const allText = " " + norm(lt + "\n" + talk) + " ";
-  const sourced = name => { const ws = words(name); return ws.length > 0 && ws.every(w => allText.includes(" " + w + " ")); };
-  // (the part of a name the model proposed that the listing or the conversation gives is the name its decision stands for:
-  // "Marcus Delacroix Jr" with only "Marcus Delacroix" in the words is a decision for Marcus Delacroix; the rest is the
-  // model's and is not used, as for its clues, 0.14.3)
-  if (model.view) for (const v of model.view.values()) v.names = v.names.map(n => { if (sourced(n)) return n; const nw = words(n);
-    const part = cands.map(c => c.name).filter(c => { const cw = words(c); if (cw.length < 2 || cw.length >= nw.length) return false; for (let i = 0; i + cw.length <= nw.length; i++) if (cw.every((w, j) => nw[i + j] === w)) return true; return false; }).sort((x, y) => words(y).length - words(x).length)[0];
-    return part || n; }).filter((n, i, all) => all.findIndex(m => norm(m) === norm(n)) === i);
-  const ctx = { sp, stats, keys, nameableKeys, fixed, fixedKeys: new Set(fixed.keys()), cands, listing: L, listingText: lt, indexOfTurn: new Map(sp.map((t, k) => [t.i, k])), recase, present: app.present, subjects: app.subjects, modelView: model.view && model.view.size ? model.view : null };
-  // (the people the conversation names with a title, who share it; who is away, and who has died: second review)
-  ctx.holders = titledIn(sp, cands); ctx.titleOnly = titleOnly; ctx.strict = strictNow; ctx.noDecision = noDecision;
-  // everyone the listing names, for checking the model's reading (listingPeople): the people the app found first
-  { const pool = cands.slice(); for (const c of listed.concat(listingPeople(L))) if (!(c.showName && !c.structured && !c.company) && !pool.some(x => norm(x.name) === norm(c.name))) pool.push(c); ctx.pool = pool; }
-  const aw = awayFrom(sp, cands, L); ctx.away = aw.away; ctx.dead = aw.dead;
-  const checked = app.evidence.concat(model.clues).map(x => {
-    const r = checkClue(x, ctx, { lenient: true });
-    // the words may give part of a name the model proposed; the rest of it is the model's and is not used
-    if (r.ok && x.source === "model" && !sourced(r.name)) return Object.assign(r, { ok: false, why: "the listing and the conversation do not name " + r.name });
-    return r;
-  });
-  // the same clue found by the app and the model counts once, and is marked as found by both
-  const byClue = new Map(), unique = [];
-  for (const x of checked) { const k = [x.key, norm(x.name), x.kind, x.turn, x.ok].join("|"); const have = byClue.get(k); if (have) { if (x.source === "model" && have.source !== "model") have.alsoModel = true; continue; } byClue.set(k, x); unique.push(x); }
+  ctx.strict = strictNow; ctx.noDecision = noDecision;
   const res = resolveNames(unique, ctx);
   // the record quotes the transcript as it is: an all-capitals turn or lower-case captions keep their own letters
   const original = (quote, turn) => {
@@ -3054,7 +3153,8 @@ async function identifySpeakers({ ai, store, id, signal, strict = true }) {
   }
   // (the one person the model's usable decision names for a voice, and whether two forms of a name are one person)
   const modelNamed = key => { const v = ctx.modelView && ctx.modelView.get(key); return v && v.names.length === 1 ? v.names[0] : ""; };
-  const agrees = (a, b) => norm(a) === norm(b) || norm(complete(a, a, cands)) === norm(b) || norm(complete(b, b, cands)) === norm(a);
+  const agrees = agreesIn(cands);
+  const ownHolds = key => unique.some(x => x.ok && x.key === key && (x.source === "model" || x.alsoModel) && SHOWS_NAME.includes(x.kind) && agrees(modelNamed(key), x.name));
   for (const key of nameableKeys) {
     if (record.decisions.some(d => d.key === key)) continue;
     const st2 = stats.get(key), modelWhy = model.notes.find(n => n.key === key);
@@ -3069,12 +3169,12 @@ async function identifySpeakers({ ai, store, id, signal, strict = true }) {
       : res.awayHeld.get(key) ? "Clues point to " + res.awayHeld.get(key) + ", but the words or the listing say " + res.awayHeld.get(key) + " is not in this conversation (away, or no longer living), so they are not used."
       : res.firstHeld && res.firstHeld.get(key) ? res.firstHeld.get(key).replace(/^./, ch => ch.toUpperCase()) + "."
       : res.modelHeld.get(key) ? "The app's reading points to " + res.modelHeld.get(key) + ", but the model's reading of the conversation does not name " + res.modelHeld.get(key) + " for this voice" + (modelWhy && modelWhy.why ? " (" + modelWhy.why.replace(/[.\s]+$/, "") + ")" : "") + "; clues that do not stand on their own words count only when both readings agree."
-      // (strict: the model's decision names one person, which does not stand on the words, and the app's reading points to
-      // someone else: neither reading alone names anyone, 0.14.3)
-      : strictNow && modelNamed(key) && best && best.net >= 1 && !agrees(modelNamed(key), best.name) ? (() => {
+      // (strict: the model's decision names one person, and the app's reading points to someone else, or to the same person
+      // where none of the model's own clues holds up: neither reading alone names anyone, 0.14.3, 0.14.4)
+      : strictNow && modelNamed(key) && best && best.net >= 1 && (!agrees(modelNamed(key), best.name) || !ownHolds(key)) ? (() => {
         const n = modelNamed(key), failed = rejected.filter(x => x.source === "model" && agrees(n, x.name));
         return "The model's answer names " + n + " for this voice, but " + (failed.length ? (failed.length > 1 ? "its clues did not hold up: " : "its clue did not hold up: ") + listFailed(failed) : "nothing it quotes shows that on its own") +
-          "; the app's reading points to " + best.name + " instead, and a name is given only where both readings agree.";
+          (agrees(n, best.name) ? "; the app's reading points to " + best.name + " too, but the app does not name a voice on its own reading alone." : "; the app's reading points to " + best.name + " instead, and a name is given only where both readings agree.");
       })()
       : best && best.net >= 1 ? (() => {
         const own = best.items.filter(i => i.kind !== "listed"), i0 = own[0] || best.items[0];

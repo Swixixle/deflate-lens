@@ -176,7 +176,7 @@ test("contradictory answers, twice: each voice they leave without a usable decis
   r = await step([{ voices: [ANA], unnamed: [] }, { voices: [named("SPEAKER 1", "Dana Reyes", [{ kind: "introduced", turn: 0, quote: "Joining me now, Dana Reyes." }]), named("SPEAKER 2", "Ana Ferreira", [{ kind: "addressed", turn: 1, quote: "Thanks for having me, Ana." }])], unnamed: [] }]);
   assert.equal(r.name("SPEAKER 1"), null); assert.equal(r.name("SPEAKER 2"), null);
   assert.equal(r.why("SPEAKER 1"), twice("its two answers decide this voice differently (Ana Ferreira, then Dana Reyes)"));
-  assert.match(r.why("SPEAKER 2"), /^The model's answer names Ana Ferreira for this voice, but its clue did not hold up: “Thanks for having me, Ana\.” \([^)]+\); the app's reading points to Dana Reyes instead, and a name is given only where both readings agree\.$/);
+  assert.equal(r.why("SPEAKER 2"), twice("its answer named this voice Ana Ferreira, but none of the words it quoted for that is where it says (turn 1, “Thanks for having me, Ana.”: that turn is this voice's own)"));
   // the same person in a fuller form when asked again is one decision, not two
   r = await step([{ voices: [named("SPEAKER 1", "Ana", [{ kind: "self_identification", turn: 0, quote: "I'm Ana Ferreira." }])], unnamed: [] }, GOOD()]);
   assert.equal(r.name("SPEAKER 1"), "Ana Ferreira"); assert.equal(r.name("SPEAKER 2"), "Dana Reyes");
@@ -274,18 +274,18 @@ test("a saved identification whose names came from the app's reading alone is id
   const run = (id, speakers, extra) => Object.assign({ kind: "transcript", parseMode: "text", input: { sha256: "h1" }, speakers: speakers || [{ key: "SPEAKER 1", name: "Ana Ferreira" }, { key: "SPEAKER 2", name: "Dana Reyes" }], provenance: Object.assign({ overrides: {}, identification: id }, extra) });
   const b = r => ({ run: r, transcript: "SPEAKER 1: Hello there, friends.\nSPEAKER 2: Hello to you.", attrSig: "a1" });
   const base = { inputHash: "h1", attrSig: "a1", unnamed: [], decisions: [{ key: "SPEAKER 1", name: "Ana Ferreira", kinds: ["self_identification"] }, { key: "SPEAKER 2", name: "Dana Reyes", kinds: ["introduced"] }] };
-  const modelEv = [{ key: "SPEAKER 1", source: "app+model" }, { key: "SPEAKER 2", source: "model" }];
+  const modelEv = [{ key: "SPEAKER 1", source: "app+model", ok: true }, { key: "SPEAKER 2", source: "model", ok: true }];
   // 0.14.2: names with no clue of the model's behind them, or an answer that could not be read twice
-  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: [{ key: "SPEAKER 1", source: "app" }, { key: "SPEAKER 2", source: "model" }] })))), true, "one name from the app alone");
+  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: [{ key: "SPEAKER 1", source: "app", ok: true }, { key: "SPEAKER 2", source: "model", ok: true }] })))), true, "one name from the app alone");
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: modelEv, modelWhy: "The model's answer could not be read…" })))), true);
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: modelEv })))), false, "every name with the model's clue behind it");
   // a guest the listing names, paired by both readers, and a name from the words when the speakers were worked out
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: [], decisions: [{ key: "SPEAKER 1", name: "Ana Ferreira", kinds: ["listing"] }, { key: "SPEAKER 2", name: "Dana Reyes", kinds: ["words"] }] })))), false);
   // 0.14.0 and 0.14.1 (no version): names the app gave on its own are identified again too
-  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { evidence: [{ key: "SPEAKER 1", source: "app" }, { key: "SPEAKER 2", source: "app" }] })))), true);
+  assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { evidence: [{ key: "SPEAKER 1", source: "app", ok: true }, { key: "SPEAKER 2", source: "app", ok: true }] })))), true);
   // this version's record: once per text and labels, even with voices left numbered
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: I.IDENTIFY_VERSION, evidence: [], decisions: [], unnamed: [{ key: "SPEAKER 1", why: "x" }, { key: "SPEAKER 2", why: "x" }] }), [{ key: "SPEAKER 1", name: "Speaker 1" }, { key: "SPEAKER 2", name: "Speaker 2" }]))), false);
-  assert.equal(I.IDENTIFY_VERSION, 3);
+  assert.ok(I.IDENTIFY_VERSION >= 3);
   // a person's names stay, whatever the record
   assert.equal(I.needsIdentification(b(run(Object.assign({}, base, { version: 2, evidence: [] }), [{ key: "SPEAKER 1", name: "Ann" }, { key: "SPEAKER 2", name: "Bo" }], { namesByPerson: { "SPEAKER 1": "Ann", "SPEAKER 2": "Bo" } }))), false);
 });

@@ -253,16 +253,18 @@ test("a recording that never identifies anyone keeps consistent numbered labels,
 });
 
 /* ---------- the model's clues ---------- */
-test("the model's clues count only after the same checks; an invented name, a misplaced quote and an unreadable answer change nothing they should not", async t => {
+test("the model's clues count only after the same checks: an invented name changes nothing; a quote not where the answer says, and an answer that cannot be read, leave the voice numbered however the app reads it", async t => {
   const caller = SAID.slice(0, 10).concat([[1, "Let's go to the phones. Ruth is calling from Dayton. Ruth, go ahead."], [4, "Hi Walt. I work at one of those mills, and we did hire again this year, but the overtime is gone."], [1, "Thank you, Ruth."]]).concat(SAID.slice(12));
   // (every voice accounted for, as the model is asked to since 0.14.3: the host by the show it opens, and the flawed clues
   // this test is about)
-  const ai = scriptedAI({ identify: p => ({ voices: [
+  // (the guest's introduction, quoted from the turn it is in, or (misplaced) from the guest's own first turn)
+  const answer = misplaced => p => ({ voices: [
     { label: "SPEAKER 2", name: HOST, evidence: [{ kind: "hosts_show", turn: Number(/\[(\d+)\] SPEAKER 2: Good evening and welcome/.exec(p)[1]), quote: "Good evening and welcome to the Straight Talk Hour." }] },
     { label: "SPEAKER 5", name: "Ruth", evidence: [{ kind: "addressed", turn: Number(/\[(\d+)\] SPEAKER 2: Let's go to the phones/.exec(p)[1]), quote: "Ruth, go ahead." }] },
     { label: "SPEAKER 1", name: "Roberta Sandoval", evidence: [{ kind: "self_identification", turn: 0, quote: "this is the Straight Talk Hour" }] },
-    { label: "SPEAKER 3", name: "Marcus Delacroix Jr", evidence: [{ kind: "introduced", turn: 2, quote: "Joining us now from Washington, Marcus Delacroix, former trade adviser" }] },
-  ], unnamed: [{ label: "SPEAKER 4", why: "reads an advertisement" }] }) });
+    { label: "SPEAKER 3", name: "Marcus Delacroix Jr", evidence: [{ kind: "introduced", turn: Number((misplaced ? /\[(\d+)\] SPEAKER 3: Thanks for having me/ : /\[(\d+)\] SPEAKER 2: [^\n]*Joining us now/).exec(p)[1]), quote: "Joining us now from Washington, Marcus Delacroix, former trade adviser" }] },
+  ], unnamed: [{ label: "SPEAKER 4", why: "reads an advertisement" }] });
+  const ai = scriptedAI({ identify: answer(false) });
   const f = await server(t, { ai, fetch: chainFetch(caller), env: { DEEPGRAM_API_KEY: KEY, TRANSCRIBE_PREFER: "cloud" } });
   const b = await fromLink(f, APPLE_LINK);
   const id = b.run.provenance.identification, ev = id.evidence.filter(e => e.source === "model");
@@ -274,6 +276,18 @@ test("the model's clues count only after the same checks; an invented name, a mi
   // one call by first name, supporting only: not enough for a name on its own
   assert.equal(nameOf(b, "SPEAKER 5"), "Speaker 5");
   assert.match(id.unnamed.find(u => u.key === "SPEAKER 5").why, /^Only one weak clue points to a name \(Ruth: called by name once just before answering\), which is not enough on its own\.$/);
+  assert.equal(ai.prompts.filter(x => x.startsWith("Who is each voice in this conversation?")).length, 1, "every named decision has words where the answer says");
+  // the same introduction quoted from a turn it is not in (0.14.4): the decision has no words of its own where it says, so
+  // the model is asked once more; still misplaced, the guest keeps its number with why. The app's own reading finds that
+  // introduction in its real turn, and it does not stand in for the model's decision
+  const misAI = scriptedAI({ identify: answer(true) });
+  const m = await server(t, { ai: misAI, fetch: chainFetch(caller), env: { DEEPGRAM_API_KEY: KEY, TRANSCRIBE_PREFER: "cloud" } });
+  const mb = await fromLink(m, APPLE_LINK), mid = mb.run.provenance.identification;
+  assert.equal(misAI.prompts.filter(x => x.startsWith("Who is each voice in this conversation?")).length, 2);
+  assert.equal(nameOf(mb, "SPEAKER 3"), "Speaker 3"); assert.equal(nameOf(mb, "SPEAKER 2"), HOST);
+  assert.match(mid.unnamed.find(u => u.key === "SPEAKER 3").why, /^Asked twice, the model gave no usable decision for this voice: its answer named this voice Marcus Delacroix, but none of the words it quoted for that is where it says \(turn \d+, “Joining us now from Washington, Marcus Delacroix, former trade adviser”: the quoted words are not in that turn\)\. It keeps its number/);
+  assert.ok(mid.evidence.some(e => e.key === "SPEAKER 3" && e.kind === "introduced" && e.source === "app" && e.ok), "the app's own reading finds the introduction");
+  assert.ok(mb.passages.length && mb.passages.every(p => p.readingGate.status === "ready"));
   // an answer that cannot be read, twice (0.14.3): asked once more, then every voice keeps its number with the reason, the
   // app's own reading never stands in for the model's, and the reading goes on
   const unreadableAI = scriptedAI({ identify: () => ({ throw: true }) });
