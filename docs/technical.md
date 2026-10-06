@@ -43,7 +43,9 @@ Contents: [How a reading is made](#how-a-reading-is-made) · [Podcasts and video
 - **What does not.** Words inside quotation marks, reported ("he says, I'm …", "she's like, I'm …"), imagined ("pretend I'm …") or asked ("so now I'm your host?"); introductions of another time ("last week my guest was …", "joining us after the news will be …"), although a teaser for later in the same episode does show that person will be on; a call to someone who may be listening; a voice that answers by speaking of the person in the third person ("Before he starts, …") or cuts in ahead of them ("Can I jump in first?"); organisations, places, holidays and titles that look like names ("this is Steel Country Radio", "Opening Day is here", "the author of Silent Orchard", "our newest sponsor, Comfy Pillow"); a host the words say is away ("sitting in for Walt", "Walt has the night off"). A voice that speaks to someone by name, says it is not them, or speaks of them by full name in the third person counts against that name for that voice.
 - **Resolved together.** Every clue is weighed; one name goes to one voice and one voice to one person, and a voice the clues split between two names, or a name they give to two voices, stays unnamed with that reason. The model reads the listing and the conversation and proposes clues with quotations; each proposal is checked against the words of the whole sentence it stands in, and counts only when the listing or the conversation names that person. Captions in lower case and turns in capitals are read with the listing's names (and the model's) given capitals for the analysis only; the record quotes the transcript's own letters.
 - **Read twice (0.14.2).** The model's clues are checked leniently (the quotation where it must be, the name or a title or calling the listing gives that person in it, and nothing showing the words say otherwise), and where the model's reading stands on such a clue it decides. The app's own rules hold back any name the model does not support. A guest the listing bills is named for the voice that answers as the guest when the model names that guest and nothing in the words is against it. A title alone never names anyone. A voice left numbered is explained with every clue that was found and why it was not enough (see Who each voice is, read twice, under Records).
-- **The model's answer checked first (0.14.3).** Every voice being identified must be accounted for in the model's answer: named, with quoted words that show it, or left unnamed. An answer that is empty, cannot be read, leaves a voice out or contradicts itself is asked for once more, with what was wrong. A voice still without a usable decision keeps its number with that reason, and the reading goes on. The app's own rules never name anyone by themselves (see The model's answer, checked before it is used, under Records). Since 0.14.4 a named decision needs at least one quotation of its own that is really in the turn it names, in a turn where that kind of clue belongs, and it stands only on the model's own clues that hold up: a clue the app found for the same person never carries it (see Words of the model's own that are real). Since 0.14.5 every name settled that way is put to a second reading of the conversation, one narrow request per text, and stands only where that reading says the voice is that person, quoting words of the voice's own turn or a turn next to it that are really there (see A second reading of every name).
+- **The model's answer checked first (0.14.3).** Every voice being identified must be accounted for in the model's answer: named, with quoted words that show it, or left unnamed. An answer that is empty, cannot be read, leaves a voice out or contradicts itself is asked for once more, with what was wrong. A voice still without a usable decision keeps its number with that reason, and the reading goes on. The app's own rules never name anyone by themselves (see The model's answer, checked before it is used, under Records). Since 0.14.4 a named decision needs at least one quotation of its own that is really in the turn it names, in a turn where that kind of clue belongs, and it stands only on the model's own clues that hold up: a clue the app found for the same person never carries it (see Words of the model's own that are real). Since 0.14.5 every name settled that way is put to a second reading of the conversation, one narrow request per text, and stands only where that reading says the voice is that person, quoting words of the voice's own turn or a turn next to it that are really there (see A second reading of every name). Since 0.14.6 a turn reference in either answer must be a whole number from 0 (or that number written in digits): a missing, null or malformed turn names no turn and is never read as turn 0 (see Articles kept whole, names bound to the work, strict turn references).
+- **Articles and prose (0.14.6).** A text whose only dialogue evidence is repeated colon headings ("Results:" twice, "Methods:" once) is read as prose: every word kept, the headings part of the text, nobody a speaker, and no speaker step runs (the run's `parseMode` is "prose", so no later cleanup or reading re-reads it as a dialogue). Prose before the first labelled line is never removed; only page chrome is (short lines that end no sentence, "Listen LIVE"). A conversation — at least two labels that each speak more than once, over at least four labelled lines — still reads as one, with an opening paragraph kept as part of the text.
+- **A reading is bound to the names it was made under (0.14.6).** A speaker's name changed while a reading runs stops the job before the prepared answer is used, with the same plain message as a changed text, and Read this resumes on the current names; the write lock refuses work prepared under other names. Whether a reading is finished is told from the cards as they stand, never from the errors caught along the way, so "Your reading is ready." is never said over a held or stale card.
 - **Everywhere, and through interruptions.** A name belongs to a label, so it follows every turn of that voice, interruptions included; clips, quotations read aloud and advertisements keep labels of their own (CLIP 1, QUOTE 1, AD 1) and are never named, and nothing in a reading is taken from an advertisement (reading-5, checked). Cards, quotations, the original passage, claims, the Markdown and both JSON exports show the names; Evidence → **Who is speaking** says for each voice how it was named, with the words that show it.
 - **When nothing names a voice.** It keeps its number ("Speaker 3"), the same everywhere, and Evidence says why in a sentence ("This voice speaks only briefly, and nothing in the conversation or the listing names it."). The reading is not held for it.
 - **Changing a name** is optional, under Controls → Input and speakers → Speakers. A name you give is kept and never replaced by the app. A reading made under other names says it is out of date, since its own words name the speakers (every reading records a fingerprint of the names it was made under, `basedOn.namesSig`), and changing the name back makes it current again.
@@ -800,6 +802,48 @@ decision carries `confirmed: {turn, quote}`, and its `how` ends "a second readin
 `version` is 5. A saved identification from an earlier version with a name no second reading confirmed (names from the
 speakers pass aside) is identified again once, at its next reading; a voice left numbered stays so.
 
+### Articles kept whole, names bound to the work, strict turn references (0.14.6)
+
+An independent review of 0.14.5 reproduced three defects, fixed together as one stabilization, with no new feature and
+the interface unchanged.
+
+- **Articles and prose kept whole** (`parseMode: "prose"`, `intake.prose`; `server/intake.js`, `shared/transcript.js`).
+  The intake trim read repeated capitalized colon headings as dialogue: an article whose paragraphs sat under
+  "Results:" and "Methods:" lost its opening paragraph — "The trial included only adults who volunteered. Its findings
+  do not establish effects in children." — as material before the dialogue, and Results and Methods became speakers,
+  through the stored text, the prompt sent to generation, the card and the exports (the saved original kept it, which
+  repairs nothing the model reads). Now the material before the first labelled line is removed only when every line of
+  it is page chrome (a short line that ends no sentence); a sentence there keeps the whole text. And a text whose only
+  dialogue evidence is such headings — fewer than two labels that each speak more than once, or fewer than four
+  labelled lines — is read as prose when prose precedes its labels or a page importer read it as an article: parse
+  mode "prose" (every line its own turn, nothing a speaker label), carried on the run so the reader's start-up
+  cleanup, which re-runs the intake cleaning on saved text, cannot re-read the headings as a dialogue. No speaker step
+  runs for prose (nothing to attribute, no structure pass, no voices, no identification). No heading word is listed
+  anywhere: the rule is the shape of the text, so Background, Findings and Limitations behave the same. Genuine
+  transcripts, caption conversion, source labels and saved runs are untouched (a saved run keeps its recorded parse
+  mode; nothing is renumbered).
+- **Names bound to the work** (`expectedNamesSig` in `store.checkWriteBasis`; `server/reading.js`). A reading's own
+  words name the speakers, and `requestedBasis` has carried `namesSig` since 0.14 — but neither the job's checks nor
+  the write lock enforced it, so a name changed over PUT /api/runs/:id while a passage was being read let the job
+  finish "complete · Your reading is ready." over zero ready cards (the display gate held the stale card; the job
+  counted only caught issues). Now the job captures the names signature at start, refreshes it only from what its own
+  guarded commits wrote (voices, structure, identification — so the app's own naming never trips it, and an unrelated
+  edit in that moment is never absorbed), checks it after every call, and the write lock refuses a passage, passages
+  or summary prepared under other names (code `input_changed`). The job stops once, with the same plain message as a
+  changed text, resumable with Read this; the stale attempt's calls stay on the call record; nothing is retried by
+  itself. And completion is told from the cards: ready counts, status and "Your reading is ready." come from the
+  current reading gates at the end, never from the issues list alone.
+- **Strict turn references** (`shared.refNumber`; `wordsAt`, `readConfirm` and `modelClues` in `server/identify.js`,
+  paragraph references in `server/structure.js`). A second reading's "is" with its turn missing, null, or malformed
+  ("abc", true, "", 0.5, −1) was coerced by `Number()` — `Number(null)` is 0 — so words found in turn 0 confirmed a
+  name the answer never bound to a turn, and the record said `confirmed: {turn: null}` with `wordsReal: true`. Now a
+  turn or paragraph reference is a whole number from 0, or that number written in digits; anything else names no turn,
+  the clue or confirmation fails with the reason in plain words ("no turn number given", "“abc” is not a turn
+  number"), and the voice keeps its number. The same rule reads the first answer's clues and the structure pass's
+  paragraph references. Evidence that intentionally rests on the listing alone (the app's `listed` clue) has no turn
+  and is unaffected. A saved confirmation whose `turn` is null (the coercion's trace), whatever its version, is
+  identified again once at its next reading.
+
 ### Names (`provenance.namesByPerson`, `basedOn.namesSig`; 0.14)
 
 `POST /api/runs/:id/confirm-names {names: [{key, name, bio?}]}` (Controls → Speakers, optional) sets the shown name of
@@ -1018,6 +1062,21 @@ Untimed repetition is kept. Caption deduplication requires overlapping time inte
 npm test
 ```
 
+**0.14.6:** 342 tests, one of them skipped unless a private replay folder is given. New file `test/stabilization-0.14.6.test.js` (11 tests), for the three findings of the independent review of 0.14.5; each was reproduced on 0.14.5 first (through POST /api/intake, the actual PUT route during a paused generation, and the identification step), and all eleven tests fail on unchanged 0.14.5:
+- An article pasted as prose: the opening qualification, both limitations and the "Results:"/"Methods:" headings reach the stored text and the prompt sent to generation; the headings are not speakers; no speaker pass runs; the reading completes; reading again changes nothing.
+- The same article through the link route, and a variant whose headings (Background, Findings, Limitations) are each used once.
+- A genuine labelled interview still reads as one: page chrome trimmed as before, and a substantive opening sentence kept as part of the text instead of deleted.
+- `cleanText` alone: chrome vs prose, the prose record and method, and the reader-start call that carries the run's prose mode.
+- A name changed over PUT while the only passage is read: the stale answer is not published, the job ends "error · input changed" (never "ready" over zero ready cards), the attempt's call stays on the call record, and Read this then completes under the new name.
+- The same during the closing overview.
+- `checkWriteBasis` itself refuses a passage save under `expectedNamesSig` from before a rename.
+- A second reading's "is" with turn missing, null, true, "abc", "", 0.5, −1 or nonexistent keeps the number with the reason; 0 and "0" still confirm, and `confirmed.turn` is never null.
+- The first answer's clues under the same rule, with the reason on the evidence record.
+- A saved confirmation with `turn: null` is identified again once; real and mock confirmations are not.
+- `shared.refNumber` as the one rule.
+
+Each safeguard was removed in turn and tests failed: the prose classification (3), the chrome-only trim (1), the names binding in the job and the write lock together (3), the turn validation in `wordsAt` (1) and in the first answer's clues (1). The 0.14.5 measurements are unchanged by this release (no wrong name; the four publisher-only hosts; 20 of 22 misread cases kept numbered).
+
 **0.14.5:** 331 tests, one of them skipped unless a private replay folder is given. New file `test/identify-second-0.14.5.test.js` (10 tests). The second readings in it are scripted, or recorded from the stand-in model given each exact prompt blind:
 - The review's remaining case on its own: set seven's A4 through an Apple link, its feed, Deepgram's voices, the readings and every export, with the model's real-quote misreading (hosts_show, turn 0, "Welcome to the Dale Whitcomb Show.") and the stand-in model's recorded second reading. One identification request, nothing to repair, the clue holding up, and the absent host's name settled; one second reading, about that name, answering is_not. The stand-in is numbered with that reason in the reading's prompt, the card's speakers, the quotes, the claims, the obligations and both exports, and the reading completes.
 - The same at the step: is_not, cannot_tell and "is" with invented words each keep the number. "Is" quoting the real opening names him: the limit, stated as a test.
@@ -1196,6 +1255,47 @@ A diagnostic pilot with 5 to 8 ordinary readers, to learn whether the three-bloc
 ## Reviews
 
 Each release since 0.11.0 was reviewed by a second model working from the code, and the next release fixed what it found; 0.12 followed an external review and brief. Newest first.
+
+### 0.14.6: an article read as a dialogue of its headings, a false "ready", a coerced turn
+
+An independent review of 0.14.5 confirmed the second reading (its checksum matched, and it ran the suite itself: 330
+passing, the private replay skipped) and kept the approach, with the limit stated plainly: two passes of the same model
+can share a mistake, and no phrase list should chase that. It reproduced three remaining defects, with reproductions,
+causes and acceptance checks, and asked for them to be fixed before the baseline is treated as settled, with the
+interface frozen; then a bounded live evaluation, then a small reader pilot. Each was reproduced here on 0.14.5
+(83d5fbd) before the fix:
+
+1. **Article intake removed meaning** (highest priority). The controlled article — an opening qualification that the
+   trial took only adults and establishes nothing about children, then paragraphs under "Results:", "Methods:",
+   "Results:" — came through POST /api/intake with `removedBefore: 1` by link (2 pasted), the qualification missing
+   from the stored text and the generation prompt, and speakers RESULTS and METHODS. Fixed by reading such texts as
+   prose and never trimming prose (see Records); the acceptance tests cover paste and link, other headings, the
+   stored text and the prompt, and a genuine interview.
+2. **A false "Your reading is ready."** Renaming HOST over PUT while the one passage was being read ended
+   `complete · "Your reading is ready." · done 0 · total 1 · issues []`, the card held as stale. Fixed by binding the
+   job and the write lock to the names and telling completion from the cards' gates (see Records).
+3. **A coerced turn reference.** An "is" confirmation with `turn` missing, null or "abc" kept the name when its quote
+   sat in turn 0 (`Number(null)` is 0), recording `confirmed.turn: null`. Fixed by `shared.refNumber` everywhere a
+   model answer names a turn or paragraph (see Records).
+
+**Decisions to check.**
+
+1. Prose classification is a shape rule, not a word list: a text with labels reads as prose only when it is not a
+   conversation (two labels each speaking twice, four labelled lines) AND prose precedes its labels or a page importer
+   read it as an article. An article whose repeated sections meet the conversation shape (say "Results:" and
+   "Methods:" twice each over four lines, with no leading prose) would still read as a dialogue; a pasted article with
+   no leading prose and weak structure still reads as a transcript. The acceptance shapes pass; these neighbours are
+   the residual risk.
+2. A transcript pasted with a substantive introductory sentence now keeps that sentence as an unlabelled turn instead
+   of deleting it. The sentence's words join the text; nothing attributes them to a speaker.
+3. The names binding stops a job once (`input_changed`), the same as a text edit; the half-read attempt's calls are
+   billed and kept on the record, and nothing retries by itself. Readings already finished before the rename stay, as
+   staleness already governed them.
+4. The turn rule accepts digits ("0", "12") for compatibility with answers that quote numbers as strings, and nothing
+   else. `confirmed.turn` can no longer be null; a saved record where it is, is identified again once.
+5. The three fixes change no identification outcome on the 219 answered scenarios, the misread cases or the private
+   replay (all recorded second readings carry explicit turns), and 0.14.5's limits stand unchanged: both readings can
+   share a mistake, and the stand-in's answers are not the production model's.
 
 ### 0.14.5: real words that do not make the person
 
@@ -1495,6 +1595,12 @@ Upload, paste text, or paste a link and press **Read this**. Reading preparation
 
 ## Limits
 
+- Whether a text is a conversation or prose is decided by its shape at intake (0.14.6). An article whose only
+  dialogue evidence is colon headings is read as prose when prose precedes its labels or a page importer read it as
+  an article; an article with no leading prose pasted as text, or one whose repeated sections happen to meet the
+  conversation shape (two headings each used twice over four lines), would still be read as a dialogue of its
+  headings. The decision and the reason are on the intake record, the parse mode is on the run, and nothing is
+  deleted either way.
 - The model cannot browse. "Unchecked" means exactly that; a receipt is a person's work. A search finds candidates; it does not find truth, and a candidate's presence says nothing about what it concludes.
 - "No retraction or correction notice found" means Crossref lists none for that DOI. It is not an endorsement, and preprints and books are thinly covered.
 - A source is never a verification. The word does not appear on a card; the claims export carries `statusMeaning` so other tools do not read "receipt" as "verified" either.

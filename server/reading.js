@@ -101,7 +101,10 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
     job.init = (async () => {
       let b = await store.bundle(id);
       if (!b || b.run.example) throw Object.assign(new Error(b ? "Copy this example to prepare it." : "Reading not found."), { status: b ? 403 : 404 });
-      const c = cleanText(b.transcript, { captions: false, web: false }), doc = {};
+      // a run read as prose keeps its text exactly: the cleanup that trims page chrome around a dialogue must not
+      // re-read an article's section headings as one (the run's parseMode carries that decision, 0.14.6)
+      const prose = b.run.parseMode === "prose";
+      const c = cleanText(b.transcript, { captions: false, web: false, article: prose }), doc = {};
       const imp = b.run.import;
       if (imp && imp.url) {
         doc.sourceUrl = imp.url;
@@ -109,12 +112,13 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
         if (imp.title && (!b.run.sourceLabel || !imp.source)) doc.sourceLabel = imp.title;
         if (imp.title && (/^(?:Listen LIVE|Untitled run)$/i.test(b.run.title) || b.run.title === autoTitle(b.transcript, b.run.kind))) doc.title = imp.title;
       }
-      if (c.text !== b.transcript || Object.keys(doc).some(k => doc[k] !== b.run[k])) {
-        await store.repairIntake(id, c.text, doc, c.original, Object.assign(c.record, { source: (b.run.intake && b.run.intake.source) || "saved-input", at: nowISO() }), b.run.input.sha256);
+      if ((!prose && c.text !== b.transcript) || Object.keys(doc).some(k => doc[k] !== b.run[k])) {
+        await store.repairIntake(id, prose ? b.transcript : c.text, doc, c.original, Object.assign(c.record, { source: (b.run.intake && b.run.intake.source) || "saved-input", at: nowISO() }), b.run.input.sha256);
         b = await store.bundle(id);
       }
       if (opts.reread && !b.passages.some(p => p.id === opts.reread)) throw Object.assign(new Error("That passage is no longer part of this reading."), { status: 404, code: "stale_reading" });
       job.inputHash = b.run.input.sha256; job.attrSig = b.attrSig;
+      job.namesSig = namesSigFor(b.run, shared.parseTranscript(b.transcript, { mode: b.run.parseMode }));
       await store.saveProcessing(id, { id: job.id, status: "running", phase: "starting", message: opts.reread ? "Reading this passage again…" : opts.overview ? "Writing the overview again…" : opts.resegment ? "Organizing the passages again…" : "Preparing your reading…", startedAt: nowISO(), finishedAt: null, inputHash: job.inputHash,
         done: 0, total: b.passages.length, issues: [], error: null, request: asked ? { reread: opts.reread || "", overview: !!opts.overview, resegment: !!opts.resegment } : null });
       return b;
@@ -140,9 +144,13 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
     const b = await store.bundle(id);
     if (!b || !b.run.processing || b.run.processing.id !== job.id || b.run.processing.status !== "running") throw stopped();
     if (b.run.input.sha256 !== job.inputHash || b.attrSig !== job.attrSig) throw Object.assign(new Error("Input changed during reading."), { code: "input_changed" });
+    // the names too (0.14.6): a reading's own words name the speakers, so work started under other names is stale.
+    // The job's own naming steps refresh job.namesSig from what they committed; any other change stops the job here,
+    // once, with the same plain message as a changed text, and Read this resumes on the current names.
+    if (job.namesSig && job.namesSig !== namesSigFor(b.run, shared.parseTranscript(b.transcript, { mode: b.run.parseMode }))) throw Object.assign(new Error("Speaker names changed during reading."), { code: "input_changed" });
     return b;
   }
-  const options = job => ({ expectedInputHash: job.inputHash, expectedAttrSig: job.attrSig, jobId: job.id });
+  const options = job => ({ expectedInputHash: job.inputHash, expectedAttrSig: job.attrSig, expectedNamesSig: job.namesSig, jobId: job.id });
   async function update(id, job, value) { await check(id, job); return store.saveProcessing(id, value, job.id); }
   async function searchSources(id, job) {
     if (!research) return;
@@ -213,7 +221,8 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
      Deepgram transcribed with its voices (their clips and advertisements have not been looked for yet). */
   function needsStructure(b) {
     const r = b.run, pr = r.provenance || {};
-    if (r.kind !== "transcript" || r.example || !(r.intake && r.intake.speakers === "auto")) return false;
+    // prose (an article, 0.14.6) is nobody's conversation: no speakers are worked out for it
+    if (r.kind !== "transcript" || r.example || r.parseMode === "prose" || !(r.intake && r.intake.speakers === "auto")) return false;
     if (pr.structure || pr.voices && pr.voices.clipsChecked !== false || b.passages.some(p => p.analysis)) return false;
     const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
     return labels.length ? CUE.test(b.transcript) || AD_CUE.test(b.transcript) : !pr.voices && shared.wordsOf(b.transcript).split(" ").length >= 12;
@@ -227,7 +236,7 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
   const recordingOf = r => { const imp = r.import || {}, info = imp.episodeInfo || {}; return !!(info.audioUrl || imp.url && info.guid); };
   function needsVoices(b) {
     const r = b.run, pr = r.provenance || {}, src = (r.import || {}).source || {};
-    if (r.kind !== "transcript" || r.example || !(r.intake && r.intake.speakers === "auto") || b.passages.some(p => p.analysis)) return false;
+    if (r.kind !== "transcript" || r.example || r.parseMode === "prose" || !(r.intake && r.intake.speakers === "auto") || b.passages.some(p => p.analysis)) return false;
     if (pr.voices || pr.voicesAttempt && pr.voicesAttempt.inputHash === r.input.sha256) return false;
     if (src.kind === "audio-transcription" || !recordingOf(r) || !cloud() || keepsAudioLocal()) return false;
     const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
@@ -239,7 +248,7 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
      failed one. Null when the recording was not relevant (labels came with the text, or the text came from it). */
   function voicesSkipped(b) {
     const r = b.run, pr = r.provenance || {}, imp = r.import || {}, src = imp.source || {};
-    if (r.kind !== "transcript" || r.example || !(r.intake && r.intake.speakers === "auto") || b.passages.some(p => p.analysis)) return null;
+    if (r.kind !== "transcript" || r.example || r.parseMode === "prose" || !(r.intake && r.intake.speakers === "auto") || b.passages.some(p => p.analysis)) return null;
     if (!src.kind || src.kind === "audio-transcription" || pr.voices || pr.voicesAttempt && pr.voicesAttempt.inputHash === r.input.sha256) return null;
     const labels = shared.speakerLabels(shared.parseTranscript(b.transcript, { mode: r.parseMode })).filter(l => l !== "UNLABELED");
     if (labels.length || shared.wordsOf(b.transcript).split(" ").length < 12) return null;
@@ -264,9 +273,10 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
       await check(id, job);
       if (out) {
         out.record = Object.assign({}, out.record, { auto: true, method: "The text came without speaker labels, so the episode's recording was sent to Deepgram (your key) to separate the voices. " + out.record.method });
-        await store.commitVoices(id, out.basis, out);
-        const nb = await store.bundle(id);
-        job.inputHash = nb.run.input.sha256; job.attrSig = nb.attrSig;
+        // the job follows what its own commit wrote (never a later edit): text, labels and names from the commit's return
+        const committed = await store.commitVoices(id, out.basis, out);
+        job.inputHash = committed.input.sha256; job.attrSig = shared.attrSig(committed.provenance && committed.provenance.overrides);
+        job.namesSig = namesSigFor(committed, shared.parseTranscript(out.text, { mode: committed.parseMode }));
         await store.saveProcessing(id, { inputHash: job.inputHash }, job.id);
       } else {
         await store.recordVoicesAttempt(id, { at: nowISO(), auto: true, status: "failed", code: String(failed.code || ""), why: String(failed.message || failed).replace(/\s+/g, " ").slice(0, 300) });
@@ -284,9 +294,9 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
       if (job.controller.signal.aborted) throw stopped();
       await check(id, job);
       if (out.changed) {
-        await store.commitStructure(id, out.basis, out);
-        const nb = await store.bundle(id);
-        job.inputHash = nb.run.input.sha256; job.attrSig = nb.attrSig;
+        const committed = await store.commitStructure(id, out.basis, out);
+        job.inputHash = committed.input.sha256; job.attrSig = shared.attrSig(committed.provenance && committed.provenance.overrides);
+        job.namesSig = namesSigFor(committed, shared.parseTranscript(out.text, { mode: committed.parseMode }));
         await store.saveProcessing(id, { inputHash: job.inputHash }, job.id);
       } else await store.recordStructure(id, out.basis, out.record);
       b = await check(id, job);
@@ -296,6 +306,7 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
       b = await prepareSpeakers({ ai, store, id, signal: job.controller.signal });
       if (job.controller.signal.aborted) throw stopped();
       job.attrSig = b.attrSig;
+      job.namesSig = namesSigFor(b.run, shared.parseTranscript(b.transcript, { mode: b.run.parseMode }));
       await check(id, job);
       if (b.attributionGate.status !== "ready") {
         await update(id, job, { status: "held", phase: "speakers", message: "The text leaves some speakers uncertain, so the reading is held back. A transcript with reliable speaker labels or the recording is needed.", finishedAt: nowISO() });
@@ -309,7 +320,10 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
       const out = await identifySpeakers({ ai, store, id, signal: job.controller.signal });
       if (job.controller.signal.aborted) throw stopped();
       await check(id, job);
-      await store.commitIdentification(id, out.basis, out);
+      // the job's own naming: its name basis follows exactly what this guarded commit wrote (the text is unchanged
+      // there), so a person's unrelated rename is never absorbed and still stops the job at the next check
+      const committed = await store.commitIdentification(id, out.basis, out);
+      job.namesSig = namesSigFor(committed, shared.parseTranscript(b.transcript, { mode: committed.parseMode }));
     }
     b = await check(id, job);
     const process = b.run.processing;
@@ -352,10 +366,14 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
       catch (e) { if (e.code !== "overview_held") throw e; issues.push({ code: e.code, message: e.message, reasons: e.issues || [] }); }
     }
     await searchSources(id, job);
-    await check(id, job);
-    await store.saveRun(id, { status: issues.length ? "analyzed" : "complete" });
-    await update(id, job, { status: issues.length ? "partial" : "complete", phase: "finished", done, total: b.passages.length, issues,
-      message: issues.length ? partialMessage(done, b.passages.length, issues) : "Your reading is ready.", finishedAt: nowISO() });
+    // what is finished is decided from the cards as they stand NOW (their gates), never from the issues list alone:
+    // a held or stale card means the reading is not ready, whatever was caught along the way (0.14.6)
+    const final = await check(id, job);
+    const ready = final.passages.filter(p => p.readingGate.status === "ready").length;
+    const finished = !issues.length && ready === final.passages.length;
+    await store.saveRun(id, { status: finished ? "complete" : "analyzed" });
+    await update(id, job, { status: finished ? "complete" : "partial", phase: "finished", done: ready, total: final.passages.length, issues,
+      message: finished ? "Your reading is ready." : partialMessage(ready, final.passages.length, issues), finishedAt: nowISO() });
   }
   async function recover() {
     for (const run of await store.listRuns()) if (!run.example) {

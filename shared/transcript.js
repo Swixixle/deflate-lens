@@ -12,9 +12,13 @@
      passages and quotes refer to, so this function must not change behaviour without a data migration.
      opts.mode: "transcript" (default; the heading heuristics below, as every run saved before 0.6.0 was parsed)
                 "text"       (no heading heuristics: every paragraph or labelled line is a turn; a short line with
-                              no final punctuation is content, not a heading). New runs record their mode. */
+                              no final punctuation is content, not a heading)
+                "prose"      (an article or other prose, 0.14.6: every line is its own turn and NOTHING is a speaker
+                              label, so "Results:" or "Methods:" at a line's start stays part of the text as a section
+                              heading). New runs record their mode; a saved run is never re-read under another one. */
   function parseTranscript(text, opts) {
     var mode = (opts && opts.mode) || "transcript";
+    if (mode === "prose") return parseProse(text);
     if (mode === "text") return parseText(text);
     var raw = String(text || "").replace(/\r/g, "");
     var lines = raw.split("\n").filter(function (l) {
@@ -79,6 +83,15 @@
     return turns;
   }
 
+  function parseProse(text) {
+    var raw = String(text || "").replace(/\r/g, "");
+    var lines = raw.split("\n").filter(function (l) { return !/^\s*\d+\s*$/.test(l) && !/^\s*\d{2}:\d{2}:\d{2}[.,]\d{3}\s*-->/.test(l) && !/^WEBVTT/.test(l); });
+    var turns = [];
+    lines.forEach(function (line) { var t = line.trim(); if (t) turns.push({ label: "UNLABELED", text: t, heading: false }); });
+    turns.forEach(function (t, i) { t.text = t.text.replace(/\s+/g, " ").trim(); t.i = i; });
+    return turns;
+  }
+
   /* What a pasted text looks like: a link, a claim (one short paragraph, no speaker labels), or a transcript. */
   function detectKind(text) {
     var t = String(text || "").trim();
@@ -88,6 +101,17 @@
     var paragraphs = t.split(/\n\s*\n|\n/).filter(function (x) { return x.trim(); }).length;
     if (labels.length === 0 && t.length <= 600 && paragraphs <= 2) return { kind: "claim", labels: [] };
     return { kind: "transcript", labels: labels, paragraphs: paragraphs, unlabeled: labels.length === 0 };
+  }
+
+  /* A turn or paragraph number as a model gives it (0.14.6): a whole number from 0, or a string of digits only. Anything
+     else (missing, null, true, "", "abc", 0.5, -1) names no turn and is never coerced into one: Number(null) and
+     Number("") are 0 and Number(true) is 1, which would bind words to a turn the answer never named. Returns { n, why }:
+     n is NaN when the value names no turn, and why then says what was given. */
+  function refNumber(v) {
+    if (typeof v === "number" && Number.isInteger(v) && v >= 0) return { n: v, why: "" };
+    if (typeof v === "string" && /^\d{1,9}$/.test(v)) return { n: Number(v), why: "" };
+    var shown = v === undefined || v === null || v === "" ? "" : typeof v === "string" ? "“" + v.slice(0, 20) + "”" : typeof v === "number" ? String(v) : String(JSON.stringify(v)).slice(0, 20);
+    return { n: NaN, why: shown ? shown + " is not a turn number" : "no turn number given" };
   }
 
   function speakerLabels(turns) {
@@ -475,5 +499,5 @@
     if (name === label) return out("unnamed", "Not identified yet: the speakers' names are found when the reading is prepared.");
     return out("earlier", "Named before names were recorded with their evidence.");
   }
-  return { issueText: issueText, claimTypeLabel: claimTypeLabel, nameable: nameable, labelName: labelName, speakerAccount: speakerAccount, SET_APART_KEY: SET_APART, historicalType: historicalType, EMPIRICAL_TYPES: EMPIRICAL, parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, readingContext: readingContext, CONTEXT_VERSION: CONTEXT_VERSION, chunkRanges: chunkRanges, carryOver: carryOver };
+  return { issueText: issueText, claimTypeLabel: claimTypeLabel, nameable: nameable, labelName: labelName, speakerAccount: speakerAccount, SET_APART_KEY: SET_APART, historicalType: historicalType, EMPIRICAL_TYPES: EMPIRICAL, parseTranscript: parseTranscript, parseText: parseText, sanitizeAnalysis: sanitizeAnalysis, CLAIM_TYPES: CLAIM_TYPES, claimKey: claimKey, detectKind: detectKind, refNumber: refNumber, parseProse: parseProse, speakerLabels: speakerLabels, normQ: normQ, wordsOf: wordsOf, verifyQuote: verifyQuote, matchQuote: matchQuote, spokenNumbers: spokenNumbers, findQuoteTurns: findQuoteTurns, verifyPassage: verifyPassage, attrSig: attrSig, effSpeaker: effSpeaker, fmtTurns: fmtTurns, readingContext: readingContext, CONTEXT_VERSION: CONTEXT_VERSION, chunkRanges: chunkRanges, carryOver: carryOver };
 });

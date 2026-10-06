@@ -7,7 +7,7 @@ const { SOURCE_TYPES, RELATIONS } = require("./research/types");
 function bad(msg) { const e = new Error(msg); e.status = 400; e.code = "invalid"; return e; }
 const STATUSES = ["draft", "attributed", "segmented", "analyzed", "complete"];
 const KINDS = ["transcript", "claim"];
-const PARSE_MODES = ["transcript", "text"];
+const PARSE_MODES = ["transcript", "text", "prose"];
 const isUrl = u => /^https?:\/\/\S+$/i.test(String(u));
 const str = (x, n) => String(x == null ? "" : x).slice(0, n);
 
@@ -25,7 +25,7 @@ function validateRunDoc(doc, ctx) {
   }
   if ("status" in doc) { if (!STATUSES.includes(doc.status)) throw bad("status must be one of " + STATUSES.join(", ")); out.status = doc.status; }
   if ("kind" in doc) { if (!KINDS.includes(doc.kind)) throw bad("kind must be transcript or claim"); out.kind = doc.kind; }
-  if ("parseMode" in doc) { if (!PARSE_MODES.includes(doc.parseMode)) throw bad("parseMode must be transcript or text"); out.parseMode = doc.parseMode; }
+  if ("parseMode" in doc) { if (!PARSE_MODES.includes(doc.parseMode)) throw bad("parseMode must be transcript, text or prose"); out.parseMode = doc.parseMode; }
   if ("pilotNote" in doc) out.pilotNote = str(doc.pilotNote, 2000);
   if ("import" in doc) {
     const i = doc.import && typeof doc.import === "object" ? doc.import : null;

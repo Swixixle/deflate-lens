@@ -359,7 +359,7 @@ async function reload(bundle){
   if (S.runId !== selectedId || !loaded || !loaded.run || loaded.run.id !== selectedId) return false;
   var textChanged = !S.b || S.b.transcript !== loaded.transcript || S.b.run.parseMode !== loaded.run.parseMode;
   S.b = loaded;
-  if (textChanged) S.turns = parseTranscript(S.b.transcript || "", {mode: S.b.run && S.b.run.parseMode === "text" ? "text" : "transcript"});
+  if (textChanged) S.turns = parseTranscript(S.b.transcript || "", {mode: S.b.run && ["text", "prose"].indexOf(S.b.run.parseMode) !== -1 ? S.b.run.parseMode : "transcript"});
   if (S.view === "guide") return true;
   S.view = "run";
   if (S.rendered === selectedId) updateRunView(); else renderRun();

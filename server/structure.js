@@ -120,7 +120,8 @@ function decideUnlabelled(text, paras, chunkParas, proposal, before) {
   const paraTok = i => { const p = paras[i]; const a = toks.findIndex(t => t.at >= p.at); let z = toks.findIndex(t => t.at >= p.end); if (z === -1) z = toks.length; return [a, z]; };
   const segs = []; let dropped = 0, from = tokFrom;
   for (const s of (proposal && Array.isArray(proposal.segments) ? proposal.segments.slice(0, 3000) : [])) {
-    const pi = Number(s && s.para);
+    // (a paragraph number as the answer gave it: a number from 0, or digits; anything else names none, 0.14.6)
+    const pi = shared.refNumber(s && s.para).n;
     if (!chunkParas.includes(pi)) { dropped++; continue; }
     const [a, z] = paraTok(pi);
     const k = locate(toks, s.start, Math.max(from, a), z);
@@ -185,7 +186,7 @@ function decideLabelled(text, paras, proposal) {
   const toks = tokens(text), found = [], rejected = [];
   const span = p => { const a = toks.findIndex(t => t.at >= p.at); let z = toks.findIndex(t => t.at >= p.end); if (z === -1) z = toks.length; return [a, z]; };
   for (const c of (proposal && Array.isArray(proposal.clips) ? proposal.clips.slice(0, 50) : [])) {
-    const pi = Number(c && c.para), p = paras[pi];
+    const pi = shared.refNumber(c && c.para).n, p = paras[pi];
     if (!p) { rejected.push({ why: "no such paragraph" }); continue; }
     const [a, z] = span(p);
     const k = locate(toks, c.start, a, z), e = k === -1 ? -1 : locateEnd(toks, c.end, k, z);
@@ -200,7 +201,7 @@ function decideLabelled(text, paras, proposal) {
   }
   const known = new Set(paras.map(p => p.label).filter(Boolean));
   for (const x of (proposal && Array.isArray(proposal.ads) ? proposal.ads.slice(0, 30) : [])) {
-    const pi = Number(x && x.para), pj = x && x.endPara !== undefined && x.endPara !== null && x.endPara !== "" ? Number(x.endPara) : pi, p = paras[pi], q = paras[pj];
+    const pi = shared.refNumber(x && x.para).n, pj = x && x.endPara !== undefined && x.endPara !== null && x.endPara !== "" ? shared.refNumber(x.endPara).n : pi, p = paras[pi], q = paras[pj];
     if (!p || !q || !(pj >= pi) || pj - pi > 12) { rejected.push({ para: pi, kind: "ad", why: "no such paragraph, or it runs over too many turns" }); continue; }
     const [a0, z0] = span(p), [a1, z1] = span(q);
     const k = locate(toks, x.start, a0, z0), e = k === -1 ? -1 : locateEnd(toks, x.end, Math.max(k, a1), z1);

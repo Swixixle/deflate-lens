@@ -42,7 +42,7 @@ function sha256(s) { return crypto.createHash("sha256").update(String(s == null 
 /* The server-owned record of the exact input a run holds: a SHA-256 of the transcript text as stored (UTF-8, no
    normalisation, so a changed line ending is a changed input), its size, the parse mode it is read under, and when the
    record was made. Readings are bound to this hash; the export carries it; scripts/verify-export.js recomputes it. */
-function inputRecord(text, parseMode, at) { const t = String(text == null ? "" : text); return { sha256: sha256(t), chars: t.length, bytes: Buffer.byteLength(t, "utf8"), parseMode: parseMode === "text" ? "text" : "transcript", recordedAt: at || nowISO() }; }
+function inputRecord(text, parseMode, at) { const t = String(text == null ? "" : text); return { sha256: sha256(t), chars: t.length, bytes: Buffer.byteLength(t, "utf8"), parseMode: ["text", "prose"].includes(parseMode) ? parseMode : "transcript", recordedAt: at || nowISO() }; }
 /* The fields of a call record a reading keeps. */
 function provenanceOf(call) { const keep = {}; ["callId", "at", "purpose", "runId", "provider", "modelRequested", "modelReturned", "requestId", "stopReason", "usage", "latencyMs", "promptHash", "promptChars", "outputHash", "images", "mock", "error", "basedOn", "review", "contract", "context"].forEach(k => { if (call[k] !== undefined) keep[k] = call[k]; }); keep.recorded = true; return keep; }
 
@@ -253,7 +253,7 @@ class Store {
     return next;
   }
   /* Turns for a run, parsed under the rules the run was saved with (never changed silently for an existing run). */
-  parseFor(run, transcript) { return shared.parseTranscript(transcript, { mode: run && run.parseMode === "text" ? "text" : "transcript" }); }
+  parseFor(run, transcript) { return shared.parseTranscript(transcript, { mode: run && ["text", "prose"].includes(run.parseMode) ? run.parseMode : "transcript" }); }
   async touchRun(id, patch) {
     const cur = await this.getRun(id); if (!cur) return;
     const next = Object.assign({}, cur, patch || {}, { updatedAt: nowISO() }); delete next.id;
@@ -597,6 +597,10 @@ class Store {
     if (opts.expectedInputHash && sha256(await this.getTranscript(id)) !== opts.expectedInputHash ||
         opts.expectedAttrSig && shared.attrSig(run.provenance && run.provenance.overrides) !== opts.expectedAttrSig)
       throw Object.assign(new Error("The input changed during reading; use Read this on the current text."), { status: 409, code: "input_changed" });
+    // the speaker names a reading's own words rest on (0.14.6): a name changed meanwhile makes the prepared work stale,
+    // so it is refused here, under the lock, exactly as a changed text or label is
+    if (opts.expectedNamesSig && namesSigFor(run, this.parseFor(run, await this.getTranscript(id))) !== opts.expectedNamesSig)
+      throw Object.assign(new Error("The speaker names changed during reading; use Read this on the current text."), { status: 409, code: "input_changed" });
     if (opts.jobId && (!run.processing || run.processing.id !== opts.jobId || run.processing.status !== "running"))
       throw Object.assign(new Error("This reading was stopped."), { status: 409, code: "cancelled" });
   }

@@ -1729,6 +1729,8 @@ function checkReading(item, ctx, reject) {
    is accepted only with at least one clue whose words are real: a reason is returned when they are not, "" when they are. */
 function realWords(item, ctx) {
   if (!ctx.keys.has(item.key)) return "no such voice";
+  // (a turn the answer did not give as a number names no turn, and is never read as turn 0, 0.14.6)
+  if (item.badTurn) return item.badTurn;
   const k = ctx.indexOfTurn.get(Number(item.turn)); if (k === undefined) return "no such turn";
   const t = ctx.sp[k];
   if (SET_APART.test(t.key) || t.key === "UNLABELED") return "that turn is a clip, a quotation, an advertisement or a stretch whose speaker is not established";
@@ -1759,6 +1761,7 @@ function checkClue(item, ctx, opts) {
   if (!ctx.keys.has(item.key)) return reject("no such voice");
   // (a name as the model writes it loses the title and roles before it: "Fr. Anselm Okafor" is Anselm Okafor, 0.14.2)
   let name = item.infer ? "" : bareName(item.name); if (!name && !item.infer) return reject("no name given");
+  if (item.badTurn) return reject(item.badTurn);
   const k = ctx.indexOfTurn.get(Number(item.turn)); if (k === undefined) return reject("no such turn");
   const t = ctx.sp[k], info = turnInfo(ctx, k), text = info.text;
   if (SET_APART.test(t.key) || t.key === "UNLABELED") return reject("that turn is a clip, a quotation, an advertisement or a stretch whose speaker is not established");
@@ -2826,7 +2829,9 @@ function confirmPrompt(L, items, sp, cands) {
    the turn is that voice's own or the turn just before or after one of its turns. One word is enough when it is the name
    or a title, as a whole turn can be ("Ofelia?"), as for every clue. */
 function wordsAt(quote, turn, ctx, key, name) {
-  const k = ctx.indexOfTurn.get(Number(turn)); if (k === undefined) return "no such turn";
+  // (the turn as the answer gave it: a number from 0, or digits; anything else names no turn, 0.14.6)
+  const ref = shared.refNumber(turn); if (ref.why) return ref.why;
+  const k = ctx.indexOfTurn.get(ref.n); if (k === undefined) return "no such turn";
   const t = ctx.sp[k]; if (SET_APART.test(t.key) || t.key === "UNLABELED") return "that turn is a clip, a quotation, an advertisement or a stretch whose speaker is not established";
   const qn = shared.wordsOf(String(quote || ""));
   const oneWordOK = qn && qn.split(" ").length === 1 && (words(bareName(name || "")).includes(qn) || !!SPOKEN_TITLE[qn]);
@@ -2842,8 +2847,9 @@ function readConfirm(data, items, ctx, mock) {
     if (mock && data && data.mock === "confirm") { out.set(d.key, { key: d.key, name: d.name, verdict: "is", quote: "", turn: null, why: "MOCK: no model read this", kept: true, mock: true }); continue; }
     const es = entries.filter(e => e && typeof e === "object" && String(e.label || "").toUpperCase().trim() === d.key);
     const e = es.length === 1 ? es[0] : null, verdict = e && ["is", "is_not", "cannot_tell"].includes(e.verdict) ? e.verdict : "";
-    const quote = e ? String(e.quote || "").slice(0, 400) : "", turn = e && Number.isFinite(Number(e.turn)) ? Number(e.turn) : null, why = e ? String(e.why || "").replace(/\s+/g, " ").trim().slice(0, 200) : "";
-    const notReal = quote ? wordsAt(quote, turn, ctx, verdict === "is" ? d.key : "", d.name) : "no words quoted";
+    const ref = shared.refNumber(e ? e.turn : undefined), turn = ref.why ? null : ref.n;
+    const quote = e ? String(e.quote || "").slice(0, 400) : "", why = e ? String(e.why || "").replace(/\s+/g, " ").trim().slice(0, 200) : "";
+    const notReal = quote ? wordsAt(quote, e.turn, ctx, verdict === "is" ? d.key : "", d.name) : "no words quoted";
     out.set(d.key, { key: d.key, name: d.name, verdict: verdict || (es.length > 1 ? "two_answers" : e ? "no_verdict" : "none"), quote, turn, why, wordsReal: !notReal, notReal, kept: verdict === "is" && !notReal });
   }
   return out;
@@ -2852,9 +2858,9 @@ function readConfirm(data, items, ctx, mock) {
 function confirmWhy(a) {
   const q = a.quote && a.wordsReal ? ": “" + shortQuote(a.quote).slice(0, 160) + "”" : "", w = a.why ? " (" + a.why.replace(/[.\s]+$/, "") + ")" : "";
   const end = " A name is given only where a second reading of the conversation confirms it, so this voice keeps its number.";
-  return (a.verdict === "is_not" ? "A second reading says this voice is not " + a.name + q + w + "." + (a.quote && !a.wordsReal ? " (The words it quoted are not in the conversation as quoted.)" : "")
+  return (a.verdict === "is_not" ? "A second reading says this voice is not " + a.name + q + w + "." + (a.quote && !a.wordsReal ? (a.notReal === "the quoted words are not in that turn" ? " (The words it quoted are not in the conversation as quoted.)" : " (The words it quoted do not hold up: " + a.notReal + ".)") : "")
     : a.verdict === "cannot_tell" ? "A second reading could not tell whether this voice is " + a.name + w + "."
-    : a.verdict === "is" ? "A second reading says this voice is " + a.name + ", but the words it quoted are not where it says (" + (a.quote ? "turn " + a.turn + ", “" + shortQuote(a.quote).slice(0, 160) + "”: " : "") + a.notReal + ")."
+    : a.verdict === "is" ? "A second reading says this voice is " + a.name + ", but the words it quoted are not where it says (" + (a.quote ? (a.turn !== null ? "turn " + a.turn + ", " : "") + "“" + shortQuote(a.quote).slice(0, 160) + "”: " : "") + a.notReal + ")."
     : "A second reading, asked whether this voice is " + a.name + ", gave no usable answer" + (a.verdict === "two_answers" ? " (it answered twice for this voice)" : a.verdict === "no_verdict" ? " (no verdict)" : "") + ".") + end;
 }
 
@@ -2865,7 +2871,9 @@ function modelClues(data, keys) {
     if (!key || !name) continue;
     if (keys.has(key)) { const w = view.get(key) || { names: [], unnamed: false, readings: [] }; if (!w.names.includes(name)) w.names.push(name); view.set(key, w); }
     for (const e of (Array.isArray(v && v.evidence) ? v.evidence.slice(0, 12) : [])) {
-      const kind = String(e && e.kind || ""), base = { key, name, kind, quote: String(e && e.quote || "").slice(0, 400), listingQuote: String(e && e.listingQuote || "").slice(0, 400), turn: Number(e && e.turn), source: "model" };
+      // (the turn as the answer gave it: a number from 0, or digits; anything else names no turn and the clue says so, 0.14.6)
+      const ref = shared.refNumber(e && e.turn);
+      const kind = String(e && e.kind || ""), base = Object.assign({ key, name, kind, quote: String(e && e.quote || "").slice(0, 400), listingQuote: String(e && e.listingQuote || "").slice(0, 400), turn: ref.n, source: "model" }, ref.why ? { badTurn: ref.why } : {});
       // speaking to someone else: the clue is about the person spoken to, never the name proposed for the speaker; the
       // model may say whom ("addressee"), otherwise the words decide (checkClue) (0.14.2)
       if (kind === "addresses_other") { const to = bareName(e && e.addressee); out.push(Object.assign(base, to ? { name: to, addressee: cleanName(e.addressee) } : { name: "", infer: true })); }
@@ -3029,7 +3037,10 @@ function needsIdentification(b) {
   const appAlone = () => !!id.modelWhy || (id.decisions || []).some(d => !(id.evidence || []).some(e => e.key === d.key && /model/.test(e.source || "") && e.ok) && !(d.kinds || []).includes("listing") && !(d.kinds || []).includes("words"));
   // (0.14.5: a name no second reading confirmed)
   const unconfirmed = () => (id.decisions || []).some(d => !(d.kinds || []).includes("words") && !d.confirmed);
-  const v = id ? id.version || 1 : 0, again = () => v < 3 ? stillUnnamed() || appAlone() || unconfirmed() : v < IDENTIFY_VERSION && (appAlone() || unconfirmed());
+  // (0.14.6: a confirmation whose turn was coerced from a missing or malformed value — recorded as null — bound the
+  // words to no turn at all; such a record, whatever its version, is identified again once)
+  const badConfirm = () => (id.decisions || []).some(d => d.confirmed && !d.confirmed.mock && (d.confirmed.turn === null || d.confirmed.turn === undefined));
+  const v = id ? id.version || 1 : 0, again = () => (v < 3 ? stillUnnamed() || appAlone() || unconfirmed() : v < IDENTIFY_VERSION && (appAlone() || unconfirmed())) || badConfirm();
   if (id && id.inputHash === r.input.sha256 && id.attrSig === b.attrSig && !again()) return false;
   const ov = pr.overrides || {}, turns = shared.parseTranscript(b.transcript, { mode: r.parseMode });
   const labels = [...new Set(turns.filter(t => !t.heading).map(t => shared.effSpeaker(t, ov)))].filter(nameable);
