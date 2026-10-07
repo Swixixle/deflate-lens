@@ -1178,7 +1178,9 @@ Untimed repetition is kept. Caption deduplication requires overlapping time inte
 npm test
 ```
 
-**0.14.8:** 366 tests, one of them skipped unless a private replay folder is given. One new file.
+**0.14.8:** 370 tests, one of them skipped unless a private replay folder is given. Two new files.
+
+`test/eval-bounded-0.14.8.test.js` (4 tests): a private set through `--spec` with a who-each-voice-is case (only identification and its second reading run, calls and verdicts recorded) and a whole reading with the voice of a phrase checked; the cost limit against a stand-in service on this computer that reports usage (two calls fit under the limit, the third takes it over, the fourth is refused before it leaves, the case ends with what it had and says why, the next case is not started, the refused request is on record); a model with no listed price stopped before anything is sent unless its price is given; the listed prices by model id, the cost of a usage, and right / missed / wrong against expected names.
 
 `test/model-connection-0.14.8.test.js` (11 tests), for the review of 0.14.7's model-connection findings; ten fail on 0.14.7, each on the defect itself (the eleventh, a refused Claude key still bringing up the Anthropic prompt, guards what passed). Two stand-in services on this computer, reached over real HTTP, with fake keys:
 - The reviewer's sequence: A saved with its key, B listed and then chosen with the key field empty, then a request: B receives no key (0.14.7 sent `Bearer FAKE_KEY_FOR_SERVICE_A`), the answer says the key was removed and for which host, `.env` holds no key, and a restart from that `.env` sends none either. A model-only change on A keeps A's key; an Ollama-like address on this computer gets none; B with its own key gets B's key on every call of a whole reading; listing follows the same rule; no key in any answer, record, health status or bundle; `.env` at mode 600.
@@ -1393,6 +1395,35 @@ Mocks prove wiring, not interpretation. `npm run eval` reads the 31 cases in `ev
 Each record has the model id, contract and context version, the source's SHA-256, every output at both levels, call count, tokens, latency, failed calls, attribution results, gate status and held reasons. Mechanical pointers flag likely failures (a surviving concern on a sound case, a qualifier missing at either level, a forbidden phrase, a narrowed restatement, a missing claim type) and, on every case since 0.12.2, card text that narrates the process instead of the substance and a restatement whose first sentence does not say whose claim it is. They point at places to look and are not the score. Run over the outputs of the first live evaluation, they flag every problem the scoring found there ("ask more people" for "a broader sample", "working from home" for "remote work", "The survey shows…" unattributed, and the narration in all three passage cases) and a few more unattributed claim restatements (tested on that wording). The scoring sheet asks for six scores per level (meaning, qualifiers, attribution, justified final judgment, fairness to the source, scoped uncertainty) with a reason for every score below full. `--repeat N --cases a,b` repeats high-risk cases to expose instability; `--old` asks the pre-0.12 prompt once per passage for comparison. With no key the command stops and says so; `DEFLATE_MOCK_AI` is refused unless `--allow-mock` is given, and then every output is marked MOCK and the sheet says the run tested wiring only.
 
 Rule for calling the semantic change ready: no designated sound case may keep a manufactured concern, and there may be no material meaning change and no invented quotation in the set (the app's quote gate already refuses invented quotations). Passing this set shows performance on this set only. Measured once: the five short cases on 4 October 2026 took 20 calls, 41,695 input and 21,061 output tokens, about $0.29 at Claude Sonnet 5.5 list prices ($2 per million input tokens, $10 per million output). The estimate for all 28 cases, about 130 calls and roughly $2–3, more with `--old` or `--repeat`, is an inference from that run and the prompt sizes, not a measurement. The reading-3 instructions are about 2,400 characters (36%) longer than reading-2's, roughly 600 more input tokens per reading; input was under a third of that run's cost.
+
+**A private set and a cost limit (0.14.8).** `--spec FILE` reads the cases from another file, so a real interview can
+be evaluated without entering the repository: its `file` and `from.file` paths are relative to that file's folder, and a
+case may carry the episode's listing (`import`: showInfo and episodeInfo as the app saves them) and the run's own
+fields (`doc`: title, sourceUrl, sourceLabel as the transcript chain sets them), so that an `intake` case goes through
+exactly what a podcast link goes through: the voices worked out from the words, who each voice is from the words and
+the listing, then the readings. A case with `identify: true` runs only who-each-voice-is and its second reading on a
+transcript whose labels are given, for contrasts that test naming alone at a fraction of a whole reading's cost. Names
+expected are written in the case before the run: `expect.names` per label for a labelled case, or `expect.named`
+(phrase → name) for an intake case, since the structure pass numbers the voices itself; each value is one name or a
+list of acceptable answers with `null` for "keeps its number". Each voice comes out right, missed (no name where one
+was expected) or wrong, counted separately from the attribution checks (`speakers`: same, differ, label), the calls,
+the runtime, the tokens and the cost. `--max-cost USD` keeps a cost limit at the model's listed price (Sonnet 5.5
+$2/$10, Opus 5.5 $4/$20, Fable 5.1 $10/$50, Haiku 4.5 $1/$5 per million tokens, as listed on 7 October 2026; another
+model needs `--price-in` and `--price-out`): the cost of every answered call is added as it comes back, and once the
+total reaches the limit the next request is refused before it leaves (recorded with error `budget`), the reading in
+progress ends with what it finished, and later cases are not started; `results.json` says `stoppedBy: "budget"`. A
+limit can overshoot by at most one call. The results and the opening line name the provider, the model and the price
+used.
+
+The bounded live evaluation the reviews asked for uses such a set, kept outside the repository: one real interview
+(its captions as fetched, and the app's labelled version of them) and four contrasts made from the labelled version —
+the actual host welcoming listeners to the show by its name in unfamiliar wording; a substitute opening the same show
+by name, saying the host is away and giving an invented name, with the one address of the host changed to hers; the
+guest mentioning and quoting an invented person who shares the host's first name; and the billed guest with both
+addresses by his title removed — with the expected identities and representative turn boundaries written down before
+the run. The real interview's guest is never named aloud, so it is also the "billed guest unnamed aloud" case. The
+outcome is recorded under What was verified once the run has been made; until then nothing about the real model's
+performance on it is claimed.
 
 ## A pilot with readers (protocol, not yet run)
 

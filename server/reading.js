@@ -76,6 +76,7 @@ function plainError(e, provider) {
   const code = e && e.code, other = provider === "openai-compatible";
   if (code === "bad_key") return other ? "The model service did not accept its key. Replace that service's key and press Read this again." : "The model key was not accepted. Replace it and press Read this again.";
   if (code === "rate_limited") return "The model service is busy. Your work is saved; try Read this again in a moment.";
+  if (code === "budget") return "The cost limit set for this run was reached, so the reading stopped here. What was finished is saved.";
   if (code === "no_ai") return other ? "Finish setting up the model service chosen under Controls (its address and model) to continue." : "Add your model key once to continue.";
   if (code === "input_changed" || code === "stale_reading" || code === "claim_edited") return "The input changed while it was being read. Press Read this to use the current text.";
   if (code === "reading_held") return "A reading could not pass its checks. It has been held back; prepared readings are saved.";
