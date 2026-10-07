@@ -183,6 +183,7 @@ function attemptsFor(entries, calls, exchanges, pair) {
 
 async function main() {
   const ai = createAI(process.env);
+  if (!ai && process.env.MODEL_PROVIDER === "openai-compatible") { console.error("The model service chosen in .env (MODEL_PROVIDER=openai-compatible) is not fully set up: OPENAI_BASE_URL and OPENAI_MODEL are needed. Nothing was run, and no mock was used in its place."); process.exit(2); }
   if (!ai) { console.error("No model key is configured (ANTHROPIC_API_KEY in .env). Nothing was run, and no mock was used in its place.\nAdd the key (the app asks for it once, or put it in .env), then run  npm run eval  again."); process.exit(2); }
   if (ai.mock && !opt("allow-mock")) { console.error("DEFLATE_MOCK_AI is on: the readings would be placeholders. Nothing was run. Use --allow-mock only to test this script's wiring."); process.exit(2); }
   const stamp = new Date().toISOString().replace(/[:.]/g, "-"), outDir = val("out") ? path.resolve(val("out")) : path.join(ROOT, "data", "eval", stamp);
@@ -190,7 +191,8 @@ async function main() {
   fs.mkdirSync(work, { recursive: true });
   const store = new Store(work); await store.init();
   const results = [];
-  const meta = { model: ai.mock ? "MOCK" : ai.model, contract: P.CONTRACT, contextVersion: shared.CONTEXT_VERSION, startedAt: new Date().toISOString(), repeat, cases: cases.map(c => c.id) };
+  // which service answered (0.14.8): the evaluation runs on whatever .env chooses, so the results say which
+  const meta = { model: ai.mock ? "MOCK" : ai.model, provider: ai.mock ? "mock" : ai.kind, providerHost: ai.host || "", contract: P.CONTRACT, contextVersion: shared.CONTEXT_VERSION, startedAt: new Date().toISOString(), repeat, cases: cases.map(c => c.id) };
   // written after every case: a stopped or failed run keeps everything it finished
   const save = done => {
     fs.writeFileSync(path.join(outDir, "results.json"), JSON.stringify(Object.assign({}, meta, { finished: done, completed: results.length, results }), null, 2));
@@ -201,7 +203,7 @@ async function main() {
   const sink = { list: [], file: "", add(x) { this.list.push(x); if (this.file) fs.appendFileSync(this.file, JSON.stringify(x) + "\n"); } };
   const model = logged(ai, sink);
   const reader = createReader({ store, getAI: () => model, searchClaim: null, research: null });
-  console.log("Model: " + (ai.mock ? "MOCK" : ai.model) + " · contract " + P.CONTRACT + " · context " + shared.CONTEXT_VERSION + " · " + cases.length + " cases × " + repeat);
+  console.log("Model: " + (ai.mock ? "MOCK" : ai.model + (ai.host ? " through " + ai.host : ai.kind === "anthropic" ? " (Anthropic)" : "")) + " · contract " + P.CONTRACT + " · context " + shared.CONTEXT_VERSION + " · " + cases.length + " cases × " + repeat);
   for (const c of cases) for (let n = 1; n <= repeat; n++) {
     const text = sourceText(c), t0 = Date.now();
     process.stdout.write(c.id + (repeat > 1 ? " #" + n : "") + " … ");

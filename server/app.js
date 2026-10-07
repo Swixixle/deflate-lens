@@ -8,7 +8,7 @@ const { buildExport, buildMarkdown, buildObligations } = require("./exportClaims
 const { REJECTION_REASONS } = require("./research/types");
 const { createImporter, htmlToText } = require("./importer");
 const { createSettings } = require("./settings");
-const { createAI, DEFAULT_MODEL, MODEL_CHOICES, CLAUDE_ID, OTHER_ID, serviceAddress, listServiceModels } = require("./ai");
+const { createAI, DEFAULT_MODEL, MODEL_CHOICES, CLAUDE_ID, OTHER_ID, serviceAddress, listServiceModels, keyFor, keyOwner } = require("./ai");
 const { createJobs } = require("./jobs");
 const { createResolver, pickEngine } = require("./podcast/resolve");
 const AF = require("./podcast/audiofile");
@@ -51,7 +51,8 @@ function createApp(opts) {
   const importer = createImporter({ fetch: opts.fetch || require("./podcast/public-fetch").publicFetch });
   // the reader separates voices from an episode's recording on its own when a link's text came without speaker labels
   // (Deepgram as configured now, the transcript chain's resolver, the person's audio-to-text choice); defined below
-  const reader = createReader({ store, getAI: () => state.ai, searchClaim, research, voices: { engine: () => engines.cloud, resolver: () => resolver, prefer: () => env.TRANSCRIBE_PREFER || "" } });
+  const reader = createReader({ store, getAI: () => state.ai, searchClaim, research, voices: { engine: () => engines.cloud, resolver: () => resolver, prefer: () => env.TRANSCRIBE_PREFER || "" },
+    provider: () => (process.env.MODEL_PROVIDER === "openai-compatible" ? "openai-compatible" : "anthropic") });
   const envPath = opts.envPath || path.join(__dirname, "..", ".env");
   const settings = createSettings({ envPath, examplePath: path.join(__dirname, "..", ".env.example") });
   /* The transcript chain (podcast and video links): engines read their keys from the environment the server was
@@ -105,7 +106,13 @@ function createApp(opts) {
   const aiInfo = ai => ai ? Object.assign({ kind: ai.kind, model: ai.model, mock: !!ai.mock }, ai.host ? { host: ai.host } : {}) : null;
   const modelInfo = () => ({ provider: process.env.MODEL_PROVIDER === "openai-compatible" ? "openai-compatible" : "anthropic",
     claude: process.env.ANTHROPIC_MODEL || DEFAULT_MODEL, default: DEFAULT_MODEL, choices: MODEL_CHOICES,
-    other: { baseUrl: serviceAddress(process.env.OPENAI_BASE_URL) || "", model: process.env.OPENAI_MODEL || "", keySet: !!String(process.env.OPENAI_API_KEY || "").trim() } });
+    // keySet: a key is saved for this address (0.14.8: a key saved for another address is not this service's key)
+    other: { baseUrl: serviceAddress(process.env.OPENAI_BASE_URL) || "", model: process.env.OPENAI_MODEL || "", keySet: !!keyFor(process.env, process.env.OPENAI_BASE_URL) } });
+  // what to do when no model is set up, for the provider chosen (0.14.8): Claude needs its key; another service needs
+  // its address and model (its key is optional: Ollama on this computer has none)
+  const noModelMessage = () => process.env.MODEL_PROVIDER === "openai-compatible"
+    ? "The model service chosen under Controls → App and files is not fully set up: give its address and a model it offers (and its key, if it needs one)."
+    : "No model configured. Add your Anthropic API key (the page asks for it once, or put ANTHROPIC_API_KEY in .env and restart), or choose another service under Controls → App and files.";
   app.get("/api/health", (req, res) => { const ai = state.ai; res.json({ ok: true, app: "deflate-lens", ai: aiInfo(ai), models: modelInfo(), keyConfigurable: true, research: research ? research.config : null, transcript: { local: engines.local.installed(), cloud: engines.cloud.configured(), prefer: env.TRANSCRIBE_PREFER || "" }, dataDir: store.dataDir, version: require("../package.json").version }); });
 
   /* One-time local configuration of the model key. Body: {key}. The key is written to .env and used at once; the
@@ -119,42 +126,62 @@ function createApp(opts) {
   }));
 
   /* Which model writes new readings (0.14.7). Body: {provider: "anthropic", model} with any Claude model id, or
-     {provider: "openai-compatible", baseUrl, apiKey?, model} for any service that speaks the OpenAI-compatible chat API
-     (an empty apiKey keeps the saved one; clearKey removes it, for Ollama). Every value is checked before anything is
-     written; then .env is updated and the server's model replaced by a new one, so a reading already running finishes
-     with the model it started with. The mock responder stays the mock. The key never comes back. */
+     {provider: "openai-compatible", baseUrl, apiKey?, clearKey?, model} for any service that speaks the OpenAI-compatible
+     chat API. The saved service key belongs to the address it was saved for (0.14.8): an empty apiKey keeps it only when
+     the address is the same one; with a different address it is removed (so it is never sent to that address, an Ollama
+     on this computer included), and the answer says so (key: "dropped"). A new apiKey replaces it and is bound to this
+     address; clearKey removes it on purpose. Every value is checked before anything is written, and the choice is written
+     to .env in one write; then the server's model is replaced by a new one built from what was written, so a reading
+     already running finishes with the model it started with. The mock responder stays the mock. The key never comes back. */
   app.put("/api/settings/model", wrap(async (req, res) => {
     const q = req.body || {}, provider = q.provider === "openai-compatible" ? "openai-compatible" : "anthropic";
     const bad = msg => Object.assign(new Error(msg), { status: 400, code: "bad_setting" });
     const model = String(q.model || "").trim();
+    let keyAction = "none", droppedFrom = "";
     if (provider === "anthropic") {
       if (!CLAUDE_ID.test(model)) throw bad("That does not look like a Claude model id (they start with claude-). Nothing was saved.");
-      settings.set("ANTHROPIC_MODEL", model); settings.set("MODEL_PROVIDER", "anthropic");
-      process.env.ANTHROPIC_MODEL = model; process.env.MODEL_PROVIDER = "anthropic";
+      settings.setMany({ ANTHROPIC_MODEL: model, MODEL_PROVIDER: "anthropic" });
+      Object.assign(process.env, { ANTHROPIC_MODEL: model, MODEL_PROVIDER: "anthropic" });
     } else {
-      const baseUrl = serviceAddress(q.baseUrl), key = String(q.apiKey || "").trim();
-      if (!baseUrl) throw bad("That is not a usable address for a model service (https, or http on this computer). Nothing was saved.");
+      const baseUrl = serviceAddress(q.baseUrl), key = String(q.apiKey || "").trim(), clearKey = q.clearKey === true;
+      if (!baseUrl) throw bad("That is not a usable address for a model service (https, or http on this computer, with no ?query or #part). Nothing was saved.");
       if (!OTHER_ID.test(model)) throw bad("That does not look like a model id. Nothing was saved.");
       if (key && !/^[\x21-\x7e]{8,400}$/.test(key)) throw bad("That does not look like an API key. Nothing was saved.");
-      settings.set("OPENAI_BASE_URL", baseUrl); settings.set("OPENAI_MODEL", model);
-      if (key) settings.set("OPENAI_API_KEY", key); else if (q.clearKey) settings.clear("OPENAI_API_KEY");
-      settings.set("MODEL_PROVIDER", "openai-compatible");
-      Object.assign(process.env, { OPENAI_BASE_URL: baseUrl, OPENAI_MODEL: model, MODEL_PROVIDER: "openai-compatible" });
-      if (key) process.env.OPENAI_API_KEY = key; else if (q.clearKey) process.env.OPENAI_API_KEY = "";
+      if (key && clearKey) throw bad("Give a new key or remove the saved one, not both. Nothing was saved.");
+      const owner = keyOwner(process.env);
+      const values = { OPENAI_BASE_URL: baseUrl, OPENAI_MODEL: model, MODEL_PROVIDER: "openai-compatible" }, clears = [];
+      if (key) { Object.assign(values, { OPENAI_API_KEY: key, OPENAI_API_KEY_FOR: baseUrl }); keyAction = "new"; }
+      else if (owner && owner === baseUrl && !clearKey) { values.OPENAI_API_KEY_FOR = baseUrl; keyAction = "kept"; }
+      else {
+        clears.push("OPENAI_API_KEY", "OPENAI_API_KEY_FOR");
+        if (String(process.env.OPENAI_API_KEY || "").trim()) { keyAction = clearKey ? "removed" : "dropped"; droppedFrom = owner ? new URL(owner).host : ""; }
+      }
+      settings.setMany(values, clears);
+      Object.assign(process.env, values); for (const name of clears) process.env[name] = "";
     }
     // (Claude to another Claude model: the same key with the new model, as a new object; anything else is built afresh
-    // from .env, where the choice was just written)
+    // from .env as just written, so the server's model and the settings agree)
     if (state.ai && state.ai.mock) { /* the mock stays the mock */ }
     else if (provider === "anthropic" && state.ai && state.ai.kind === "anthropic" && typeof state.ai.withModel === "function") state.ai = state.ai.withModel(model);
     else state.ai = createAI(process.env, { fetch: opts.modelFetch });
-    res.json({ ok: true, ai: aiInfo(state.ai), models: modelInfo() });
+    res.json(Object.assign({ ok: true, ai: aiInfo(state.ai), models: modelInfo() }, provider === "openai-compatible" ? { key: keyAction } : {}, droppedFrom ? { keyWasFor: droppedFrom } : {}));
   }));
   /* The models an OpenAI-compatible service lists, for the list under Controls. Body: {baseUrl, apiKey?}; with no key
-     given, the saved key is used for the saved address only. Returns ids; nothing is saved and no key comes back. */
+     given, the saved key is used only for the address it belongs to (the same rule as readings). Returns ids; nothing is
+     saved and no key comes back. */
   app.post("/api/settings/model/list", wrap(async (req, res) => {
-    const q = req.body || {}, baseUrl = serviceAddress(q.baseUrl);
-    const key = String(q.apiKey || "").trim() || (baseUrl && baseUrl === serviceAddress(process.env.OPENAI_BASE_URL) ? String(process.env.OPENAI_API_KEY || "").trim() : "");
+    const q = req.body || {};
+    const key = String(q.apiKey || "").trim() || keyFor(process.env, q.baseUrl);
     res.json({ ok: true, models: await listServiceModels({ baseUrl: q.baseUrl, apiKey: key, fetch: opts.modelFetch }) });
+  }));
+  /* Remove the saved service key on purpose (0.14.8), from Controls. The provider and the rest of the connection stay as
+     they are; when that service is the one in use, the server's model is rebuilt without a key. */
+  app.delete("/api/settings/model/key", wrap(async (req, res) => {
+    const had = !!String(process.env.OPENAI_API_KEY || "").trim();
+    settings.setMany({}, ["OPENAI_API_KEY", "OPENAI_API_KEY_FOR"]);
+    process.env.OPENAI_API_KEY = ""; process.env.OPENAI_API_KEY_FOR = "";
+    if (process.env.MODEL_PROVIDER === "openai-compatible" && !(state.ai && state.ai.mock)) state.ai = createAI(process.env, { fetch: opts.modelFetch });
+    res.json({ ok: true, ai: aiInfo(state.ai), models: modelInfo(), key: had ? "removed" : "none" });
   }));
 
   /* Link importer: readable text or a plain reason it could not be read. Stores nothing. */
@@ -320,7 +347,7 @@ function createApp(opts) {
   app.post("/api/settings/key", wrap(async (req, res) => {
     const name = String(req.body && req.body.name || ""); const key = String(req.body && req.body.key || "");
     // (the model and its connection are set together through /api/settings/model, which checks them as one, 0.14.7)
-    if (["ANTHROPIC_MODEL", "MODEL_PROVIDER", "OPENAI_BASE_URL", "OPENAI_API_KEY", "OPENAI_MODEL"].includes(name)) throw Object.assign(new Error("Choose the model under Controls → App and files."), { status: 400, code: "not_settable" });
+    if (["ANTHROPIC_MODEL", "MODEL_PROVIDER", "OPENAI_BASE_URL", "OPENAI_API_KEY", "OPENAI_API_KEY_FOR", "OPENAI_MODEL"].includes(name)) throw Object.assign(new Error("Choose the model under Controls → App and files."), { status: 400, code: "not_settable" });
     const r = settings.set(name, key);
     if (name === "ANTHROPIC_API_KEY") { process.env.ANTHROPIC_API_KEY = key.trim(); if (!(process.env.DEFLATE_MOCK_AI === "1" || process.env.DEFLATE_MOCK_AI === "true")) state.ai = createAI(process.env, { fetch: opts.modelFetch }); }
     if (name === "DEEPGRAM_API_KEY") { env.DEEPGRAM_API_KEY = key.trim(); engines.cloud = opts.cloudEngine || deepgramEngine({ apiKey: key.trim(), fetch: opts.fetch || globalThis.fetch, env }); }
@@ -569,7 +596,7 @@ function createApp(opts) {
      recorded too, so "the model was asked and did not answer" is on file. */
   app.post("/api/sample", wrap(async (req, res) => {
     const ai = state.ai;
-    if (!ai) return res.status(503).json({ error: "No model configured. Add your Anthropic API key (the page asks for it once, or put ANTHROPIC_API_KEY in .env and restart).", code: "no_ai" });
+    if (!ai) return res.status(503).json({ error: noModelMessage(), code: "no_ai" });
     const { prompt, json, images, runId, purpose, basedOn, passageId } = req.body || {};
     if (!prompt || typeof prompt !== "string") return res.status(400).json({ error: "prompt required", code: "invalid_request" });
     if (Buffer.byteLength(prompt, "utf8") > 400000) return res.status(400).json({ error: "prompt too large", code: "prompt_too_large" });
@@ -602,7 +629,7 @@ function createApp(opts) {
       return res.json(await reviewedOverview({ai,store,b,prompt:P.patterns(b.run,ready),basis,signal:ctl.signal,contract:P.CONTRACT}));
     }
     const call = { callId: newId("call"), at: new Date().toISOString(), purpose: String(purpose || "").replace(/[^a-z0-9_]/gi, "").slice(0, 40), runId: typeof runId === "string" && /^[A-Za-z0-9_-]{1,64}$/.test(runId) ? runId : "", provider: ai.kind, modelRequested: ai.model, mock: !!ai.mock,
-      promptHash: sha256(prompt), promptChars: prompt.length, images: imgs.map(im => ({ mediaType: String(im && im.mediaType || ""), sha256: crypto.createHash("sha256").update(String(im && im.data || ""), "base64").digest("hex") })), json: !!json };
+      ...(ai.host ? { providerHost: ai.host } : {}), promptHash: sha256(prompt), promptChars: prompt.length, images: imgs.map(im => ({ mediaType: String(im && im.mediaType || ""), sha256: crypto.createHash("sha256").update(String(im && im.data || ""), "base64").digest("hex") })), json: !!json };
     // Resolve the page's input version before the provider starts. The stored record, not a later browser save,
     // determines what a completed reading was based on. Unknown origins remain unknown.
     call.basedOn = await store.captureCallBasis(call.runId, basedOn, call.purpose);

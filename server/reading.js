@@ -70,11 +70,13 @@ function partialMessage(done, total, issues) {
   return done + " " + (done === 1 ? "reading" : "readings") + " ready. " + (held ? held + " couldn't be completed." : "") + (overview ? (held ? " " : "") + "The closing overview couldn't be completed." : "");
 }
 function stopped() { return Object.assign(new Error("Reading stopped. Prepared readings have been kept."), { code: "cancelled" }); }
-function plainError(e) {
-  const code = e && e.code;
-  if (code === "bad_key") return "The model key was not accepted. Replace it and press Read this again.";
+/* `provider` (0.14.8): "openai-compatible" when another service was chosen, so the words name that service's key and
+   setup instead of an Anthropic key */
+function plainError(e, provider) {
+  const code = e && e.code, other = provider === "openai-compatible";
+  if (code === "bad_key") return other ? "The model service did not accept its key. Replace that service's key and press Read this again." : "The model key was not accepted. Replace it and press Read this again.";
   if (code === "rate_limited") return "The model service is busy. Your work is saved; try Read this again in a moment.";
-  if (code === "no_ai") return "Add your model key once to continue.";
+  if (code === "no_ai") return other ? "Finish setting up the model service chosen under Controls (its address and model) to continue." : "Add your model key once to continue.";
   if (code === "input_changed" || code === "stale_reading" || code === "claim_edited") return "The input changed while it was being read. Press Read this to use the current text.";
   if (code === "reading_held") return "A reading could not pass its checks. It has been held back; prepared readings are saved.";
   if (code === "invalid_json" || code === "truncated") return "The model's answer could not be read" + (code === "truncated" ? " (it was cut off at its length limit)" : "") + ", even after one correction. Your text and finished readings are saved. Press Read this to try again.";
@@ -86,7 +88,8 @@ function plainError(e) {
 // write checks the input and job under the store lock, so a stopped job cannot publish late.
 /* `voices` (optional): { engine(), resolver(), prefer() } — the Deepgram engine as currently configured, the transcript
    chain's resolver, and the person's audio-to-text choice ("local" keeps audio on this computer). */
-function createReader({ store, getAI, searchClaim, research, voices }) {
+function createReader({ store, getAI, searchClaim, research, voices, provider }) {
+  const chosen = () => (provider ? provider() : "anthropic");
   const jobs = new Map();
   /* opts (all optional, from a person's request in Controls or a card's Evidence): reread = a passage id to read again
      even though it is prepared; overview = write the closing overview again; resegment = organize the passages again.
@@ -129,7 +132,7 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
     job.done = job.init.then(() => execute(id, job)).catch(async e => {
       try {
         await store.saveProcessing(id, { status: e.code === "cancelled" || job.controller.signal.aborted ? "stopped" : e.code === "no_ai" ? "awaiting_key" : "error",
-          phase: "finished", message: e.code === "cancelled" || job.controller.signal.aborted ? "Stopped. Your prepared readings are saved." : plainError(e), error: { code: String(e.code || "reading_error"), message: String(e.message || "").slice(0, 500) }, finishedAt: nowISO() }, job.id);
+          phase: "finished", message: e.code === "cancelled" || job.controller.signal.aborted ? "Stopped. Your prepared readings are saved." : plainError(e, chosen()), error: { code: String(e.code || "reading_error"), message: String(e.message || "").slice(0, 500) }, finishedAt: nowISO() }, job.id);
       } catch (_) { /* A removed run or newer job must not be recreated. */ }
     }).finally(() => { if (jobs.get(id) === job) jobs.delete(id); });
     try { await job.init; return store.bundle(id); } catch (e) { await job.done; throw e; }
@@ -264,7 +267,10 @@ function createReader({ store, getAI, searchClaim, research, voices }) {
     let b = await check(id, job), ai = getAI();
     if (!ai) {
       if (b.run.kind === "claim") await searchSources(id, job);
-      await update(id, job, { status: "awaiting_key", phase: "key", message: b.run.kind === "claim" ? "Your claim and source search are ready. Add the model key once for a plain-language reading." : "Your transcript is saved. Add the model key once and the reading will continue automatically.", finishedAt: nowISO() });
+      const other = chosen() === "openai-compatible";
+      await update(id, job, { status: "awaiting_key", phase: "key", message: b.run.kind === "claim"
+        ? (other ? "Your claim and source search are ready. Finish setting up the model service chosen under Controls for a plain-language reading." : "Your claim and source search are ready. Add the model key once for a plain-language reading.")
+        : (other ? "Your transcript is saved. Finish setting up the model service chosen under Controls (its address and model) and the reading will continue." : "Your transcript is saved. Add the model key once and the reading will continue automatically."), finishedAt: nowISO() });
       return;
     }
     // new input from a podcast link with no speaker labels: the voices, from the recording (see needsVoices)

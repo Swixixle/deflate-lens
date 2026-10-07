@@ -27,7 +27,8 @@ const OTHER_ID = /^[A-Za-z0-9][A-Za-z0-9._:\/@+\-]{0,119}$/;
 function serviceAddress(u) {
   let url; try { url = new URL(String(u || "").trim()); } catch (e) { return ""; }
   const local = ["localhost", "127.0.0.1", "[::1]", "::1"].includes(url.hostname);
-  if (!(url.protocol === "https:" || url.protocol === "http:" && local) || url.username || url.password) return "";
+  // (no query or fragment: the endpoint is the address's path plus /chat/completions or /models, 0.14.8)
+  if (!(url.protocol === "https:" || url.protocol === "http:" && local) || url.username || url.password || url.search || url.hash || /[?#]/.test(String(u).trim())) return "";
   return url.href.replace(/\/+$/, "");
 }
 /* A ceiling, not a target: a reading of a long passage at two levels can exceed 8,000 output tokens, and an answer cut
@@ -57,10 +58,14 @@ function parseReply(text, meta, json) {
   }
 }
 
+/* A secret taken out of a text before it is shown or recorded (0.14.8). */
+function redactKey(text, key) { const k = String(key || "").trim(); return k.length >= 8 ? String(text).split(k).join("[the key]") : String(text); }
 function createAnthropicAI({ apiKey, model, maxTokens }) {
   const Anthropic = require("@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey });
   const mdl = model || DEFAULT_MODEL;
+  // the key never appears in what an error says (0.14.8), should the service or the client library repeat it
+  const redact = text => redactKey(text, apiKey);
   return {
     kind: "anthropic", model: mdl, mock: false,
     // the same key with another model, as a NEW object: a reading already running keeps the one it holds (0.14.7)
@@ -73,7 +78,7 @@ function createAnthropicAI({ apiKey, model, maxTokens }) {
       try {
         res = await client.messages.create({ model: mdl, max_tokens: maxTokens || DEFAULT_MAX_TOKENS, messages: [{ role: "user", content }] }, { signal });
       } catch (e) {
-        const err = new Error(e && e.message ? e.message : "model request failed");
+        const err = new Error(e && e.message ? redact(e.message) : "model request failed");
         err.code = e && e.status === 401 ? "bad_key" : e && e.status === 429 ? "rate_limited" : e && e.name === "AbortError" ? "cancelled" : "upstream_error";
         err.status = e && e.status;
         throw err;
@@ -229,8 +234,14 @@ function createOpenAICompatibleAI({ baseUrl, apiKey, model, maxTokens, fetch }) 
   const address = serviceAddress(baseUrl), doFetch = fetch || globalThis.fetch;
   if (!address) throw Object.assign(new Error("That is not a usable address for a model service (https, or http on this computer)."), { code: "bad_address" });
   const host = new URL(address).host;
+  // the reply-length limit as the service names it (0.14.8): OpenAI's own API takes max_completion_tokens (max_tokens is
+  // deprecated there and refused by its reasoning models); OpenRouter, Ollama, Groq and Together take max_tokens.
+  // A narrow profile by address, not a retry on errors: what was sent is what the call record shows was asked.
+  const tokenParam = host === "api.openai.com" ? "max_completion_tokens" : "max_tokens";
+  // a key never appears in what the service's error says back to the page or the record
+  const redact = text => redactKey(text, apiKey);
   return {
-    kind: "openai-compatible", model, host, mock: false,
+    kind: "openai-compatible", model, host, tokenParam, mock: false,
     withModel(other) { return createOpenAICompatibleAI({ baseUrl: address, apiKey, model: other, maxTokens, fetch: doFetch }); },
     async sample({ prompt, json, images, signal }) {
       const content = (images || []).length
@@ -240,15 +251,15 @@ function createOpenAICompatibleAI({ baseUrl, apiKey, model, maxTokens, fetch }) 
       try {
         res = await doFetch(address + "/chat/completions", { method: "POST", signal,
           headers: Object.assign({ "Content-Type": "application/json" }, apiKey ? { Authorization: "Bearer " + apiKey } : {}),
-          body: JSON.stringify({ model, max_tokens: maxTokens || DEFAULT_MAX_TOKENS, messages: [{ role: "user", content }] }) });
+          body: JSON.stringify({ model, [tokenParam]: maxTokens || DEFAULT_MAX_TOKENS, messages: [{ role: "user", content }] }) });
         body = await res.json().catch(() => null);
       } catch (e) {
-        const err = new Error(e && e.name === "AbortError" ? "Stopped" : "Could not reach " + host + " (" + String(e && e.message || e).slice(0, 120) + ").");
+        const err = new Error(e && e.name === "AbortError" ? "Stopped" : "Could not reach " + host + " (" + redact(String(e && e.message || e)).slice(0, 120) + ").");
         err.code = e && e.name === "AbortError" ? "cancelled" : "upstream_error"; throw err;
       }
       if (!res.ok) {
         const msg = body && body.error && (body.error.message || body.error) || ("HTTP " + res.status);
-        const err = new Error(host + ": " + String(msg).slice(0, 300));
+        const err = new Error(host + ": " + redact(String(msg)).slice(0, 300));
         err.code = res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : "upstream_error"; err.status = res.status; throw err;
       }
       const choice = body && Array.isArray(body.choices) && body.choices[0] || {};
@@ -278,18 +289,32 @@ async function listServiceModels({ baseUrl, apiKey, fetch, timeoutMs }) {
   } finally { clearTimeout(timer); }
 }
 
+/* The address the saved service key belongs to (0.14.8): OPENAI_API_KEY_FOR, written with the key from the page; for a
+   key without it (saved by 0.14.7, or written into .env by hand) the address it was saved beside, OPENAI_BASE_URL.
+   Empty when there is no key, or when the recorded address is not a usable one (then the key is sent nowhere). */
+function keyOwner(env) {
+  if (!String(env.OPENAI_API_KEY || "").trim()) return "";
+  return serviceAddress(String(env.OPENAI_API_KEY_FOR || "").trim() || env.OPENAI_BASE_URL);
+}
+/* The saved key for an address: only the address it belongs to gets it. A key saved for one service is never sent to
+   another, whether for a reading or for the list of models. */
+function keyFor(env, address) {
+  const owner = keyOwner(env);
+  return owner && owner === serviceAddress(address) ? String(env.OPENAI_API_KEY).trim() : "";
+}
 /* The model the server uses, from .env: the mock (DEFLATE_MOCK_AI), an OpenAI-compatible service when MODEL_PROVIDER says
    so and its address and model are set, or Claude when an Anthropic key is set. Null when what is chosen is not set up. */
 function createAI(env, opts) {
   if (env.DEFLATE_MOCK_AI === "1" || env.DEFLATE_MOCK_AI === "true") return createMockAI();
   const maxTokens = env.ANTHROPIC_MAX_TOKENS ? Number(env.ANTHROPIC_MAX_TOKENS) : undefined;
   if (env.MODEL_PROVIDER === "openai-compatible") {
-    if (!serviceAddress(env.OPENAI_BASE_URL) || !OTHER_ID.test(String(env.OPENAI_MODEL || ""))) return null;
-    return createOpenAICompatibleAI({ baseUrl: env.OPENAI_BASE_URL, apiKey: String(env.OPENAI_API_KEY || "").trim(), model: env.OPENAI_MODEL, maxTokens, fetch: opts && opts.fetch });
+    const address = serviceAddress(env.OPENAI_BASE_URL);
+    if (!address || !OTHER_ID.test(String(env.OPENAI_MODEL || ""))) return null;
+    return createOpenAICompatibleAI({ baseUrl: address, apiKey: keyFor(env, address), model: env.OPENAI_MODEL, maxTokens, fetch: opts && opts.fetch });
   }
   // a placeholder such as sk-ant-... is not a key; the page then asks for one instead of failing on first use
   if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(String(env.ANTHROPIC_API_KEY || "").trim())) return null;
   return createAnthropicAI({ apiKey: env.ANTHROPIC_API_KEY, model: env.ANTHROPIC_MODEL, maxTokens });
 }
 
-module.exports = { createAI, createMockAI, createAnthropicAI, createOpenAICompatibleAI, listServiceModels, serviceAddress, parseJSONLoose, parseReply, DEFAULT_MODEL, DEFAULT_MAX_TOKENS, MODEL_CHOICES, modelName, CLAUDE_ID, OTHER_ID };
+module.exports = { createAI, createMockAI, createAnthropicAI, createOpenAICompatibleAI, listServiceModels, serviceAddress, keyFor, keyOwner, redactKey, parseJSONLoose, parseReply, DEFAULT_MODEL, DEFAULT_MAX_TOKENS, MODEL_CHOICES, modelName, CLAUDE_ID, OTHER_ID };

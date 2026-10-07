@@ -90,7 +90,7 @@ The clean-copy checks for this version ran on Linux with Node 24 (see What was v
 
 ## Costs and keys
 
-Analysis calls go to the model chosen under Controls → App and files (0.14.7): Claude by default (Sonnet 5.5; Opus 5.5 and Fable 5.1 are listed, at about twice and five times Sonnet's price as Anthropic listed them in October 2026, and any other Claude model can be typed by its id), billed to your Anthropic key separately from any Claude.ai subscription; or any service that speaks the OpenAI-compatible chat API (OpenRouter, OpenAI, Groq, Together, or Ollama on this computer), billed by that service, or free on your own computer with Ollama. The page asks for the key once, when you first request real analysis, and writes it to `.env` on this computer with the file readable by you alone; it is not sent back to the browser, logged, or stored anywhere else, and `.env` is ignored by git. You can also put `ANTHROPIC_API_KEY=sk-ant-…` in `.env` by hand and restart. Add credit in the console under **Billing**. The default model is configured in `.env.example`. Preparation adds two speaker passes per chunk and a separate review for each reading; a rejected reading gets at most two corrections, each a short call that changes only the named parts plus a short check of them. New input without speaker labels gets two passes per 12,000 characters to work out who is speaking (labelled input only where a clip or quotation is introduced). Separating voices from a recording is billed to your Deepgram key by the minute of audio; the app does it by itself for a podcast link whose transcript has no speaker labels, unless audio is set to stay on this computer. A recording you upload and send to Deepgram is billed the same way. Finding who each voice is takes one model call per text (`identify_speakers`), and a second when the first answer cannot be used (0.14.3), plus the clip and advertisement pass on a recording's text when its words introduce one. When it settles any name, one more call checks them all (`confirm_speakers`, 0.14.5; asked again only when its answer cannot be read). A run identified by an earlier version whose names rest on the app's own reading alone, or (since 0.14.5) whose names no second reading confirmed, is identified again once, at its next reading. All of those calls use your API account. Check current prices at <https://platform.claude.com/docs/en/models/overview>.
+Analysis calls go to the model chosen under Controls → App and files (0.14.7): Claude by default (Sonnet 5.5; Opus 5.5 and Fable 5.1 are listed, at about twice and five times Sonnet's price as Anthropic listed them in October 2026, and any other Claude model can be typed by its id), billed to your Anthropic key separately from any Claude.ai subscription; or any service that speaks the OpenAI-compatible chat API (OpenRouter, OpenAI, Groq, Together, or Ollama on this computer), billed by that service, or free on your own computer with Ollama; a key saved for a service is sent only to that service's address (0.14.8). The page asks for the key once, when you first request real analysis, and writes it to `.env` on this computer with the file readable by you alone; it is not sent back to the browser, logged, or stored anywhere else, and `.env` is ignored by git. You can also put `ANTHROPIC_API_KEY=sk-ant-…` in `.env` by hand and restart. Add credit in the console under **Billing**. The default model is configured in `.env.example`. Preparation adds two speaker passes per chunk and a separate review for each reading; a rejected reading gets at most two corrections, each a short call that changes only the named parts plus a short check of them. New input without speaker labels gets two passes per 12,000 characters to work out who is speaking (labelled input only where a clip or quotation is introduced). Separating voices from a recording is billed to your Deepgram key by the minute of audio; the app does it by itself for a podcast link whose transcript has no speaker labels, unless audio is set to stay on this computer. A recording you upload and send to Deepgram is billed the same way. Finding who each voice is takes one model call per text (`identify_speakers`), and a second when the first answer cannot be used (0.14.3), plus the clip and advertisement pass on a recording's text when its words introduce one. When it settles any name, one more call checks them all (`confirm_speakers`, 0.14.5; asked again only when its answer cannot be read). A run identified by an earlier version whose names rest on the app's own reading alone, or (since 0.14.5) whose names no second reading confirmed, is identified again once, at its next reading. All of those calls use your API account. Check current prices at <https://platform.claude.com/docs/en/models/overview>.
 
 To try the workflow with no key and no bill, set `DEFLATE_MOCK_AI=1` in `.env` yourself. Every analysis is then a labelled placeholder, not a real reading; the app never switches this on for you.
 
@@ -439,7 +439,7 @@ export cannot name. This is CDIL's server-side hash at intake and Wordicon's rea
 ### Model-call record (`calls.jsonl`, `passage.provenance`; 0.8.0)
 
 Every request to the model is recorded by the server as one JSON line in `data/runs/<id>/calls.jsonl` (or
-`data/calls.jsonl` when the request names no run): `{callId, at, purpose, runId, provider, modelRequested,
+`data/calls.jsonl` when the request names no run): `{callId, at, purpose, runId, provider, providerHost (another service's host; 0.14.7, and on /api/sample since 0.14.8), modelRequested,
 modelReturned, requestId, stopReason, usage: {input, output}, latencyMs, promptHash, promptChars, outputHash,
 outputChars, images: [{mediaType, sha256}], json, mock, basedOn: {inputHash, transcriptUpdatedAt, attrSig, passagesSig?}}`; a failed call is recorded with `error` and `errorMessage`
 instead of the output fields. The record holds hashes of the prompt and the answer, never their text. The page saves
@@ -892,8 +892,9 @@ Alex asked to choose the model: Claude by default, and any model from any servic
   computer), and a model it offers; **List its models** asks the service (GET /models, free on OpenRouter, OpenAI and
   Ollama) and offers the ids as you type. The address must be https, or plain http on this computer only, so a key is
   never sent in the clear. One adapter (`createOpenAICompatibleAI`) sends one user message to `/chat/completions` with
-  no provider-specific options, and reads the answer as the Anthropic one is read (JSON loosely; "length" as cut off;
-  401/403 as a refused key; a picture as an image part).
+  no provider-specific options (since 0.14.8, one exception: the name of the reply-length field for OpenAI's own API),
+  and reads the answer as the Anthropic one is read (JSON loosely; "length" as cut off; 401/403 as a refused key; a
+  picture as an image part).
 
 The choice is written to `.env` (mode 600) by PUT /api/settings/model, which checks every value before writing any;
 the generic settings route refuses the model settings piecemeal. Keys go to the server once and never come back:
@@ -905,6 +906,59 @@ not marked out of date; each card records which model wrote it.
 Every check in the app applies to every model, but they were built and measured with Claude: the identification
 measurements and stand-in answers are Claude-class answers, and another model's answers are untested here. A model
 that writes less disciplined JSON or quotations will have more readings held or asked again, at its own cost.
+
+### The connection to another service (`OPENAI_API_KEY_FOR` in `.env`; 0.14.8)
+
+The review of 0.14.7 found that a saved service key followed the service to a new address: choose service A with its
+key, then service B with the key field left empty, and B received A's key with the next request. The page's own "Use
+this service" sends exactly that when only the address is edited. It also found that a key refused by another service
+brought up the Anthropic key prompt. Both were reproduced here first (the regression tests fail on 0.14.7).
+
+- **A key belongs to its address.** The key is saved with the address it was given for (`OPENAI_API_KEY_FOR`), and
+  `keyFor` gives it only to that address, for a reading and for the list of models alike. A key saved before 0.14.8,
+  or written into `.env` by hand without the record, belongs to the address saved beside it (`OPENAI_BASE_URL`); a
+  record that is not a usable address sends the key nowhere. Saving a service with the key field empty keeps the key
+  only when the address is the same (a model change, a trailing slash); with a different address the key is removed
+  from `.env` and the answer says so (`key: "dropped"`, `keyWasFor: <host>`), and the page says which address's key
+  was removed and why. That includes Ollama on this computer: it gets no key. A typed key replaces the saved one and is
+  bound to the new address (`key: "new"`); "Remove the saved key" in Controls removes it on purpose without changing
+  the provider (DELETE /api/settings/model/key), and the service fields' `clearKey` does the same as part of a save.
+  There is one key slot: switching back to a service whose key was removed means typing its key again. The key field
+  says, as the address is edited, whether leaving it empty keeps a key ("Key saved for this address") or not.
+- **One write.** A choice is checked whole and written to `.env` in one write (`settings.setMany`), then the server's
+  model is built from what was written, so the settings and the model in use agree; a reading already running keeps
+  the model object it started with.
+- **Recovery for the provider chosen.** When Claude is chosen, a missing or refused key brings up the Anthropic key
+  prompt, as before. When another service is chosen, a refused key brings up a prompt for that service's key, naming
+  its host and the model that stays chosen; saving it re-saves the same address and model with the new key (no request
+  to `/api/settings/anthropic-key`) and resumes the reading. A service missing its address or model points to its
+  settings in Controls ("Open the model settings"), and saving them there resumes the reading. The server's
+  no-model answer, the reading's status words and the startup line name what the chosen provider needs.
+- **The reply-length field.** OpenAI's Chat Completions reference, as the review quoted it, deprecates `max_tokens`
+  in favour of `max_completion_tokens` and says `max_tokens` is not compatible with its o-series models. Requests to
+  `api.openai.com` (exactly that host) now send `max_completion_tokens`; every other address keeps `max_tokens`, the
+  field 0.14.7 sent everywhere and the one OpenRouter, Groq, Together and Ollama are generally documented to take (not
+  re-checked against them for this release, and none called live). This is a profile by address, not a retry: a refusal is
+  one request, recorded with its error, and nothing is resent under the other name. `tokenParam` on the model object
+  says which field it sends.
+- **Addresses.** An address with a `?query` or `#part` is refused before anything is saved or asked (0.14.7 sent
+  `/v1?version=1/chat/completions`); versioned paths such as `/api/v1` work as before. Services that need a query
+  (Azure OpenAI's `api-version`) are therefore not supported.
+- **Values in `.env`.** Every value written from the page is checked to read back unchanged through dotenv before
+  anything is written (`envValue`): plain when it has nothing dotenv treats specially, in single quotes when it has a
+  `#`, a space or a quote character; a value that cannot round-trip either way (a `'` together with `#`) is refused with
+  nothing written. 0.14.7 wrote `FAKE_TOKEN#SUFFIX` unquoted and read back `FAKE_TOKEN`.
+- **Secrets in errors.** A key the service (or the Anthropic client library) repeats in an error message is replaced
+  by "[the key]" before the message reaches the page or a call record, for both adapters. The generic `/api/sample`
+  record now names the service host (`providerHost`) like every other call.
+- **The evaluation** (`npm run eval`) runs on whatever `.env` chooses; its `results.json` now records the provider and
+  host beside the model, its opening line names them, and with another service chosen but not set up it stops saying
+  so. `npm run setup` likewise reports another service's setup instead of an Anthropic key.
+
+What this does not establish: that a model a service lists works with this adapter. The list is the service's
+catalogue; whether a model accepts the request and writes readings the checks pass is shown only by a reading. For
+OpenAI's reasoning models `max_completion_tokens` also covers their hidden reasoning (OpenAI's reference describes it
+that way; not checked live here), so a long passage can run out at 16,000 and be reported as cut off.
 
 ### Names (`provenance.namesByPerson`, `basedOn.namesSig`; 0.14)
 
@@ -1124,6 +1178,21 @@ Untimed repetition is kept. Caption deduplication requires overlapping time inte
 npm test
 ```
 
+**0.14.8:** 366 tests, one of them skipped unless a private replay folder is given. One new file.
+
+`test/model-connection-0.14.8.test.js` (11 tests), for the review of 0.14.7's model-connection findings; ten fail on 0.14.7, each on the defect itself (the eleventh, a refused Claude key still bringing up the Anthropic prompt, guards what passed). Two stand-in services on this computer, reached over real HTTP, with fake keys:
+- The reviewer's sequence: A saved with its key, B listed and then chosen with the key field empty, then a request: B receives no key (0.14.7 sent `Bearer FAKE_KEY_FOR_SERVICE_A`), the answer says the key was removed and for which host, `.env` holds no key, and a restart from that `.env` sends none either. A model-only change on A keeps A's key; an Ollama-like address on this computer gets none; B with its own key gets B's key on every call of a whole reading; listing follows the same rule; no key in any answer, record, health status or bundle; `.env` at mode 600.
+- Removal on purpose (the fields' `clearKey`, and Controls' button, which leaves Claude chosen when Claude is); a new key and a removal together refused with nothing written; the address record not settable through the generic route.
+- A key saved before 0.14.8 stays with the address saved beside it; a hand-edited address does not inherit a key recorded for another; an unusable record sends the key nowhere.
+- The shipped page: the address edited with the key left empty, the note saying the saved key is not sent there, the save message naming the removed key's host, and the next reading reaching B with no key.
+- The shipped page: a refused service key brings up "Replace the service key" and a field for that host's key (not Anthropic's); saving it keeps the address and model, makes no request to `/api/settings/anthropic-key`, and the reading resumes and completes. A refused Claude key still asks for the Anthropic key. Another service with no address or model: the status and the prompt point to its settings, and saving them in Controls resumes the reading.
+- The server's no-model answer for each provider.
+- The reply-length field: a whole reading through `api.openai.com` under a contract that refuses `max_tokens` (OpenAI's documented rule for its reasoning models), and a whole reading through a local service that takes only `max_tokens`; the field for five addresses; a refusal sent once and recorded, never retried.
+- Addresses with `?query` or `#part` refused before anything is saved or asked; `FAKE_TOKEN#SUFFIX` saved quoted, read back whole after a restart and sent whole; a value .env cannot hold refused with nothing written.
+- A key the service repeats in its error replaced before the page or the record sees it, for both adapters (Claude's against a stand-in endpoint on this computer); `/api/sample`'s record names the host.
+
+Each safeguard was removed in turn and tests failed: the key's binding in `keyFor` (2), the route keeping a key only for the same address (2), the provider-aware prompt (2), the reader's provider-aware words (2), the no-model answer (1), the reply-length profile (1), the address rule (1), quoting in `.env` (1), redaction (1), the host on `/api/sample` (1). `npm run ui-check` adds four checks of the same flows in Chromium (the service key prompt at 1440 and 390 pixels, the reading resuming, and a new address getting no key): 60 checks.
+
 **0.14.7:** 355 tests, one of them skipped unless a private replay folder is given. Two new files.
 
 `test/stabilization-0.14.7.test.js` (7 tests), for the four findings of the independent review of 0.14.6, each reproduced on 0.14.6 first; all seven fail there:
@@ -1337,6 +1406,33 @@ A diagnostic pilot with 5 to 8 ordinary readers, to learn whether the three-bloc
 ## Reviews
 
 Each release since 0.11.0 was reviewed by a second model working from the code, and the next release fixed what it found; 0.12 followed an external review and brief. Newest first.
+
+### 0.14.8: a key that followed the service, and an Anthropic prompt for another service's key
+
+The independent review of 0.14.7 closed the four 0.14.6 findings and found two defects in the new model selector,
+both reproduced with ordinary local stand-ins and fake keys: switching to a new service address with the key field
+empty sent the previous service's saved key to the new address (what the page's own "Use this service" sends when only
+the address is edited), and a key refused by another service brought up the Anthropic key prompt, which cannot repair
+that service's key. It also recorded a request incompatibility (the adapter always sent `max_tokens`, which OpenAI's
+reference says its o-series models refuse), two accepted-input edges (an address with `?query` built a wrong endpoint;
+a key with `#` was cut at the `#` after a restart), unredacted provider error text, and `/api/sample` records without
+the host. The instruction: repair the selector before using it for any provider comparison, and resolve or constrain
+the rest. Each was reproduced here on 0.14.7 first; the repairs are under Records (The connection to another service).
+
+**Decisions to check.**
+
+1. One key slot. A key leaves `.env` when a different address is saved without one, rather than staying dormant for
+   its old address; switching back means typing it again. The alternative (keep it, send it only to its own address)
+   would avoid retyping but leaves a key on disk the page no longer describes as this service's.
+2. The reply-length field is chosen by address: exactly `api.openai.com` gets `max_completion_tokens`; everything else,
+   OpenRouter's routes to OpenAI models included, gets `max_tokens`. No negotiation retry was added: a refusal is one
+   recorded failure, so no billable attempt is hidden behind a second request.
+3. Addresses with a query are refused rather than supported, so Azure OpenAI is out of scope.
+4. A value .env cannot hold exactly is refused before anything is written, rather than escaped by a scheme dotenv does
+   not read back.
+5. Nothing here was called live: the OpenAI field rule is from OpenAI's reference as the review quoted it (a fetch of
+   that page here did not surface the parameter text), and the other services keep the field 0.14.7 sent them, not
+   re-checked against their documentation for this release.
 
 ### 0.14.7: short qualifications, standalone numbers, preparation's names, the overview's gate
 
@@ -1714,7 +1810,12 @@ Upload, paste text, or paste a link and press **Read this**. Reading preparation
   reads as a dialogue of its headings. Either way nothing is deleted, and since 0.14.7 every line, headings included,
   reaches the model.
 - Models other than Claude (0.14.7) are reached through one OpenAI-compatible adapter and are untested against the
-  app's checks; how often their readings are held or asked again, and what they cost, is unmeasured.
+  app's checks; how often their readings are held or asked again, and what they cost, is unmeasured. The supported
+  surface (0.14.8): Anthropic's API; OpenAI's own API with `max_completion_tokens`; other services that take
+  `max_tokens` on `{address}/chat/completions` with a Bearer key or none (OpenRouter, Groq, Together, Ollama are the
+  intended ones; none was called live). Not supported: addresses that need a query (Azure OpenAI), services that
+  authenticate other than by a Bearer key, and provider-specific options. A listed model is not shown to work until a
+  reading through it passes. One service key is kept at a time.
 - The model cannot browse. "Unchecked" means exactly that; a receipt is a person's work. A search finds candidates; it does not find truth, and a candidate's presence says nothing about what it concludes.
 - "No retraction or correction notice found" means Crossref lists none for that DOI. It is not an endorsement, and preprints and books are thinly covered.
 - A source is never a verification. The word does not appear on a card; the claims export carries `statusMeaning` so other tools do not read "receipt" as "verified" either.

@@ -4,7 +4,7 @@
    exits non-zero on the first failed check. Needs:  npm install --no-save playwright  (and a Chromium; set
    DEFLATE_CHROMIUM_EXECUTABLE to use one already installed). Pictures go to scripts/ui-shots/. */
 const fs = require("fs"), os = require("os"), path = require("path"), assert = require("node:assert/strict");
-const { createApp } = require("../server/app"), { createMockAI } = require("../server/ai"), { createResearch } = require("../server/research");
+const http = require("http"), { createApp } = require("../server/app"), { createMockAI, createAI } = require("../server/ai"), { createResearch } = require("../server/research");
 const { cuesToText } = require("../server/podcast/transcripts"), audioFiles = require("../test/fixtures/audio-files");
 
 const T = Array.from({ length: 18 }, (_, i) => (i % 2 ? "GUEST" : "HOST") + ": This is an argument with enough words for a quoted passage number " + i + "." + (i === 3 ? " That shows everyone agrees with it." : "")).join("\n");
@@ -67,8 +67,24 @@ function testAI() {
   } };
 }
 
+/* A model service on this computer that speaks the OpenAI-compatible chat API and answers through the mock responder
+   (0.14.8). `accept(auth)` decides whether a key is accepted; every Authorization header is kept in `seen`. */
+async function localService(accept) {
+  const seen = [], mock = createMockAI();
+  const srv = http.createServer((req, res) => { let raw = ""; req.on("data", c => { raw += c; }); req.on("end", async () => {
+    const auth = req.headers.authorization || ""; seen.push(auth); res.setHeader("content-type", "application/json");
+    if (!accept(auth)) { res.statusCode = 401; return res.end(JSON.stringify({ error: { message: "Incorrect API key provided." } })); }
+    const body = JSON.parse(raw || "{}"), out = await mock.sample({ prompt: body.messages[0].content, json: true });
+    res.end(JSON.stringify({ id: "chatcmpl-ui", model: body.model, choices: [{ message: { role: "assistant", content: JSON.stringify(out.data) }, finish_reason: "stop" }] }));
+  }); });
+  await new Promise(r => srv.listen(0, "127.0.0.1", r));
+  return { url: "http://127.0.0.1:" + srv.address().port + "/v1", host: "127.0.0.1:" + srv.address().port, seen, close: () => new Promise(r => srv.close(r)) };
+}
+const MODEL_ENV = ["MODEL_PROVIDER", "OPENAI_BASE_URL", "OPENAI_MODEL", "OPENAI_API_KEY", "OPENAI_API_KEY_FOR"];
+
 (async () => {
   const { chromium } = require("playwright");
+  const services = [], envWas = Object.fromEntries(MODEL_ENV.map(k => [k, process.env[k]]));
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "deflate-browser-")), shots = path.join(__dirname, "ui-shots"); fs.mkdirSync(shots, { recursive: true });
   const system = createApp({ dataDir: dir, ai: testAI(), research: createResearch({ DEFLATE_MOCK_RESEARCH: "1" }), fetch: fakeFetch, run: fakeYtdlp, cloudEngine: fakeCloud, env: {}, envPath: path.join(dir, ".env") }); await system.ready;
   const server = await new Promise(r => { const s = system.app.listen(0, "127.0.0.1", () => r(s)); });
@@ -369,12 +385,40 @@ function testAI() {
     await page.waitForFunction(() => /supplied example/.test((document.querySelector("#notices") || {}).textContent || ""), null, { timeout: 20000 });
     check("exampleHeld", await page.locator(".card:not(.waiting)").count() === 0 && /Copy and read this example/.test(await page.locator("#notices").innerText()));
 
+    /* 14. Another model service (0.14.8): a key the service refuses is replaced as that service's key, never with the
+       Anthropic prompt, and the reading resumes; a new address saved with the key left empty gets no key */
+    const svcA = await localService(auth => auth === "Bearer FAKE_GOOD_SERVICE_KEY"), svcB = await localService(() => true); services.push(svcA, svcB);
+    Object.assign(process.env, { MODEL_PROVIDER: "openai-compatible", OPENAI_BASE_URL: svcA.url, OPENAI_MODEL: "m1", OPENAI_API_KEY: "FAKE_REFUSED_SERVICE_KEY", OPENAI_API_KEY_FOR: svcA.url });
+    system.state.ai = createAI(process.env);
+    const anthropicKeyRequests = []; page.on("request", r => { if (/\/api\/settings\/anthropic-key$/.test(r.url())) anthropicKeyRequests.push(r.method()); });
+    await page.setViewportSize({ width: 1440, height: 900 }); await page.goto("about:blank"); await page.goto(root); await page.waitForFunction(() => !!document.querySelector("#storeChip"));
+    await read(page, T.replace(/argument/g, "position"));
+    await page.waitForFunction(() => /did not accept its key/.test((document.querySelector("#reading-status") || {}).textContent || ""), null, { timeout: 30000 });
+    await page.getByRole("button", { name: "Replace the service key" }).click();
+    const keyLabel = await page.locator("#reading-status .keybox input").getAttribute("aria-label"), keyBox = await page.locator("#reading-status .keybox").innerText();
+    check("serviceKeyPrompt", keyLabel === "Key for " + svcA.host && !/Anthropic/.test(keyBox) && /Readings use m1 through/.test(keyBox), { keyLabel, keyBox });
+    await page.screenshot({ path: path.join(shots, "service-key.png") });
+    await page.setViewportSize({ width: 390, height: 844 }); await page.screenshot({ path: path.join(shots, "service-key-390.png") });
+    check("serviceKeyPromptPhone", await noHScroll(page)); await page.setViewportSize({ width: 1440, height: 900 });
+    await page.fill("#reading-status .keybox input", "FAKE_GOOD_SERVICE_KEY"); await page.getByRole("button", { name: "Save key and continue" }).click();
+    await ready(page);
+    check("serviceKeyResumes", anthropicKeyRequests.length === 0 && svcA.seen.at(-1) === "Bearer FAKE_GOOD_SERVICE_KEY", { anthropicKeyRequests, last: svcA.seen.at(-1) });
+    await page.locator("#controlsBtn").click(); await page.fill("#svc-address", svcB.url);
+    const keyHint = await page.locator("#svc-key-note").innerText();
+    await page.getByRole("button", { name: "Use this service" }).scrollIntoViewIfNeeded(); await page.screenshot({ path: path.join(shots, "service-address.png") });
+    await page.getByRole("button", { name: "Use this service" }).click();
+    await page.waitForFunction(() => /was removed: a key is only sent to the address it was saved for/.test((document.querySelector("#say") || {}).textContent || ""), null, { timeout: 10000 });
+    await page.keyboard.press("Escape"); await read(page, T.replace(/argument/g, "proposal")); await ready(page);
+    check("serviceKeyStaysWithItsAddress", /is not sent to this address/.test(keyHint) && svcB.seen.length > 2 && svcB.seen.every(a => a === ""), { keyHint, seen: svcB.seen.slice(0, 3) });
+    system.state.ai = testAI(); for (const k of MODEL_ENV) { if (envWas[k] === undefined) delete process.env[k]; else process.env[k] = envWas[k]; }
+
     check("noPageErrors", errors.length === 0, errors);
     check("onlyTheDeliberateRefusals", refused.length === 2, refused); // the short Deepgram key and the first, bad model key
     console.log(JSON.stringify(report, null, 2));
     console.log("ui-check: " + Object.keys(report).length + " checks passed");
   } finally {
     for (const job of system.reader.jobs.values()) job.controller.abort(); await Promise.all([...system.reader.jobs.values()].map(j => j.done));
-    if (browser) await browser.close(); await new Promise(r => server.close(r)); fs.rmSync(dir, { recursive: true, force: true });
+    if (browser) await browser.close(); await new Promise(r => server.close(r)); for (const s of services) await s.close(); fs.rmSync(dir, { recursive: true, force: true });
+    for (const k of MODEL_ENV) { if (envWas[k] === undefined) delete process.env[k]; else process.env[k] = envWas[k]; }
   }
 })().catch(e => { console.error(e); process.exitCode = 1; });

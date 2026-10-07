@@ -13,7 +13,7 @@ const { createResearch } = require("../server/research");
 const { createSettings } = require("../server/settings");
 const { page, visible } = require("./page-harness");
 
-const ENV_KEYS = ["ANTHROPIC_MODEL", "MODEL_PROVIDER", "OPENAI_BASE_URL", "OPENAI_API_KEY", "OPENAI_MODEL", "ANTHROPIC_API_KEY"];
+const ENV_KEYS = ["ANTHROPIC_MODEL", "MODEL_PROVIDER", "OPENAI_BASE_URL", "OPENAI_API_KEY", "OPENAI_API_KEY_FOR", "OPENAI_MODEL", "ANTHROPIC_API_KEY"];
 function keepEnv(t) { const was = Object.fromEntries(ENV_KEYS.map(k => [k, process.env[k]])); t.after(() => { for (const k of ENV_KEYS) { if (was[k] === undefined) delete process.env[k]; else process.env[k] = was[k]; } }); for (const k of ENV_KEYS) delete process.env[k]; }
 function deferred() { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; }
 /* A stand-in for Claude that records which model each call went to; withModel gives a new object, as the real one does. */

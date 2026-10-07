@@ -38,6 +38,7 @@ test("eval: every finished case is on disk with its call records, and the sheet 
   assert.match(sheet, /call records: store\/runs\/[^/]+\/calls\.jsonl/);
   const res = JSON.parse(fs.readFileSync(path.join(out, "results.json"), "utf8"));
   assert.equal(res.finished, true); assert.equal(res.completed, 2); assert.doesNotMatch(sheet, /Incomplete/);
+  assert.equal(res.provider, "mock", "the results say which service answered (0.14.8)");
 });
 
 test("eval: a run stopped partway keeps every case it finished and says the sheet is incomplete", async t => {

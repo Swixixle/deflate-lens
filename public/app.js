@@ -51,10 +51,10 @@ function lvl(obj){
   return wrap;
 }
 function errCopy(e){
-  var c = e && e.code;
+  var c = e && e.code, other = otherService();
   var map = {
-    no_ai:"Add the model key once to continue.",
-    bad_key:"The model key was not accepted. Replace it and try again.",
+    no_ai: other ? "The model service chosen under Controls is not fully set up: give its address and a model it offers." : "Add the model key once to continue.",
+    bad_key: other ? "The model service did not accept its key. Replace that service's key and try again." : "The model key was not accepted. Replace it and try again.",
     rate_limited:"Too many requests right now. Wait a minute and try again.",
     cancelled:"Stopped.",
     stale_reading:"This card changed since you looked (another tab, a reread, or an edit). It has been reloaded; try again.",
@@ -143,6 +143,7 @@ var API = {
   preferEngine(engine){ return API.req("PUT","/api/transcript/prefer", {engine:engine}); },
   setKey(key){ return API.req("POST","/api/settings/anthropic-key", {key:key}); },
   setModel(choice){ return API.req("PUT","/api/settings/model", choice); },
+  removeServiceKey(){ return API.req("DELETE","/api/settings/model/key"); },
   listModels(q){ return API.req("POST","/api/settings/model/list", q); },
   listTrash(){ return API.req("GET","/api/trash"); },
   restoreRun(name){ return API.req("POST","/api/trash/" + name + "/restore"); }
@@ -630,11 +631,23 @@ async function transcribeRecordingInner(file, choice, ui){
   await fetchTranscriptInner("", "", started.engine || choice || "", sub, started.jobId);
 }
 
-/* The one-time key prompt: shown when real analysis is asked for and no model is configured. The key goes to the
-   server, which writes it to .env on this computer; it is never kept or shown in the page. */
-function ensureAI(where, continueWith){
-  if (S.ai) return true;
+/* The one-time model setup prompt: shown when real analysis is asked for and no model is set up, or (`replace`) when the
+   service refused its key. It asks for what the chosen provider needs (0.14.8): Claude, the Anthropic key; another
+   service, that service's own key, saved with its address and model as chosen, or, when its address or model is missing,
+   the way to its settings under Controls. Either way the reading resumes after the save. A key goes to the server, which
+   writes it to .env on this computer; it is never kept or shown in the page. */
+function ensureAI(where, continueWith, replace){
+  if (S.ai && !replace) return true;
   var host = where || view; var old = host.querySelector(".keybox"); if (old) old.remove();
+  var box = otherService() ? serviceKeyBox(continueWith) : anthropicKeyBox(continueWith);
+  host.insertBefore(box, host.firstChild);
+  box.scrollIntoView({block:"nearest"});
+  return false;
+}
+/* the model provider chosen in Controls (0.14.8): another service than Claude, and that service's host with its port */
+function otherService(){ return !!(S.health && S.health.models && S.health.models.provider === "openai-compatible"); }
+function serviceHost(u){ try { return new URL(u).host; } catch(e){ return String(u || ""); } }
+function anthropicKeyBox(continueWith){
   var inp = h("input",{type:"password",placeholder:"sk-ant-…",autocomplete:"off","aria-label":"Anthropic API key"});
   var save = h("button",{class:"btn primary",type:"button",text:"Save key and continue",onclick:async function(){
     if (S.busy) return; S.busy = true; save.disabled = true;
@@ -643,9 +656,24 @@ function ensureAI(where, continueWith){
   }});
   var note = h("p",{class:"hint",text:"Get a key at console.anthropic.com (API keys). Each reading is billed to that account. The key is written to the .env file in the app folder on this computer and is not sent back to the browser, logged, or stored anywhere else."});
   var box = h("div",{class:"note info keybox"}, h("p",{text:"Real analysis needs your Anthropic API key, once. Searching sources works without it."}), h("div",{class:"row"}, inp, save), note);
-  host.insertBefore(box, host.firstChild);
-  box.scrollIntoView({block:"nearest"});
-  return false;
+  return box;
+}
+function serviceKeyBox(continueWith){
+  var o = S.health.models.other || {}, at = serviceHost(o.baseUrl);
+  // the service's settings under Controls; the reading resumes once they are saved there
+  var settings = h("button",{class:"btn quiet", type:"button", text:"Open the model settings", onclick:function(){ S.afterModelSave = continueWith ? {runId: S.runId, go: continueWith} : null; openDrawer("controls", "#svc-address"); }});
+  if (!o.baseUrl || !o.model) return h("div",{class:"note info keybox"}, h("p",{text:"Readings are set to use another model service, which is not fully set up: it needs its address and a model it offers. Your text is saved."}), h("div",{class:"row"}, settings));
+  var inp = h("input",{type:"password", autocomplete:"off", placeholder:"Key for " + at, "aria-label":"Key for " + at});
+  var note = h("p",{class:"hint", text:"Readings use " + o.model + " through " + at + "; that stays as chosen. The key is written to .env on this computer and sent only to " + at + ". It is not shown here again."});
+  var save = h("button",{class:"btn primary", type:"button", text:"Save key and continue", onclick:async function(){
+    if (S.busy) return;
+    if (!inp.value.trim()) { note.textContent = "Type the key " + at + " gave you first."; return; }
+    S.busy = true; save.disabled = true;
+    try { var out = await API.setModel({provider:"openai-compatible", baseUrl:o.baseUrl, model:o.model, apiKey:inp.value}); S.ai = out.ai; S.health.models = out.models; inp.value = ""; box.remove(); S.busy = false; setStore("ready", ""); if (continueWith) await continueWith(); else renderRun(); }
+    catch(e){ S.busy = false; save.disabled = false; note.textContent = errCopy(e); }
+  }});
+  var box = h("div",{class:"note info keybox"}, h("p",{text:"The model service at " + at + " needs a key it accepts."}), h("div",{class:"row"}, inp, save, settings), note);
+  return box;
 }
 /* ---- 2 Provenance ---- */
 
@@ -838,8 +866,9 @@ function buildStatus(el){
     var stop = h("button",{class:"btn quiet", type:"button", text:"Stop", onclick:async function(){ stop.disabled = true; stopNote.hidden = false; try { await reload(await API.stopReading(r.id)); } catch(e){ say(errCopy(e)); stop.disabled = false; } }});
     actions.append(stop); el.append(actions, stopNote);
   } else if (info.action) { actions.append(h("button",{class:"btn primary", type:"button", text:info.action, onclick:startReading})); el.append(actions); }
-  if (proc.error && proc.error.code === "bad_key") el.append(h("button",{class:"btn", type:"button", text:"Replace the model key", onclick:function(){ S.ai = null; ensureAI(el, startReading); }}));
-  if ((proc.status === "awaiting_key" && !S.ai) || keyboxNow) ensureAI(el, startReading);
+  // a refused key: the key of the provider chosen (0.14.8), asked for in place; the model as chosen is kept meanwhile
+  if (proc.error && proc.error.code === "bad_key") el.append(h("button",{class:"btn", type:"button", text: otherService() ? "Replace the service key" : "Replace the model key", onclick:function(){ ensureAI(el, startReading, true); }}));
+  if ((proc.status === "awaiting_key" && !S.ai) || keyboxNow) ensureAI(el, startReading, !!keyboxNow);
 }
 
 /* ---- contents ---- */
@@ -1393,7 +1422,16 @@ function ctlApp(){
     : other ? "The other service is not fully set up: give its address and model below."
     : "No model key yet. The app asks for it the first time a reading needs it.";
   var m = ctlItem(h("h3",{text:"Model"}), h("p",{text:status}));
-  var saved = function(out, what){ S.ai = out.ai; S.health.models = out.models; say("Saved. New readings use " + what + "."); renderControls(true); };
+  // after a save: what new readings use, what happened to the service key (0.14.8), and a reading that was waiting for
+  // this setup resumes
+  var saved = function(out, what){
+    S.ai = out.ai; S.health.models = out.models;
+    var k = out.key === "new" ? " Its key is saved." : out.key === "removed" ? " The saved key was removed." : out.key === "dropped" ? " The key saved for " + (out.keyWasFor || "the previous address") + " was removed: a key is only sent to the address it was saved for. Give this service's key if it needs one." : "";
+    say("Saved. New readings use " + what + "." + k); renderControls(true);
+    // (only for the reading that asked, if it is still the one open)
+    var next = S.afterModelSave; S.afterModelSave = null;
+    if (next && S.ai && next.runId === S.runId) { closeDrawer("controls", true); return next.go(); }
+  };
   if (models && !mock) {
     var prov = h("select",{"aria-label":"Who provides the model"}, h("option",{value:"anthropic", text:"Claude (Anthropic)", selected:other ? null : "selected"}), h("option",{value:"openai-compatible", text:"Another service (OpenAI-compatible)", selected:other ? "selected" : null}));
     m.append(field("Model from", prov));
@@ -1404,16 +1442,29 @@ function ctlApp(){
     var pick = h("select",{"aria-label":"Claude model"}, models.choices.map(function(c){ return h("option",{value:c.id, text:c.name + " — " + c.note, selected:c.id === models.claude ? "selected" : null}); }).concat([h("option",{value:"", text:"Another Claude model…", selected:listed ? null : "selected"})]));
     var cid = h("input",{type:"text", autocomplete:"off", spellcheck:"false", placeholder:"claude-…", "aria-label":"Claude model id", value:listed ? "" : models.claude, hidden:listed});
     pick.addEventListener("change", function(){ cid.hidden = pick.value !== ""; });
-    var csv = h("button",{class:"btn quiet", type:"button", text:"Use this model", onclick:async function(){ var id = pick.value || cid.value.trim(); csv.disabled = true; try { saved(await API.setModel({provider:"anthropic", model:id}), nameOf(id)); } catch(err){ csv.disabled = false; say(errCopy(err)); } }});
+    var csv = h("button",{class:"btn quiet", type:"button", text:"Use this model", onclick:async function(){ var id = pick.value || cid.value.trim(); csv.disabled = true; try { await saved(await API.setModel({provider:"anthropic", model:id}), nameOf(id)); } catch(err){ csv.disabled = false; say(errCopy(err)); } }});
     claudeBox.append(field("Claude model", pick), cid, h("div",{class:"row"}, csv));
     // another service: its address, its key (none for Ollama on this computer), and a model it offers
-    var addr = h("input",{type:"url", autocomplete:"off", spellcheck:"false", placeholder:"https://openrouter.ai/api/v1", "aria-label":"Service address", value:models.other.baseUrl || ""});
-    var okey = h("input",{type:"password", autocomplete:"off", placeholder:models.other.keySet ? "Key saved — leave empty to keep it" : "Key (none for Ollama on this computer)", "aria-label":"Service key"});
+    var addr = h("input",{type:"url", id:"svc-address", autocomplete:"off", spellcheck:"false", placeholder:"https://openrouter.ai/api/v1", "aria-label":"Service address", value:models.other.baseUrl || ""});
+    var okey = h("input",{type:"password", autocomplete:"off", "aria-label":"Service key"});
+    // the saved key belongs to the saved address (0.14.8): the field says whether leaving it empty keeps a key here
+    // (compared as the server compares them: the address as a URL, without a trailing slash)
+    var sameAddr = function(){ try { return !!models.other.baseUrl && new URL(addr.value.trim()).href.replace(/\/+$/, "") === models.other.baseUrl; } catch(e){ return false; } };
+    var okeyNote = h("p",{class:"hint", id:"svc-key-note", hidden:true});
+    var keyHint = function(){
+      var same = sameAddr();
+      okey.setAttribute("placeholder", models.other.keySet && same ? "Key saved — leave empty to keep it" : models.other.keySet ? "Key for this address" : "Key (none for Ollama on this computer)");
+      okeyNote.hidden = !(models.other.keySet && !same);
+      okeyNote.textContent = okeyNote.hidden ? "" : "The saved key belongs to " + serviceHost(models.other.baseUrl) + " and is not sent to this address. Leave the field empty for no key; saving removes the old key.";
+    };
+    keyHint(); addr.addEventListener("input", keyHint);
     var omod = h("input",{type:"text", autocomplete:"off", spellcheck:"false", placeholder:"A model the service offers (List its models)", "aria-label":"Model id", value:models.other.model || "", list:"svc-models"});
     var olist = h("datalist",{id:"svc-models"}), onote = h("p",{class:"hint"});
-    var load = h("button",{class:"btn quiet", type:"button", text:"List its models", onclick:async function(){ load.disabled = true; onote.textContent = "Asking " + addr.value + "…"; try { var out = await API.listModels({baseUrl:addr.value, apiKey:okey.value}); clear(olist); out.models.forEach(function(id){ olist.append(h("option",{value:id})); }); onote.textContent = out.models.length + " models offered. Type to search them in the model field."; } catch(err){ onote.textContent = errCopy(err); } load.disabled = false; }});
-    var osv = h("button",{class:"btn quiet", type:"button", text:"Use this service", onclick:async function(){ osv.disabled = true; try { saved(await API.setModel({provider:"openai-compatible", baseUrl:addr.value, apiKey:okey.value, model:omod.value}), omod.value.trim()); } catch(err){ osv.disabled = false; say(errCopy(err)); } }});
-    otherBox.append(field("Service address", addr), field("Service key", okey), field("Model", omod), olist, h("div",{class:"row"}, load, osv), onote,
+    var load = h("button",{class:"btn quiet", type:"button", text:"List its models", onclick:async function(){ load.disabled = true; onote.textContent = "Asking " + addr.value + "…"; try { var out = await API.listModels({baseUrl:addr.value, apiKey:okey.value}); clear(olist); out.models.forEach(function(id){ olist.append(h("option",{value:id})); }); onote.textContent = out.models.length + " models offered. Type to search them in the model field. Being listed does not mean a model works with this app: the first reading shows that."; } catch(err){ onote.textContent = err && err.message ? String(err.message) : errCopy(err); } load.disabled = false; }});
+    var osv = h("button",{class:"btn quiet", type:"button", text:"Use this service", onclick:async function(){ osv.disabled = true; try { await saved(await API.setModel({provider:"openai-compatible", baseUrl:addr.value, apiKey:okey.value, model:omod.value}), omod.value.trim()); } catch(err){ osv.disabled = false; say(errCopy(err)); } }});
+    // removing the saved key on purpose; the provider and the rest of the connection stay as they are
+    var orm = models.other.keySet ? h("button",{class:"btn quiet", type:"button", text:"Remove the saved key", onclick:async function(){ orm.disabled = true; try { var out = await API.removeServiceKey(); S.ai = out.ai; S.health.models = out.models; say("The saved service key was removed."); renderControls(true); } catch(err){ orm.disabled = false; say(errCopy(err)); } }}) : null;
+    otherBox.append(field("Service address", addr), field("Service key", okey), okeyNote, field("Model", omod), olist, h("div",{class:"row"}, load, osv, orm), onote,
       h("p",{class:"hint",text:"OpenRouter reaches models from many companies with one key; Ollama runs models on this computer (http://localhost:11434/v1, no key). The app's checks were built with Claude: another model may have more readings held or asked again."}));
     m.append(claudeBox, otherBox, h("p",{class:"hint",text:"Applies from the next reading; a reading in progress finishes with the model it started with. Each card records which model wrote it."}));
   }

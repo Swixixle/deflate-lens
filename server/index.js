@@ -23,8 +23,10 @@ ready.then(() => {
     console.log("  Deflate Lens is running.");
     console.log("  Open this address in your browser:  " + url);
     console.log("  Data folder:                         " + path.resolve(DATA_DIR));
-    if (!ai) console.log("  Model:                               none configured. The supplied example works; real analysis asks for your Anthropic API key once (saved to .env on this computer).");
+    if (!ai && process.env.MODEL_PROVIDER === "openai-compatible") console.log("  Model:                               another service was chosen but is not fully set up (its address and model: Controls → App and files).");
+    else if (!ai) console.log("  Model:                               none configured. The supplied example works; real analysis asks for your Anthropic API key once (saved to .env on this computer).");
     else if (ai.mock) console.log("  Model:                               MOCK (DEFLATE_MOCK_AI=1). Analyses will be placeholders, not real readings.");
+    else if (ai.kind === "openai-compatible") console.log("  Model:                               " + ai.model + " through " + ai.host + " (usage is billed by that service)");
     else console.log("  Model:                               " + ai.model + " (Anthropic API; usage is billed to your key)");
     console.log("  Research:                            " + (research.config.mock ? "MOCK (DEFLATE_MOCK_RESEARCH=1)" : "Crossref + PubMed + GDELT news" + (research.config.openalexKey ? " + OpenAlex" : " (OpenAlex off: no OPENALEX_API_KEY)") + (research.config.contact ? "" : "; set RESEARCH_CONTACT_EMAIL for the polite pools")));
     console.log("  Stop with Ctrl+C. Start again later with: npm start");

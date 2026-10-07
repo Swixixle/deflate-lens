@@ -46,9 +46,11 @@ const envPath = path.join(root, ".env"), examplePath = path.join(root, ".env.exa
 if (!fs.existsSync(envPath)) { fs.copyFileSync(examplePath, envPath); try { fs.chmodSync(envPath, 0o600); } catch (e) {} log(".env created from .env.example (no key yet)"); }
 else log(".env already present; left exactly as it was");
 const env = {}; for (const line of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) { const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)$/.exec(line); if (m) env[m[1]] = m[2].trim(); }
-const hasKey = /^sk-ant-[A-Za-z0-9_-]{20,}$/.test(env.ANTHROPIC_API_KEY || "");
+// (another service chosen, 0.14.8: what it needs is its address and model; its key is optional)
+const other = env.MODEL_PROVIDER === "openai-compatible";
+const hasKey = other ? !!(env.OPENAI_BASE_URL && env.OPENAI_MODEL) : /^sk-ant-[A-Za-z0-9_-]{20,}$/.test(env.ANTHROPIC_API_KEY || "");
 const mock = env.DEFLATE_MOCK_AI === "1" || process.env.DEFLATE_MOCK_AI === "1";
-log("Model key: " + (hasKey ? "present" : "not set") + (mock ? " (DEFLATE_MOCK_AI=1: analyses will be placeholders)" : ""));
+log((other ? "Model: another service, " + (hasKey ? "address and model set" : "not fully set up (address or model missing)") : "Model key: " + (hasKey ? "present" : "not set")) + (mock ? " (DEFLATE_MOCK_AI=1: analyses will be placeholders)" : ""));
 log("Research contact e-mail: " + (env.RESEARCH_CONTACT_EMAIL ? "set" : "not set (optional; Crossref is faster with one)"));
 log("OpenAlex key: " + (env.OPENALEX_API_KEY ? "set" : "not set (optional)"));
 
@@ -77,6 +79,7 @@ if (args.has("--test")) {
 
 console.log("\n  Ready. Start it with:  npm run launch     (starts the server, waits until it answers, opens the page)");
 console.log("  Or without a browser:  npm start          Stop with Ctrl+C.");
-if (!hasKey && !mock) console.log("  Source search works without a key. Real analysis and preparation ask for your Anthropic API key once, in the page.");
+if (!hasKey && !mock) console.log(other ? "  Source search works without a model. Real analysis needs the model service chosen in .env set up: its address and model, under Controls → App and files."
+  : "  Source search works without a key. Real analysis and preparation ask for your Anthropic API key once, in the page (or choose another service under Controls → App and files).");
 console.log("");
 }
