@@ -170,7 +170,7 @@ test("youtube: yt-dlp is preferred when present (a fake writes the VTT), the bui
   let r = await YT.captions({ url: "https://youtu.be/AbCdEfGhIjK", fetch: f, env: {}, run: fakeYtdlp }); assert.equal(r.reader, "yt-dlp"); assert.match(r.text, /^from yt-dlp/); assert.equal(r.title, "Ep 2 video");
   r = await YT.captions({ url: "https://youtu.be/AbCdEfGhIjK", fetch: f, env: {}, run: noYtdlp }); assert.equal(r.reader, "built-in"); assert.equal(r.tried[0].reader, "yt-dlp"); assert.match(r.tried[0].error, /not installed/);
   const refused = fakeFetch(u => /youtubei/.test(u) ? { body: { playabilityStatus: { status: "LOGIN_REQUIRED", reason: "Sign in to confirm you’re not a bot" } } } : null);
-  await assert.rejects(YT.captions({ url: "https://youtu.be/AbCdEfGhIjK", fetch: refused, env: {}, run: noYtdlp }), /not a bot.*yt-dlp usually gets through/);
+  await assert.rejects(YT.captions({ url: "https://youtu.be/AbCdEfGhIjK", fetch: refused, env: {}, run: noYtdlp }), e => e.code === "youtube_access_blocked" && /not a bot/.test(e.message) && !/usually gets through/.test(e.message));
   const none = fakeFetch(u => /youtubei/.test(u) ? { body: { playabilityStatus: { status: "OK" }, captions: {} } } : null);
   await assert.rejects(YT.captions({ url: "https://youtu.be/AbCdEfGhIjK", fetch: none, env: {}, run: noYtdlp }), /no captions/);
   // A title-only search result must not silently become this episode’s transcript.

@@ -151,7 +151,7 @@ var API = {
 function fileToBase64(file){ return new Promise(function(resolve, reject){ var r = new FileReader(); r.onload = function(){ resolve(String(r.result).split(",")[1]); }; r.onerror = reject; r.readAsDataURL(file); }); }
 
 /* ---------- state ---------- */
-var S = {health:null, ai:null, research:null, engines:null, runs:[], trash:[], runId:null, b:null, turns:[], busy:false, abort:null, view:"new", rendered:null, draft:{}};
+var S = {health:null, ai:null, research:null, engines:null, runs:[], trash:[], runId:null, b:null, turns:[], busy:false, abort:null, view:"new", rendered:null, draft:{}, autoSourceUrl:""};
 /* UI state that survives every redraw: which disclosures are open, what a person has typed but not saved, and the
    signature of what each region last showed. */
 var UI = {open:{}, drafts:{}, sig:{}, cardSig:{}, drawer:null, deferred:false};
@@ -411,7 +411,7 @@ function renderNew(){
   }
   // a new choice of what to read replaces the old one and whatever the old one left in the message area (an engine
   // choice for another recording, an error); nothing is cleared while a fetch is running
-  function freshInput(){ recording = null; pendingConsume = null; if (!S.busy) clear(msg); }
+  function freshInput(){ recording = null; pendingConsume = null; if (!S.busy) clear(msg); clearFallbackSourceForLink(ta.value); }
   async function loadFile(f){
     if (!f) return;
     freshInput();
@@ -438,7 +438,7 @@ function renderNew(){
       pendingConsume = !e.status || e.status >= 500 ? jobId : null;
       throw e;
     }
-    pendingConsume = null; S.runId = nb2.run.id; S.view = "run"; S.resumeFetch = null; forget("intake-text"); S.draft = {};
+    pendingConsume = null; S.runId = nb2.run.id; S.view = "run"; S.resumeFetch = null; forget("intake-text"); S.draft = {}; S.autoSourceUrl = "";
     try { location.hash = "run-" + S.runId; } catch(e){} storeSet("deflate-run", S.runId);
     await refreshList(); await reload(nb2);
   };
@@ -457,6 +457,7 @@ function renderNew(){
     if (blockWhileBusy()) return; S.busy = true; go.disabled = true; clear(msg);
     var text = ta.value, k = kindNow || describeKind(text).d;
     try {
+      clearFallbackSourceForLink(text);
       var doc = {title:(S.draft.title||"").trim(), sourceUrl:(S.draft.sourceUrl||"").trim(), sourceLabel:(S.draft.sourceLabel||"").trim(), sourceDate:S.draft.sourceDate||""};
       Object.keys(doc).forEach(function(x){ if (!doc[x]) delete doc[x]; });
       // words fetched before whose import failed for a moment: imported now, not read again as the box's text
@@ -471,7 +472,7 @@ function renderNew(){
       if (k.kind === "link") { await fetchTranscript(k.url, "", "", {msg:msg, ta:ta, updateStats:updateStats, fromGo:true, onWords:onWords, context:doc, targetRunId:""}); return; }
       msg.append(h("p",{class:"note info",text:"Saving and preparing your reading…"}));
       var nb = await API.intake(text, doc);
-      S.runId = nb.run.id; S.view = "run"; forget("intake-text"); S.draft = {};
+      S.runId = nb.run.id; S.view = "run"; forget("intake-text"); S.draft = {}; S.autoSourceUrl = "";
       try { location.hash = "run-" + S.runId; } catch(e){} storeSet("deflate-run", S.runId);
       await refreshList(); await reload(nb);
     } catch(e) { msg.replaceChildren(h("div",{class:"note err",text:errCopy(e)})); }
@@ -534,6 +535,13 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
     S.activeTranscriptJobId = null;
     return;
   }
+  // The caption readers could not obtain words. Keep their outcome distinct from evidence that no captions exist.
+  if (res.recovery && res.recovery.kind === "youtube") {
+    await API.dismissJob(jobId);
+    ui.msg.append(youtubeRecovery(res, link, ui));
+    S.activeTranscriptJobId = null;
+    return;
+  }
   // nothing published; maybe the audio can be transcribed
   var nt = res.needsTranscription;
   var none = h("div",{class:"note"}); none.append(h("p",{text:cap(res.reason || "No transcript was found.")}));
@@ -544,7 +552,42 @@ async function fetchTranscriptInner(link, guid, choice, ui, existingJobId){
     ui.msg.append(engineChoice(Object.assign({link:link}, nt), eng, ui, function(c){ fetchTranscript(link, guid, c, ui); }));
   } else { await API.dismissJob(jobId); ui.msg.append(fallbackHint(link)); }
 }
-function fallbackHint(link, rec){ if (link && !S.draft.sourceUrl && !S.runId) S.draft.sourceUrl = link; return h("p",{class:"hint",text:rec ? "You can upload the recording again, or paste or upload its transcript (.txt, .srt or .vtt)." : "You can paste the transcript, or upload a .txt, .srt or .vtt file." + (link && !S.runId ? " The link is kept as the source." : "")}); }
+function draftContextLabel(){ var b = $("addContext"); if (b) b.textContent = S.draft.title || S.draft.sourceUrl || S.draft.sourceLabel ? "Context added · edit" : "Add context"; }
+// A failed link is useful context for a supplied transcript or recording. It is not context for a different link,
+// and a source the person entered under Add context always wins over one adopted automatically.
+function clearFallbackSourceForLink(text){
+  if (!S.autoSourceUrl) return;
+  if (S.draft.sourceUrl !== S.autoSourceUrl) { S.autoSourceUrl = ""; return; }
+  var d = SH.detectKind(text);
+  if (d.kind === "link" && d.url !== S.autoSourceUrl) { delete S.draft.sourceUrl; S.autoSourceUrl = ""; draftContextLabel(); }
+}
+function keepFallbackSource(link){
+  if (!link || S.runId) return false;
+  var ta = $("f-text"), d = ta && SH.detectKind(ta.value);
+  if (d && d.kind === "link" && d.url !== link) return false; // a new link typed while the old fetch was finishing
+  if (!S.draft.sourceUrl) { S.draft.sourceUrl = link; S.autoSourceUrl = link; draftContextLabel(); }
+  return S.draft.sourceUrl === link;
+}
+function fallbackHint(link, rec){ var kept = keepFallbackSource(link); return h("p",{class:"hint",text:rec ? "You can upload the recording again, or paste or upload its transcript (.txt, .srt or .vtt)." : "You can paste the transcript, or upload a transcript (.txt, .srt or .vtt) or recording." + (kept ? " The link is kept as the source." : "")}); }
+function youtubeRecovery(res, link, ui){
+  var box = h("div",{class:"note youtube-recovery"}), row = h("div",{class:"row"}), openUrl = "", newIntake = ui.ta && !S.runId;
+  // Only the canonical video address from the resolver may become an external action, even for a saved job.
+  try { var u = new URL(res.recovery.url); if (u.protocol === "https:" && u.hostname === "www.youtube.com" && u.pathname === "/watch" && /^[A-Za-z0-9_-]{11}$/.test(u.searchParams.get("v") || "")) openUrl = "https://www.youtube.com/watch?v=" + u.searchParams.get("v"); } catch(e){}
+  box.append(h("p",{text:res.reason || "The app could not fetch this video's captions."}), h("p",{class:"hint",text:newIntake ? "Open the video in your browser. If YouTube offers Show transcript, copy those words and paste them here. Signing in there does not sign this app in." : "Your saved reading is unchanged. Open the video in your browser to check transcript availability. Start a New reading with a transcript or recording, or try another link here."}));
+  if (openUrl) row.append(h("a",{class:"btn",href:openUrl,target:"_blank",rel:"noopener noreferrer",text:"Open YouTube"}));
+  if (newIntake) {
+    row.append(h("button",{class:"btn",type:"button",text:"Paste transcript",onclick:function(){
+      if (hasFn(ui.ta, "focus")) ui.ta.focus();
+      if (ui.ta.value.trim() === link && hasFn(ui.ta, "select")) ui.ta.select();
+    }}));
+    var file = $("f-file");
+    if (file) row.append(h("button",{class:"btn",type:"button",text:"Upload transcript or recording",onclick:function(){ if (hasFn(file, "click")) file.click(); }}));
+  }
+  box.append(row);
+  if (keepFallbackSource(link)) box.append(h("p",{class:"hint",text:"The link is kept as the source."}));
+  if ((res.tried || []).length) box.append(h("details",{class:"caption-diagnostics"}, h("summary",{text:"Caption fetch details"}), h("ul",{class:"steps"}, res.tried.map(function(t){ return h("li",{text:(t.reader || t.step || "Caption reader") + ": " + (t.error || t.code || "No readable captions returned")}); }))));
+  return box;
+}
 /* The one-time choice for the audio step. Once an engine is installed or a key is set, the chain runs through it on
    its own from then on. The consequence of each choice (cost, where the audio goes) is stated at the choice. `again`
    carries on with the choice made: the link's chain, or the uploaded recording (nt.recording; the engine on this
@@ -1256,7 +1299,7 @@ function ctlInput(){
   if (!r) {
     s.append(h("p",{class:"hint",text:"Optional. Used when you press Read this."}));
     [["title","Title","text"],["sourceUrl","Source link","url"],["sourceLabel","Source label","text"],["sourceDate","Date","date"]].forEach(function(x){
-      var inp = h("input",{type:x[2], id:"draft-" + x[0], value:S.draft[x[0]] || ""}); inp.addEventListener("input", function(){ S.draft[x[0]] = inp.value; var b = $("addContext"); if (b) b.textContent = S.draft.title || S.draft.sourceUrl || S.draft.sourceLabel ? "Context added · edit" : "Add context"; });
+      var inp = h("input",{type:x[2], id:"draft-" + x[0], value:S.draft[x[0]] || ""}); inp.addEventListener("input", function(){ S.draft[x[0]] = inp.value; if (x[0] === "sourceUrl") S.autoSourceUrl = ""; draftContextLabel(); });
       s.append(field(x[1], inp));
     });
     return s;
