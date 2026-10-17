@@ -218,8 +218,18 @@ function createResolver({ fetch: fetchFn, env, engines, run: runFn }) {
     const base = { show: located.show, episode: located.item ? { title: located.item.title, guid: located.item.guid, pubDate: located.item.pubDate, duration: located.item.duration, link: located.item.link, audioUrl: located.item.enclosure && located.item.enclosure.url || "", description: located.item.description || "", author: located.item.author || "", persons: located.item.persons || [] } : null, matchedBy: located.matchedBy || "", ambiguous: located.ambiguous || null, match: located.match || null, identity: located.match ? "needs_confirmation" : "direct" };
     if (located.kind === "video") {
       step("YouTube", "reading captions");
-      const r = await YT.captions({ id: located.video.id, fetch: fetchFn, env, run: runFn });
-      return Object.assign(base, { ok: true, text: r.text, title: r.title, speakers: r.speakers, tried: r.tried, channel: r.channel || "", source: { kind: "youtube-captions", url: located.video.url, reader: r.reader, automatic: !!(r.track && r.track.automatic), language: r.track && r.track.language || "", note: (r.track && r.track.automatic ? "YouTube's automatic captions" : "captions published with the video") + "; no speaker labels" + (r.reader === "built-in" ? "; read by the built-in reader" : "; read with yt-dlp") } });
+      try {
+        const r = await YT.captions({ id: located.video.id, fetch: fetchFn, env, run: runFn });
+        return Object.assign(base, { ok: true, text: r.text, title: r.title, speakers: r.speakers, tried: r.tried, channel: r.channel || "", source: { kind: "youtube-captions", url: located.video.url, reader: r.reader, automatic: !!(r.track && r.track.automatic), language: r.track && r.track.language || "", note: (r.track && r.track.automatic ? "YouTube's automatic captions" : "captions published with the video") + "; no speaker labels" + (r.reader === "built-in" ? "; read by the built-in reader" : "; read with yt-dlp") } });
+      } catch (e) {
+        if (!["youtube_access_blocked", "youtube_captions_unavailable"].includes(e.code) || !Array.isArray(e.tried)) throw e;
+        // A completed attempt without words, not a fetched transcript. Keep the known listing and reader outcomes in
+        // the job record; the page can offer a user-supplied replacement without inventing audio or starting speech-to-text.
+        return Object.assign(base, { ok: false, code: e.code,
+          reason: e.code === "youtube_access_blocked" ? "YouTube blocked the app's caption request with a sign-in or bot check. No transcript was retrieved." : "The app could not retrieve this video's captions. No transcript was retrieved.",
+          recovery: { kind: "youtube", url: "https://www.youtube.com/watch?v=" + located.video.id },
+          title: e.title || "", channel: e.channel || "", tried: e.tried });
+      }
     }
     const item = located.item;
     if (located.audioOnly) tried.push({ step: "transcript", error: "the link is an audio file, so there is no published transcript to look for" });

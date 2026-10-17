@@ -74,7 +74,7 @@ Settings live in `.env` in the app folder (setup creates it). The ones you might
 | `TRANSCRIBE_PREFER` | `local` or `cloud`, when both audio options are set up. `local` keeps audio on this computer: nothing is sent to Deepgram, to transcribe or to separate voices, unless you choose Deepgram when the page asks. |
 | `DEFLATE_MOCK_AI` | `1` to try the app with placeholder readings and no key. |
 
-`brew install yt-dlp` makes YouTube captions more reliable. Your work is saved as plain files in the `data/` folder; copy that folder to back it up.
+`brew install yt-dlp` adds another caption reader; YouTube can still require sign-in or block access. Your work is saved as plain files in the `data/` folder; copy that folder to back it up.
 
 ## More
 

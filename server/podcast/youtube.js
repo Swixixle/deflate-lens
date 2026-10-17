@@ -1,12 +1,11 @@
 "use strict";
 /* YouTube captions. Two readers, tried in order:
-     1. yt-dlp, when it is installed on this computer (brew install yt-dlp). It is the maintained tool for this and
-        survives YouTube's changes; it writes the caption file (VTT) and nothing else.
+     1. yt-dlp, when it is installed on this computer (brew install yt-dlp). It is maintained separately and writes
+        caption files only. YouTube can still refuse its requests.
      2. A built-in reader that asks YouTube's own player endpoint for the caption track list and fetches the English
         track as json3. It needs no install, but YouTube sometimes answers it with "sign in to confirm you're not a bot"
-        (seen from a datacenter address on 2026-10-03; home addresses usually pass), and it can break when YouTube
-        changes its site. Every failure is reported as what it is.
-   The title and channel come from YouTube's oEmbed endpoint, which is public and stable. Nothing is downloaded but
+        and it can break when YouTube changes its site. Every failure is reported as what it is.
+   The title and channel come from YouTube's public oEmbed endpoint when it answers. Nothing is downloaded but
    captions. Automatic captions have no speaker labels; the attribution stage is told so. */
 const { spawn } = require("child_process");
 const fs = require("fs/promises");
@@ -15,6 +14,11 @@ const path = require("path");
 const { transcriptToText } = require("./transcripts");
 
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+// Classify an explicit challenge, not every caption failure. Missing captions, timeouts and extractor failures do
+// not establish a sign-in requirement. This records the refusal; it never reads a browser's credentials.
+function accessBlocked(message, status) {
+  return status === "LOGIN_REQUIRED" || /\bsign[ -]?in to\b|\blog[ -]?in (?:is )?required\b|\bconfirm\b[^\n]{0,80}\bnot a bot\b|\bauthentication (?:is )?required\b/i.test(String(message || ""));
+}
 function videoId(url) {
   let u; try {u=new URL(String(url||""));}catch(e){return "";}
   if(!/^https?:$/.test(u.protocol))return "";
@@ -39,7 +43,7 @@ async function captionsBuiltin(fetchFn, id, language) {
   const r = await fetchText(fetchFn, "https://www.youtube.com/youtubei/v1/player?prettyPrint=false", { method: "POST", headers: { "Content-Type": "application/json", "User-Agent": "com.google.android.youtube/20.10.38 (Linux; U; Android 11) gzip" }, body }, 25000);
   let d; try { d = JSON.parse(r.text); } catch (e) { throw new Error("YouTube answered with something other than JSON (HTTP " + r.status + ")"); }
   const ps = d.playabilityStatus || {};
-  if (ps.status && ps.status !== "OK") throw new Error("YouTube refused the caption list: " + (ps.reason || ps.status) + (/bot|sign in/i.test(ps.reason || "") ? " (this happens from some network addresses; yt-dlp usually gets through)" : ""));
+  if (ps.status && ps.status !== "OK") throw Object.assign(new Error("YouTube refused the caption list: " + (ps.reason || ps.status)), { code: accessBlocked(ps.reason, ps.status) ? "youtube_access_blocked" : "youtube_captions_unavailable" });
   const tracks = ((d.captions || {}).playerCaptionsTracklistRenderer || {}).captionTracks || [];
   if (!tracks.length) throw new Error("this video has no captions, automatic or otherwise");
   const pick = tracks.find(t => String(t.languageCode || "").startsWith(lang) && t.kind !== "asr") || tracks.find(t => String(t.languageCode || "").startsWith(lang)) || tracks[0];
@@ -76,14 +80,19 @@ async function captionsYtdlp(id, language, env, runFn) {
       const r = await (runFn || run)(ytdlpPath(env), ["--skip-download", kind, "--sub-langs", lang + ".*," + lang, "--sub-format", "json3/vtt", "--no-playlist", "--no-warnings", "-o", path.join(dir, "%(id)s"), "https://www.youtube.com/watch?v=" + id], { cwd: dir });
       last = r;
       const files = (await fs.readdir(dir)).filter(f => /\.(json3|vtt)$/i.test(f)).sort((a, b) => a.length - b.length);
-      if (!files.length) continue;
+      if (!files.length) {
+        // An explicit challenge applies before a caption track can be selected. Trying automatic captions with the
+        // same request cannot settle it; retain the diagnostic and let the independent built-in reader try next.
+        if (r.code !== 0 && accessBlocked(r.err)) break;
+        continue;
+      }
       const file = files.find(f => /\.json3$/i.test(f)) || files[0];
       const json = /\.json3$/i.test(file);
       const out = transcriptToText(await fs.readFile(path.join(dir, file), "utf8"), json ? "application/json" : "text/vtt", file);
       return Object.assign(out, { reader: "yt-dlp", track: { language: lang, automatic: kind === "--write-auto-subs", name: file } });
     } finally { await fs.rm(dir, { recursive: true, force: true }).catch(() => {}); }
   }
-  throw new Error("yt-dlp wrote no caption file" + (last && last.code !== 0 ? " (exit " + last.code + ": " + String(last.err).trim().split("\n").pop() + ")" : "; this video may have no captions"));
+  throw Object.assign(new Error("yt-dlp wrote no caption file" + (last && last.code !== 0 ? " (exit " + last.code + ": " + String(last.err).trim() + ")" : "; this video may have no captions")), { code: last && last.code !== 0 && accessBlocked(last.err) ? "youtube_access_blocked" : "youtube_captions_unavailable" });
 }
 
 /* The captions for a video, by whichever reader works, with what each one said when it did not. */
@@ -91,10 +100,11 @@ async function captions({ url, id, language, fetch: fetchFn, env, run: runFn }) 
   const vid = id || videoId(url); if (!vid) throw new Error("not a YouTube video link");
   const meta = await oembed(fetchFn || require("./public-fetch").publicFetch, vid);
   const tried = [];
-  if (await ytdlpAvailable(env, runFn)) { try { const r = await captionsYtdlp(vid, language, env, runFn); return Object.assign(r, { id: vid, title: meta && meta.title || "", channel: meta && meta.channel || "", tried }); } catch (e) { tried.push({ reader: "yt-dlp", error: e.message }); } }
-  else tried.push({ reader: "yt-dlp", error: "not installed (brew install yt-dlp makes YouTube reliable)" });
-  try { const r = await captionsBuiltin(fetchFn || require("./public-fetch").publicFetch, vid, language); return Object.assign(r, { id: vid, title: meta && meta.title || "", channel: meta && meta.channel || "", tried }); } catch (e) { tried.push({ reader: "built-in", error: e.message }); }
-  const err = new Error("no captions could be read: " + tried.map(t => t.reader + ": " + t.error).join("; ")); err.tried = tried; err.title = meta && meta.title || ""; throw err;
+  if (await ytdlpAvailable(env, runFn)) { try { const r = await captionsYtdlp(vid, language, env, runFn); return Object.assign(r, { id: vid, title: meta && meta.title || "", channel: meta && meta.channel || "", tried }); } catch (e) { tried.push({ reader: "yt-dlp", code: e.code || "youtube_captions_unavailable", error: e.message }); } }
+  else tried.push({ reader: "yt-dlp", code: "reader_unavailable", error: "not installed (brew install yt-dlp adds another caption reader; YouTube may still refuse it)" });
+  try { const r = await captionsBuiltin(fetchFn || require("./public-fetch").publicFetch, vid, language); return Object.assign(r, { id: vid, title: meta && meta.title || "", channel: meta && meta.channel || "", tried }); } catch (e) { tried.push({ reader: "built-in", code: e.code || "youtube_captions_unavailable", error: e.message }); }
+  const code = tried.some(t => t.code === "youtube_access_blocked") ? "youtube_access_blocked" : "youtube_captions_unavailable";
+  throw Object.assign(new Error("no captions could be read: " + tried.map(t => t.reader + ": " + t.error).join("; ")), { code, tried, title: meta && meta.title || "", channel: meta && meta.channel || "" });
 }
 
 /* Candidate videos for an episode, by a YouTube search through yt-dlp (the built-in search page is not attempted:

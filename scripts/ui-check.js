@@ -2,7 +2,8 @@
 /* Real-browser acceptance check for the reading page (headless Chromium through Playwright). All generated text is
    the MOCK responder's; the podcast feed, the YouTube search and its captions are local fixtures. Prints a report and
    exits non-zero on the first failed check. Needs:  npm install --no-save playwright  (and a Chromium; set
-   DEFLATE_CHROMIUM_EXECUTABLE to use one already installed). Pictures go to scripts/ui-shots/. */
+   DEFLATE_CHROMIUM_EXECUTABLE to use one already installed). Pictures go to scripts/ui-shots/.
+   --youtube-recovery runs just the start screen and blocked-caption recovery checks. */
 const fs = require("fs"), os = require("os"), path = require("path"), assert = require("node:assert/strict");
 const http = require("http"), { createApp } = require("../server/app"), { createMockAI, createAI } = require("../server/ai"), { createResearch } = require("../server/research");
 const { cuesToText } = require("../server/podcast/transcripts"), audioFiles = require("../test/fixtures/audio-files");
@@ -30,11 +31,12 @@ const fakeYtdlp = async (cmd, args) => {
   if (args[0] === "--version") return { code: 0, out: "2026.09.01\n", err: "" };
   const last = String(args[args.length - 1]);
   if (last.startsWith("ytsearch")) return { code: 0, out: /An episode found on video/.test(last) ? "FullEpisod1\tUI Check Show — An episode found on video (full)\tUI Check Show\t5300\nClipClipCli\tAn episode found on video (best bit)\tClips\t300\n" : "", err: "" };
+  if (args.includes("--skip-download") && /Blocked000[12]$/.test(last)) return { code: 1, out: "", err: "ERROR: [youtube] Blocked0001: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for authentication." };
   if (args.includes("--skip-download")) { if (args.includes("--write-auto-subs") && /FullEpisod1$/.test(last)) fs.writeFileSync(args[args.indexOf("-o") + 1].replace("%(id)s", "FullEpisod1.en.json3"), JSON.stringify({ events: [{ segs: [{ utf8: CAPTIONS }] }] })); return { code: 0, out: "", err: "" }; }
   return { code: 1, out: "", err: "?" };
 };
 /* The mock responder, slowed or made to fail on request so progress and failure can be watched. */
-const knob = { delay: 0, failTurns: null, deepgram: false, recording: null };
+const knob = { delay: 0, failTurns: null, deepgram: false, recording: null, modelCalls: 0, transcriptionCalls: 0 };
 /* Deepgram, faked for voice separation and for a recording uploaded from this computer: no key until a check turns it
    on; its answers are set here and by the checks. The uploaded file is looked at (size, type) and answered with an
    invented interview, as Deepgram numbers its voices. */
@@ -48,8 +50,9 @@ const UPLOAD_SAID = [
   [1, "Some did. But the plants hired eight hundred workers last year, and that is in the company filings."],
   [0, "Marcus Delacroix, thank you for joining us tonight."],
 ];
-const fakeCloud = { name: "deepgram", model: "nova-3", configured: () => knob.deepgram, async diarize() { return knob.recording; },
+const fakeCloud = { name: "deepgram", model: "nova-3", configured: () => knob.deepgram, async diarize() { knob.transcriptionCalls++; return knob.recording; },
   async transcribe({ file, type }) {
+    knob.transcriptionCalls++;
     knob.uploaded = { bytes: fs.statSync(file).size, type };
     if (knob.uploadDelay) await new Promise(r => setTimeout(r, knob.uploadDelay));
     const conv = cuesToText(UPLOAD_SAID.map(([v, text]) => ({ speaker: "SPEAKER " + (v + 1), text })));
@@ -60,6 +63,7 @@ const recordingOf = text => { const words = []; let t = 0; text.split(/\n\s*\n/)
 function testAI() {
   const mock = createMockAI();
   return { ...mock, async sample(args) {
+    knob.modelCalls++;
     const p = String(args.prompt || ""), passage = p.startsWith("Help a reader understand this passage accurately.") && !p.includes("This is ONE claim");
     if (passage && knob.delay) await new Promise(r => setTimeout(r, knob.delay));
     if (passage && knob.failTurns && p.includes("PASSAGE (turns " + knob.failTurns)) { const e = new Error("The model's answer was cut off at its length limit before the JSON was complete."); e.code = "truncated"; e.text = "{"; e.meta = { usage: { input: 1, output: 16000 }, model: "mock", requestId: "req_cut", stopReason: "max_tokens" }; throw e; }
@@ -99,6 +103,8 @@ const MODEL_ENV = ["MODEL_PROVIDER", "OPENAI_BASE_URL", "OPENAI_MODEL", "OPENAI_
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DEFLATE_CHROMIUM_EXECUTABLE ? { executablePath: process.env.DEFLATE_CHROMIUM_EXECUTABLE } : {}) });
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    // Use the app's system-font fallback so this fixture never depends on an external font service.
+    await context.route("https://fonts.googleapis.com/**", route => route.fulfill({ status: 200, contentType: "text/css", body: "" }));
     const page = await context.newPage();
     page.on("pageerror", e => errors.push(e.message)); page.on("console", m => { if (m.type() === "error") (/^Failed to load resource: the server responded with a status of 400/.test(m.text()) ? refused : errors).push("console: " + m.text()); });
 
@@ -113,6 +119,62 @@ const MODEL_ENV = ["MODEL_PROVIDER", "OPENAI_BASE_URL", "OPENAI_MODEL", "OPENAI_
       });
       check("start@" + w, s.inputs === 1 && s.uploads === 1 && s.primaries.length === 1 && s.primaries[0] === "Read this" && s.helpers <= 1 && s.controlsHidden && s.readingsHidden, s);
       await page.screenshot({ path: path.join(shots, "start-" + w + ".png") });
+    }
+
+    /* 1b. A direct YouTube access block is not evidence that captions are absent. The recovery is local and explicit:
+       inspect the reader failures, open the original video, paste words or pick a file. It creates no reading or model
+       call until the person supplies text, and changing the link replaces only the automatically retained source. */
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const blockedLink = "https://youtu.be/Blocked0001", changedLink = "https://www.youtube.com/watch?v=Blocked0002";
+    const beforeBlock = { runs: (await system.store.listRuns()).length, model: knob.modelCalls, transcription: knob.transcriptionCalls };
+    await read(page, blockedLink);
+    await page.waitForSelector("#intake .youtube-recovery", { timeout: 20000 });
+    const recovery = page.locator("#intake .youtube-recovery"), recoveryText = await recovery.innerText();
+    check("youtubeBlockExplained", /sign.in|verification/i.test(recoveryText) && !/yt-dlp usually gets through|no captions, automatic or otherwise|makes YouTube reliable/i.test(recoveryText), recoveryText);
+    check("youtubeBlockNoReadingOrProvider", (await system.store.listRuns()).length === beforeBlock.runs && knob.modelCalls === beforeBlock.model && knob.transcriptionCalls === beforeBlock.transcription, { before: beforeBlock, after: { runs: (await system.store.listRuns()).length, model: knob.modelCalls, transcription: knob.transcriptionCalls } });
+    const openVideo = recovery.getByRole("link", { name: "Open YouTube", exact: true });
+    check("youtubeRecoverySafeLink", await openVideo.getAttribute("href") === "https://www.youtube.com/watch?v=Blocked0001" && await openVideo.getAttribute("target") === "_blank" && /noopener/.test(await openVideo.getAttribute("rel") || ""));
+    const captionDetails = recovery.locator("details.caption-diagnostics");
+    check("youtubeDiagnosticsClosed", await captionDetails.count() === 1 && !(await captionDetails.evaluate(d => d.open)) && !/--cookies/.test(recoveryText));
+    await captionDetails.locator(":scope > summary").click();
+    const captionFailures = await captionDetails.innerText();
+    check("youtubeReaderFailuresVisible", /yt-dlp[\s\S]*Sign in[\s\S]*built-in[\s\S]*Sign in/i.test(captionFailures), captionFailures);
+    await captionDetails.locator(":scope > summary").click();
+    await page.screenshot({ path: path.join(shots, "youtube-block-1440.png") });
+    await page.setViewportSize({ width: 390, height: 844 });
+    check("youtubeRecoveryPhoneFits", await noHScroll(page));
+    await page.screenshot({ path: path.join(shots, "youtube-block-390.png"), fullPage: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const picker = page.waitForEvent("filechooser");
+    await recovery.getByRole("button", { name: "Upload transcript or recording", exact: true }).click();
+    const chosen = await picker;
+    check("youtubeRecoveryUploadPicker", await chosen.element().getAttribute("id") === "f-file");
+    await chosen.setFiles([]); // cancelling the picker leaves the failed link available for paste recovery
+    await recovery.getByRole("button", { name: "Paste transcript", exact: true }).click();
+    const selection = await page.locator("#f-text").evaluate(el => ({ focus: document.activeElement === el, text: el.value, from: el.selectionStart, to: el.selectionEnd }));
+    check("youtubeRecoveryPasteSelectsLink", selection.focus && selection.text === blockedLink && selection.from === 0 && selection.to === blockedLink.length, selection);
+    await page.keyboard.insertText(T.replace(/argument/g, "recovered statement")); await page.locator("#readThis").click(); await ready(page);
+    const recoveredPaste = await bundle(page, await runId(page));
+    check("youtubeRecoveryPasteKeepsSource", recoveredPaste.run.sourceUrl === blockedLink && /recovered statement/.test(recoveredPaste.transcript) && !recoveredPaste.run.import, { sourceUrl: recoveredPaste.run.sourceUrl, import: recoveredPaste.run.import });
+    await read(page, blockedLink); await page.waitForSelector("#intake .youtube-recovery", { timeout: 20000 });
+    await page.fill("#f-text", changedLink); await page.locator("#readThis").click(); await page.waitForSelector("#intake .youtube-recovery", { timeout: 20000 });
+    check("youtubeRecoveryNewLinkShown", await page.locator("#intake .youtube-recovery").getByRole("link", { name: "Open YouTube", exact: true }).getAttribute("href") === changedLink);
+    const changedPicker = page.waitForEvent("filechooser");
+    await page.locator("#intake .youtube-recovery").getByRole("button", { name: "Upload transcript or recording", exact: true }).click();
+    await (await changedPicker).setFiles({ name: "recovered-transcript.txt", mimeType: "text/plain", buffer: Buffer.from(T.replace(/argument/g, "second recovered statement")) });
+    await page.waitForFunction(() => /second recovered statement/.test(document.querySelector("#f-text").value));
+    await page.locator("#readThis").click(); await ready(page);
+    const recoveredChange = await bundle(page, await runId(page));
+    check("youtubeRecoveryUploadKeepsNewSource", recoveredChange.run.sourceUrl === changedLink && /second recovered statement/.test(recoveredChange.transcript), { sourceUrl: recoveredChange.run.sourceUrl });
+
+    await page.locator("#readingsBtn").click(); await page.locator("#newRun").click();
+
+    if (process.argv.includes("--youtube-recovery")) {
+      check("noPageErrors", errors.length === 0, errors);
+      check("noUnexpectedRefusals", refused.length === 0, refused);
+      console.log(JSON.stringify(report, null, 2));
+      console.log("ui-check: " + Object.keys(report).length + " YouTube recovery checks passed");
+      return;
     }
 
     /* 2. A pasted transcript; the completed reading; Evidence in one action; no level change calls anything */
