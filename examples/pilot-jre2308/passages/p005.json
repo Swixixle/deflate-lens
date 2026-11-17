@@ -1,0 +1,141 @@
+{
+  "order": 5,
+  "title": "Reputation, serotonin, and treasure in heaven",
+  "turnStart": 172,
+  "turnEnd": 181,
+  "stake": "Whether an earned reputation is indestructible, and whether status changes brain chemistry as described.",
+  "speakers": [
+    "JORDAN PETERSON",
+    "JOE ROGAN"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 178,
+        "speaker": "JORDAN PETERSON",
+        "quote": "In the Gospels, Christ tells people to store up treasure in heaven where it doesn’t rust, where the thieves can’t steal it. That’s reputational treasure.",
+        "verbatim": true
+      },
+      {
+        "turn": 178,
+        "speaker": "JORDAN PETERSON",
+        "quote": "if you conduct yourself impeccably, you’ll develop a storehouse of reputation that will withstand all catastrophe. Nothing can touch it.",
+        "verbatim": true
+      },
+      {
+        "turn": 178,
+        "speaker": "JORDAN PETERSON",
+        "quote": "when your reputation rises, your serotonin levels rise, and that makes you less sensitive to negative emotion and more sensitive to positive emotion",
+        "verbatim": true
+      },
+      {
+        "turn": 180,
+        "speaker": "JORDAN PETERSON",
+        "quote": "I think that virtualization has enabled the psychopaths.",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "An earned reputation is the most valuable and safest thing you can own. When your standing rises, your serotonin rises, so bad things sting less and good things feel better; that is why losing face hurts. The best way to build reputation is a real quest rather than a status contest. Online, people can play status games anonymously and without consequence, which has enabled psychopaths.",
+      "g5": "A good name is the best thing you can have and nobody can take it. When people respect you more, your brain makes you feel better and tougher. That's why being embarrassed hurts. The best way to earn respect is to really try to figure things out, not to show off. Online, people can show off and be cruel without getting caught."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "'Withstand all catastrophe. Nothing can touch it' is kept at full strength because he said it twice. The 'treasure in heaven' reading is his, and the rewrite marks it as such.",
+        "g5": "He really did say nothing can touch a good name, twice, so the short version keeps it."
+      }
+    },
+    "jump": {
+      "present": true,
+      "pivot": "will withstand all catastrophe. Nothing can touch it",
+      "pivotVerbatim": true,
+      "hs": "Two steps. The serotonin mechanism is carried from animal studies into humans as settled, with no hedge; the human evidence is thin and mixed. And 'nothing can touch it' is contradicted by ordinary experience and by Rogan's own divorce stories minutes earlier: reputations are destroyed, often unjustly.",
+      "g5": "He says brain chemistry works the same in people as in animals, but that isn't proven. And he says nothing can hurt a good name, but people's good names get ruined all the time, sometimes unfairly."
+    },
+    "defense": {
+      "hs": "'Treasure in heaven' can be read as 'what you have become', which no one can confiscate even if they damage how you are seen; on that reading 'nothing can touch it' is about character, not public standing. The serotonin point is offered to explain why losing face hurts, not to prove reputation's value, and the behavioral claim (status loss dysregulates emotion) is widely observed whatever the chemistry.",
+      "g5": "Maybe he means the good you've built inside yourself, which nobody can take even if they lie about you. And everyone knows losing face feels terrible, whatever is happening in the brain."
+    },
+    "revision": {
+      "jumpSurvives": "partly",
+      "hs": "If 'reputation' means character, the strong claim survives. But he says 'reputational' and 'storehouse of reputation', which is public standing. The serotonin challenge stands; the emotional observation it decorates does not depend on it.",
+      "g5": "If he meant 'who you really are', he'd be right. But he said 'reputation', which is what others think of you, and that can be ruined. The brain-chemistry part is still not proven."
+    },
+    "claims": [
+      {
+        "text": "Rising status raises serotonin and changes emotional sensitivity in humans.",
+        "speaker": "JORDAN PETERSON",
+        "type": "contested",
+        "basis": {
+          "hs": "Suggestive in crustaceans and some primates; mixed and causally unclear in humans. Stated with no hedge. Not re-checked here.",
+          "g5": "Found in lobsters and some monkeys. Not clearly shown in people."
+        },
+        "status": "unchecked",
+        "wouldSettle": "Human studies manipulating social status and measuring serotonergic markers; reviews of tryptophan-depletion and status research.",
+        "receipts": [],
+        "settle": {
+          "hs": "Human studies manipulating social status and measuring serotonergic markers; reviews of tryptophan-depletion and status research.",
+          "g5": "Studies where scientists change a person's rank and measure a brain chemical called serotonin."
+        },
+        "expectedSources": [
+          "academic_paper"
+        ],
+        "searchQuery": "social status serotonin humans dominance"
+      },
+      {
+        "text": "An impeccable reputation withstands all catastrophe.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unsupported",
+        "basis": {
+          "hs": "Counterexamples are common: wrongful accusation, defamation, divorce. The co-host supplies some in this conversation.",
+          "g5": "People with good names get ruined all the time, even when they did nothing wrong."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "'Treasure in heaven' refers to reputation.",
+        "speaker": "JORDAN PETERSON",
+        "type": "interpretation",
+        "basis": {
+          "hs": "One reading of Matthew 6. The traditional reading is close to the opposite: reward not visible to others.",
+          "g5": "That's his reading of the Bible verse. Many readers take it the other way: good done in secret."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "Anonymity online enables psychopathic behavior.",
+        "speaker": "JORDAN PETERSON",
+        "type": "fact",
+        "basis": {
+          "hs": "Consistent with research on anonymity, disinhibition and trolling; the clinical label 'psychopaths' is looser than the evidence. Not re-checked here.",
+          "g5": "Studies do find people act meaner when nobody knows who they are."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": [],
+        "expectedSources": [
+          "academic_paper"
+        ],
+        "searchQuery": "online anonymity disinhibition trolling dark triad"
+      }
+    ],
+    "judgments": {
+      "evidence": "weak",
+      "inference": "gap"
+    }
+  }
+}

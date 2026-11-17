@@ -1,0 +1,3335 @@
+{
+ "1-B6m": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Straight Talk Hour.",
+    "why": "opens the show as host of Walt Brannigan's show"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Marcus Delacroix joins us now.",
+    "why": "introduced by name, then answers as the guest"
+   }
+  ]
+ },
+ "1-D3m": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Joining me now from New York, Dana Reyes.",
+    "why": "introduced by name, then answers as the guest"
+   }
+  ]
+ },
+ "1-E3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Straight Talk Hour.",
+    "why": "host's opening welcome"
+   }
+  ]
+ },
+ "1-G2m": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hi, I'm Anne-Marie Duval, and I run the lab.",
+    "why": "names itself in answer to 'who are you?'"
+   }
+  ]
+ },
+ "1-G3cm": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hi, I'm Łukasz Nowak, and I build bridges.",
+    "why": "names itself"
+   }
+  ]
+ },
+ "1-G3m": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hello, I'm Émile Durand, and I make wine in Burgundy.",
+    "why": "names itself; host asked it to introduce itself"
+   }
+  ]
+ },
+ "1-G4m": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "My name is R. J. Okafor, and I teach economics.",
+    "why": "Names itself right after being asked to introduce itself"
+   }
+  ]
+ },
+ "1-G5m": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Joining us now, Dr. Ruth Okonkwo.",
+    "why": "introduced by name, then answers as guest"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "Hello, I'm Senator Jane Holloway, and I chair the committee.",
+    "why": "names itself"
+   }
+  ]
+ },
+ "1-G6m": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "thanks for having me, Walt.",
+    "why": "guest thanks the host by name right after he welcomes the show"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "joining us now, Marcus Delacroix.",
+    "why": "introduced by name just before speaking"
+   }
+  ]
+ },
+ "1-K4m": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Hey everybody, it's Dana Reyes.",
+    "why": "names itself as Dana Reyes"
+   }
+  ]
+ },
+ "1-K6m": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hi Walt",
+    "why": "guest greets him as Walt right after his welcome"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hi Walt, this is Marcus Delacroix.",
+    "why": "names itself as the guest"
+   }
+  ]
+ },
+ "1-L1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Straight Talk Hour.",
+    "why": "opens the show and takes calls; listing names Walt Brannigan as show author"
+   }
+  ]
+ },
+ "1-L2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Straight Talk Hour.",
+    "why": "host's opening welcome"
+   }
+  ]
+ },
+ "1-L4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Straight Talk Hour.",
+    "why": "opens the show and takes calls as host"
+   }
+  ]
+ },
+ "1-N4": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "hi I'm Dana Reyes glad to be here",
+    "why": "names itself"
+   }
+  ]
+ },
+ "3-R3m": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Father, thanks so much for coming in.",
+    "why": "interviews the guest as host of the show bearing his name; nothing says otherwise"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thank you for having me.",
+    "why": "addressed as Father, answers as the guest"
+   }
+  ]
+ },
+ "4-P7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "Thanks, Dale.",
+    "why": "caller thanks it as Dale; it also opens the show"
+   }
+  ]
+ },
+ "5-MP1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "host's opening welcome"
+   }
+  ]
+ },
+ "5-MP2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show and welcomes the guest; nothing says someone else is hosting"
+   }
+  ]
+ },
+ "5-MP3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Tonight is personal, because my own father came in to tell this story.",
+    "why": "hosts the Dale Whitcomb Show; guest calls him son and notes say Dale's father is the guest"
+   }
+  ]
+ },
+ "5-MP4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host; nothing says otherwise"
+   }
+  ]
+ },
+ "7-A1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "Opens the show as host; only the co-host is said to be away"
+   }
+  ]
+ },
+ "7-A10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show and hosts; nothing says someone else is hosting"
+   }
+  ]
+ },
+ "7-A12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host; Marcus is only the absent subject"
+   }
+  ]
+ },
+ "7-A13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks, Dale.",
+    "why": "called Dale by the voice answering it; also opens the show"
+   }
+  ]
+ },
+ "7-A14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host; Marcus is only spoken of"
+   }
+  ]
+ },
+ "7-A15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "welcome to the Dale Whitcomb show",
+    "why": "opens the show as host and nothing says otherwise"
+   }
+  ]
+ },
+ "7-A16": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as its host; nothing says otherwise"
+   }
+  ]
+ },
+ "7-A17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 7,
+    "quote": "Ann, you worked the payroll office for twenty years.",
+    "why": "called Ann just before answering; Speaker 3 is addressed as Mr. Delacroix"
+   }
+  ]
+ },
+ "7-A18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "host's opening welcome"
+   }
+  ]
+ },
+ "7-A19": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host"
+   }
+  ]
+ },
+ "7-A2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host; Marcus is the guest"
+   }
+  ]
+ },
+ "7-A20": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "Opens the show as host"
+   }
+  ]
+ },
+ "7-A21": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show and hosts"
+   }
+  ]
+ },
+ "7-A22": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thank you, Dale.",
+    "why": "thanked by name as Dale right after hosting the introduction"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Don't believe a word of it.",
+    "why": "introduced as Marcus; answers the friend's tease about Marcus"
+   }
+  ]
+ },
+ "7-A23": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "thank you dale",
+    "why": "called Dale by the next voice; opened with the show welcome"
+   }
+  ]
+ },
+ "7-A24": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks, Dale.",
+    "why": "called Dale by the next voice; also opens the show"
+   }
+  ]
+ },
+ "7-A25": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "Thank you, Dale.",
+    "why": "next voice calls it Dale, answering it; also opens the show"
+   }
+  ]
+ },
+ "7-A26": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "This is Ray Dunn, everybody.",
+    "why": "Introduced by name just before speaking and then addressed as Ray"
+   }
+  ]
+ },
+ "7-A27": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Okay, we're rolling. My guest tonight ran the union hall in Gary for thirty years.",
+    "why": "plays the show's host, interviewing the guest; nothing says otherwise"
+   }
+  ]
+ },
+ "7-A28": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as its host; nothing says otherwise"
+   }
+  ]
+ },
+ "7-A29": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host and introduces the co-host and guest"
+   }
+  ]
+ },
+ "7-A3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show and hosts the guest"
+   }
+  ]
+ },
+ "7-A30": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hey Dale",
+    "why": "caller addresses him as Dale"
+   }
+  ]
+ },
+ "7-A31": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host"
+   }
+  ]
+ },
+ "7-A32": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "Opens the show as host"
+   }
+  ]
+ },
+ "7-A33": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "welcome to the Dale Whitcomb show",
+    "why": "opens the show as host and nothing says otherwise"
+   }
+  ]
+ },
+ "7-A34": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Thanks for having me, Dale.",
+    "why": "guest thanks Dale; SPEAKER 1 is the host whose co-host is Pat"
+   }
+  ]
+ },
+ "7-A35": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host; notes say Dale talks with the guest"
+   }
+  ]
+ },
+ "7-A36": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "host's opening welcome"
+   }
+  ]
+ },
+ "7-A37": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "welcome to the Dale Whitcomb show",
+    "why": "opens the show as host"
+   }
+  ]
+ },
+ "7-A38": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks for having us, Dale.",
+    "why": "guest calls it Dale, answering it; opens the show"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Joining me now, Dana Reyes, with her deputy, Marcus Webb.",
+    "why": "deputy introduced just before speaking and refers to Dana in third person"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Dana asked me to start with the numbers, so here they are.",
+    "why": "deputy defers to Dana, who then speaks as the other guest"
+   }
+  ]
+ },
+ "7-A39": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "Opens the show as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Ann, what was that first semester like?",
+    "why": "Called Ann just before answering as the guest"
+   }
+  ]
+ },
+ "7-A40": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks for having me, Dale.",
+    "why": "called Dale by the guest right after hosting"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Ray, good to see you, old friend.",
+    "why": "addressed as Ray just before answering"
+   }
+  ]
+ },
+ "7-A41": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Good to see you too, Dale.",
+    "why": "addressed as Dale by the guest"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Ray, good to see you.",
+    "why": "addressed as Ray, then answers"
+   }
+  ]
+ },
+ "7-A42": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thank you, Dale.",
+    "why": "guest thanks Dale right after his welcome"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Congratulations, Ann.",
+    "why": "called Ann just before answering as the guest"
+   }
+  ]
+ },
+ "7-A43": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "Ann, how did the band start?",
+    "why": "called Ann, then answers"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 5,
+    "quote": "Ray, who wrote the songs?",
+    "why": "called Ray, then answers"
+   }
+  ]
+ },
+ "7-A44": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks, Dale.",
+    "why": "co-host calls host Dale"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Dana, how bad are the pipes?",
+    "why": "addressed as Dana just before answering"
+   }
+  ]
+ },
+ "7-A45": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks for having me, Dale.",
+    "why": "called Dale by the guest; opens the show"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Joining me now is Ruth Okonkwo, professor of Economics and Public Policy at Purdue Northwest.",
+    "why": "introduced by name just before answering"
+   }
+  ]
+ },
+ "7-A6": {
+  "voices": [
+   {
+    "label": "HOST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "Opens the show as host; only the guest is a stand-in"
+   }
+  ]
+ },
+ "7-A7": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Thanks for having me, Dana.",
+    "why": "the guest, answering SPEAKER 2's introduction, calls it Dana"
+   }
+  ]
+ },
+ "7-A8": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as its host; nothing says otherwise"
+   }
+  ]
+ },
+ "7-A9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host; notes say Dale talks with the reporter"
+   }
+  ]
+ },
+ "7-R1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks for having me, Dale.",
+    "why": "guest calls host Dale"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Joining us now on the line from Washington, Marcus Delacroix.",
+    "why": "introduced by name just before speaking"
+   }
+  ]
+ },
+ "7-R10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks for having me, Dale.",
+    "why": "called Dale by the guest; opens the show"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Joining me now, State Senator Mara Quill.",
+    "why": "introduced by name, then addressed as Senator and answers"
+   }
+  ]
+ },
+ "7-R11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks for having me, Dale.",
+    "why": "guest calls him Dale"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 4,
+    "quote": "Dana, how old are the mains?",
+    "why": "addressed as Dana, then answers"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 6,
+    "quote": "Marcus, why weren't they replaced on your watch?",
+    "why": "addressed as Marcus, then answers"
+   }
+  ]
+ },
+ "7-R12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "As a judge, I sent a lot of young men to prison, and I think about every one of them.",
+    "why": "called Judge just before; answers as the guest judge"
+   }
+  ]
+ },
+ "7-R13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "Opens the show as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "In my twenty years as an emergency physician, I've never seen a winter like this one.",
+    "why": "Addressed as Doctor and speaks as the ER physician guest"
+   }
+  ]
+ },
+ "7-R14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Dale Whitcomb",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "lena thanks for coming in",
+    "why": "introduced and addressed by name, then answers as guest"
+   }
+  ]
+ },
+ "7-R15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks for having me, Dale.",
+    "why": "called Dale by the guest right after hosting"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Joining me now, Ann Kowalski, who has written the first full history of the 1919 steel strike.",
+    "why": "introduced by name just before speaking"
+   }
+  ]
+ },
+ "7-R16": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Pat Quinn, keeping the big chair warm while Dale's away this week.",
+    "why": "names itself as Pat Quinn"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Joining me now, Ann Kowalski.",
+    "why": "introduced by name, then answers"
+   }
+  ]
+ },
+ "7-R17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hi Dale, longtime listener.",
+    "why": "caller greets him as Dale after his welcome"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Linda in Hobart, you're on the air.",
+    "why": "introduced as Linda, then speaks; thanked as Linda"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 4,
+    "quote": "Ray in Merrillville, go ahead.",
+    "why": "introduced as Ray just before speaking"
+   }
+  ]
+ },
+ "7-R18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks for having me, Dale.",
+    "why": "called Dale by the next voice; opened with the show welcome"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Joining me now is the author of a new history of the 1919 steel strike, Ann Kowalski.",
+    "why": "introduced by name just before speaking"
+   }
+  ]
+ },
+ "7-R19": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks for having me, Dale.",
+    "why": "guest calls host Dale"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "My guest tonight needs no introduction in this town — Ann Kowalski.",
+    "why": "introduced by name just before speaking"
+   }
+  ]
+ },
+ "7-R2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Dana, were you surprised by the state report?",
+    "why": "addressed as Dana and answers as the water department guest"
+   }
+  ]
+ },
+ "7-R20": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks, Dale, glad to be here.",
+    "why": "guest calls him Dale"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Ann, welcome aboard.",
+    "why": "welcomed as Ann, then answers"
+   }
+  ]
+ },
+ "7-R21": {
+  "voices": [
+   {
+    "label": "HOST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host"
+   },
+   {
+    "label": "GUEST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "My guest tonight has written the first full history of the 1919 steel strike.",
+    "why": "matches notes on Ann Kowalski's history of the 1919 strike; answers as guest"
+   }
+  ]
+ },
+ "7-R22": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "Opens the show as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Joining us now, Ray Dunn.",
+    "why": "Introduced by name just before speaking"
+   }
+  ]
+ },
+ "7-R23": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hi Dale, this is Ann Kowalski calling from Bloomington.",
+    "why": "the guest greets it as Dale; it opened as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hi Dale, this is Ann Kowalski calling from Bloomington.",
+    "why": "names itself"
+   }
+  ]
+ },
+ "7-R24": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Good to be back, Dale.",
+    "why": "called Dale by the guest right after hosting"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome back to the show, Marcus.",
+    "why": "welcomed by name just before answering"
+   }
+  ]
+ },
+ "7-R25": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks, Dale, it's great to be here.",
+    "why": "addressed as Dale by the guest"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "It's great to have Ann Kowalski with us tonight.",
+    "why": "introduced by name, then answers"
+   }
+  ]
+ },
+ "7-R3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "It's an honor, Dale.",
+    "why": "guest addresses him as Dale after his welcome"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Marcus, great to have you here.",
+    "why": "called Marcus just before answering as the guest"
+   }
+  ]
+ },
+ "7-R4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Dana, how's the foundation doing?",
+    "why": "called Dana just before answering"
+   }
+  ]
+ },
+ "7-R5": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "We are. Welcome to the Dale Whitcomb Show.",
+    "why": "answers recording question, then welcomes as host"
+   }
+  ]
+ },
+ "7-R6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show and answers a listener email about Dale as himself"
+   }
+  ]
+ },
+ "7-R7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host"
+   }
+  ]
+ },
+ "7-R8": {
+  "voices": [
+   {
+    "label": "HOST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "opens the show as host"
+   },
+   {
+    "label": "GUEST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "My guest tonight teaches economics at Purdue Northwest.",
+    "why": "matches notes on economist Ruth Okonkwo of Purdue Northwest; answers as guest"
+   }
+  ]
+ },
+ "7-R9": {
+  "voices": [
+   {
+    "label": "HOST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the Dale Whitcomb Show.",
+    "why": "Opens the show as host"
+   },
+   {
+    "label": "GUEST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "My guest tonight runs the Gary water department.",
+    "why": "Only guest; matches episode title about Gary's water"
+   }
+  ]
+ },
+ "8-R1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome back to the show, everybody.",
+    "why": "opens the show as host and nothing says otherwise"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Renata, welcome.",
+    "why": "introduced and addressed by name, then answers as guest"
+   }
+  ]
+ },
+ "8-R10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "That was my guest, structural engineer Desmond Achterberg",
+    "why": "host names the cold-open voice as Desmond, then welcomes him and he answers"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Welcome to Plumb Line. I'm Greta Mahoney.",
+    "why": "names itself as the host"
+   }
+  ]
+ },
+ "8-R11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "Thanks, Lena.",
+    "why": "addressed as Lena by the guest"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Okay, Abe. Make your case.",
+    "why": "introduced and addressed as Abe, then answers"
+   }
+  ]
+ },
+ "8-R12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Clark Ebersole.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Councilwoman Kettleman, do you still stand by that?",
+    "why": "addressed by name and title just before answering"
+   }
+  ]
+ },
+ "8-R13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Cal Brody.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "My guest today is Ingrid Solheim, who spent the first fourteen years of her life at a lighthouse on Lake Superior, where her father was the keeper.",
+    "why": "introduced by name, then answers as that guest"
+   }
+  ]
+ },
+ "8-R14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Theo Marchbanks.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Please welcome Dr. Maren Holloway.",
+    "why": "introduced by name just before speaking"
+   }
+  ]
+ },
+ "8-R15": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Celia Brandvold, thank you for coming in.",
+    "why": "introduced by name just before answering"
+   }
+  ]
+ },
+ "8-R16": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Hey everybody, welcome back to the channel.",
+    "why": "channel owner welcoming viewers"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Say hi, Ferris.",
+    "why": "asked to say hi by name, then answers"
+   }
+  ]
+ },
+ "8-R17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "Honestly, Imani, it was a funeral.",
+    "why": "called Imani by the next voice, answering it"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Calvin, you were at the game Tuesday when the news broke.",
+    "why": "called Calvin just before answering"
+   }
+  ]
+ },
+ "8-R18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 6,
+    "quote": "For Ledger and Ink, I'm Silas Penhallow.",
+    "why": "Names itself in the sign-off"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Pauline, welcome.",
+    "why": "Introduced and welcomed by name just before answering"
+   }
+  ]
+ },
+ "8-R19": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Marcy Delahunt",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hi, I'm Beatrix Olumide, and I run the food pantry at the old firehouse on Ninth Street.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "And I'm Sol Pinsker.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 4",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "I'm Hannah Voss.",
+    "why": "names itself"
+   }
+  ]
+ },
+ "8-R2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is Night Questions. I'm Mara Ellwood.",
+    "why": "names itself as the host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Father, thank you for doing this.",
+    "why": "addressed as Father just before answering; speaks as the exorcist the notes describe"
+   }
+  ]
+ },
+ "8-R20": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Corrie Vanderpool.",
+    "why": "names itself as Corrie Vanderpool"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Hector, thanks for driving up from the valley.",
+    "why": "addressed as Hector, then answers"
+   }
+  ]
+ },
+ "8-R21": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Ray Thibodeaux.",
+    "why": "names itself and hosts the show"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Doctor, thank you for not going straight to bed.",
+    "why": "addressed as Doctor just before answering as the guest"
+   }
+  ]
+ },
+ "8-R22": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks, Neil.",
+    "why": "called Neil by the next voice; opens the broadcast"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Simone, what are you hearing?",
+    "why": "introduced and asked by name just before answering"
+   }
+  ]
+ },
+ "8-R3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "We're out at the farm today, and it is loud. You can probably hear the pigs behind me.",
+    "why": "host visiting the farm, as listing says Wes does"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 4,
+    "quote": "You know, Ann, as a rule I don't buy pork at the grocery store anymore, and it's places like this that ruined me.",
+    "why": "called Ann just before answering as the farmer"
+   }
+  ]
+ },
+ "8-R4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "hey everybody welcome back to ridgeline radio im Kara Ellison",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Mateo Brandt builds trails for a living welcome mateo",
+    "why": "introduced and welcomed by name, then thanks Kara"
+   }
+  ]
+ },
+ "8-R5": {
+  "voices": [
+   {
+    "label": "HOST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is Signal and Static, I'm Wendell Osei.",
+    "why": "names itself"
+   },
+   {
+    "label": "GUEST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Lorna Becket, welcome to the show.",
+    "why": "welcomed by name, then answers"
+   }
+  ]
+ },
+ "8-R6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Gretchen Albers.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Climatologist Hal Brenner is on the line from Tucson.",
+    "why": "introduced by name just before speaking"
+   }
+  ]
+ },
+ "8-R7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Danny Ruelas.",
+    "why": "Names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Rhea, let's start with you.",
+    "why": "Called by name just before answering"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Bill, you were in that office. Is that fair?",
+    "why": "Called by name just before answering"
+   }
+  ]
+ },
+ "8-R8": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thank you, Ruth.",
+    "why": "the guest answering it calls it Ruth; it opened the show as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome back, Nadia.",
+    "why": "addressed by name just before answering"
+   }
+  ]
+ },
+ "8-R9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Priya Raman, here as always with Jonah Feld.",
+    "why": "names itself as Priya Raman"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 6,
+    "quote": "Jonah, that is literally what you did last weekend.",
+    "why": "addressed as Jonah, then answers"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Odette, welcome.",
+    "why": "welcomed by name, then answers"
+   }
+  ]
+ },
+ "8-T1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Priscilla Hahn",
+    "why": "names itself; sitting in for the listed host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Arjun, welcome.",
+    "why": "introduced and welcomed by name, then answers as guest"
+   }
+  ]
+ },
+ "8-T10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Ruby Sandoval.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "With me is swim coach Abby Marchetti, who taught half this town to swim at the Westside pool.",
+    "why": "introduced by name, then answers as that guest"
+   }
+  ]
+ },
+ "8-T11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks, Gil.",
+    "why": "guest calls host Gil"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Patrice Wynn, welcome.",
+    "why": "introduced by name just before speaking"
+   }
+  ]
+ },
+ "8-T12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is Undertow. I'm Hugh Talbot.",
+    "why": "names itself"
+   }
+  ]
+ },
+ "8-T13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Marisol Ibarra.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Dr. Hana Whitlock, thank you for saving us.",
+    "why": "introduced by name, then answers"
+   }
+  ]
+ },
+ "8-T14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Hi Dale, long time listener, first time caller.",
+    "why": "caller addresses it as Dale; it hosts the show"
+   }
+  ]
+ },
+ "8-T15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Owen Strickland.",
+    "why": "Names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "His name is Lyle Dempsey, he's eighty-one now, and in March he finally called me back.",
+    "why": "Introduced by name just before speaking"
+   }
+  ]
+ },
+ "8-T16": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Felipe, thanks for coming in so early.",
+    "why": "introduced and addressed by name, then answers as guest"
+   }
+  ]
+ },
+ "8-T17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is Capitol Corner. I'm Joanna Pell.",
+    "why": "names itself as the host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Curtis, does the bill have the votes?",
+    "why": "introduced and asked by name just before answering"
+   }
+  ]
+ },
+ "8-T18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thank you, Agnes.",
+    "why": "addressed as Agnes; host, though guest this episode"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Russ, take it away.",
+    "why": "addressed as Russ, then answers"
+   }
+  ]
+ },
+ "8-T19": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Mile Marker.",
+    "why": "opens the show; June is the listed author and host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "my producer Ty is here to keep me honest",
+    "why": "introduced as Ty just before speaking"
+   }
+  ]
+ },
+ "8-T2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Bonnie Laczko.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "His daughter Celeste is here with me.",
+    "why": "introduced by name, then answers as the daughter"
+   }
+  ]
+ },
+ "8-T20": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Hi, I'm Lucinda Paz, and I've been looking after this show since Vernon died this summer.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Delphine, welcome.",
+    "why": "welcomed by name just before answering"
+   }
+  ]
+ },
+ "8-T21": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Plainsong Sessions. I'm Amos Teague",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Lucia, welcome.",
+    "why": "welcomed by name, answers 'Thank you, Amos'; Kofi is the engineer thanked for the mic"
+   }
+  ]
+ },
+ "8-T22": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "He's fourth in the league, Dana.",
+    "why": "called Dana by the next voice"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Marcus, give me the one number that matters.",
+    "why": "called Marcus, then answers"
+   }
+  ]
+ },
+ "8-T3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Tamsin Rourke.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "My guest is Peter Lindgren, who wrote her biography and found those tapes.",
+    "why": "introduced by name just before speaking"
+   }
+  ]
+ },
+ "8-T4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Mirela Costa.",
+    "why": "Names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Tessa, explain the new code for people who haven't read all four hundred pages.",
+    "why": "Called by name just before answering"
+   }
+  ]
+ },
+ "8-T5": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Leah Dorsey",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 4,
+    "quote": "Whitley, you worked nights with her, didn't you?",
+    "why": "addressed by last name just before answering"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Okonjo, welcome.",
+    "why": "addressed by last name just before answering as the guest"
+   }
+  ]
+ },
+ "8-T6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Merle Hanstad, and with me in the studio is master gardener Nina Castellanos.",
+    "why": "names itself as the host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Nina, good to have you back.",
+    "why": "addressed as Nina Castellanos in the studio just before answering"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Nina in Fresno, you're on The Garden Line.",
+    "why": "the phone caller Nina in Fresno, a different person from the studio guest"
+   }
+  ]
+ },
+ "8-T7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Nell Hargrove.",
+    "why": "names itself as Nell Hargrove"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Gus Pavlides, welcome.",
+    "why": "welcomed by name, then answers"
+   }
+  ]
+ },
+ "8-T8": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Corey Blaylock.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Martin, would you read it for us?",
+    "why": "introduced and called Martin just before answering"
+   }
+  ]
+ },
+ "8-T9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to The Vesper Hour.",
+    "why": "opens the show as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 6,
+    "quote": "Father Kevin, thank you for everything you've given that parish.",
+    "why": "called Father Kevin; the retiring priest guest"
+   }
+  ]
+ },
+ "9-G1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Ingrid Solvang",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "As a rabbi, I've learned that the first week after a death is crowded and the second month is empty",
+    "why": "addressed as Rabbi and speaks as one"
+   }
+  ]
+ },
+ "9-G10": {
+  "voices": [
+   {
+    "label": "HOST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is Weather Eye. I'm Teodora Vance.",
+    "why": "names itself"
+   },
+   {
+    "label": "GUEST",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "May of ninety-nine. I was in the wrong county, chasing a storm that looked perfect on radar and did absolutely nothing.",
+    "why": "the storm chaser with thirty years on the road; the listing's one guest"
+   }
+  ]
+ },
+ "9-G11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Hi, I'm Ruthanne Pell, and this is Main Street Ledger, the show about the businesses that hold a town together.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "I bought it from my father-in-law in nineteen eighty-four.",
+    "why": "answers as the guest who runs the store since 1984"
+   }
+  ]
+ },
+ "9-G12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Rafael Brandt.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "My guest has spent those five years out measuring the river.",
+    "why": "answers as the only guest, the hydrologist named in the notes"
+   }
+  ]
+ },
+ "9-G13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Gus.",
+    "why": "Names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "And I'm Rhonda, and Gus, we are recording in a car right now.",
+    "why": "Names itself"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 5,
+    "quote": "The demolition company bid eighty-four thousand dollars. I bid eighty-four thousand and one.",
+    "why": "Tells the winning-bid story from the episode notes as the owner"
+   }
+  ]
+ },
+ "9-G14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Naomi Fairbanks-Oduya, and our panel is back.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Curtis, you first.",
+    "why": "addressed by name just before answering"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Ofelia?",
+    "why": "addressed by name just before answering"
+   }
+  ]
+ },
+ "9-G15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Patrick Ellery, the phone lines are full, so let's get right to it.",
+    "why": "names itself as the host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "This is Priya Kothari.",
+    "why": "names itself as the caller Priya"
+   }
+  ]
+ },
+ "9-G16": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Mireille Dufresne, and I'm standing on the deck of a shrimp boat at six in the morning.",
+    "why": "names itself as Mireille Dufresne"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 6,
+    "quote": "Dot, what are prices doing to you this year?",
+    "why": "addressed as Dot, which the listing gives as Dorothea Gaspard's name"
+   }
+  ]
+ },
+ "9-G17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Ingrid Solvang.",
+    "why": "names itself and hosts the show"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "I'm Hannah Liebowitz, and I've supervised the overnight shift at the county 911 center since twenty fifteen.",
+    "why": "names itself"
+   }
+  ]
+ },
+ "9-G18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Anders Marchand.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 5,
+    "quote": "Every canoe is three hundred hours, give or take, and I won't hire anyone to rush it.",
+    "why": "answers as the boat builder guest the title names; nothing says otherwise"
+   }
+  ]
+ },
+ "9-G19": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to the show, everybody.",
+    "why": "host opening the show named for him"
+   }
+  ]
+ },
+ "9-G2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Corinne Mabry.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Pastor, welcome.",
+    "why": "addressed as Pastor, the title for Delroy Haskins, then answers as the guest"
+   }
+  ]
+ },
+ "9-G20": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to The Margins, the show about the people behind the books.",
+    "why": "opens the show as the only listed host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "I translated the opening paragraph maybe forty times before I trusted myself to go on.",
+    "why": "answers as the guest translator"
+   }
+  ]
+ },
+ "9-G3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Marcus Tilden.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Coach, that was you in nineteen ninety-eight.",
+    "why": "called Coach just before answering; notes name the coach"
+   }
+  ]
+ },
+ "9-G4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 4,
+    "quote": "In twenty-six years as a judge, I made it a rule to read every letter a family sent me before a sentencing",
+    "why": "Addressed as Judge and speaks as the retired judge"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "I'm Hollis Pemberton.",
+    "why": "Names itself"
+   }
+  ]
+ },
+ "9-G5": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Naomi Fairbanks-Oduya.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Senator, welcome.",
+    "why": "addressed as the senator guest just before answering"
+   }
+  ]
+ },
+ "9-G6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "im Corinne Mabry",
+    "why": "names itself as the host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "sister thank you for having us out here",
+    "why": "addressed as sister just before answering; speaks as the hospice chaplain sister in the notes"
+   }
+  ]
+ },
+ "9-G7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Bastian Leclair.",
+    "why": "names itself as Bastian Leclair"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Professor, you've counted bees on the same mountain for fifteen years.",
+    "why": "addressed as Professor, the listing's guest, then answers"
+   }
+  ]
+ },
+ "9-G8": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "cannot_tell",
+    "turn": 0,
+    "quote": "Hi, and welcome to Second Draft.",
+    "why": "hosts, but is never named; listing gives only a publisher company name"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "I did. Thanks for having me on your show, by the way.",
+    "why": "answers as the guest novelist who threw his book away"
+   }
+  ]
+ },
+ "9-G9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Marisol Quintero-Hale, and I'm sitting in a pottery studio that, a year ago, was under four feet of water.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 5,
+    "quote": "Both kilns, most of my glazes, about two hundred finished pieces.",
+    "why": "answers as the potter whose studio flooded; nothing says otherwise"
+   }
+  ]
+ },
+ "9-H1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Dev Malhotra, sitting in for Ingrid Solvang, who is off finishing her book",
+    "why": "names itself as the stand-in"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "My guest tonight grew up on an island with exactly one building on it, and that building was a lighthouse.",
+    "why": "answers as the lighthouse-island guest"
+   }
+  ]
+ },
+ "9-H10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is The Quiet Dispatch. I'm Rafael Brandt.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "I've been organizing tenants for nine years",
+    "why": "the tenant organizer who joins instead of the owner, per the listing and her words"
+   }
+  ]
+ },
+ "9-H11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is Understory. I'm Bastian Leclair.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 6,
+    "quote": "Tobias, thank you for jumping in.",
+    "why": "thanked as Tobias after answering"
+   }
+  ]
+ },
+ "9-H12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Ruthanne Pell, and this is Main Street Ledger.",
+    "why": "names itself as host"
+   }
+  ]
+ },
+ "9-H13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Carol Hennessy, director of the foundation that carries her name",
+    "why": "Names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thank you, Carol, and thank you all for coming out on a rainy night.",
+    "why": "Thanks the introducer and gives the lecture as the listed lecturer"
+   }
+  ]
+ },
+ "9-H14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Patrick Ellery.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Otis, I'm so sorry.",
+    "why": "addressed by name just before answering as the guest"
+   }
+  ]
+ },
+ "9-H15": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 6,
+    "quote": "And now, as promised, Marisol will read her tamale recipe",
+    "why": "producer introduces Marisol, then SPEAKER 2 reads the recipe; SPEAKER 2 also answers the line about her being unable to bear the corrections"
+   }
+  ]
+ },
+ "9-H16": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Lorna Vasquez-Pruitt.",
+    "why": "names itself as Lorna Vasquez-Pruitt"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "That conversation became the first chapter of my book",
+    "why": "guest who wrote the review and the book, as the listing gives Annika Thorsby"
+   }
+  ]
+ },
+ "9-H17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Teodora Vance",
+    "why": "names itself and hosts the show"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "First up, Miriam in Erie.",
+    "why": "introduced as the caller Miriam just before speaking"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks, Teodora.",
+    "why": "answers the host's welcome as the forecaster guest"
+   }
+  ]
+ },
+ "9-H18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Mireille Dufresne.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "so Dot is back with me to answer some of it.",
+    "why": "introduced as Dot, the listing's nickname for Dorothea Gaspard, then answers"
+   }
+  ]
+ },
+ "9-H19": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Bastian Leclair, and today we're going underground.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "But under every forest there's a web of fungus connecting the trees, and I've spent my career mapping it.",
+    "why": "answers as the mycologist guest"
+   }
+  ]
+ },
+ "9-H2": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "I've measured stones that rode up and down for twenty minutes before they finally fell.",
+    "why": "answers the hail questions as the expert guest the host announces"
+   }
+  ]
+ },
+ "9-H20": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Double Feature. I'm Gus.",
+    "why": "names itself"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "Thirty-eight years. I started when I was seventeen, splicing film with a razor blade and tape",
+    "why": "answers as the projectionist guest"
+   }
+  ]
+ },
+ "9-H3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Marisol Quintero-Hale.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 6,
+    "quote": "Marco, is there a song she'd want us to end on?",
+    "why": "called Marco just before answering; speaks as her son"
+   }
+  ]
+ },
+ "9-H4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Naomi Fairbanks-Oduya.",
+    "why": "Names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Lena, you were in the chamber. What happened?",
+    "why": "Called by name just before answering"
+   }
+  ]
+ },
+ "9-H5": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Patrick Ellery.",
+    "why": "names itself as host"
+   }
+  ]
+ },
+ "9-H6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Old Letters. I'm Grayson Teale.",
+    "why": "names itself as the host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Renata, would you read it for us?",
+    "why": "addressed as Renata just before answering"
+   }
+  ]
+ },
+ "9-H7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Corinne Mabry, and today I have two clergymen from the same parish, a priest and a deacon.",
+    "why": "names itself as Corinne Mabry"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Father, let's start with you.",
+    "why": "addressed as Father, then answers as a priest"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 4,
+    "quote": "Deacon, what does your week look like?",
+    "why": "addressed as Deacon, then answers as a deacon"
+   }
+  ]
+ },
+ "9-H8": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Rafael Brandt.",
+    "why": "names itself and hosts the show"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "In eighteen years as an engineer for this city, I'd never seen that under a river crossing.",
+    "why": "speaks as the city engineer guest"
+   }
+  ]
+ },
+ "9-H9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Wen-Li Tsao.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "I have a lot of notes. I brought them.",
+    "why": "answers as the water-law guest the host introduces; nothing says otherwise"
+   }
+  ]
+ },
+ "10-K1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Rising Dough, I'm Dale Prentiss.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Honestly, eleven weeks felt like eleven years.",
+    "why": "answers as the guest baker who reopened after eleven weeks"
+   }
+  ]
+ },
+ "10-K10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to The Glass Hour.",
+    "why": "opens the show and welcomes the guest as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thank you. And it's Vroo-bel, actually.",
+    "why": "guest answers the welcome and corrects the host's mispronunciation of her own name"
+   }
+  ]
+ },
+ "10-K11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "okay were standing on the warning track its about six in the morning and the sprinklers just shut off thanks for letting me out here",
+    "why": "plays the host's part, opening and interviewing; nothing says otherwise"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "nineteen seasons here before that I did golf courses",
+    "why": "answers as the groundskeeper guest the notes describe"
+   }
+  ]
+ },
+ "10-K12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to The Thursday Panel.",
+    "why": "opens the show as the listed host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Arjun, you've studied the pilot programs. Do they work?",
+    "why": "addressed by name, then answers"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Esperanza, you actually tried it at your print shop.",
+    "why": "addressed by name, then answers"
+   }
+  ]
+ },
+ "10-K13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Because our guest just got back from a volcano, Petra!",
+    "why": "called Petra just before answering"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Hiroshi, you have been bouncing in your chair all morning.",
+    "why": "called Hiroshi just before answering"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 2,
+    "quote": "Leocadia, welcome.",
+    "why": "welcomed by name, then answers as the guest"
+   }
+  ]
+ },
+ "10-K14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Clementine, this is Made by Hand",
+    "why": "names itself as the host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 7,
+    "quote": "One at a time. It's about five years before I'd let someone open a fusee on their own.",
+    "why": "answers as the clock restorer guest in his workshop; nothing says otherwise"
+   }
+  ]
+ },
+ "10-K15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 6,
+    "quote": "Subscribe if you want to see part two, where I definitely do not fall into a ditch.",
+    "why": "channel owner hosting and signing off"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 5,
+    "quote": "This is my eleventh season. I started on a hand crew when I was nineteen and never figured out how to leave.",
+    "why": "answers as the firefighter guest named in title"
+   }
+  ]
+ },
+ "10-K16": {
+  "voices": [
+   {
+    "label": "HOST",
+    "verdict": "cannot_tell",
+    "turn": 0,
+    "quote": "This is Low Tide Stories.",
+    "why": "host never names itself; Seraphina Vukovic Studios is only the publisher, no host listed"
+   },
+   {
+    "label": "GUEST",
+    "verdict": "is",
+    "turn": 5,
+    "quote": "Nineteen eighty-four. I stood out on the gallery with a hand horn for six hours, one blast every thirty seconds, until the ore boat was past the shoal.",
+    "why": "the lighthouse keeper guest; listing names one guest, Oskar Brandvold"
+   }
+  ]
+ },
+ "10-K17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Lucian, no.",
+    "why": "addressed as Lucian by the next voice"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Wilhelmina, I have something to confess.",
+    "why": "addressed as Wilhelmina, then answers"
+   }
+  ]
+ },
+ "10-K18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "cannot_tell",
+    "turn": 0,
+    "quote": "We're about ninety feet up inside a grain elevator that hasn't held any grain since nineteen ninety-eight.",
+    "why": "hosts but never names itself; only the publisher network carries the name"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "One dollar and about four hundred thousand dollars of repairs.",
+    "why": "answers as the guest who bought the elevator, named in the episode title"
+   }
+  ]
+ },
+ "10-K2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Thanks for having me out.",
+    "why": "Visiting host in the barn; notes say Annika visits Tobias"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Glad you made the drive. Watch your step there, that's the extractor, and it bites.",
+    "why": "Answers as the barn's owner and beekeeper being visited"
+   }
+  ]
+ },
+ "10-K3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Today we're talking about childhood asthma with a physician who has spent twenty years running a children's asthma clinic.",
+    "why": "opens the show and introduces the guest as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Doctor, thanks for coming in.",
+    "why": "addressed as the doctor guest, then answers as guest"
+   }
+  ]
+ },
+ "10-K4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "It's a little after ten at night, we're in the front seat of car fourteen, and the radio has not stopped since we pulled out of the lot.",
+    "why": "opens as the host riding along, as the notes say Cormac does"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Officer, is it always like this?",
+    "why": "addressed as Officer just before answering; the notes name Officer Imani Castellanos as the ride-along subject"
+   }
+  ]
+ },
+ "10-K5": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "cannot_tell",
+    "turn": 0,
+    "quote": "It's nine-fifteen on a Sunday, there are thirty tickets on the rail, and I have been told to stand against the wall and touch nothing.",
+    "why": "never named; Hollis Pemberton appears only in the publisher company name"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Chef, where do you want me?",
+    "why": "addressed as Chef, the guest, then answers"
+   }
+  ]
+ },
+ "10-K6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Lorna Fitzwilliam",
+    "why": "names itself and hosts the show"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 4,
+    "quote": "Captain, what do you tell a green deckhand on day one?",
+    "why": "addressed as Captain, the listed title, then answers as guest"
+   }
+  ]
+ },
+ "10-K7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Good evening, this is City Desk Live, I'm Bertrand Okafor",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Councilwoman, welcome back.",
+    "why": "spoken to as the councilwoman, then answers as the guest"
+   }
+  ]
+ },
+ "10-K8": {
+  "voices": [
+   {
+    "label": "HOST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Bishop, welcome to Faith in the Valley.",
+    "why": "host opens and welcomes guest"
+   },
+   {
+    "label": "GUEST",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "My guest was installed just last month, and this is her first interview since. Bishop, welcome to Faith in the Valley.",
+    "why": "addressed as Bishop just before answering"
+   }
+  ]
+ },
+ "10-K9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "Thanks, Saoirse.",
+    "why": "guest answers it by name; it opens and hosts the show"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Imam, thank you for hosting us.",
+    "why": "addressed as Imam, the listing's title for Hamza Bilgrami-Shaw, then answers as guest"
+   }
+  ]
+ },
+ "10-L1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Pages Across, I'm Rashida Okonjo.",
+    "why": "names itself and opens the show"
+   }
+  ]
+ },
+ "10-L10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is Pothole Report, I'm Constance Ebright.",
+    "why": "names itself as host"
+   }
+  ]
+ },
+ "10-L11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Good morning, this is The Potting Bench and I'm Morley Atwater.",
+    "why": "Names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "In the studio with me from the county extension office, master gardener Philippa Gorringe.",
+    "why": "Introduced by name just before speaking"
+   },
+   {
+    "label": "SPEAKER 3",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "This is Tom Gorringe calling from Elkhart, and before anybody asks, no, we are not related.",
+    "why": "Names itself as the caller"
+   }
+  ]
+ },
+ "10-L12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Groundwater, I'm Vesna Odegaard.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome, Zofia Krawczyk.",
+    "why": "introduced as the stand-in guest, answers, and is thanked by name at the end"
+   }
+  ]
+ },
+ "10-L15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Gridlock, I'm Anouk Verhaegen.",
+    "why": "names itself as the host"
+   }
+  ]
+ },
+ "10-L16": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Ignatius Corrigan",
+    "why": "names itself as Ignatius Corrigan"
+   }
+  ]
+ },
+ "10-L18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is Dear Home, I'm Augusta Ferrante.",
+    "why": "names itself as host"
+   }
+  ]
+ },
+ "10-L2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "On Listen Closely this week, the voice behind fourteen hours of a memoir about a Montana logging camp.",
+    "why": "host opening the show"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "It's strange to talk in my own voice instead of the book's.",
+    "why": "answers as the audiobook narrator guest"
+   }
+  ]
+ },
+ "10-L3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is The Frozen Past, I'm Ingrid Sandvold",
+    "why": "names itself and opens the show"
+   }
+  ]
+ },
+ "10-L4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "On Rural Route 9 today, a woman who drove the same hundred and twelve miles of gravel six days a week for thirty-one years. Welcome.",
+    "why": "opens the show and welcomes the guest; only host listed"
+   }
+  ]
+ },
+ "10-L5": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "This is Delta Voices, I'm Silas Amankwah, and today we remember a man who spent forty years about ten feet above the cotton.",
+    "why": "names itself as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "His wife is with me from their farm.",
+    "why": "host introduces the wife just before it answers; notes name her Ruth"
+   }
+  ]
+ },
+ "10-L6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Score and Story.",
+    "why": "Opens the show as host; listing names Noor as host"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 1,
+    "quote": "I'm Beatriz Aldana, and I write music for video games now.",
+    "why": "Names itself"
+   }
+  ]
+ },
+ "10-L7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Counter Culture, I'm Hamish Teague.",
+    "why": "names itself as host"
+   }
+  ]
+ },
+ "10-L8": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "I'm Jonas",
+    "why": "names itself Jonas, sitting in for the away host Fenna"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 3,
+    "quote": "I hauled about four thousand of them in my uncle's pickup.",
+    "why": "answers as the guest who built the kiln from salvaged bricks"
+   }
+  ]
+ },
+ "10-L9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "verdict": "is",
+    "turn": 0,
+    "quote": "Welcome to Open Throttle, I'm Rhys Kaltenbach.",
+    "why": "names itself as Rhys Kaltenbach"
+   },
+   {
+    "label": "SPEAKER 2",
+    "verdict": "is",
+    "turn": 6,
+    "quote": "Priyanka, how did you get into this?",
+    "why": "introduced and addressed as Priyanka, then answers"
+   }
+  ]
+ }
+}

@@ -1,0 +1,1556 @@
+{
+ "K1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Prentiss",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Dale Prentiss",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Marisol Quintero",
+    "evidence": [
+     {
+      "kind": "self_reference",
+      "turn": 1,
+      "quote": "Honestly, eleven weeks felt like eleven years. The water came up past the second shelf of the proofing racks.",
+      "listingQuote": "A baker on losing everything to the river last spring and opening her doors again eleven weeks later.",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "I called my oven repairman. The deck ovens were the whole business.",
+      "listingQuote": "Marisol Quintero: The Flood, the Ovens, and Reopening Day",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "There was a line around the block. People I had never met brought me flour, brought me coffee, and one man brought me a mop.",
+      "listingQuote": "Marisol Quintero: The Flood, the Ovens, and Reopening Day",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Ezekiel Brannigan",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to The Glass Hour. My guest left a career in accounting at fifty to restore stained glass windows. Please welcome Magdalena Robel.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Magdalena Wrobel",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Please welcome Magdalena Robel.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_identification",
+      "turn": 1,
+      "quote": "And it's Vroo-bel, actually. The W sounds like a V.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Vroo-bel. I'm so sorry, I practiced that in the car.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Kwabena Asante-Mills",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "okay were standing on the warning track its about six in the morning and the sprinklers just shut off thanks for letting me out here",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Gideon Mbatha",
+    "evidence": [
+     {
+      "kind": "self_reference",
+      "turn": 1,
+      "quote": "no problem just stay off the infield dirt I raked it an hour ago and if you leave a footprint I will cry",
+      "listingQuote": "head groundskeeper at a minor-league ballpark in Chattanooga",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "nineteen seasons here before that I did golf courses which honestly is easier grass",
+      "listingQuote": "head groundskeeper at a minor-league ballpark in Chattanooga",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "ive got the tarp crew on standby anyway because ive been burned before",
+      "listingQuote": "head groundskeeper at a minor-league ballpark in Chattanooga",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Delphine Mabry",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to The Thursday Panel.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Arjun Telford",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Arjun, you've studied the pilot programs. Do they work?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 5,
+      "quote": "Well, the data didn't have to answer my phone on Fridays, Arjun.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Esperanza Ruelas",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Esperanza, you actually tried it at your print shop.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 5,
+      "quote": "Well, the data didn't have to answer my phone on Fridays, Arjun.",
+      "listingQuote": "",
+      "addressee": "Arjun"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Petra Lindgren-Osei",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Because our guest just got back from a volcano, Petra!",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Hiroshi, you have been bouncing in your chair all morning.",
+      "listingQuote": "",
+      "addressee": "Hiroshi"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Hiroshi Vandermeer",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Hiroshi, you have been bouncing in your chair all morning.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Because our guest just got back from a volcano, Petra!",
+      "listingQuote": "",
+      "addressee": "Petra"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Leocadia Pruitt",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Leocadia, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "Gas, mostly. How much sulfur dioxide is coming out tells us how much magma is still on its way up.",
+      "listingQuote": "volcanologist Leocadia Pruitt, just back from three weeks measuring gas on an erupting volcano in Iceland",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Clementine Oyelaran",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Clementine",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "I'm Clementine, this is Made by Hand, and I'm surrounded by about two hundred clocks that are all ticking slightly out of sync.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Florian Weisskopf",
+    "evidence": [
+     {
+      "kind": "self_reference",
+      "turn": 1,
+      "quote": "Slightly is generous. Give me a week with them.",
+      "listingQuote": "clock restorer, Cincinnati",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "A tower movement from a courthouse in Kentucky. Half the gears had to be redrawn by hand and cut one tooth at a time.",
+      "listingQuote": "the courthouse clock that took four years",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 7,
+      "quote": "One at a time. It's about five years before I'd let someone open a fusee on their own.",
+      "listingQuote": "clock restorer, Cincinnati",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Nadia Khoury-Baines",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Okay, we're in the truck, it's five in the morning, and I've already been told I'm holding my coffee wrong. What's the plan today?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ravindra Kulkarni-Shaw",
+    "evidence": [
+     {
+      "kind": "self_reference",
+      "turn": 1,
+      "quote": "Mop-up on the east flank. We walk the line, feel for heat with the back of the hand, and dig out anything that's still smoking.",
+      "listingQuote": "Riding along with a wildland firefighter during mop-up week on the east flank.",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "This is my eleventh season. I started on a hand crew when I was nineteen and never figured out how to leave.",
+      "listingQuote": "A day on the fire line (ft. Ravindra Kulkarni-Shaw)",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K16": {
+  "voices": [
+   {
+    "label": "HOST",
+    "name": "Seraphina Vukovic",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 0,
+      "quote": "This is Low Tide Stories.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "This is Low Tide Stories. Today, a man who kept a lighthouse on Lake Superior for almost forty years, and he brought his logbooks.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "GUEST",
+    "name": "Oskar Brandvold",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 1,
+      "quote": "Eleven of them. My wife was glad to get them out of the closet.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "I stood out on the gallery with a hand horn for six hours, one blast every thirty seconds, until the ore boat was past the shoal.",
+      "listingQuote": "A retired lighthouse keeper reads from forty years of logbooks and remembers the night the fog signal failed",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Lucian Abernathy",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Lucian, no.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Wilhelmina, I have something to confess.",
+      "listingQuote": "",
+      "addressee": "Wilhelmina"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Wilhelmina Strand",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Wilhelmina, I have something to confess.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Lucian, no.",
+      "listingQuote": "",
+      "addressee": "Lucian"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Mateus Carvalho-Dunn",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "We're about ninety feet up inside a grain elevator that hasn't held any grain since nineteen ninety-eight. My guest bought it from the county for one dollar. Is that true?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Kofi Ansah-Whitcombe",
+    "evidence": [
+     {
+      "kind": "self_reference",
+      "turn": 1,
+      "quote": "One dollar and about four hundred thousand dollars of repairs. But yes, the check said one dollar.",
+      "listingQuote": "The One-Dollar Grain Elevator - with Kofi Ansah-Whitcombe",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "A climbing gym on the bottom, apartments in the head house, and a little radio station up top, if the town lets me.",
+      "listingQuote": "Now he has to figure out what to do with it.",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Annika Thorvaldsen",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "We're standing in a barn that smells like beeswax and old hay, and the man next to me has kept bees on this farm for thirty years. Thanks for having me out.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Tobias Ellingboe",
+    "evidence": [
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "My father built most of these frames. The bees don't care, and I like the way the wood holds up when the hive gets heavy in August.",
+      "listingQuote": "beekeeper Tobias Ellingboe at his family's barn outside Decorah to talk queen rearing, mite counts, and why he still uses wooden frames",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "I lost eight over the winter",
+      "listingQuote": "beekeeper Tobias Ellingboe at his family's barn outside Decorah to talk queen rearing, mite counts, and why he still uses wooden frames",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Wendell Farrow",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Today we're talking about childhood asthma with a physician who has spent twenty years running a children's asthma clinic. Doctor, thanks for coming in.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Nkechi Obiora",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Doctor, thanks for coming in.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Doctor, what's the most common mistake parents make with inhalers?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Doctor, thank you.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Cormac Delahunt",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "It's a little after ten at night, we're in the front seat of car fourteen, and the radio has not stopped since we pulled out of the lot. Officer, is it always like this?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Imani Castellanos",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Officer, is it always like this?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 4,
+      "quote": "Officer, what's the call you think about most?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "Six years. I asked for days twice and then I stopped asking.",
+      "listingQuote": "a patrol officer in Dayton, on an overnight shift",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "A little terrier loose in the median on the interstate. Took two of us forty minutes and half a cheeseburger to get him into the car.",
+      "listingQuote": "a lost dog on the interstate",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K5": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Hollis Pemberton",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "It's nine-fifteen on a Sunday, there are thirty tickets on the rail, and I have been told to stand against the wall and touch nothing. Chef, where do you want me?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ottilie Marchetti",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Chef, where do you want me?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "Five a.m., same as every day. I roll the brunch ravioli myself.",
+      "listingQuote": "Chef Ottilie Marchetti on pasta rolled at 5 a.m., thirty tickets on the rail, and how she has kept the same cooks for a decade",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Chef, thank you for letting me into your kitchen.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Lorna Fitzwilliam",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Lorna Fitzwilliam",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "This is Saltwater Hours, I'm Lorna Fitzwilliam",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Halvard Nygaard",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Captain, thanks for letting me aboard.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 4,
+      "quote": "Captain, what do you tell a green deckhand on day one?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "When I started we fished on a hunch. Now I've got three weather models on that screen and I still fish on a hunch.",
+      "listingQuote": "Captain Halvard Nygaard has run the crab boat Kittiwake out of Kodiak for twenty-two seasons.",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 7,
+      "quote": "I don't talk about that one. Ask me something else.",
+      "listingQuote": "the one storm he refuses to describe",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Bertrand Okafor",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Bertrand Okafor",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Good evening, this is City Desk Live, I'm Bertrand Okafor",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Rosalind Achterhof",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Councilwoman, welcome back.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "Route 12 is how half my district gets to the hospital and to second shift.",
+      "listingQuote": "Councilwoman Rosalind Achterhof, who represents the 4th District on the Toledo City Council",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 5,
+      "quote": "Councilwoman, the branch library.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K8": {
+  "voices": [
+   {
+    "label": "HOST",
+    "name": "Teodoro Vasquez-Lin",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 0,
+      "quote": "My guest was installed just last month, and this is her first interview since.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Bishop, welcome to Faith in the Valley.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "GUEST",
+    "name": "Thandiwe Mokoena-Reyes",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 1,
+      "quote": "Thank you. I'm still learning where all the light switches are in the new office.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Bishop, welcome to Faith in the Valley.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "I've put two thousand miles on the car visiting congregations of thirty and forty people",
+      "listingQuote": "she talks about long drives, small congregations, and churches that are closing",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "K9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Saoirse Callanan",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Saoirse.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Hamza Bilgrami-Shaw",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Imam, thank you for hosting us.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "We served four hundred households in a single week. Half of them were not Muslim, and nobody asked.",
+      "listingQuote": "Imam Hamza Bilgrami-Shaw, who leads a neighborhood mosque in Dearborn, explains how its food pantry more than doubled during Ramadan",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Imam, what's the one thing people listening can do?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "L1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Rashida Okonjo",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Rashida Okonjo",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Pages Across, I'm Rashida Okonjo.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "This voice is the unnamed translator; Rasmus Kvaale is the author, who died in 1990 and is spoken of as he, and no one names this voice."
+   }
+  ]
+ },
+ "L10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Constance Ebright",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Constance Ebright",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "This is Pothole Report, I'm Constance Ebright.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The reporter who covered city hall; the listing gives no name for the reporter and nobody in the words does, and the mayor is spoken of as 'he', so this voice is not him."
+   }
+  ]
+ },
+ "L11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Morley Atwater",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Morley Atwater",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Good morning, this is The Potting Bench and I'm Morley Atwater.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "Hi Philippa, hi Morley.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Philippa Gorringe",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "In the studio with me from the county extension office, master gardener Philippa Gorringe.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Philippa, the phones are already full.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 4,
+      "quote": "Not as far as I know, Tom! What's your question?",
+      "listingQuote": "",
+      "addressee": "Tom"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Tom Gorringe",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 3,
+      "quote": "This is Tom Gorringe calling from Elkhart",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 4,
+      "quote": "Not as far as I know, Tom! What's your question?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 3,
+      "quote": "Hi Philippa, hi Morley.",
+      "listingQuote": "",
+      "addressee": "Philippa and Morley"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "L12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Vesna Odegaard",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Vesna Odegaard",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Groundwater, I'm Vesna Odegaard.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Vesna.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Zofia Krawczyk",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Welcome, Zofia Krawczyk.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Zofia, thank you for jumping in.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks, Vesna.",
+      "listingQuote": "",
+      "addressee": "Vesna"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "L13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Gus",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "you've got me, Gus, his neighbor from two doors down",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "A caller with a riding mower; nobody names this caller, and Bob is the absent host the caller asks about."
+   },
+   {
+    "label": "SPEAKER 3",
+    "why": "A caller with an aquarium; nobody names this caller, and Bob is the absent host the caller sends congratulations to."
+   }
+  ]
+ },
+ "L14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Bob Kettleson",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 2,
+      "quote": "I'm kidding, ma'am, it's me, it's Bob, twenty-two years on this microphone.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "You're on the Fix-It Hour, go ahead.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "A caller with a garbage disposal; neither the listing nor the words give her name, and 'ma'am' is only a form of address."
+   }
+  ]
+ },
+ "L15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Anouk Verhaegen",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Anouk Verhaegen",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Gridlock, I'm Anouk Verhaegen.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "No one names, introduces or addresses this voice; Emeka is only spoken of as absent, so it is not him, and nothing else shows which guest it is."
+   }
+  ]
+ },
+ "L16": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Ignatius Corrigan",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Ignatius Corrigan",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Long Run Home, I'm Ignatius Corrigan",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 5,
+      "quote": "Ignatius, do you want to take that one, or should I?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "This is the co-host, whom no one names and the listing does not list; the guest Saskia is still in another room, not yet on."
+   }
+  ]
+ },
+ "L17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "June",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "since before you were born, June",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "Guest is described only as a woman who has grown persimmons for thirty years; neither the listing ('a local grower') nor the words give her name, and she speaks of Harlan in the third person."
+   }
+  ]
+ },
+ "L18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Augusta Ferrante",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Augusta Ferrante",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "This is Dear Home, I'm Augusta Ferrante.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "This voice is the archivist, whom the listing gives only by role and no one names; Elias Thornbury is the long-dead subject of the letters, not a voice here."
+   }
+  ]
+ },
+ "L2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Bao Tran Whitfield",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "On Listen Closely this week, the voice behind fourteen hours of a memoir about a Montana logging camp. Thanks for coming in.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Tavish McAllister",
+    "evidence": [
+     {
+      "kind": "self_reference",
+      "turn": 1,
+      "quote": "It's strange to talk in my own voice instead of the book's.",
+      "listingQuote": "read by Tavish McAllister",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "I read it three times before I recorded a word.",
+      "listingQuote": "read by Tavish McAllister",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "L3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Ingrid Sandvold",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Ingrid Sandvold",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "This is The Frozen Past, I'm Ingrid Sandvold",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "This voice is the unnamed local historian; Bartholomew Crane is only the long-dead subject, spoken of as he, and no one names this voice."
+   }
+  ]
+ },
+ "L4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Augustin Pellerin",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "On Rural Route 9 today, a woman who drove the same hundred and twelve miles of gravel six days a week for thirty-one years. Welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "The guest is described only as a retired rural mail carrier; neither the listing nor the words give a name."
+   }
+  ]
+ },
+ "L5": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Silas Amankwah",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Silas Amankwah",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "This is Delta Voices, I'm Silas Amankwah, and today we remember a man who spent forty years about ten feet above the cotton.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ruth Pennington",
+    "evidence": [
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "I carried him out a glass of tea and he stayed for supper.",
+      "listingQuote": "His wife of fifty-one years, Ruth Pennington, joins us from the farm to remember him",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "We cleared it ourselves, the two of us and a borrowed tractor. I drove and he pulled stumps.",
+      "listingQuote": "His wife of fifty-one years, Ruth Pennington, joins us from the farm to remember him",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "L6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Noor Halabi-Grant",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Score and Story. Today, a remembrance. My guest studied with him for six years and still has a drawer full of his letters.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Beatriz Aldana",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 1,
+      "quote": "I'm Beatriz Aldana",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Beatriz, what was a lesson with him like?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Thank you, Beatriz.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "L7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Hamish Teague",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Hamish Teague",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Counter Culture, I'm Hamish Teague.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "She is the former chef at the Tulsa lunch counter, but neither the listing nor the words give her name; 'Valentina' is the film star she cooked for, spoken of in the third person."
+   }
+  ]
+ },
+ "L8": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Jonas",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Jonas",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Odalys Ferreira",
+    "evidence": [
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "I hauled about four thousand of them in my uncle's pickup.",
+      "listingQuote": "ceramicist Odalys Ferreira about wood-firing, failure, and the kiln she built from salvaged bricks",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 5,
+      "quote": "Four days of stoking, around the clock. My friends take shifts.",
+      "listingQuote": "ceramicist Odalys Ferreira about wood-firing, failure, and the kiln she built from salvaged bricks",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "L9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Rhys Kaltenbach",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Rhys Kaltenbach",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Open Throttle, I'm Rhys Kaltenbach.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Rhys.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Priyanka Sethuraman",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Please welcome Priyanka Sethuraman.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Priyanka, how did you get into this?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks, Rhys.",
+      "listingQuote": "",
+      "addressee": "Rhys"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ }
+}

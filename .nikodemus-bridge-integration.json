@@ -1,0 +1,98 @@
+{
+  "backup": "/Users/alexmaksimovich/Documents/ChatGPT/deflate-lens-0.15.2/integration/verification/deflate-releases/deflate-06db4506-20261018T095734Z",
+  "changed_originals": [],
+  "deployment_state": "verified_after_startup",
+  "files": [
+    {
+      "baseline_sha256": "12bb4b1b0758a0e57fe080e60056928f15252e8041606374a34e7d0dd859a81b",
+      "before_sha256": "12bb4b1b0758a0e57fe080e60056928f15252e8041606374a34e7d0dd859a81b",
+      "bytes": 31642,
+      "change": "verified_unchanged",
+      "path": "server/ai.js",
+      "runtime": true,
+      "sha256": "12bb4b1b0758a0e57fe080e60056928f15252e8041606374a34e7d0dd859a81b",
+      "staged_sha256": "12bb4b1b0758a0e57fe080e60056928f15252e8041606374a34e7d0dd859a81b"
+    },
+    {
+      "baseline_sha256": "4e306a12c778f7e0bebfe2086a911abec6c99abe10613f8109b596fab8afa56c",
+      "before_sha256": "4e306a12c778f7e0bebfe2086a911abec6c99abe10613f8109b596fab8afa56c",
+      "bytes": 66555,
+      "change": "verified_unchanged",
+      "path": "server/app.js",
+      "runtime": true,
+      "sha256": "4e306a12c778f7e0bebfe2086a911abec6c99abe10613f8109b596fab8afa56c",
+      "staged_sha256": "4e306a12c778f7e0bebfe2086a911abec6c99abe10613f8109b596fab8afa56c"
+    },
+    {
+      "baseline_sha256": "31d8ab04d4a1816f6c8c35ea8b3502a5b8581cbc26cc25aca2459a090bf991f1",
+      "before_sha256": "31d8ab04d4a1816f6c8c35ea8b3502a5b8581cbc26cc25aca2459a090bf991f1",
+      "bytes": 34658,
+      "change": "modified",
+      "path": "server/bridge.js",
+      "runtime": true,
+      "sha256": "34b40512423e1e30ebf96ee4566506ac837e5f94625482f7cd7314bedd720b94",
+      "staged_sha256": "34b40512423e1e30ebf96ee4566506ac837e5f94625482f7cd7314bedd720b94"
+    },
+    {
+      "baseline_sha256": "bb4a78c5d89a228d6df8cf6e1d12e92a36eec05197a88e2d69861c0c24215569",
+      "before_sha256": "bb4a78c5d89a228d6df8cf6e1d12e92a36eec05197a88e2d69861c0c24215569",
+      "bytes": 27758,
+      "change": "verified_unchanged",
+      "path": "server/exportClaims.js",
+      "runtime": true,
+      "sha256": "bb4a78c5d89a228d6df8cf6e1d12e92a36eec05197a88e2d69861c0c24215569",
+      "staged_sha256": "bb4a78c5d89a228d6df8cf6e1d12e92a36eec05197a88e2d69861c0c24215569"
+    },
+    {
+      "baseline_sha256": "54067bf7807f51c447e085b1e47040308d5395c8cc3c5f4d9bdc4bfc3f7b3a73",
+      "before_sha256": "54067bf7807f51c447e085b1e47040308d5395c8cc3c5f4d9bdc4bfc3f7b3a73",
+      "bytes": 6643,
+      "change": "verified_unchanged",
+      "path": "server/importer.js",
+      "runtime": true,
+      "sha256": "54067bf7807f51c447e085b1e47040308d5395c8cc3c5f4d9bdc4bfc3f7b3a73",
+      "staged_sha256": "54067bf7807f51c447e085b1e47040308d5395c8cc3c5f4d9bdc4bfc3f7b3a73"
+    },
+    {
+      "baseline_sha256": "1e4d94d685adc1f85cc105d0ca01086d8105486a01daee6409153209c6ace552",
+      "before_sha256": "1e4d94d685adc1f85cc105d0ca01086d8105486a01daee6409153209c6ace552",
+      "bytes": 48898,
+      "change": "verified_unchanged",
+      "path": "server/preparation.js",
+      "runtime": true,
+      "sha256": "1e4d94d685adc1f85cc105d0ca01086d8105486a01daee6409153209c6ace552",
+      "staged_sha256": "1e4d94d685adc1f85cc105d0ca01086d8105486a01daee6409153209c6ace552"
+    },
+    {
+      "baseline_sha256": "545b20ab1756a09519935d6650bee192447d609a759c48b62a9feedc81825c8f",
+      "before_sha256": "545b20ab1756a09519935d6650bee192447d609a759c48b62a9feedc81825c8f",
+      "bytes": 25605,
+      "change": "modified",
+      "path": "test/bridge.test.js",
+      "runtime": false,
+      "sha256": "55e71426bdbe0d7a4e8dce92fa0a41478db2b3b36fa1c8c68f6d2422603b3235",
+      "staged_sha256": "55e71426bdbe0d7a4e8dce92fa0a41478db2b3b36fa1c8c68f6d2422603b3235"
+    },
+    {
+      "baseline_sha256": "30e434aa17630181478ef59ef7a376148bfc189852166171fca63494c6149a00",
+      "before_sha256": "30e434aa17630181478ef59ef7a376148bfc189852166171fca63494c6149a00",
+      "bytes": 2590,
+      "change": "verified_unchanged",
+      "path": "test/html-forms.test.js",
+      "runtime": false,
+      "sha256": "30e434aa17630181478ef59ef7a376148bfc189852166171fca63494c6149a00",
+      "staged_sha256": "30e434aa17630181478ef59ef7a376148bfc189852166171fca63494c6149a00"
+    }
+  ],
+  "model_calls": 0,
+  "original_store_files": 161,
+  "previous_marker_sha256": "54eca5039ba8116c610eedbde4f1e54ff32b7b1f5093e7d2d518e33f9c54ce0a",
+  "previous_source_commit": "cfe84c3ec4992dac345f363b36a9bf86fe77ec28",
+  "reviewed_manifest": {
+    "path": "/Users/alexmaksimovich/Documents/ChatGPT/deflate-lens-0.15.2/integration/verification/deflate-releases/deflate-06db4506-20261018T095734Z/PROMOTION-MANIFEST.json",
+    "sha256": "9c6ef88c08a5669fb1dcdafcb58051e7a9322ce4a7e85ccd49c940c52bd86c14"
+  },
+  "schema": "deflate.selective_update.v1",
+  "source_commit": "06db4506dde8b1991bfe11e18d4048d710c6f713",
+  "source_root": "/Users/alexmaksimovich/Documents/ChatGPT/deflate-lens-0.15.2/integration/deflate-provider-signature-20261018"
+}

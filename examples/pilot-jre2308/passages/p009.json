@@ -1,0 +1,143 @@
+{
+  "order": 9,
+  "title": "COVID: 'we were all right'",
+  "turnStart": 227,
+  "turnEnd": 239,
+  "stake": "Whether a government web page vindicates 'everything' the skeptics said, and whether the Omicron premise is true.",
+  "speakers": [
+    "JORDAN PETERSON",
+    "JOE ROGAN"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 230,
+        "speaker": "JOE ROGAN",
+        "quote": "All the things that would have gotten you fired if you were a professor and you said them four years ago, you would have 100% got fired for espousing any of these ideas that turned out to be true.",
+        "verbatim": true
+      },
+      {
+        "turn": 234,
+        "speaker": "JOE ROGAN",
+        "quote": "And turns out, luckily, we were all right. We were all correct, you know, and now the government shows it on their f*ing website",
+        "verbatim": true
+      },
+      {
+        "turn": 239,
+        "speaker": "JOE ROGAN",
+        "quote": "“You’re looking forward to a winter of severe illness and death. And the hospitals that you will overwhelm.” Like, that was the White House telling you something when it was in Omicron. By that point, which was like a cold, like it was crazy, the deaths had dropped off radically",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "Rogan: a White House web page about COVID's origin now backs ideas that would have gotten a professor fired four years ago, so 'we were all right'. He also recalls the White House's December 2021 warning to the unvaccinated of 'a winter of severe illness and death', made, he says, when Omicron was like a cold and deaths had dropped off radically.",
+      "g5": "Rogan says a new government web page agrees with things that used to get people in trouble for saying, so the doubters were right about everything. He also remembers the White House warning unvaccinated people about a deadly winter, and says that at the time the virus was mild and fewer people were dying."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "'We were all right. We were all correct' is kept as spoken. The rewrite does not specify what 'all' covers, because the passage does not.",
+        "g5": "He said 'we were right about everything' but didn't list the things, so the card can't either."
+      }
+    },
+    "jump": {
+      "present": true,
+      "pivot": "we were all right. We were all correct",
+      "pivotVerbatim": true,
+      "hs": "One real vindication (the lab-origin hypothesis moved from banned to officially endorsed) is spent on everything else that was said, without listing it. And the premise offered about Omicron is wrong on the record: US deaths were rising in December 2021 and reached a one-year high in early February 2022.",
+      "g5": "Being right about one thing, where the virus came from, is used to say they were right about everything. And the part about fewer people dying is wrong: more people were dying then, not fewer."
+    },
+    "defense": {
+      "hs": "The lab-origin reversal is real and significant: people were deplatformed for a view a government page now asserts, and Rogan was a target. Omicron was milder per infection than Delta, which is what 'like a cold' points at. The Biden quote is accurate. The complaint about 'psychological warfare' is a judgment about tone, which the quote supports.",
+      "g5": "He's right that people got punished for an idea the government now puts on its own website. He's right that this version of the virus was milder for each person who caught it. And the scary quote is real."
+    },
+    "revision": {
+      "jumpSurvives": "partly",
+      "hs": "The vindication claim survives for the one case named. The deaths claim does not: 'milder per infection' and 'deaths dropped off' are different statements, and the second is false for that winter. 'We were all right' remains unscorable until 'all' is listed.",
+      "g5": "He's right about the one thing he names. He's wrong about deaths going down. 'Right about everything' can't be checked until he says what 'everything' is."
+    },
+    "claims": [
+      {
+        "text": "The White House warned the unvaccinated of 'a winter of severe illness and death'.",
+        "speaker": "JOE ROGAN",
+        "type": "fact",
+        "basis": {
+          "hs": "President Biden, 16 December 2021. Not re-checked here.",
+          "g5": "Yes, the President said this in December 2021."
+        },
+        "status": "unchecked",
+        "wouldSettle": "White House transcript, 16 December 2021.",
+        "receipts": [],
+        "settle": {
+          "hs": "White House transcript, 16 December 2021.",
+          "g5": "The White House's own record of what the President said on 16 December 2021."
+        }
+      },
+      {
+        "text": "By then the deaths had dropped off radically.",
+        "speaker": "JOE ROGAN",
+        "type": "unsupported",
+        "basis": {
+          "hs": "Wrong. US COVID deaths climbed through January 2022 to a seven-day average above 2,400 a day on 1 February 2022, the highest in about a year. Omicron was milder per infection; the death toll was not small.",
+          "g5": "Not true. More people were dying each day in January and February 2022 than at almost any time in the previous year."
+        },
+        "status": "receipt",
+        "wouldSettle": "",
+        "receipts": [
+          {
+            "url": "https://www.cnbc.com/2022/02/01/us-covid-fatalities-reach-highest-level-in-a-year-as-omicron-cases-subside.html",
+            "note": "CNBC, 1 Feb 2022: 7-day average above 2,400 deaths/day, highest in a year",
+            "addedBy": "claude-in-chat",
+            "at": "2026-10-02T14:00:00.000Z"
+          }
+        ],
+        "expectedSources": [
+          "government_data",
+          "news_coverage"
+        ],
+        "searchQuery": "United States COVID-19 deaths January 2022 Omicron"
+      },
+      {
+        "text": "A government web page endorses a lab origin for COVID.",
+        "speaker": "JOE ROGAN",
+        "type": "contested",
+        "basis": {
+          "hs": "The White House published such a page in April 2025. A government page asserting an origin is not the same as the question being settled; scientific opinion remained divided. Not re-checked here.",
+          "g5": "The web page is real. But a government saying something doesn't make it settled; scientists still disagree."
+        },
+        "status": "unchecked",
+        "wouldSettle": "The page itself; intelligence-community assessments; peer-reviewed origin studies.",
+        "receipts": [],
+        "settle": {
+          "hs": "The page itself; intelligence-community assessments; peer-reviewed origin studies.",
+          "g5": "The web page itself, the spy agencies' reports, and scientists' published studies on where the virus came from."
+        }
+      },
+      {
+        "text": "We were all right.",
+        "speaker": "JOE ROGAN",
+        "type": "unscorable",
+        "basis": {
+          "hs": "No list of what 'all' covers.",
+          "g5": "He doesn't say what 'all' means, so it can't be checked."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      }
+    ],
+    "judgments": {
+      "evidence": "mixed",
+      "inference": "gap"
+    }
+  }
+}

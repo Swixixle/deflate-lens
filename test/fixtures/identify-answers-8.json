@@ -1,0 +1,2255 @@
+{
+ "R1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Hollis Grady",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome back to the show, everybody.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Renata, welcome.",
+      "listingQuote": "",
+      "addressee": "Renata"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Renata Szabo",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "My guest is civil engineer Renata Szabo, who has inspected more bridges in this state than anybody I know.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Renata, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Desmond Achterberg",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Desmond, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "introduced",
+      "turn": 1,
+      "quote": "That was my guest, structural engineer Desmond Achterberg",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Glad to be here, Greta.",
+      "listingQuote": "",
+      "addressee": "Greta"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Greta Mahoney",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 1,
+      "quote": "I'm Greta Mahoney.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 1,
+      "quote": "Welcome to Plumb Line.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Glad to be here, Greta.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Desmond, welcome.",
+      "listingQuote": "",
+      "addressee": "Desmond"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Lena Fairbanks",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Courtside Notes.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "Thanks, Lena.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Okay, Abe. Make your case.",
+      "listingQuote": "",
+      "addressee": "Abe"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Abe Lundgren",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Today I've got former college coach Abe Lundgren with me",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Okay, Abe. Make your case.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 3,
+      "quote": "Thanks, Lena.",
+      "listingQuote": "",
+      "addressee": "Lena"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Clark Ebersole",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Clark Ebersole.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Councilwoman Kettleman, do you still stand by that?",
+      "listingQuote": "",
+      "addressee": "Councilwoman Kettleman"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Dolores Kettleman",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Councilwoman Kettleman, do you still stand by that?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Cal Brody",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Cal Brody.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ingrid Solheim",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "My guest today is Ingrid Solheim",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Theo Marchbanks",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Theo Marchbanks.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Maren Holloway",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Please welcome Dr. Maren Holloway.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R15": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "name": "Celia Brandvold",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Celia Brandvold, thank you for coming in.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "My guest tonight runs the overnight shift at the biggest truck stop on Interstate 80 in Nebraska. Celia Brandvold, thank you for coming in.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 1",
+    "why": "No one says the host's name, and the listing names no host person (only Harborlight Network)."
+   }
+  ]
+ },
+ "R16": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Teodora Lisk",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Hey everybody, welcome back to the channel.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Say hi, Ferris.",
+      "listingQuote": "",
+      "addressee": "Ferris"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ferris Kilbane",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "my neighbor Ferris Kilbane came over to hold the flashlight.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Say hi, Ferris.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Imani Brooks",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "Honestly, Imani, it was a funeral.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Calvin, you were at the game Tuesday when the news broke.",
+      "listingQuote": "",
+      "addressee": "Calvin"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Calvin Rusk",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Calvin, you were at the game Tuesday when the news broke. What was the clubhouse like?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 3,
+      "quote": "Honestly, Imani, it was a funeral.",
+      "listingQuote": "",
+      "addressee": "Imani"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Silas Penhallow",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 6,
+      "quote": "I'm Silas Penhallow.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Pauline, welcome.",
+      "listingQuote": "",
+      "addressee": "Pauline"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Pauline Ostergaard",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Pauline Ostergaard is a historian who has spent the last six years with that bank's ledgers.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Pauline, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Pauline Ostergaard, thank you.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R19": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Marcy Delahunt",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Marcy Delahunt",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 4,
+      "quote": "Beatrix, let's start with you.",
+      "listingQuote": "",
+      "addressee": "Beatrix"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Beatrix Olumide",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 1,
+      "quote": "I'm Beatrix Olumide",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 4,
+      "quote": "Beatrix, let's start with you.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Sol Pinsker",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 2,
+      "quote": "I'm Sol Pinsker",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 4",
+    "name": "Hannah Voss",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 3,
+      "quote": "I'm Hannah Voss",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Mara Ellwood",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Mara Ellwood.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "This is Night Questions.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Father, thank you for doing this.",
+      "listingQuote": "",
+      "addressee": "Father"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Tomas Varga",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Father, thank you for doing this.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "as an exorcist, I spend far more of my time referring people to doctors than I do performing any rite.",
+      "listingQuote": "Fr. Tomas Varga is a parish priest and exorcist for a Midwestern diocese.",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R20": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Corrie Vanderpool",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Corrie Vanderpool.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Dirt Talk, the show about the stuff under your feet.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Hector, thanks for driving up from the valley.",
+      "listingQuote": "",
+      "addressee": "Hector"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Hector Villanueva",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Hector, thanks for driving up from the valley.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R21": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Ray Thibodeaux",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Ray Thibodeaux.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "This is The Night Rounds.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Rosalind Okafor",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Doctor, thank you for not going straight to bed.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 3,
+      "quote": "In emergency medicine you learn to expect a little of everything.",
+      "listingQuote": "Dr. Rosalind Okafor, an emergency physician at a Houston trauma center",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R22": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Neil Haverford",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Good evening. Jurors in the Castlebrook mill fire trial deliberated for a sixth straight day today without reaching a verdict.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Neil.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Simone, what are you hearing?",
+      "listingQuote": "",
+      "addressee": "Simone"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Simone Abara",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Our reporter Simone Abara has been at the courthouse all week.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Simone, what are you hearing?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks, Neil.",
+      "listingQuote": "",
+      "addressee": "Neil"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Wes Tolliver",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "We're out at the farm today, and it is loud. You can probably hear the pigs behind me.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 4,
+      "quote": "You know, Ann, as a rule I don't buy pork at the grocery store anymore, and it's places like this that ruined me.",
+      "listingQuote": "",
+      "addressee": "Ann"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ann Kowalczyk",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 4,
+      "quote": "You know, Ann, as a rule I don't buy pork at the grocery store anymore, and it's places like this that ruined me.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Kara Ellison",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "im Kara Ellison",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "hey everybody welcome back to ridgeline radio",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "thanks kara happy to be here",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "welcome mateo",
+      "listingQuote": "",
+      "addressee": "mateo"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Mateo Brandt",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "today im sitting down with somebody whose work youve probably walked on without ever knowing it mateo brandt builds trails for a living",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "welcome mateo",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "thanks kara happy to be here",
+      "listingQuote": "",
+      "addressee": "kara"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R5": {
+  "voices": [
+   {
+    "label": "HOST",
+    "name": "Wendell Osei",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Wendell Osei.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Wendell.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Lorna Becket, welcome to the show.",
+      "listingQuote": "",
+      "addressee": "Lorna Becket"
+     }
+    ]
+   },
+   {
+    "label": "GUEST",
+    "name": "Lorna Becket",
+    "evidence": [
+     {
+      "kind": "role_label",
+      "turn": 1,
+      "quote": "Thanks, Wendell. Glad to be here, and glad to be on the ground for once.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Lorna Becket, welcome to the show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Lorna Becket, welcome to the show.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks, Wendell.",
+      "listingQuote": "",
+      "addressee": "Wendell"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Gretchen Albers",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Gretchen Albers.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Good morning, this is Kettle River Morning.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "I can hear you fine, Gretchen.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Hal, can you hear me okay?",
+      "listingQuote": "",
+      "addressee": "Hal"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Hal Brenner",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Climatologist Hal Brenner is on the line from Tucson.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Hal, can you hear me okay?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "I can hear you fine, Gretchen.",
+      "listingQuote": "",
+      "addressee": "Gretchen"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Danny Ruelas",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Danny Ruelas.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Danny.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Bill, you were in that office.",
+      "listingQuote": "",
+      "addressee": "Bill"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Rhea Castellano",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Joining me are economist Rhea Castellano and former county treasurer Bill Ostrowski.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Rhea, let's start with you.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks, Danny.",
+      "listingQuote": "",
+      "addressee": "Danny"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Bill Ostrowski",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Bill, you were in that office. Is that fair?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R8": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Ruth Adeyemi",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to The Lamplit Table.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thank you, Ruth.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Welcome back, Nadia.",
+      "listingQuote": "",
+      "addressee": "Nadia"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Nadia Petrakis",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Welcome back, Nadia.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 1,
+      "quote": "Third time. I think that makes me a regular.",
+      "listingQuote": "Nadia Petrakis is back for a third conversation",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thank you, Ruth.",
+      "listingQuote": "",
+      "addressee": "Ruth"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "R9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Priya Raman",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Priya Raman",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 6,
+      "quote": "Jonah, that is literally what you did last weekend.",
+      "listingQuote": "",
+      "addressee": "Jonah"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Jonah Feld",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Jonah, that is literally what you did last weekend.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Odette Lindqvist",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 2,
+      "quote": "Odette Lindqvist runs the pastry program at a little bakery in Duluth that I will drive four hours for.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Odette, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T1": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Priscilla Hahn",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Priscilla Hahn, sitting in while he's fishing somewhere in northern Minnesota",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Priscilla.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Arjun, welcome.",
+      "listingQuote": "",
+      "addressee": "Arjun"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Arjun Talwar",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "My guest this hour is Arjun Talwar, who runs the regional blood bank.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Arjun, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks, Priscilla.",
+      "listingQuote": "",
+      "addressee": "Priscilla"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T10": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Ruby Sandoval",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Ruby Sandoval.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks for having me, Ruby.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Abby Marchetti",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "With me is swim coach Abby Marchetti, who taught half this town to swim at the Westside pool.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks for having me, Ruby.",
+      "listingQuote": "",
+      "addressee": "Ruby"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T11": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Gil Okerlund",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to the hour.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thanks, Gil.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Patrice Wynn, welcome.",
+      "listingQuote": "",
+      "addressee": "Patrice Wynn"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Patrice Wynn",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "My guest has practiced law in a town of nine hundred people for thirty years. Patrice Wynn, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 4,
+      "quote": "Patrice, what does a small-town lawyer actually do all day?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thanks, Gil.",
+      "listingQuote": "",
+      "addressee": "Gil"
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 3",
+    "why": "Ad read that speaks of Gil in the third person; nothing names this announcer."
+   }
+  ]
+ },
+ "T12": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Hugh Talbot",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Hugh Talbot.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "Former engineer who asked not to be named; no one names her (Rachel Imbert is only spoken of)."
+   }
+  ]
+ },
+ "T13": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Marisol Ibarra",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Marisol Ibarra.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Dr. Hana Whitlock, thank you for saving us.",
+      "listingQuote": "",
+      "addressee": "Dr. Hana Whitlock"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Hana Whitlock",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "Dr. Hana Whitlock, thank you for saving us.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Dr. Hana Whitlock, thank you for saving us.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T14": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dale Whitcomb",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "It's Dale After Dark, the phones are lit up, and tonight we want your worst landlord stories.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Hi Dale, long time listener, first time caller.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 2",
+    "why": "A caller who never gives a name; the listing names only the host."
+   }
+  ]
+ },
+ "T15": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Owen Strickland",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Owen Strickland.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Lyle Dempsey",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "For three years I tried to reach the man who was working the front desk that night. His name is Lyle Dempsey, he's eighty-one now, and in March he finally called me back.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T16": {
+  "voices": [
+   {
+    "label": "SPEAKER 2",
+    "name": "Felipe Arambula",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "My guest is the county library director, Felipe Arambula.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Felipe, thanks for coming in so early.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": [
+   {
+    "label": "SPEAKER 1",
+    "why": "Says the host Marguerite is home sick and this is her producer; the producer's name is never given."
+   }
+  ]
+ },
+ "T17": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Joanna Pell",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Joanna Pell.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "This is Capitol Corner.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Curtis, does the bill have the votes?",
+      "listingQuote": "",
+      "addressee": "Curtis"
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 5,
+      "quote": "Tricia, welcome.",
+      "listingQuote": "",
+      "addressee": "Tricia"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Curtis Lemaire",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "With me as always is our political analyst, Curtis Lemaire.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Curtis, does the bill have the votes?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Tricia",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 4,
+      "quote": "Tricia. I'm his chief of staff.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 5,
+      "quote": "Tricia, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T18": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Agnes Moberly",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thank you, Agnes.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Russ, take it away.",
+      "listingQuote": "",
+      "addressee": "Russ"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Russ Kemper",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Russ, take it away.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thank you, Agnes.",
+      "listingQuote": "",
+      "addressee": "Agnes"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T19": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "June Halloran",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Mile Marker.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 6,
+      "quote": "Ty, you have never driven a truck in your life.",
+      "listingQuote": "",
+      "addressee": "Ty"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Ty",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "my producer Ty is here to keep me honest",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Ty, you have never driven a truck in your life.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T2": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Bonnie Laczko",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Bonnie Laczko.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Celeste, thank you.",
+      "listingQuote": "",
+      "addressee": "Celeste"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Celeste",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "His daughter Celeste is here with me.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Celeste, thank you.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T20": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Lucinda Paz",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Lucinda Paz",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_identification",
+      "turn": 7,
+      "quote": "I'm Lucinda Paz.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Vernon Eckert",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Thank you, Vernon.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Delphine, welcome.",
+      "listingQuote": "",
+      "addressee": "Delphine"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Delphine Achter",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Delphine, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "self_reference",
+      "turn": 4,
+      "quote": "Nobody on my route cares that I write poems.",
+      "listingQuote": "with the poet Delphine Achter",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Thank you, Vernon.",
+      "listingQuote": "",
+      "addressee": "Vernon"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T21": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Amos Teague",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Amos Teague",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to Plainsong Sessions.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "Thank you, Amos.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Lucia, welcome.",
+      "listingQuote": "",
+      "addressee": "Lucia"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Lucia Ferrante",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "sitting across from me with a fiddle in her lap is Lucia Ferrante",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Lucia, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 3,
+      "quote": "Thank you, Amos.",
+      "listingQuote": "",
+      "addressee": "Amos"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T22": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Dana Whitfield",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "He's fourth in the league, Dana.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Marcus, give me the one number that matters.",
+      "listingQuote": "",
+      "addressee": "Marcus"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Marcus Feeney",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Marcus, give me the one number that matters.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 3,
+      "quote": "He's fourth in the league, Dana.",
+      "listingQuote": "",
+      "addressee": "Dana"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T3": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Tamsin Rourke",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Tamsin Rourke.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Peter, what did you think the first time you heard her voice?",
+      "listingQuote": "",
+      "addressee": "Peter"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Peter Lindgren",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 2,
+      "quote": "My guest is Peter Lindgren, who wrote her biography and found those tapes.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Peter, what did you think the first time you heard her voice?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T4": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Mirela Costa",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Mirela Costa.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Tessa, explain the new code for people who haven't read all four hundred pages.",
+      "listingQuote": "",
+      "addressee": "Tessa"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Tessa Moreau",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Tessa, explain the new code for people who haven't read all four hundred pages.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "we'll start with city planner Tessa Moreau",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T5": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Leah Dorsey",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Leah Dorsey",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 2,
+      "quote": "Okonjo, welcome.",
+      "listingQuote": "",
+      "addressee": "Okonjo"
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 4,
+      "quote": "Whitley, you worked nights with her, didn't you?",
+      "listingQuote": "",
+      "addressee": "Whitley"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Sam Whitley",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 4,
+      "quote": "Whitley, you worked nights with her, didn't you?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Sam Okonjo",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Okonjo, welcome. How long have you been an ICU nurse?",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 7,
+      "quote": "Okonjo, what's the ratio on a bad night now?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T6": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Merle Hanstad",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Merle Hanstad",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "You're on The Garden Line.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Good to be back, Merle.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 3,
+      "quote": "Hi, Merle.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Nina Castellanos",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "with me in the studio is master gardener Nina Castellanos",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Nina, good to have you back.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Good to be back, Merle.",
+      "listingQuote": "",
+      "addressee": "Merle"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 3",
+    "name": "Nina",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 2,
+      "quote": "Nina in Fresno, you're on The Garden Line.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 2,
+      "quote": "Nina in Fresno, you're on The Garden Line.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 3,
+      "quote": "Hi, Merle.",
+      "listingQuote": "",
+      "addressee": "Merle"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T7": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Nell Hargrove",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Nell Hargrove.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 1,
+      "quote": "Thank you, Nell.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Gus Pavlides, welcome.",
+      "listingQuote": "",
+      "addressee": "Gus Pavlides"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Gus Pavlides",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "My guest walked steel beams sixty stories up for forty years. Gus Pavlides, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Gus Pavlides, welcome.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 1,
+      "quote": "Thank you, Nell.",
+      "listingQuote": "",
+      "addressee": "Nell"
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T8": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Corey Blaylock",
+    "evidence": [
+     {
+      "kind": "self_identification",
+      "turn": 0,
+      "quote": "I'm Corey Blaylock.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 0,
+      "quote": "Martin, would you read it for us?",
+      "listingQuote": "",
+      "addressee": "Martin"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Martin Greaves",
+    "evidence": [
+     {
+      "kind": "introduced",
+      "turn": 0,
+      "quote": "My guest today is Martin Greaves, and he brought a letter with him.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addressed",
+      "turn": 0,
+      "quote": "Martin, would you read it for us?",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ },
+ "T9": {
+  "voices": [
+   {
+    "label": "SPEAKER 1",
+    "name": "Anselm Duarte",
+    "evidence": [
+     {
+      "kind": "hosts_show",
+      "turn": 0,
+      "quote": "Welcome to The Vesper Hour.",
+      "listingQuote": "",
+      "addressee": ""
+     },
+     {
+      "kind": "addresses_other",
+      "turn": 6,
+      "quote": "Father Kevin, thank you for everything you've given that parish.",
+      "listingQuote": "",
+      "addressee": "Father Kevin"
+     }
+    ]
+   },
+   {
+    "label": "SPEAKER 2",
+    "name": "Kevin Mulroney",
+    "evidence": [
+     {
+      "kind": "addressed",
+      "turn": 6,
+      "quote": "Father Kevin, thank you for everything you've given that parish.",
+      "listingQuote": "",
+      "addressee": ""
+     }
+    ]
+   }
+  ],
+  "unnamed": []
+ }
+}

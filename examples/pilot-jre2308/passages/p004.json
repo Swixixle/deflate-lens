@@ -1,0 +1,147 @@
+{
+  "order": 4,
+  "title": "Religious couples, the pill, and pornography",
+  "turnStart": 88,
+  "turnEnd": 98,
+  "stake": "Who has the most sex, and whether the pill explains the rise in pornography use.",
+  "speakers": [
+    "JOE ROGAN",
+    "JORDAN PETERSON"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 89,
+        "speaker": "JORDAN PETERSON",
+        "quote": "the people who have the most sex now are religious married couples, really.",
+        "verbatim": true
+      },
+      {
+        "turn": 91,
+        "speaker": "JORDAN PETERSON",
+        "quote": "the last hypothesis anyone would have possibly generated was that the cascading consequences of that over 50 years would be, well, radical increase in pornography use because sex has been made less dangerous by the pill",
+        "verbatim": true
+      },
+      {
+        "turn": 93,
+        "speaker": "JOE ROGAN",
+        "quote": "But is that true? Because pornography essentially was very difficult to acquire before the birth control pill was invented.",
+        "verbatim": true
+      },
+      {
+        "turn": 95,
+        "speaker": "JOE ROGAN",
+        "quote": "Isn’t part of the excess use of pornography just because the access is so instantaneous now?",
+        "verbatim": true
+      },
+      {
+        "turn": 96,
+        "speaker": "JORDAN PETERSON",
+        "quote": "Oh, definitely. But you could imagine too that you might have hypothesized that if the birth control pill took the threat out of sex, that pornography would be less necessary. That didn’t seem to work out.",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "Peterson: churchgoing married couples now report more sex than other groups, and it is surprising that pornography use rose after the pill made sex safer. Rogan: pornography was hard to get before the internet; isn't instant access part of the rise? Peterson: yes, definitely; but one might still have expected the pill to make pornography less necessary, and it did not.",
+      "g5": "Peterson says married people who go to church have the most sex, and that it's strange people watch more porn now that birth control made sex safer. Rogan says porn is easy to get now, and that's part of it. Peterson says yes, that's part of it, but he still finds it surprising."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "An earlier version of this card said Peterson 'withdrew' the claim and that access 'explains the whole effect'. Neither is in the words. He accepted access as a factor ('Oh, definitely') and kept his point ('That didn't seem to work out'). The rewrite now reflects that.",
+        "g5": "Before, this card said Peterson gave up his point. He didn't. He agreed with Rogan about one part and kept the rest."
+      }
+    },
+    "jump": {
+      "present": true,
+      "pivot": "radical increase in pornography use because sex has been made less dangerous by the pill",
+      "pivotVerbatim": true,
+      "hs": "The pill-to-pornography link is offered with the word 'because'. No mechanism or evidence is given, and a simpler cause (instant access) is on the table. The surprise only exists if the pill was the operative variable, and the passage does not show that it was.",
+      "g5": "He says porn went up BECAUSE of birth control, but he doesn't show how. Rogan gives a simpler reason: it's easy to get now."
+    },
+    "defense": {
+      "hs": "Peterson's point is weaker than a causal thesis: he says a 1960s observer would not have predicted this pairing, which is about expectations, not mechanism, and he concedes access immediately. The religious-couples claim, separately, is supported by survey data.",
+      "g5": "He's really saying 'nobody would have guessed this', not 'this is why it happened'. And he agrees with Rogan right away. His other claim, about church couples, is backed by surveys."
+    },
+    "revision": {
+      "jumpSurvives": "partly",
+      "hs": "The jump survives as stated, because 'because' is in the words. But the challenge should be sized to what was claimed: a loosely worded surprise, conceded in part, not a thesis defended and lost.",
+      "g5": "He did say 'because', so the problem is real. But it was a small claim, and he partly agreed with Rogan, so it's a small problem."
+    },
+    "claims": [
+      {
+        "text": "Religious married couples have the most sex.",
+        "speaker": "JORDAN PETERSON",
+        "type": "fact",
+        "basis": {
+          "hs": "An Institute for Family Studies survey (Sept 2026) finds 62% of churchgoing married couples report weekly sex vs 48% of non-religious married couples; General Social Survey trends point the same way. Self-reported, with age and selection confounds, from an advocacy-leaning publisher. 'More than secular married couples' is what the data shows; 'the most' of any group is a stretch the data roughly supports.",
+          "g5": "A survey found that married couples who go to church say they have sex more often than married couples who don't. People might not tell the truth on surveys, and the group that did the survey likes marriage and religion."
+        },
+        "status": "receipt",
+        "wouldSettle": "",
+        "receipts": [
+          {
+            "url": "https://ifstudies.org/report-brief/the-devout-difference-religion-marital-quality-and-sex-among-americans",
+            "note": "IFS, The Devout Difference (2026): 62% vs 48% weekly",
+            "addedBy": "claude-in-chat",
+            "at": "2026-10-02T14:00:00.000Z"
+          }
+        ],
+        "expectedSources": [
+          "survey_report",
+          "academic_paper"
+        ],
+        "searchQuery": "religious attendance marital sexual frequency survey"
+      },
+      {
+        "text": "Pornography use rose because the pill made sex less dangerous.",
+        "speaker": "JORDAN PETERSON",
+        "type": "unsupported",
+        "basis": {
+          "hs": "No mechanism or data offered; the speaker accepts access as a factor. Internet access is sufficient to explain the rise in availability and use.",
+          "g5": "He gives no proof, and he agrees that the internet is a big reason."
+        },
+        "status": "unchecked",
+        "wouldSettle": "Time series of pornography consumption against access (dial-up, broadband, mobile) versus contraceptive uptake.",
+        "receipts": [],
+        "settle": {
+          "hs": "Time series of pornography consumption against access (dial-up, broadband, mobile) versus contraceptive uptake.",
+          "g5": "Numbers over the years showing when pornography use rose, lined up against when fast internet arrived and when the pill became common."
+        },
+        "expectedSources": [
+          "academic_paper"
+        ],
+        "searchQuery": "oral contraceptive pornography consumption causal"
+      },
+      {
+        "text": "Instant access explains part of the rise in pornography use.",
+        "speaker": "JOE ROGAN",
+        "type": "fact",
+        "basis": {
+          "hs": "Uncontroversial; broadband and mobile adoption track consumption.",
+          "g5": "Easy to see: it's on every phone now."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": [],
+        "expectedSources": [
+          "academic_paper"
+        ],
+        "searchQuery": "internet access pornography consumption trends"
+      }
+    ],
+    "judgments": {
+      "evidence": "mixed",
+      "inference": "gap"
+    }
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "order": 7,
+  "title": "The anti-Semitism exchange",
+  "turnStart": 194,
+  "turnEnd": 206,
+  "stake": "What is actually claimed in a passage that lists the themes of anti-Semitic conspiracy talk.",
+  "speakers": [
+    "JOE ROGAN",
+    "JORDAN PETERSON"
+  ],
+  "status": "done",
+  "createdAt": "2026-10-02T14:00:00.000Z",
+  "analyzedAt": "2026-10-02T14:00:00.000Z",
+  "analyzedBy": "claude-in-chat (pilot; corrected after a second-reader review)",
+  "model": "claude (chat, 2 Oct 2026)",
+  "basedOn": {
+    "transcriptUpdatedAt": "2026-10-02T14:00:00.000Z",
+    "attrSig": "af1ce6b18-108"
+  },
+  "analysis": {
+    "asSaid": [
+      {
+        "turn": 198,
+        "speaker": "JOE ROGAN",
+        "quote": "it’s one of those things where you can’t separate. It’s a religion and it’s also a race and it’s also a government.",
+        "verbatim": true
+      },
+      {
+        "turn": 200,
+        "speaker": "JOE ROGAN",
+        "quote": "And then there’s also the concept of intelligence agencies and compromise that also gets attached to it. The manipulation of world markets and money. And there’s a lot to unpack. And then there’s regular Jewish people who have nothing to do with that.",
+        "verbatim": true
+      },
+      {
+        "turn": 201,
+        "speaker": "JORDAN PETERSON",
+        "quote": "the Jews too are very successful. And so what you would expect from a purely statistical point of view is you’d expect them to be over-represented at the extreme.",
+        "verbatim": true
+      },
+      {
+        "turn": 204,
+        "speaker": "JOE ROGAN",
+        "quote": "They don’t proselytize, they don’t try to get you to join. And they’re all very tightly knit. They call themselves the Klan.",
+        "verbatim": true
+      }
+    ],
+    "deflated": {
+      "hs": "Rogan: anti-Semitism is hard to discuss because 'Jewish' names a religion, an ethnicity and a state at once, and people attach claims about intelligence agencies and control of markets and money to it, which have nothing to do with ordinary Jews. Peterson: a successful group will be over-represented at any extreme just by the math. Rogan: Jews do not recruit, stick together, and call themselves a clan.",
+      "g5": "Rogan says it's confusing because 'Jewish' can mean a religion, a people, or a country, and some people blame Jews for secret plots about spies and money, which isn't fair to regular Jewish people. Peterson says any group that does well will show up more at the top and the bottom. Rogan says Jewish people stick together and don't try to get others to join."
+    },
+    "fidelity": {
+      "grade": "faithful",
+      "notes": {
+        "hs": "Attribution here rests on content cues; the transcript labels nearly all of it Peterson. 'Klan' is rendered 'clan' in the deflation because that is almost certainly the word meant; the quote keeps the transcript's spelling.",
+        "g5": "The transcript's name labels are wrong here, so who said what is a best guess. The word 'Klan' is probably 'clan'."
+      }
+    },
+    "jump": {
+      "present": true,
+      "pivot": "And there’s a lot to unpack.",
+      "pivotVerbatim": true,
+      "hs": "The passage lists the standard conspiracy themes (intelligence compromise, markets, money) as things that 'get attached', neither endorsed nor rejected, then adds 'they stick together' and an in-group name no evidence supports. No claim is argued; associations are listed with a disclaimer at the end. Peterson's statistical point is the only step with a structure, and 'over-represented at the extreme' never says the extreme of what.",
+      "g5": "Rogan lists the usual rumors about Jewish people without saying whether they're true, then says 'there's a lot to unpack' and doesn't unpack it. Peterson's math point is the only real argument, and it doesn't say what he's measuring."
+    },
+    "defense": {
+      "hs": "Rogan's stated aim is to explain why the topic is hard to discuss, and naming the rumors that circulate is part of describing the difficulty; he explicitly separates 'regular Jewish people' from them. Peterson's point is a correct statistical generality: a group with a higher mean or variance on a trait is over-represented in both tails, and he uses it to explain visibility, not to assign blame. 'They don't proselytize' is accurate as a description of mainstream Judaism.",
+      "g5": "Rogan is trying to explain why this subject is hard to talk about, and he does say the rumors aren't about regular Jewish people. Peterson's math is correct in general. And it's true that Judaism doesn't go looking for converts."
+    },
+    "revision": {
+      "jumpSurvives": "partly",
+      "hs": "The challenge stands on structure: listing conspiracy themes without evaluating them leaves them in the air, and 'they call themselves the Klan' is false as stated. But an earlier version described the passage as 'maximum association', which reads motive into it. The defensible reading is a clumsy attempt to describe a hard subject, and the ledger should grade the claims, not the intent.",
+      "g5": "The rumors were left hanging and the 'Klan' line is wrong. But the earlier version made it sound like Rogan was doing it on purpose, and that isn't fair. Grade what was said, not what he meant."
+    },
+    "claims": [
+      {
+        "text": "Jews call themselves 'the Klan'.",
+        "speaker": "JOE ROGAN",
+        "type": "unsupported",
+        "basis": {
+          "hs": "No basis known. Most likely a mangling of the ordinary word 'clan'. As stated, false.",
+          "g5": "Not true. Probably the word 'clan'."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "A successful group is over-represented at the extremes.",
+        "speaker": "JORDAN PETERSON",
+        "type": "fact",
+        "basis": {
+          "hs": "True of any distribution with a shifted mean or larger variance. Uninformative about any group until the trait is named.",
+          "g5": "True in math class. But he never says what he's measuring, so it doesn't tell you anything specific."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "Jewish communities do not proselytize.",
+        "speaker": "JOE ROGAN",
+        "type": "fact",
+        "basis": {
+          "hs": "Accurate for mainstream Judaism, which does not seek converts.",
+          "g5": "True. Judaism doesn't go looking for new members."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      },
+      {
+        "text": "Intelligence agencies, compromise and market manipulation are 'attached' to the topic.",
+        "speaker": "JOE ROGAN",
+        "type": "unscorable",
+        "basis": {
+          "hs": "Named as things people say, neither asserted nor denied; nothing to grade until a specific claim is made.",
+          "g5": "He says people say these things. He doesn't say if they're true, so there's nothing to check."
+        },
+        "status": "unchecked",
+        "wouldSettle": "",
+        "receipts": []
+      }
+    ],
+    "judgments": {
+      "evidence": "weak",
+      "inference": "gap"
+    }
+  }
+}
